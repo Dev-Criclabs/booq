@@ -54,7 +54,7 @@ export const CLUB = { nameTh: 'ฮันเตอร์ เทนนิส ค�
  * function of the calls so far), `notice` GET /public/notice/{kind} as { privacy: { th: doc } }; every API call is recorded,
  * so a test can prove nothing was created.
  */
-export async function openPage(browser, { liff, club = CLUB, session = { status: 200, body: { state: 'active' } }, profile = { status: 200, body: { state: 'active' } }, notice = null, lang, width = 375, height = 812 } = {}) {
+export async function openPage(browser, { liff, club = CLUB, session = { status: 200, body: { state: 'active' } }, profile = { status: 200, body: { state: 'active' } }, notice = null, me = undefined, lang, width = 375, height = 812 } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, locale: 'th-TH' });
   if (lang) await context.addCookies([{ name: 'lang', value: lang, url: 'http://localhost' }]);
   const page = await context.newPage();
@@ -73,6 +73,16 @@ export async function openPage(browser, { liff, club = CLUB, session = { status:
     if (path.endsWith('/auth/profile') && req.method() === 'POST') {
       const r = typeof profile === 'function' ? profile(calls) : profile;
       return route.fulfill({ status: r.status, json: r.body });
+    }
+    if (path.endsWith('/me/profile')) {
+      // `me`: undefined or null is a guest (401); otherwise { profile, groupFor(dob) } kept in memory.
+      if (!me) return route.fulfill({ status: 401, json: { code: 'sign_in_required' } });
+      if (req.method() === 'PUT') {
+        const change = JSON.parse(req.postData() ?? '{}');
+        me.profile = { ...me.profile, ...change };
+        me.profile.priceGroup = me.groupFor ? me.groupFor(me.profile.dateOfBirth) : 'adult';
+      }
+      return route.fulfill({ status: 200, json: me.profile });
     }
     const kind = /\/public\/notice\/(privacy|terms)$/.exec(path)?.[1];
     if (kind) {

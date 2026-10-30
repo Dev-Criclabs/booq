@@ -253,3 +253,59 @@ describe('app.add_order_lines', () => {
     await expect(add(player(), id, goodLines(b))).rejects.toThrow(/not an open priced sale/);
   });
 });
+
+describe('lock order (migration 0318, FA 3.4)', () => {
+  /** Runs fn inside a club transaction and rolls it back (an order without lines cannot commit). */
+  const probe = async (c: ReturnType<typeof ctx>, fn: (tx: Parameters<Parameters<Db['withClubTx']>[1]>[0]) => Promise<void>) => {
+    try {
+      await web.withClubTx(c, async (tx) => {
+        await fn(tx);
+        throw new Rollback(null);
+      });
+    } catch (e) {
+      if (!(e instanceof Rollback)) throw e;
+    }
+  };
+
+  it('creating a priced order takes the customer lock first: a second Pay of the same customer waits for the first, and nothing deadlocks', async () => {
+    const events: string[] = [];
+    const first = probe(player(), async (tx) => {
+      await createIn(tx, null);
+      events.push('first has its order');
+      await tx.query(`select pg_sleep(0.4)`);
+      events.push('first ends');
+    });
+    await new Promise((r) => setTimeout(r, 150));
+    const second = probe(player(), async (tx) => {
+      await createIn(tx, null);
+      events.push('second has its order');
+    });
+    await Promise.all([first, second]);
+    expect(events).toEqual(['first has its order', 'first ends', 'second has its order']);
+  });
+
+  it('two different customers do not wait for each other', async () => {
+    const events: string[] = [];
+    const first = probe(player(P1), async (tx) => {
+      await createIn(tx, null);
+      await tx.query(`select pg_sleep(0.4)`);
+      events.push('first ends');
+    });
+    await new Promise((r) => setTimeout(r, 150));
+    const second = probe(player(P2), async (tx) => {
+      await createIn(tx, null);
+      events.push('second has its order');
+    });
+    await Promise.all([first, second]);
+    expect(events).toEqual(['second has its order', 'first ends']);
+  });
+
+  it('reserve_court takes the same customer lock later in the same transaction without waiting for itself', async () => {
+    await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1,'booking_window_days','30'), ($1,'hold_minutes','15')`, [A]);
+    await tdb.query(`insert into public.opening_hours (club_id, weekday, open, close) select $1, d, '06:00', '24:00' from generate_series(1, 7) d`, [A]);
+    await probe(player(), async (tx) => {
+      const id = await createIn(tx, null);
+      await tx.query(`select app.reserve_court($1, $2, $3::timestamptz[], null, null)`, [id, RES, [new Date('2026-12-02T18:00:00+07:00').toISOString()]]);
+    });
+  });
+});
