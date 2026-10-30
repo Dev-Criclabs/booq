@@ -43,6 +43,12 @@ export interface AppLaunchProducers {
   task: string;
 }
 
+export interface AppMessageKinds {
+  kind: string;
+  cap_class: string;
+  switch_key: string | null;
+}
+
 export interface AppMoveHandlers {
   name: string;
   handler: unknown;
@@ -1062,6 +1068,7 @@ export interface Tables {
   'app.deletion_impact_handlers': AppDeletionImpactHandlers;
   'app.feature_keys': AppFeatureKeys;
   'app.launch_producers': AppLaunchProducers;
+  'app.message_kinds': AppMessageKinds;
   'app.move_handlers': AppMoveHandlers;
   'app.pause_handlers': AppPauseHandlers;
   'app.payment_ports': AppPaymentPorts;
