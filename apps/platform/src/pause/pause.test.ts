@@ -96,13 +96,17 @@ describe('pause (PLAT-03-AC1 to AC3, AC10)', () => {
   });
 });
 
+/** Handlers registered by the migrations of later features (F06 registers one in 0508); tests add theirs on top. */
+const registeredHandlers = async () => Number((await tdb.query('select count(*) from app.pause_handlers')).rows[0].count);
+
 describe('resume (PLAT-01-AC10, PLAT-03-AC11)', () => {
   it('an admin resumes with a reason: Live, the reason in P6, the pause length returned, the owner told', async () => {
     await tdb.setNow('2026-12-29T03:00:00Z');
     await pause(admin, { reason: 'a' });
     await tdb.advance('2 days');
+    const baseline = await registeredHandlers();      // handlers other features register (F06 0508, ...)
     const r = await resume(admin, { reason: 'fixed' });
-    expect(r).toEqual({ ok: true, pausedAt: '2026-12-29T03:00:00.000Z', resumedAt: '2026-12-31T03:00:00.000Z', handlersRun: 0, ownerNotified: true });
+    expect(r).toEqual({ ok: true, pausedAt: '2026-12-29T03:00:00.000Z', resumedAt: '2026-12-31T03:00:00.000Z', handlersRun: baseline, ownerNotified: true });
     expect(await status()).toBe('live');
     expect((await p6()).find((x) => x.action === 'club.resumed')).toMatchObject({ name: 'Ada Admin', reason: 'fixed', club_id: CLUB });
     expect(notices.at(-1)).toMatchObject({ kind: 'club_resumed', templateKey: 'L-new.club_resumed', params: { clubName: 'Club A' } });
@@ -118,9 +122,10 @@ describe('resume (PLAT-01-AC10, PLAT-03-AC11)', () => {
   });
 
   it('runs the registered handlers once and reports how many', async () => {
+    const baseline = await registeredHandlers();
     await tdb.query(`create function public.__h(p_club uuid, p_paused timestamptz, p_resumed timestamptz) returns void language plpgsql as $$ begin null; end $$`);
     await tdb.query(`insert into app.pause_handlers (handler_key, handler) values ('h', 'public.__h(uuid, timestamptz, timestamptz)'::regprocedure)`);
     await pause(admin, { reason: 'a' });
-    expect(await resume(admin, { reason: 'b' })).toMatchObject({ ok: true, handlersRun: 1 });
+    expect(await resume(admin, { reason: 'b' })).toMatchObject({ ok: true, handlersRun: baseline + 1 });
   });
 });
