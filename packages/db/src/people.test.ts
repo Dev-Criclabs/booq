@@ -59,7 +59,7 @@ const ctx = (roles: string[], userId = U1, club = A) => ({ clubId: club, userId,
 
 describe('a person keeps the Player role, so at least one role (ROLE-01-AC7, D115)', () => {
   it('a person with no role is refused at commit', async () => {
-    await expect(tx((c) => c.query('insert into public.app_user (club_id, id) values ($1,$2)', [A, U1]))).rejects.toThrow(/player role/);
+    await expect(tx((c) => c.query('insert into public.app_user (club_id, id, line_user_id) values ($1,$2,$3)', [A, U1, 'Lx']))).rejects.toThrow(/player role/);
   });
   it('a person with only a coach role is refused: Player is always there', async () => {
     await expect(person(A, U1, 'L1', ['coach'])).rejects.toThrow(/player role/);
