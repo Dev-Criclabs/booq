@@ -14,6 +14,8 @@ export interface ClubConfig {
   status: string;
   liffId: string | null;
   languages: Lang[];
+  /** The current privacy notice and terms release (D152), or null when none is published. */
+  noticeVersion?: string | null;
 }
 
 export type ClubLoad = { state: 'loading' } | { state: 'ready'; config: ClubConfig } | { state: 'not_found' } | { state: 'offline' };
@@ -69,6 +71,10 @@ export function useClub(slug: string, initialLang: Lang, liff: LiffPort | null) 
     setLangState(l);
   }, []);
   const retry = useCallback(() => setAttempt((n) => n + 1), []);
+  /** Fetch the config again behind the current screen (no loading state), e.g. after a new notice release. */
+  const reload = useCallback(() => {
+    void loadClub(slug, fetch).then((r) => r.state === 'ready' && setLoad(r));
+  }, [slug]);
   const t: T = useMemo(() => translator(lang), [lang]);
-  return { load, lang, setLang, t, retry };
+  return { load, lang, setLang, t, retry, reload };
 }

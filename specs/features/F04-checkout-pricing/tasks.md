@@ -48,7 +48,7 @@ Migration numbers are 0301 to 0399 and rise with task order (the migrator refuse
 
 ## C. Routes and the Pay flow
 
-- [ ] **F04-T11** Loader and `POST /checkout/quote`: reads rules, prices, the player's group, eligible credits, wallet balance, code and entitlements in one transaction and calls the engine; typed errors; no amount accepted from the client. IDs: R1 to R4, R8, PROMO-01-AC9, CC-2. Role: BE-C · Deps T08, T09, T01, T02 · Size: M
+- [x] **F04-T11** Loader and `POST /checkout/quote`: reads rules, prices, the player's group, eligible credits, wallet balance, code and entitlements in one transaction and calls the engine; typed errors; no amount accepted from the client. IDs: R1 to R4, R8, PROMO-01-AC9, CC-2. Role: BE-C · Deps T08, T09, T01, T02 · Size: M
   Tests first: the client sends choices only; another club's code answers as a missing code (AC9); an unset coach price cannot be picked.
 - [ ] **F04-T12a** `POST /checkout/pay`, part (a): gate (club status, feature switch, tap limit), reprice and `price_changed`. IDs: R4-AC9, R8-AC1, AC2, R7-AC1, decision D63, F03 §4.8. Role: BE-C · Deps T11, F03-T07, F03-T12 · Size: S
   Tests first: a changed price creates nothing and returns the new quote; a Paused club and a third tap are refused with their typed codes.
