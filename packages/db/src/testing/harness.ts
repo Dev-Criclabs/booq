@@ -37,6 +37,8 @@ export interface TestDatabase {
   clearNow(): Promise<void>;
   /** Publishes a placeholder privacy and terms release v1 (D152), so sign-up has a current notice version. */
   seedNotice(): Promise<void>;
+  /** Makes `id` a coach of `club` (F07, migration 0801): the person with the coach and player roles, and the coach row. Safe to repeat. */
+  seedCoach(club: string, id: string): Promise<void>;
   close(): Promise<void>;
 }
 
@@ -114,6 +116,21 @@ function wrap(name: string): TestDatabase {
     },
     async clearNow() {
       await pool.query('update app.test_clock set now_override = null');
+    },
+    async seedCoach(club, id) {
+      const c = await pool.connect();
+      try {
+        await c.query('begin');
+        await c.query('insert into public.app_user (club_id, id, line_user_id) values ($1, $2, $3) on conflict do nothing', [club, id, 'coach:' + id]);
+        await c.query(`insert into public.app_user_role (club_id, user_id, role) values ($1, $2, 'coach'), ($1, $2, 'player') on conflict do nothing`, [club, id]);
+        await c.query('insert into public.coach (club_id, id) values ($1, $2) on conflict do nothing', [club, id]);
+        await c.query('commit');
+      } catch (e) {
+        await c.query('rollback');
+        throw e;
+      } finally {
+        c.release();
+      }
     },
     async seedNotice() {
       if ((await pool.query('select 1 from platform.legal_release')).rowCount) return;

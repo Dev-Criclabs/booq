@@ -35,8 +35,9 @@ describe('answers', () => {
     expect(await fail(409, 'limit_reached', { hours: 4, obj: { a: 1 } }).json()).toEqual({ code: 'limit_reached', params: { hours: 4 } });
     expect(cleanParams({ a: 'x'.repeat(300) })).toBeUndefined();
   });
-  it('callerOf prefers x-real-ip, then the first forwarded address', () => {
-    expect(callerOf(new Request('https://x.example/', { headers: { 'x-real-ip': '1.1.1.1', 'x-forwarded-for': '2.2.2.2' } }))).toBe('1.1.1.1');
+  it('callerOf prefers the leftmost forwarded address, then x-real-ip', () => {
+    expect(callerOf(new Request('https://x.example/', { headers: { 'x-real-ip': '1.1.1.1', 'x-forwarded-for': '2.2.2.2' } }))).toBe('2.2.2.2');
+    expect(callerOf(new Request('https://x.example/', { headers: { 'x-real-ip': '1.1.1.1' } }))).toBe('1.1.1.1');
     expect(callerOf(new Request('https://x.example/', { headers: { 'x-forwarded-for': ' 2.2.2.2 , 3.3.3.3' } }))).toBe('2.2.2.2');
     expect(callerOf(new Request('https://x.example/'))).toBe('unknown');
   });

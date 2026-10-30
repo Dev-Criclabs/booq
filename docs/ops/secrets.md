@@ -17,6 +17,7 @@ Proposal, 30 Oct 2026. The Architect and Security roles must agree before the fi
 | Supabase service role key | Per environment | Not set in any app environment. Only a staff invite function holds it, if the Architect keeps one |
 | Master key for club secrets (D34: an extra layer of encryption in the app, on top of the host's disk encryption) | Per environment | Hosting provider or a managed key service. **Two named holders** and an offline recovery copy in the password manager. In no log, repo or chat |
 | Slip checking provider key | Platform level, not Hunter | Hosting provider. Only if a slip club exists (F16) |
+| `WEB_RATE_LIMIT_KEY` (HMAC key of the web sign-in limiter, 32+ characters, web deployment only) | Per environment | Hosting provider |
 | Error tracking DSN, monitoring tokens, `HEALTH_TOKEN` (the shared token for the platform health route; set in `apps/platform` and in the external monitor) | Per environment | Hosting provider and the monitor's secret store |
 | Backup bucket credentials and the backup encryption key (age) | Platform | Bucket keys in a GitHub environment secret and the password manager. The age private key is held outside the bucket by **two named people**; the bucket access list has two names |
 
