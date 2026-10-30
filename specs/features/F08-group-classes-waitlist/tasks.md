@@ -19,8 +19,9 @@ Depends on: F01 (settings `group_min_players`, `group_max_players`, `below_min_a
 - [x] **F08-T03** Migration 0903: `booking.class_session_id` and `booking.waitlist_entry_id`, the partial unique index for one live seat per player and session, the CHECK tying `type = 'class_seat'` to a session. IDs: CLASS-01-AC4, AC17, CLASS-02-AC12. Role: BE-B · Deps T02, F03 `booking` · Size: S
   Tests first: a player cannot hold two live seats in one session; a seat with no session is refused; existing booking rows are unchanged.
   - Built (Architect): `0903_seat_link.sql`, `seat-link.test.ts`. `booking.waitlist_entry_id` is a plain column here; its key is added with the table in 0904. The seat's `coach_id` stays null by design (the session holds the coach); no CHECK was added for it.
-- [ ] **F08-T04** Migration 0904: `waitlist_entry`, `waitlist_seq`, indexes, one live entry per player and subject. IDs: CLASS-02-AC1, AC8, AC16, WAIT-01-AC1. Role: BE-B · Deps T02 · Size: S
+- [x] **F08-T04** Migration 0904: `waitlist_entry`, `waitlist_seq`, indexes, one live entry per player and subject. IDs: CLASS-02-AC1, AC8, AC16, WAIT-01-AC1. Role: BE-B · Deps T02 · Size: S
   Tests first: a player joins several waitlists (D157) but not the same one twice; positions are per subject and own; no maximum on entries.
+  - Built (Architect): `0904_waitlist.sql`, `waitlist-entry.test.ts`. `waitlist_seq` is a one row per club counter written only by `app.next_waitlist_seq()` (internal, not granted; 0908 calls it). `booking.waitlist_entry_id` now has its key, `on delete set null` so the test data purge can delete entries first (delete order 160). An offered entry must carry `offer_no >= 1`, its times and its held booking.
 
 ## B. Functions
 
