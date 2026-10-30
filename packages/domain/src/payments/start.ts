@@ -13,8 +13,17 @@ import { qrExpiryTime, type KeySet, type PaymentGateway } from './gateway';
 // When the keys are missing or Beam refuses them: release the hold (payment_unavailable, so the restore handlers
 // run and no "Booking released" message goes out), flag the owner and raise the P1 alert. When Beam cannot be
 // reached, or the margin is unset: release and raise the P1 alert only. The player gets payment_unavailable.
+// The P1 alert is a failed check in platform.club_health (F05-T04c), written in the release's transaction.
 
 export type PaymentAlertKind = 'beam_unreachable' | 'beam_keys_missing' | 'beam_key_check_failed' | 'qr_margin_unset';
+
+// Each alert is also a failed check in platform.club_health for the console health tile (F05-T04c, 0699).
+const HEALTH: Record<PaymentAlertKind, [check: 'beam_keys' | 'beam_charge', reason: string]> = {
+  beam_keys_missing: ['beam_keys', 'keys_missing'],
+  beam_key_check_failed: ['beam_keys', 'key_refused'],
+  beam_unreachable: ['beam_charge', 'unreachable'],
+  qr_margin_unset: ['beam_charge', 'margin_unset'],
+};
 
 /** Platform alerts (P1): a kind and the club only; never a key, an amount or a person. */
 export interface PaymentAlerts {
@@ -94,6 +103,8 @@ export async function startPayment(deps: StartPaymentDeps, ctx: ClubContext, ord
     try {
       await tx.query('savepoint record_charge');
       await tx.query('select app.record_charge($1, $2, $3, $4)', [prepared.paymentId, created.chargeId, created.qrImageBase64, created.qrExpiresAt]);
+      // Beam took the keys and made the charge: both checks are ok again.
+      await tx.query(`select app.report_payment_health('beam_keys', null), app.report_payment_health('beam_charge', null)`);
     } catch (e) {
       // A parallel tap recorded the same charge first (same idempotency key, G8): keep what is stored.
       if (!/already recorded/.test((e as Error).message ?? '')) throw e;
@@ -107,6 +118,7 @@ async function refuse(deps: StartPaymentDeps, ctx: ClubContext, orderId: string,
   await deps.db.withClubTx(ctx, async (tx) => {
     await tx.query(`select app.release_hold($1, 'payment_unavailable')`, [orderId]);
     if (flag) await tx.query('select app.flag_key_check_failed()');
+    await tx.query('select app.report_payment_health($1, $2)', HEALTH[alert]);
   });
   deps.alerts.p1(alert, ctx.clubId);
   return unavailable;

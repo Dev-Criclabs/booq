@@ -766,6 +766,17 @@ export interface PublicCustomerPackage {
   created_at: string;
 }
 
+export interface PublicDailyClose {
+  club_id: string;
+  id: string;
+  day: string;
+  run_by: string;
+  run_at: string;
+  totals: unknown;
+  receipt_count: number;
+  is_test: boolean;
+}
+
 export interface PublicDataExport {
   club_id: string;
   id: string;
@@ -1326,6 +1337,7 @@ export interface Tables {
   'public.court_price_rule': PublicCourtPriceRule;
   'public.credit_ledger': PublicCreditLedger;
   'public.customer_package': PublicCustomerPackage;
+  'public.daily_close': PublicDailyClose;
   'public.data_export': PublicDataExport;
   'public.data_request': PublicDataRequest;
   'public.idempotency_key': PublicIdempotencyKey;
