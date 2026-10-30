@@ -189,10 +189,10 @@ describe('blindness and classification', () => {
   it('booq_platform has no privilege on a club data (D) table, and anon/authenticated none on platform tables', async () => {
     const priv = async (role: string, table: string) =>
       (await tdb.query(`select has_table_privilege($1, $2, 'select,insert,update,delete') as ok`, [role, table])).rows[0].ok;
-    expect(await priv('booq_platform', 'public.club_status_change')).toBe(false);
+    expect(await priv('booq_platform', 'public.club_status_change')).toBe(false); // D table: never (the full sweep is platform-grants.test.ts)
     const tables = (await tdb.query(`select table_name from information_schema.tables where table_schema = 'platform'`)).rows.map((r) => r.table_name);
     expect(tables.sort()).toEqual(['audit_log', 'club_usage_daily', 'config', 'export_request', 'launch_check', 'platform_staff', 'staff_assignment', 'support_session', 'template', 'template_item']);
-    for (const t of tables) for (const role of ['anon', 'authenticated', 'booq_platform', 'booq_app', 'booq_worker']) {
+    for (const t of tables) for (const role of ['anon', 'authenticated', 'booq_app', 'booq_worker']) {
       expect(await priv(role, `platform.${t}`), `${role} ${t}`).toBe(false);
     }
   });
