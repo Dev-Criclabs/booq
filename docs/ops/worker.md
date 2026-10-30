@@ -15,12 +15,13 @@ Each deployment has its own environment, so the worker's `DATABASE_URL` is the w
 | `WORKER_HOLD_RELEASE_TICK_SECONDS` | `20` | Proposed name, for BE-P. Inside the 15 to 30 s that F03 design 6 and FA 5.4 allow |
 | `WORKER_RATE_LIMIT_SWEEP_CRON` | 5 cron fields, UTC. **No value proposed yet** | For the `rate_limit_sweep` task (BE-P), which removes the web sign-in limiter's old rows (`web.md`). Required, no default |
 | `WORKER_RATE_LIMIT_KEEP_SECONDS` | Whole seconds above 0. **No value proposed yet** | How long limiter rows are kept before the sweep removes them. Required, no default. Keep it at least as long as the longest limiter window (`WEB_SIGNIN_RATE_WINDOW_SECONDS`), so a row is never removed while it still counts; the limiter rows hold a keyed hash of the IP, not the address |
+| `WORKER_PAY_TAP_PRUNE_CRON` | 5 cron fields, UTC. **No value proposed yet** | For BE-B's task that prunes old rows of the pay-tap limit (F03 design 4.8, D61). Required, no default: the worker will not start without it |
 | `WORKER_CONSOLE_SWEEP_CRON` | 5 cron fields, UTC. **No value proposed yet** | For BE-P's sweep of the BOOQ console's (`apps/platform`) expired sessions. Required, no default |
 | `WORKER_CONSOLE_SESSION_ABSOLUTE_SECONDS` | Whole seconds, **at least the console's absolute session limit**. That limit is 8 hours in code, so at least `28800`. **No value proposed yet** | The sweep must never remove a session that is still within its absolute life, so this setting is the floor under it. If the console limit is ever raised, raise this first. Matches Security's `boq_session_absolute_hours` = 8 (threat model section 6). Required, no default |
 
 ### Deploy environment checklist, `apps/worker`
 
-Set in the worker's hosting environment (staging, production), all without defaults in code: `DATABASE_URL`, `WORKER_QUEUE_URL`, `WORKER_HOUSEKEEPING_CRON`, `WORKER_IMPORT_SWEEP_CRON`, `WORKER_HOLD_RELEASE_TICK_SECONDS`, `WORKER_RATE_LIMIT_SWEEP_CRON`, `WORKER_RATE_LIMIT_KEEP_SECONDS`, `WORKER_CONSOLE_SWEEP_CRON`, `WORKER_CONSOLE_SESSION_ABSOLUTE_SECONDS`. A missing one means the worker will not start, which is the intent. All nine must be set on production by 4 Dec.
+Set in the worker's hosting environment (staging, production), all without defaults in code: `DATABASE_URL`, `WORKER_QUEUE_URL`, `WORKER_HOUSEKEEPING_CRON`, `WORKER_IMPORT_SWEEP_CRON`, `WORKER_HOLD_RELEASE_TICK_SECONDS`, `WORKER_RATE_LIMIT_SWEEP_CRON`, `WORKER_RATE_LIMIT_KEEP_SECONDS`, `WORKER_PAY_TAP_PRUNE_CRON`, `WORKER_CONSOLE_SWEEP_CRON`, `WORKER_CONSOLE_SESSION_ABSOLUTE_SECONDS`. A missing one means the worker will not start, which is the intent. All ten must be set on production by 4 Dec.
 
 ## Schedules
 
