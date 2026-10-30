@@ -7,7 +7,9 @@
 | `en.json` | 1,476 keys. English for P, A, K, L and X | Writers replace it; developers only add variables (TEXT-03) or new keys (TEXT-04) |
 | `th.json` | 1,180 keys. Thai for P, A, K, L. No X keys, the platform console is English only (TEXT-05) | Same |
 | `variable-candidates.csv` | What is left of the TEXT-03 pass: values that still look like sample data, each with a question or a reason it was kept | Written by `tools/i18n/audit.mjs`, do not edit by hand |
-| `copy-index.csv` | Key, screens, canvas boards (TEXT-02). **Not supplied yet, see below** | Writers, or generated |
+| `copy-index.csv` | Key, screens, canvas boards (TEXT-02). Generated from the canvas (D31); replace it if the writers supply theirs | `node tools/i18n/build-copy-index.mjs <boards-dir>` |
+| `copy-index-report.md` | Keys with no board, English/Thai disagreements, texts that fit several keys, board texts with no key | Same script |
+| `writer-questions.md` | The open candidates grouped to send to the writers as is | By hand |
 
 Prefixes: P player app, A club admin, K coach portal, L LINE and receipt, X platform console.
 
@@ -45,7 +47,9 @@ One row per value still left in the text that looks like sample data. Columns: `
 - `status` is `open` (a question for the writers or product) or `kept` (looked at, left on purpose; `note` says why, for example the 60 minute booking rule).
 - Open rows go to the writers with their `question`. Answers become a rule in `tools/i18n/rules.mjs` or a decision in `tools/i18n/decisions.mjs`, then `node tools/i18n/apply-text-03.mjs` and `node tools/i18n/audit.mjs` again.
 
-## `copy-index.csv`: what is missing and how to get it
+## `copy-index.csv`: how it was made
+
+Generated with Option 2 below by `tools/i18n/build-copy-index.mjs` (decision D31), from 188 boards. Matching is by exact text, so it is a first index for the writers to check, not their sign-off. See `copy-index-report.md` for what did not match. The original notes follow.
 
 CLAUDE.md and TEXT-02 name `locales/copy-index.csv` (key, screens, canvas boards) but nobody supplied it, and it cannot be worked out from the locale files alone, so it is **not invented here**. Developers need it to find which key a screen uses (CLAUDE.md: "Look up a key there by screen before using it").
 
