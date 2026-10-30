@@ -1,6 +1,6 @@
 # F04 Checkout, pricing, add-ons and promo codes · Requirements
 
-Status: **DRAFT for approval (gate 1).** Drafted 30 Oct 2026. Nothing here is approved until a person says so. No design or code follows until then.
+Status: **Approved 30 Oct 2026** (gate 1). Recorded in `docs/decisions.md`, round 8: the drafter's F04 and F05 requirements and the answers D59 to D80 were approved by the user. Revision 2 applies D59 to D80 and the hand-off rows PAY-02, PAY-04, PAY-07, PROMO-01, BOOK-05, PLAT-03. Changes after approval go PRD, then hand-off, then this file. No design or code follows until the design gate.
 
 Feature: F04 Checkout, pricing, add-ons and promo codes. Depends on: F03. Requirement IDs: PAY-07, PROMO-01, and the checkout, pricing and add-on rules the hand-off has no ID for (labelled R1 to R8 below, local to this file). Also uses COACH-02, COACH-03 and COACH-04 (F07 owns them). Wave 2.
 
@@ -10,7 +10,7 @@ Feature: F04 Checkout, pricing, add-ons and promo codes. Depends on: F03. Requir
 |---|---|---|
 | PRD | `specs/product/prd-v1.2.md` | Club facts; Court booking (Add a coach at checkout); Pricing and packages; Payments, cancellation, credits and wallet (Credits and wallet, Checkout and payment); Promotions and referrals; Customer app pages C10, C10b, C10c; Platform foundation (price groups, court prices, add-ons) |
 | HO | `specs/product/handoff-v1.2.md` | Business rules as requirements (PAY-07 in Payments, PROMO-01, PROMO-02, COACH-02 to COACH-04, PKG-01, PKG-02, BOOK-06); Data model (Price group, Court price rule, Add-on, Order and payment, Promo code, partner, referral) |
-| Decisions | `docs/decisions.md` | D12, D21, D22, D23, D33, D35, D37, D40, D45 (booking released), D49; round 1 |
+| Decisions | `docs/decisions.md` | D12, D21, D22, D23, D33, D35, D37, D40, D49, D62 to D70; round 1. PRD change log "Decisions 30 Oct (7)"; HO PAY-07, PROMO-01 |
 | Gaps | `docs/canvas-gaps.md` | A4, A5, B-section sample warnings |
 | QA | `docs/qa/traceability.md`, `open-questions.md` (branch `qa/test-strategy`) | PAY-07, PROMO-01 gaps and Q-13, Q-15, Q-17 |
 | Other features | F01, F02, F03 requirements | Club scope, price group from date of birth, hold, BOOK-06 |
@@ -57,7 +57,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 - R1-AC4. Given the club's court price rules, when a court hour is priced, then the server looks up the rule by weekday or weekend and off peak or peak and the player's price group; Hunter's single rule gives ฿500 (50000 satang) for every hour for both groups.
 - R1-AC5. Given a court price rule that is missing for an hour, when a player tries to book it, then the server refuses and the hour is not offered (no invented price).
 - R1-AC6. Given a Student item (a package, class or price sold only to under 18) and a player who is 18 or older, when they try to buy it, then the server refuses (PRD "Student packages can only be bought by customers under 18").
-- R1-AC7. Given an Adult item, when a player is under 18, then it is allowed unless the club's rule says otherwise (the spec does not forbid it; see Q1).
+- R1-AC7. Given a player under 18, when they buy an Adult item, then it is allowed (D62, HO PROMO-01). Only Student items are closed to players 18 or older (R1-AC6).
 
 **Meets.** PDPA: price group uses the date of birth only to decide the group; the date is not shown to the Accountant (D35). No double booking: not relevant. Club scope: price groups and rules are per club. TEXT: price lines use P keys with `{amount}`.
 
@@ -128,7 +128,8 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 - R4-AC6. Given the player has a package credit of the wrong type or customer type (a Student credit for an Adult item), when checkout prices the order, then the credit is not applied.
 - R4-AC7. Given credits or wallet are applied, when the order is submitted, then the credit and wallet movements are written as ledger rows (reserve for credit, a wallet use row) by F06 in the same transaction as the order, and no balance is an editable number (PKG-01, D28).
 - R4-AC8. Given the order is submitted, when the allocation is stored, then each line records how much was paid by credit, by wallet and by money, so a later cancel returns package credit to the package, money paid to the wallet and wallet use to the wallet (D21).
-- R4-AC9. Given a price, a discount or the allocation, when two requests change the same order at once (a code applied while Pay is tapped), then the order the server holds at Pay is the one used and its price is fixed from that moment (see Q2).
+- R4-AC9. Given the player taps Pay, when the server prices the order, then it uses the prices at that moment (D63, HO PAY-07). If the price changed since checkout opened, the player sees the new price and must confirm again; nothing is held or charged until they do. Two requests that change the same order at once are resolved the same way: the order the server holds at Pay is the one priced.
+- R4-AC11. Given any amount shown to the player, when it is whole baht, then it shows without decimals (฿1,300); otherwise it shows two decimals (฿1,299.50). Storage stays integer satang (D69).
 - R4-AC10. Given a Paused club, when a player starts checkout, then the server refuses (F01 PLAT-03-AC4).
 
 **Meets.** PDPA: wallet and credit amounts are the player's own data. No double booking: applying credit does not hold a slot; the hold comes from F03. Club scope: credits and wallet belong to one club. TEXT: summary lines from P keys with `{amount}`, `{hours}`.
@@ -150,7 +151,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 - PAY-07-AC3. Given a 100 percent promo code makes the amount due zero, when the player taps Pay, then the order confirms the same way with no Beam charge.
 - PAY-07-AC4. Given the order confirms, when it is saved, then the Booking confirmed LINE card is sent (LINE-04, F10), and the booking is Confirmed with its credit and wallet rows written in the same transaction.
 - PAY-07-AC5. Given the credit or wallet rows and the booking, when any step fails, then none is saved (all or nothing).
-- PAY-07-AC6. Given an order of zero money paid, when it is confirmed, then whether a receipt is issued, and what number the LINE card shows, is Q3 (QA Q-25).
+- PAY-07-AC6. Given an order where money paid is zero (credits, wallet or a 100 percent code covered it), when it is confirmed, then a receipt is still issued in the same numbered series, showing how it was paid (credit, wallet), and the LINE card shows that receipt number (D64, HO PAY-07, RCPT-01).
 
 **Meets.** PDPA: not relevant beyond CC-3. No double booking: AC2 and the same transaction. Club scope: per club. TEXT: the confirmation text from P and L keys; no payment text shown.
 
@@ -167,16 +168,17 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 **Acceptance criteria.**
 
 - PROMO-01-AC1. Given a code is applied, when a second code is entered, then the second is refused; one code per order.
-- PROMO-01-AC2. Given a code that is stackable with the birthday discount and a player entitled to the birthday discount, when the order is priced, then both apply. Given a code that is not stackable, then only one applies; which one is Q4 (QA Q-13).
+- PROMO-01-AC2. Given a code that is stackable with the birthday discount and a player entitled to the birthday discount, when the order is priced, then both apply. Given a code that is not stackable, then the one giving the larger discount applies and the other is not used up (D65, HO PROMO-01).
 - PROMO-01-AC3. Given a code with a percentage discount, when priced, then the discount is calculated on the items in the code's scope only and rounds half up to the satang; add-ons are excluded unless the code says so (D23).
 - PROMO-01-AC4. Given a code with a fixed THB discount larger than the price of the items in scope, when priced, then the discount is capped at that price (never a negative price).
-- PROMO-01-AC5. Given a code outside its dates, for the wrong audience (Adult or Student), for items outside its scope, or below its minimum spend, when it is entered, then it is refused with a reason.
+- PROMO-01-AC5. Given a code outside its dates, for the wrong audience (Adult or Student), for items outside its scope, or whose minimum spend is not met, when it is entered, then it is refused with a reason. Minimum spend is checked on the order total before credits and wallet are applied (D68).
 - PROMO-01-AC6. Given a first time only code and a player who has a paid booking already, when the code is entered, then it is refused.
-- PROMO-01-AC7. Given a total cap or a per customer cap, when two players (or one player twice) use the code in parallel at the last use, then exactly one succeeds (QA CONC-23). When the use is counted is Q5.
+- PROMO-01-AC7. Given a total cap or a per customer cap, when two players (or one player twice) use the code in parallel at the last use, then exactly one succeeds (QA CONC-23). A use is counted at Pay and restored when the hold ends without payment or the booking is cancelled 12 hours or more ahead (D66, HO PROMO-01).
 - PROMO-01-AC8. Given a partner code on a solo class, when it is entered, then it is not accepted: partner codes on solo classes are parked for later (Gaps A4). The PARTNER100 example on the C10b canvas board is a canvas bug.
 - PROMO-01-AC9. Given a code of another club, or one that does not exist, when it is entered, then the answer is the same "code not valid" (CC-1).
-- PROMO-01-AC10. Given a booking that used a code is cancelled 12 hours or more ahead, when F09 returns value, then the used code is restored so the player may use it again (D21); F04 records which order used which code.
+- PROMO-01-AC10. Given a discount on an order of several hours, when it is priced, then it is split across the hours by each hour's price (D67). Given one hour is cancelled 12 hours or more ahead, then that hour's share of the discount is restored; the code use is restored only when every hour of the order is cancelled (D67, D21). F04 records the share per hour and which order used which code.
 - PROMO-01-AC11. Given a referral code from a friend, when a new player enters it at checkout, then it is the one code of the order and gives the friend discount (an empty setting until the owner sets it); a player cannot use their own referral code (blocked by LINE ID and phone, PROMO-02, F14).
+- PROMO-01-AC14. Given a code use is restored (release or cancel), when the partner report counts redemptions, then the restored use is no longer counted (D70).
 - PROMO-01-AC12. Given the owner creates or edits a code, when it is saved, then it is audited (PLAT-04) and a change applies to new orders only.
 - PROMO-01-AC13. Given a promo discount makes the amount due zero, when the player pays, then PAY-07 applies.
 
@@ -199,7 +201,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 - R5-AC3. Given the player has already used the entitlement for that type this year, when checkout loads, then it does not apply again.
 - R5-AC4. Given a player with no date of birth on file, when checkout loads, then no birthday discount applies (D12; adults may add a date of birth voluntarily).
 - R5-AC5. Given a booking that used the entitlement is cancelled 12 hours or more ahead, when F09 returns value, then the entitlement is restored (D21).
-- R5-AC6. Given a code that does not stack with it (PROMO-01-AC2), then the rule there applies.
+- R5-AC6. Given a code that does not stack with the birthday discount, when the order is priced, then the larger discount wins (D65); the birthday entitlement is used only if it is the discount that applies.
 
 **Meets.** PDPA: the date of birth is used for the month check only. No double booking: not relevant. Club scope: per club and player. TEXT: banner and line text from P keys with `{amount}`.
 
@@ -279,12 +281,4 @@ No key is added by this draft.
 
 ## Open questions
 
-1. **Adult items for players under 18 (R1-AC7).** The spec stops Student items for adults but says nothing about an Adult item for a player under 18. Allowed (assumed)?
-2. **Price change during checkout (R4-AC9, R7-AC2).** If the owner changes a price after the player opened checkout, does the player see the new price at Pay, or the price they saw? Assumed: the server prices at Pay and the player confirms the price shown; confirm.
-3. **Receipt for a zero money order (PAY-07-AC6, QA Q-25).** Is a receipt issued when credits and wallet cover everything, and what number does the LINE card show?
-4. **Birthday discount and a non stackable code (PROMO-01-AC2, QA Q-13).** Which one wins: the larger, the code, or the birthday discount?
-5. **When a code use is counted (PROMO-01-AC7).** At Pay (during the hold) or at confirmation? Is a use given back when the hold is released?
-6. **How a discount is split across hours.** When a two hour order uses a code and one hour is cancelled, how much discount is restored (D21 restores the code, D40 cancels hour by hour)?
-7. **Minimum spend.** Is it checked before or after credits and wallet are applied?
-8. **Display of satang.** Money is stored in satang; is the amount always shown as whole baht, or with satang when not whole (percent discounts can give fractions)?
-9. **Partner code reporting.** The partner report counts redemptions and new customers; does a restored code (cancel) reduce the count?
+All 9 earlier questions are answered by D62 to D70 and removed. None remain. Items outside this feature that touch it: the birthday discount and referral amounts are empty settings until the owner sets them (F14), and wording of new keys belongs to the writers (D51).

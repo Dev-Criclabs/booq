@@ -1,0 +1,161 @@
+name: CI
+
+# Passes on a repo with no code. Each code check runs only when package.json exists.
+# A package.json script that is missing is a notice while the repo is young.
+# Set the repository variable CI_STRICT=true (Settings > Variables) once the scripts exist,
+# so a missing script fails the build instead of being skipped.
+# Set LOCALE_STRICT=true when the Content role says en.json and th.json are in step.
+# Neither variable is a secret. CI uses no secrets. Tests run against fakes (fake Beam, fake LINE).
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Servers run in UTC. Run CI in UTC so code that leans on the machine's zone fails here,
+  # not in production. App code must convert to Asia/Bangkok explicitly.
+  TZ: UTC
+  CI_STRICT: ${{ vars.CI_STRICT }}
+  LOCALE_STRICT: ${{ vars.LOCALE_STRICT }}
+
+jobs:
+  detect:
+    name: Detect code
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      has_code: ${{ steps.d.outputs.has_code }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: d
+        run: |
+          if [ -f package.json ]; then echo "has_code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_code=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No package.json yet. Code checks are skipped."
+          fi
+
+  # Runs now. Needs only the locale files, which exist.
+  locales:
+    name: Locale files
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Locale files parse, keys and variables match
+        run: |
+          set -euo pipefail
+          if [ ! -f locales/en.json ] && [ ! -f locales/th.json ]; then
+            echo "::notice::No locale files yet."; exit 0
+          fi
+          jq -e 'type == "object" and ([.[] | type] | all(. == "string"))' locales/en.json >/dev/null
+          jq -e 'type == "object" and ([.[] | type] | all(. == "string"))' locales/th.json >/dev/null
+          echo "Both files are valid flat key to string JSON."
+
+          fail=0
+          # Keys in one language and not the other (X keys are English only by design).
+          jq -r 'keys[]' locales/en.json | sort > "$RUNNER_TEMP/en.keys"
+          jq -r 'keys[]' locales/th.json | sort > "$RUNNER_TEMP/th.keys"
+          en_only=$(comm -23 "$RUNNER_TEMP/en.keys" "$RUNNER_TEMP/th.keys" | grep -v '^X-' || true)
+          th_only=$(comm -13 "$RUNNER_TEMP/en.keys" "$RUNNER_TEMP/th.keys" || true)
+          if [ -n "$en_only" ]; then
+            echo "::warning::$(echo "$en_only" | wc -l) key(s) in en.json and not in th.json (first: $(echo "$en_only" | head -3 | tr '\n' ' '))"
+            fail=1
+          fi
+          if [ -n "$th_only" ]; then
+            echo "::warning::$(echo "$th_only" | wc -l) key(s) in th.json and not in en.json"
+            fail=1
+          fi
+
+          # Same {named} variables in both languages for every shared key.
+          jq -n -r --slurpfile e locales/en.json --slurpfile t locales/th.json '
+            def vars: [scan("\\{[A-Za-z_][A-Za-z0-9_]*\\}")] | unique;
+            ($e[0]) as $en | ($t[0]) as $th
+            | $en | keys[] | select($th[.] != null)
+            | select(($en[.] | vars) != ($th[.] | vars)) ' > "$RUNNER_TEMP/var.mismatch"
+          if [ -s "$RUNNER_TEMP/var.mismatch" ]; then
+            echo "::warning::$(wc -l < "$RUNNER_TEMP/var.mismatch") key(s) use different {variables} in en and th (first: $(head -3 "$RUNNER_TEMP/var.mismatch" | tr '\n' ' '))"
+            fail=1
+          fi
+
+          if [ "$fail" = 1 ] && [ "${LOCALE_STRICT:-}" = "true" ]; then
+            echo "::error::Locale files are out of step and LOCALE_STRICT is true."; exit 1
+          fi
+
+  code:
+    name: ${{ matrix.check }}
+    needs: detect
+    if: needs.detect.outputs.has_code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # Script names are a contract. The back end and Content roles add them to package.json.
+        #   lint          ESLint
+        #   typecheck     tsc --noEmit
+        #   test          unit tests, fake Beam and fake LINE, no network
+        #   locale:audit  every key used in code exists in both files, no unused or duplicate keys,
+        #                 keys match locales/copy-index.csv (owned by Content / i18n)
+        #   text:check    fails on hard-coded user-facing text in code (owned by Content / i18n)
+        check: [lint, typecheck, test, "locale:audit", "text:check"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pick package manager
+        id: pm
+        run: |
+          if   [ -f pnpm-lock.yaml ]; then echo "name=pnpm" >> "$GITHUB_OUTPUT"
+          elif [ -f yarn.lock ];      then echo "name=yarn" >> "$GITHUB_OUTPUT"
+          else                             echo "name=npm"  >> "$GITHUB_OUTPUT"; fi
+
+      - if: steps.pm.outputs.name == 'pnpm'
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ${{ hashFiles('.nvmrc') != '' && '.nvmrc' || '' }}
+          node-version: ${{ hashFiles('.nvmrc') == '' && '22' || '' }}
+          cache: ${{ steps.pm.outputs.name }}
+
+      - name: Install
+        run: |
+          case "${{ steps.pm.outputs.name }}" in
+            pnpm) pnpm install --frozen-lockfile ;;
+            yarn) yarn install --frozen-lockfile ;;
+            npm)  if [ -f package-lock.json ]; then npm ci; else npm install; fi ;;
+          esac
+
+      - name: Run ${{ matrix.check }}
+        run: |
+          pm="${{ steps.pm.outputs.name }}"
+          check="${{ matrix.check }}"
+          if node -e "process.exit(require('./package.json').scripts?.['$check'] ? 0 : 1)"; then
+            "$pm" run "$check"
+          elif [ "${CI_STRICT:-}" = "true" ]; then
+            echo "::error::package.json has no '$check' script and CI_STRICT is true."; exit 1
+          else
+            echo "::notice::No '$check' script yet. Skipped."
+          fi
+
+  # One required status for branch protection. Green when everything above is green or skipped.
+  ci-ok:
+    name: CI result
+    if: always()
+    needs: [detect, locales, code]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - run: |
+          echo "detect=${{ needs.detect.result }} locales=${{ needs.locales.result }} code=${{ needs.code.result }}"
+          case "${{ needs.detect.result }}${{ needs.locales.result }}${{ needs.code.result }}" in
+            *failure*|*cancelled*) exit 1 ;;
+          esac
