@@ -1,6 +1,6 @@
 # F09 Cancellation and closures · Requirements
 
-Status: **DRAFT for approval (gate 1).** Drafted 30 Oct 2026. Nothing here is approved until a person says so. No design or code follows until then.
+Status: **Approved 30 Oct 2026** (gate 1). Recorded in `docs/decisions.md`, round 10 ("approve all"): the F13, F09, F07 and F08 drafts and the answers D118 to D121 were approved by the user. Revision 2 applies D107, D111 and D118. Changes after approval go PRD, then hand-off, then this file. No design or code follows until the design gate.
 
 Feature: F09 Cancellation and closures. Depends on: F06. Requirement IDs: CANCEL-01 to CANCEL-04. Wave 3.
 
@@ -10,7 +10,7 @@ Feature: F09 Cancellation and closures. Depends on: F06. Requirement IDs: CANCEL
 |---|---|---|
 | PRD | `specs/product/prd-v1.2.md` | Payments, cancellation, credits and wallet (Booking and cancellation policy, Credits and wallet); Court booking; Solo classes (Substitutions); Group classes and waitlist; Coach portal and admin console (A2, A12, Front desk rules); Customer app pages C13, C13b; LINE notifications; Key flows D |
 | HO | `specs/product/handoff-v1.2.md` | Business rules as requirements (CANCEL-01 to CANCEL-04, BOOK-06, PKG-01, PROMO-01, COACH-04); Payments (PAY-03, PAY-05); Data model (Closure, Booking) |
-| Decisions | `docs/decisions.md` | D19, D21, D25, D28, D40, D45, D48, D49, D50, D56, D67, D70, D78, D84, D85, D90; round 1 |
+| Decisions | `docs/decisions.md` | D19, D21, D25, D28, D40, D45, D48, D49, D50, D56, D67, D70, D78, D84, D85, D90, D107, D111, D118; round 1 |
 | Gaps | `docs/canvas-gaps.md` | A1 (check in leftovers), A3 |
 | QA | `docs/qa/traceability.md`, `open-questions.md`, `concurrency-tests.md` (branch `qa/test-strategy`) | CANCEL rows; Q-13, Q-14, Q-16; CONC-13 |
 | Other features | F03, F04, F05, F06, F07, F08, F10, F11, F14 | Slot and hold, order allocation, wallet, ledgers, coach, class, messages, A2 and A12, rewards |
@@ -60,8 +60,9 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2-, F3- flow copies (not
 - CANCEL-01-AC5. Given a booking paid partly by wallet, when it is cancelled in time, then the wallet use returns to the wallet with the reason `return` (D21, D78).
 - CANCEL-01-AC6. Given a mixed payment (credit, wallet and money), when it is cancelled in time, then each part returns to its own source, using the allocation stored on the order (F04 R4-AC8, D21).
 - CANCEL-01-AC7. Given add-ons on the booking, when it is cancelled in time, then they return with the booking (D21).
-- CANCEL-01-AC8. Given a promo code used on the order, when only some hours of the order are cancelled, then that hour's share of the discount is restored and the code use is restored only when every hour of the order is cancelled (D67, F04 PROMO-01-AC10); a restored code reduces the partner redemption count (D70). The birthday entitlement is restored like the code (D21); whether it follows the every-hour rule is Q1.
+- CANCEL-01-AC8. Given a promo code used on the order, when only some hours of the order are cancelled, then that hour's share of the discount is restored and the code use is restored only when every hour of the order is cancelled (D67, F04 PROMO-01-AC10); a restored code reduces the partner redemption count (D70). The birthday entitlement follows the same rule as the code (D118, D21).
 - CANCEL-01-AC9. Given a two hour order, when the player cancels one hour, then only that hour is cancelled and the other stays (BOOK-06, D40).
+- CANCEL-01-AC23. Given one hour of an order is cancelled in time, when its money returns, then the money of that hour returns to its sources net of its discount share, and an add-on belongs to the first hour of its order and returns only with that hour (D111).
 - CANCEL-01-AC10. Given a late cancel (under the window) or a no show, when it is confirmed or marked, then the credit or payment is forfeited: a `forfeit` row for credit, and money paid is not returned (PRD). The sheet says so before the player confirms and the player may still cancel to free the slot.
 - CANCEL-01-AC11. Given a credit reserved before its package expired, when the booking is cancelled in time but after the package expiry date, then the credit is lost and not returned (D85). The sheet says so before confirming.
 - CANCEL-01-AC12. Given a Student credit held by a player who is now an Adult, when the booking is cancelled in time, then it returns to the package as any credit (D84).
@@ -72,8 +73,8 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2-, F3- flow copies (not
 - CANCEL-01-AC17. Given a class seat, when the player cancels in time, then the group credit (or money to the wallet) returns and the seat is freed for the waitlist (F08); late cancel forfeits.
 - CANCEL-01-AC18. Given a solo class whose coach was changed (F07 R4), when the customer cancels, then full value returns whatever the time (PRD Substitutions).
 - CANCEL-01-AC19. Given a cancel, when it is saved, then the player gets Cancellation result stating whether value came back (LINE-05, F10) and the coach of a solo class or class gets New or changed session (F12 CPORT-07).
-- CANCEL-01-AC20. Given a cancel by staff for a player (A2), when it is saved, then the same return rules apply by the same window unless staff mark it as a club cancel (Q2); a reason is required and audited (PLAT-04).
-- CANCEL-01-AC21. Given a cancel by a player at a Paused club, when it is made, then whether it is allowed is Q3.
+- CANCEL-01-AC20. Given staff cancel for a player (A2), when it is saved, then the same window applies unless staff choose a club cancel, which returns full value; a reason is required in either case and the cancel is audited (D118, PLAT-04).
+- CANCEL-01-AC21. Given a Paused club, when a player cancels an existing booking, then it is allowed and follows the same rules (D118); the owner and staff may also move, add a coach, cancel and mark no show on existing bookings (D107).
 - CANCEL-01-AC22. Given any return, when it is saved, then the ledger rows and the booking status change are one transaction, or neither (PKG-01-AC6), and every ledger row is append only (D28).
 
 **Meets.**
@@ -126,13 +127,13 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2-, F3- flow copies (not
 - CANCEL-03-AC6. Given a group class session in the closed range, when the closure is confirmed, then the session is cancelled for everyone with full credit back and a message, the waitlist entries end, and the coach is told (F08 CLASS-01-AC13).
 - CANCEL-03-AC7. Given a solo class in the closed range, when the closure is confirmed, then it is cancelled with full value back for the customer and the coach is told (F07).
 - CANCEL-03-AC8. Given a booking in the closed range that is already played (its slot has ended), when the closure is confirmed, then it is not touched.
-- CANCEL-03-AC9. Given a repeat closure (for example every Monday), when it is confirmed, then it applies to each occurrence and the preview shows every affected booking in the horizon; occurrences beyond the booking window apply as the window reaches them and cancel nothing yet.
+- CANCEL-03-AC9. Given a repeat closure (for example every Monday), when it is confirmed, then it cancels the affected bookings across the whole booking window and the preview lists every one (D118); occurrences beyond the window apply as the window reaches them.
 - CANCEL-03-AC10. Given the owner wants to change opening hours or remove a court under existing bookings, when they try, then it is refused and they use a closure instead (D50).
 - CANCEL-03-AC11. Given a closure is removed or shortened, when it is saved, then the slots become Open again; cancelled bookings are not restored.
-- CANCEL-03-AC12. Given a package that expired before the return (the booking was reserved before expiry, D85), when a closure cancels the booking, then the credit is returned and what happens to its expiry is Q4.
+- CANCEL-03-AC12. Given a closure cancels a booking whose package has already expired (the credit was reserved before expiry, D85), when it is confirmed, then the credit is returned and the package is listed on the closure screen; the owner extends it with a written reason (D118, F06 PKG-03-AC5).
 - CANCEL-03-AC13. Given a closure over a Paused club, when it is created, then it works as for a Live club (the owner can still manage existing bookings, D60).
 - CANCEL-03-AC14. Given a closure, when it is saved, then it records the courts, range, repeat, reason and the staff member, and is audited (PLAT-04).
-- CANCEL-03-AC15. Given a closure over many bookings, when it is confirmed, then it is applied as one operation: all cancels and returns succeed or none does, and the messages follow once it is committed; a message that fails to send never undoes the cancel (the app shows it in My bookings, D9, LINE-07).
+- CANCEL-03-AC15. Given a closure over many bookings, when it is confirmed, then it is applied as one operation: all cancels and returns succeed or none does, and the messages follow once it is committed; a message that fails to send never undoes the cancel (the app shows it in My bookings, D9, LINE-07). The owner gets a list of the players who could not be messaged (D118).
 - CANCEL-03-AC16. Given a closure created while a booking is being created in the same range, when both run, then exactly one outcome stands: the booking is created before the closure and then cancelled by it, or refused because the slot is closed (QA CONC-13).
 - CANCEL-03-AC17. Given Front desk and Owner only, when anyone else tries to create a closure, then the server refuses (HO Roles).
 
@@ -160,9 +161,9 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2-, F3- flow copies (not
 - CANCEL-04-AC3. Given a confirmed booking whose player did not come, when staff mark No show in A2 with a reason, then the status is No show, the credit or payment is forfeited (`forfeit` row, CANCEL-01-AC10) and the reason is audited (PLAT-04). Without a reason the server refuses.
 - CANCEL-04-AC4. Given a late cancel that happened outside the app (the player phoned the desk), when staff mark Late cancel in A2 with a reason, then it is treated as CANCEL-01-AC10: value is forfeited, the slot is freed if still in the future.
 - CANCEL-04-AC5. Given staff reverse a No show or Late cancel, when they do it with a reason, then the status returns to Played (or the prior state) and the forfeited credit comes back by a new ledger row, not by editing the old one (F06 R1-AC5, D28); the reversal is audited.
-- CANCEL-04-AC6. Given staff mark a no show before the slot has ended, when they try, then whether it is allowed is Q5 (QA Q-14).
-- CANCEL-04-AC7. Given a reversal, when coach pay and a referral reward already depended on the status, then what changes is Q6.
-- CANCEL-04-AC8. Given a solo class or a class seat, when the coach marks Absent in K5 (F12), then it is the attendance record for pay, and staff A2 still decides the player's forfeit; whether one drives the other is Q7.
+- CANCEL-04-AC6. Given staff try to mark a no show before the slot has ended, when they do, then the server refuses; a no show is marked only after the slot ends (D118).
+- CANCEL-04-AC7. Given a reversal of a no show or late cancel, when it is saved, then coach pay changes by the normal rule (F13 R3) and a referral reward that was already paid stays paid (D118).
+- CANCEL-04-AC8. Given a solo class or a class seat, when the coach marks Absent in K5 (F12), then it is a hint shown to staff and does not mark the player's no show or forfeit; staff decide in A2 (D118).
 - CANCEL-04-AC9. Given the no show timing setting (A16), when staff mark a no show, then it is read from the club's settings; its value is an empty setting until the owner sets it.
 - CANCEL-04-AC10. Given front desk and owner only, when anyone else tries to mark or reverse, then the server refuses (HO Roles).
 - CANCEL-04-AC11. Given the played status, when the referral reward rule reads it (the friend's first paid booking is played, F14), then it uses this status, so a booking reversed to No show does not count as played.
@@ -195,12 +196,4 @@ No key is added by this draft.
 
 ## Open questions
 
-1. **Birthday entitlement on a partial cancel (CANCEL-01-AC8).** D67 restores a code use only when every hour of an order is cancelled. Does the birthday entitlement follow the same rule, or is it restored on any hour?
-2. **Staff cancel for a player (CANCEL-01-AC20).** Does the 12 hour window apply when staff cancel for a player at the desk, or may staff choose a club cancel with full value (with a reason)?
-3. **Cancel during a pause (CANCEL-01-AC21).** May a player cancel an existing booking while the club is Paused (existing bookings stay valid; D60 lets the owner manage them)?
-4. **Package expired before a closure return (CANCEL-03-AC12).** D85 loses the credit if a booking is cancelled after expiry, but a closure is the club's doing. Is the credit returned and the package extended, or returned to an expired package?
-5. **No show before the slot ends (QA Q-14).** Can staff mark a no show before the slot has ended, or only after?
-6. **Reversal effects (QA Q-14).** When staff reverse a no show or late cancel, does coach pay change, and what about a referral reward already paid?
-7. **Coach Absent and player forfeit (CANCEL-04-AC8).** Does the coach's Absent in K5 mark the player no show, or are they separate records?
-8. **Closure repeat horizon (CANCEL-03-AC9).** How far ahead does a repeat closure cancel bookings, the booking window or without limit?
-9. **Messages that fail (CANCEL-03-AC15).** For a closure of many bookings the club may hit the LINE cap: the app shows the cancel in My bookings (D9, LINE-07). Does the owner also get a list of players who could not be messaged?
+All 9 earlier questions are answered by D118 and D107 and removed. None remain.
