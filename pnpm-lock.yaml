@@ -30,7 +30,17 @@ importers:
         specifier: workspace:*
         version: link:../../packages/time
 
-  apps/web: {}
+  apps/web:
+    dependencies:
+      '@booq/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@booq/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@booq/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
 
   apps/worker:
     dependencies:
