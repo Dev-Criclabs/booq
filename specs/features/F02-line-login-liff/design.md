@@ -207,6 +207,7 @@ Columns on `app_user` already listed; no table. The webhook handler is `SECURITY
 - `needs_person`: a valid active session whose club equals the slug's club.
 - Player-only data: RLS `customer_id = app.user_id()` (FA §4.3); a request for another player's record returns 404 (ROLE-AC4).
 - `GET /customers/{id}/dob-history`: owner only.
+- Accountants (decision D35) see customer names on receipts and reports but never phone or date of birth: they have no `select` on `app_user` and read names only through the F01 view `app_user_names` (F01 §6.2).
 - The LINE webhook: valid `x-line-signature` for the club in the token.
 - The `route()` wrapper from FA §9 applies to every route above, with a declared permission or `public`.
 

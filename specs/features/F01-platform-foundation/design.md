@@ -58,7 +58,7 @@ Conventions are FA §2.1 (uuid keys, composite foreign keys, `club_id` first in 
 
 **`location`**, **`resource`**, **`opening_hours`** (S) as FA §2.2. Add `resource.sport` from the template; `resource.active=false` cannot be booked and keeps its id (CC-4). Hunter has one location. The add-location UI is not built; the data model allows several (assumption A-2).
 
-**`line_connection`**, **`payment_connection`** (S) as FA §2.2 (`secret_last4`, `line_plan_kind`, `plan_message_limit`, `mode`). **`club_secret`** `(club_id, kind, ciphertext, key_id, written_by, written_at)`; kinds: `line_channel_token`, `line_channel_secret`, `line_login_secret`, `beam_api_key`, `beam_hmac_key`, `webhook_token_hash` (the webhook token itself is shown once to the platform at creation and stored hashed; the URL contains it).
+**`line_connection`**, **`payment_connection`** (S) as FA §2.2 (`secret_last4`, `line_plan_kind`, `plan_message_limit`, `mode`, and a Beam merchant id for each of the two key sets). **`club_secret`** `(club_id, kind, ciphertext, key_id, written_by, written_at)`; kinds: `line_channel_token`, `line_channel_secret`, `line_login_secret`, and for Beam two sets (decision D32) `beam_api_key_test`, `beam_hmac_key_test`, `beam_api_key_live`, `beam_hmac_key_live`, each with its own `webhook_token_hash_*`; the ciphertext is produced by app-level envelope encryption (decision D34): a data key per row wrapped by a master key held outside the database (the webhook token itself is shown once to the platform at creation and stored hashed; the URL contains it).
 
 **`club_status_change`** (D, append-only). `(club_id, id, from_status, to_status, reason, actor_staff_id, occurred_at)`. Also feeds P6.
 
@@ -191,6 +191,10 @@ Routes that do not exist anywhere: delete club (D14), cash refund, any route tha
 | `staff.manage`, `roles.assign`, `support-window.write` | | | | | yes |
 | `audit.read`, `import.run`, `export.run` | | | | | yes |
 | `datarequest.handle` | | | yes | | yes |
+| `customer.contact.read` (phone, date of birth) | | | yes | **no** | yes |
+| `customer.names.read` (names on receipts and reports) | | | yes | yes | yes |
+
+Accountant (decision D35): sees names on receipts and reports, not phone numbers or dates of birth. This is enforced twice: the accountant has no `select` on `app_user`; accountant routes read names through the view `app_user_names (club_id, id, full_name, display_name)`, which has the tenant filter built in; and the permission `customer.contact.read` is refused. A CI test requests phone and date of birth as an accountant through every route and expects them to be absent.
 
 Two layers, as in FA §4.3: `route({permission})` on the server, and row-level policies. A route without a declared permission fails the build. Platform permissions are checked against `platform_staff.role` and `staff_assignment`.
 
@@ -200,7 +204,7 @@ Two layers, as in FA §4.3: `route({permission})` on the server, and row-level p
 - `club` for `booq_app`: `id = app.club_id()`; writes by owner only through the routes above; `status`, `slug` after Testing, and `allow_booq_changes_until` are not directly writable (functions only).
 - S tables for `booq_platform`: `select` for admin or assigned specialist; `insert/update` only when the club's status is `draft` or `testing`, or `allow_booq_changes_until > now()` (the policy reads the club row; there is no job, it expires by itself). A Paused club is neither, so it is look only (D27).
 - D tables for `booq_platform`: **no grant at all.**
-- `club_secret`: `booq_platform` and `booq_app` get `insert, update`, never `select`; reads go through a `SECURITY DEFINER` function `app.read_secret(club, kind)` callable only by `booq_worker` and the payment/LINE adapters' role (listed in `definer-functions.ts`).
+- `club_secret`: `booq_platform` and `booq_app` get `insert, update`, never `select`, and never see the plaintext or the master key; reads go through a `SECURITY DEFINER` function `app.read_secret(club, kind)` callable only by `booq_worker` and the payment/LINE adapters' role (listed in `definer-functions.ts`).
 - `audit_entry`, ledgers: no `insert` for any app role; only the definer writer functions insert (FA §8.1).
 - `platform.club_usage_daily`: `select` for `booq_platform` and `booq_app` (own club only); no direct `insert`.
 
@@ -237,7 +241,7 @@ BOOQ staff `POST /clubs/{id}/exports` inserts `export_request`; a `booq_worker` 
 - A `BEFORE INSERT` trigger sets `is_test` from the club status at insert time; the column cannot be updated (AC1).
 - `go_live_purge(club)` deletes only `is_test` rows of that club in `delete_order`, in the Go live transaction, and the append-only triggers allow it only through that function (FA §2.6). It writes one non-test audit entry with row counts and one P6 entry (AC8).
 - Testers (AC5): the owner and BOOQ testers in `club_tester`. A BOOQ tester receives a tester invite link, signs in with LINE and gets a normal player account flagged as a tester; no BOOQ credential is involved (ROLE-02-AC2). F02's sign-in gate uses `club_tester`.
-- BOOQ staff see pass or fail per check only (`launch_check`); the P4 page never queries D tables (AC6). P1 aggregate counts exclude `is_test` activity (AC7; assumption A-16 for Q-E).
+- BOOQ staff see pass or fail per check only (`launch_check`); the P4 page never queries D tables (AC6). Test-flagged rows are excluded from all reports, the daily close, receipt lists and platform counts, and show only in test-mode views (AC7, decision D33; mechanism in FA §2.6).
 - Test payments use Beam's Playground only (D26, AC9).
 - Test receipt marking is a new L key (§13).
 
@@ -272,7 +276,7 @@ Whether the P5 actions New template, Duplicate and Edit exist in v1 is requireme
 
 ### 9.3 Go live checks
 
-The check keys are data rows per template (`launch_check.check_key`) so the list can change without code. The spec's P4 list is requirements Q7 (open). Until it is answered the design implements these assumed checks (A-19): LINE connection test passed, Beam connection test passed (live keys), at least one product with a price, every setting the template marks `required` is set (BOOK-05 and the other TBD settings are not `required`), owner signed in, at least one successful test booking on the Playground, no open launch failure. For a Beam club the fake-slip tests of H-P4-Launch are replaced by Beam tests (Gaps A2).
+The check keys are data rows per template (`launch_check.check_key`) so the list can change without code. The spec's P4 list is requirements Q7 (open). Until it is answered the design implements these assumed checks (A-19): LINE connection test passed, Beam **key swap** (decision D32: the club's live Beam key set is entered and active, the test key set is no longer used, and a smoke test passes; see A-23), at least one product with a price, every setting the template marks `required` is set (BOOK-05 and the other TBD settings are not `required`), owner signed in, at least one successful test booking on the Playground, no open launch failure. For a Beam club the fake-slip tests of H-P4-Launch are replaced by Beam tests (Gaps A2).
 
 ## 10. Settings registry
 
@@ -303,6 +307,7 @@ Rules: the 60 minute booking length is not a key and cannot be created (a CHECK 
 - **Club ID scope (CC-1):** FA §2.1 (composite keys), §4.2 and §4.3 (context and policies). All F01 tables except the `platform` schema carry `club_id`. A request for another club's record returns 404.
 - **Server permissions (CC-2):** §6; the platform app has no credentials for D tables.
 - **PDPA (CC-3):** personal data F01 touches: owner contact (class S, visible to BOOQ by decision D2), the player record, consent, roles, audit values, import files (parsed and discarded, §7.4), exports (private bucket, signed link, short life). BOOQ never reads player, booking or payment data (FA §4.4). Hosting is FA §4.1 (D5). Slips and staff notes are staff only. Consent is a record, append-only.
+- **Encryption (PDPA-01-AC9, decision D34):** TLS for all traffic in transit; the host's standard disk encryption at rest (Supabase's encrypted storage); stored secrets (Beam and LINE keys) get an extra application-level layer so a database copy alone does not reveal them. Who owns a breach procedure remains an open item for a person (requirements Q23, security baseline).
 - **No double booking (CC-4):** F01 has no booking logic. Resources keep stable ids; inactive resources are refused by `claim_occupancy`; pause and closure never delete bookings; hour changes that conflict with bookings are refused and sent to a closure.
 - **TEXT (CC-5):** no text in code. Routes return codes. The keys used are listed per screen in §13; every new key is added in both files by the content role and sent to the writers. X keys are English only. Dates use the international year.
 - **Other (CC-6):** Bangkok time (FA §7), satang, no invented values (the registry and templates hold only spec values; TBD stays empty).
@@ -328,13 +333,14 @@ These need a person's yes or no; none changes the tables much.
 | A-13 | Imported package keeps the file's expiry date | Q15 |
 | A-14 | Owner downloads exports from A16, link valid 24 hours, owner may start an export | Q1 |
 | A-15 | Slips and staff notes not in the full export until decided | Q18 |
-| A-16 | Test activity is excluded from P1 counts | Q-E |
+| A-16 | Decided (D33): test activity is excluded from all reports, daily close, receipts lists and platform counts | Q-E |
 | A-17 | Staff notes are not in a player's data copy | Q21 |
 | A-18 | Deletion is refused while a future confirmed booking exists | Q22 |
 | A-19 | The Go live check list in §9.3 | Q7 |
 | A-20 | Both Thai and English club text fields are required to save | Q27 |
 | A-21 | Backups and audit retention periods are set when legal input is available | Q13 |
 | A-22 | May one person be booked in two places at once: not decided; F03 must add a rule if not | Q-A |
+| A-23 | The key swap smoke test is a read-only authenticated call to Beam with the live keys plus a check that a body signed with the stored live HMAC key verifies; it moves no money. Exactly what "smoke test" means is not in D32 | none |
 
 ## 13. Text keys and canvas boards
 
@@ -362,6 +368,9 @@ All tests run against a real Postgres (FA §4.5, decision D30); Playwright for t
 | Roles | ROLE-01-AC1 to AC6, ROLE-AC1 to AC6 | Union of roles; owner-only role assignment; BOOQ account never gets a club role; last owner protected |
 | BOOQ sign in | ROLE-02-AC1 to AC5 | No session without the second factor; deactivated staff ends a session; every attempt in P6 |
 | Audit | PLAT-04-AC1 to AC11 | One entry per audited change in the same transaction; failing audit rolls back; staff ledger movement without note refused; edits and deletes of `audit_entry` fail for every role; owner-only read; Bangkok times |
+| Accountant columns | D35 | As an accountant, every route that lists customers, receipts or reports returns names and never phone or date of birth; direct `select` on `app_user` fails |
+| Test exclusion | PLAT-07-AC7, D33 | Seed test rows in every report, daily close, receipts list and P1 count: all return zero; test-mode view shows them to the owner only while Testing |
+| Key sets | D32 | Testing uses the test set; Live uses the live set; a callback on the inactive set's URL changes nothing; Go live is refused until the key swap check passes; plaintext secrets never appear in the database, logs or responses |
 | Settings | PLAT-05, §10 | `hold_minutes` 12 refused; 60 minute length cannot be set; unset TBDs read as unset; every write audited |
 | Templates | PLAT-05-AC7 to AC15 | Tennis copy equals the PRD offer in satang; later template edit leaves clubs unchanged; Blank copies nothing; TBD values are empty; "to build" templates cannot be chosen |
 | Import | PLAT-06-AC1 to AC10, AC18 | One bad row saves nothing; all-valid saves players, packages, `import` ledger rows and no bookings; other club's id ignored; non-owner refused; raw file not kept; phone match and duplicate flag |
