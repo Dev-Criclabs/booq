@@ -9,13 +9,28 @@ import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// One number block per feature (docs/architecture/build-plan.md section 4; proposal docs/proposals/migration-blocks.md).
+// Numbers are four digits and compare as strings, so 1001 sorts after 0999. A number in a gap belongs to no feature.
 export const BLOCKS = [
   { name: 'F01', from: 1, to: 99 },
   { name: 'F02', from: 101, to: 199 },
   { name: 'F03', from: 201, to: 299 },
   { name: 'F04', from: 301, to: 399 },
   { name: 'F05', from: 401, to: 499 },
-  { name: 'later', from: 501, to: 9999 },
+  { name: 'F06', from: 501, to: 599 },
+  { name: 'F10', from: 601, to: 699 },
+  { name: 'F13', from: 701, to: 799 },
+  { name: 'F07', from: 801, to: 899 },
+  { name: 'F08', from: 901, to: 999 },
+  { name: 'F09', from: 1001, to: 1099 },
+  { name: 'F11', from: 1101, to: 1199 },   // none expected; reserved so a table of its own has a place
+  { name: 'F12', from: 1201, to: 1299 },   // none expected; reserved
+  { name: 'F14', from: 1401, to: 1499 },
+  { name: 'F15', from: 1501, to: 1599 },
+  { name: 'F16', from: 1601, to: 1699 },
+  // After the first production deploy the migrator refuses a number below the highest applied one, so blocks end:
+  // every later migration takes the next number from here up, in one sequence (build plan section 4).
+  { name: 'after launch', from: 2001, to: 9999 },
 ];
 const FILE = /^(\d{4})_[a-z0-9]+(_[a-z0-9]+)*\.sql$/;
 

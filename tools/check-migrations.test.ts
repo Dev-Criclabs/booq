@@ -11,6 +11,16 @@ describe('F01-T36 migration number check', () => {
     expect(checkNames(['2_a.sql', '0003_Bad.sql', '0003-x.sql', '0003_x.SQL']).length).toBe(4);
     expect(checkNames(['0100_gap.sql', '0200_gap.sql']).join()).toMatch(/no feature block/);
   });
+  it('knows every feature block of the build plan, in order, without a catch-all', () => {
+    expect(checkNames(['0501_a.sql', '0601_a.sql', '0701_a.sql', '0801_a.sql', '0901_a.sql', '1001_a.sql', '1401_a.sql'])).toEqual([]);
+    expect(checkNames(['1301_gap.sql']).join()).toMatch(/no feature block/);
+    expect(checkNames(['1701_after_f16.sql']).join()).toMatch(/no feature block/);
+    expect(checkNames(['2001_first_after_launch.sql'])).toEqual([]);
+    expect(checkNames(['0600_gap.sql', '0800_gap.sql']).length).toBe(2);
+  });
+  it('four digit numbers sort after 0999 as strings, so the loader order is the number order', () => {
+    expect(['1001_a.sql', '0999_b.sql', '0501_c.sql'].sort()).toEqual(['0501_c.sql', '0999_b.sql', '1001_a.sql']);
+  });
   it('refuses to edit, remove or rename a migration that is on the base branch', () => {
     const base = new Map([['0001_a.sql', 'one'], ['0002_b.sql', 'two']]);
     expect(checkImmutable(base, new Map([['0001_a.sql', 'one'], ['0002_b.sql', 'two'], ['0003_c.sql', 'three']]))).toEqual([]);
