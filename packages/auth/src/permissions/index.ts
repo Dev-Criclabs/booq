@@ -1,12 +1,13 @@
 import { permissions as core } from './core';
 import { permissions as f01 } from './f01';
+import { permissions as f02 } from './f02';
 import { permissions as f03 } from './f03';
 import { ROLES, type PermissionFragment, type Role } from './types';
 
 export { ROLES, type PermissionFragment, type Role } from './types';
 
 // One line per feature fragment. A permission may be declared once only.
-const FRAGMENTS: Record<string, PermissionFragment> = { core, f01, f03 };
+const FRAGMENTS: Record<string, PermissionFragment> = { core, f01, f02, f03 };
 
 export function mergePermissions(fragments: Record<string, PermissionFragment>): ReadonlyMap<string, ReadonlySet<Role>> {
   const merged = new Map<string, ReadonlySet<Role>>();
