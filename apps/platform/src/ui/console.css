@@ -52,3 +52,8 @@ input, select { width: 100%; min-height: 44px; padding: 8px 12px; border: 1px so
 .pill.testing { background: #fff3cf; border-color: #8a6a00; }
 .pill.draft { background: #eceeea; }
 .pill.paused { background: #f8dede; border-color: var(--err); }
+.ok { color: #1f5d2d; margin: 4px 0; }
+.checks { padding-left: 20px; }
+.checks li { padding: 4px 0; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+h3 { font-size: 16px; margin: 16px 0 4px; }
