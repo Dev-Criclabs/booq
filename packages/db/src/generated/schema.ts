@@ -399,6 +399,8 @@ export interface PublicBooking {
   is_test: boolean;
   created_at: string;
   updated_at: string;
+  class_session_id: string | null;
+  waitlist_entry_id: string | null;
 }
 
 export interface PublicBookingCancel {

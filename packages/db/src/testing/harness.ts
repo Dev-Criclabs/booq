@@ -41,6 +41,8 @@ export interface TestDatabase {
   seedCoach(club: string, id: string): Promise<void>;
   /** A closure row to hang occupancy closure slots on (F09, migration 1002); returns its id. */
   seedClosure(club: string): Promise<string>;
+  /** Makes a class session (F08, migrations 0901 and 0902) of `club` on `resource`: its own owner, coach and template are created, nothing is claimed in occupancy. Returns the session id; every class_seat booking names one (0903). */
+  seedClassSession(club: string, resource: string, start?: string): Promise<string>;
   close(): Promise<void>;
 }
 
@@ -145,6 +147,28 @@ function wrap(name: string): TestDatabase {
         [club],
       );
       return r.rows[0].id as string;
+    },
+    async seedClassSession(club, resource, start = '2027-03-03T18:00:00+07:00') {
+      const c = await pool.connect();
+      try {
+        await c.query('begin');
+        const owner = (await c.query(`insert into public.app_user (club_id, line_user_id) values ($1, 'cs:' || gen_random_uuid()::text) returning id`, [club])).rows[0].id as string;
+        await c.query(`insert into public.app_user_role (club_id, user_id, role) values ($1, $2, 'owner'), ($1, $2, 'player')`, [club, owner]);
+        const coach = (await c.query(`insert into public.app_user (club_id, line_user_id) values ($1, 'cc:' || gen_random_uuid()::text) returning id`, [club])).rows[0].id as string;
+        await c.query(`insert into public.app_user_role (club_id, user_id, role) values ($1, $2, 'coach'), ($1, $2, 'player')`, [club, coach]);
+        await c.query(`insert into public.coach (club_id, id) values ($1, $2)`, [club, coach]);
+        const tpl = (await c.query(`insert into public.class_template (club_id, name_th, name_en, audience, coach_id, resource_id, weekday, start_time, min_players, max_players, created_by)
+                                    values ($1,'ก','Test class','adult',$2,$3,0,'18:00',1,6,$4) returning id`, [club, coach, resource, owner])).rows[0].id as string;
+        const session = (await c.query(`insert into public.class_session (club_id, template_id, start_at, end_at, name_th, name_en, audience, coach_id, resource_id, min_players, max_players)
+                                        values ($1,$2,$3::timestamptz,$3::timestamptz + interval '1 hour','ก','Test class','adult',$4,$5,1,6) returning id`, [club, tpl, start, coach, resource])).rows[0].id as string;
+        await c.query('commit');
+        return session;
+      } catch (e) {
+        await c.query('rollback');
+        throw e;
+      } finally {
+        c.release();
+      }
     },
     async seedNotice() {
       if ((await pool.query('select 1 from platform.legal_release')).rowCount) return;
