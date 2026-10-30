@@ -1,0 +1,11 @@
+{
+  "name": "@booq/staff-invite",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@booq/auth": "workspace:*",
+    "@booq/db": "workspace:*"
+  }
+}
