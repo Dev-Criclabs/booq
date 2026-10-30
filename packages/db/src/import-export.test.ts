@@ -233,3 +233,59 @@ describe('platform config keys with no default (migration 0016)', () => {
     expect(r.rows).toEqual([{ key: 'import_max_rows', value: null }, { key: 'import_staging_hours', value: null }]);
   });
 });
+
+describe('BOOQ staff start an export, and only start it (migration 0017; PLAT-06-AC12)', () => {
+  const ADMIN = '77777777-7777-4777-8777-777777777771';
+  const OTHER = '77777777-7777-4777-8777-777777777772';
+  beforeEach(async () => {
+    await tdb.query(`insert into platform.platform_staff (id, auth_user_id, email, display_name, role) values ($1, gen_random_uuid(), 'a@b.test', 'Ann', 'platform_admin'), ($2, gen_random_uuid(), 'o@b.test', 'Oli', 'platform_admin')`, [ADMIN, OTHER]);
+  });
+  const asStaff = async <T,>(staff: string, club: string, fn: (q: (sql: string, p?: unknown[]) => Promise<{ rows: Record<string, unknown>[]; rowCount: number | null }>) => Promise<T>) => {
+    const c = await tdb.pool.connect();
+    try {
+      await c.query('begin');
+      await c.query('set local role booq_platform');
+      await c.query(`select set_config('app.actor_platform_staff_id', $1, true), set_config('app.club_id', $2, true), set_config('app.actor_label', 'BOOQ staff: x', true)`, [staff, club]);
+      const out = await fn((sql, p) => c.query(sql, p));
+      await c.query('commit');
+      return out;
+    } catch (e) {
+      await c.query('rollback');
+      throw e;
+    } finally {
+      c.release();
+    }
+  };
+  const request = (staff = ADMIN) => asStaff(staff, A, async (q) => (await q(`insert into platform.export_request (club_id, requested_by_staff) values ($1,$2) returning id`, [A, staff])).rows[0]!.id as string);
+  const start = (id: string, staff = ADMIN, club = A) => asStaff(staff, club, async (q) => (await q('select app.start_staff_export($1) as id', [id])).rows[0]!.id as string);
+
+  it('turns the staff request into the club’s export, owned by the staff request, and is idempotent', async () => {
+    const r = await request();
+    const id = await start(r);
+    expect(await start(r)).toBe(id);
+    const e = (await tdb.query('select club_id, kind, requested_by_staff, requested_by_user, status, request_id from public.data_export')).rows;
+    expect(e).toEqual([{ club_id: A, kind: 'club', requested_by_staff: ADMIN, requested_by_user: null, status: 'requested', request_id: r }]);
+    expect((await tdb.query('select status from platform.export_request where id = $1', [r])).rows[0].status).toBe('running');
+  });
+  it('only the staff member who asked, for a club they can see; everything else is "not found"', async () => {
+    const r = await request();
+    await expect(start(r, OTHER)).rejects.toThrow(/not_found/);
+    await expect(start(r, ADMIN, B)).rejects.toThrow(/not_found/);
+    await expect(start('00000000-0000-4000-8000-00000000ffff')).rejects.toThrow(/not_found/);
+    expect((await tdb.query('select count(*)::int as n from public.data_export')).rows[0].n).toBe(0);
+  });
+  it('the status of the request follows the export; staff never read the export itself', async () => {
+    const r = await request();
+    const id = await start(r);
+    await worker.withClubTx({ clubId: A, userId: null, roles: [], source: 'job' }, (tx) =>
+      tx.query(`update public.data_export set status = 'done', storage_path = $2, expires_at = now() + interval '1 day', row_count = 3 where id = $1`, [id, `${A}/export.zip`]));
+    expect((await tdb.query('select status from platform.export_request where id = $1', [r])).rows[0].status).toBe('done');
+    await expect(asStaff(ADMIN, A, (q) => q('select * from public.data_export'))).rejects.toThrow(/permission denied/);
+    expect((await asStaff(ADMIN, A, (q) => q('select status from platform.export_request'))).rows).toEqual([{ status: 'done' }]);
+  });
+  it('the app roles cannot call it', async () => {
+    for (const role of ['booq_app', 'booq_worker']) {
+      expect((await tdb.query(`select has_function_privilege($1, 'app.start_staff_export(uuid)', 'execute') as ok`, [role])).rows[0].ok, role).toBe(false);
+    }
+  });
+});

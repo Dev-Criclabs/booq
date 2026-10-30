@@ -143,6 +143,7 @@ Roles: **Arch** Architect/data, **BE-P** back end platform and LINE, **DevOps**,
 - [x] **F01-T32** Export: `export_request`, worker task in the club context, ZIP of CSVs, storage interface, owner signed link, BOOQ start-only, audit. IDs: PLAT-06-AC11 to AC17. Role: BE-P · Deps T34 · Size: M
   Tests first: only that club's rows; BOOQ cannot fetch the file or link; link expires; no delete-club route exists.
 - [ ] **F01-T33** Data requests and `app.anonymise_user`: player copy and delete requests, staff handling routes, audit. IDs: PDPA-01-AC3 to AC7. Role: BE-P · Deps T12, T10 · Size: M
+  - Database part built (migration 0019, `anonymise.test.ts`): `app.deletion_impact(user)` returns `future_bookings` and `held_bookings` plus handler counts; `app.anonymise_user(user)` (owner or front desk, refuses a future confirmed booking or live hold) clears the person, notes, sessions, keys, request notes, import staging and audit personal values, and runs `app.anonymise_handlers`. Routes and screens remain with lane D.
   Tests first: request stored and audited; copy has no staff notes; deletion anonymises, keeps receipts, redacts audit JSON, refuses with a future confirmed booking.
   Review amendment: D104 and SR-04, SR-19. `app.anonymise_user` replaces personal values in the audit `pii_*` columns with the placeholder and clears the other personal stores (outbox params, idempotency responses, import staging, sessions, invites); it writes an `audit_erasure` row. Extra tests: after deletion no marker value remains in any of those stores; audit rows are otherwise unchanged.
 
@@ -150,7 +151,7 @@ Roles: **Arch** Architect/data, **BE-P** back end platform and LINE, **DevOps**,
 
 - [x] **F01-T34** `apps/worker` bootstrap (Graphile Worker, direct connection, club-context task wrapper), heartbeat and housekeeping task. IDs: FA §5 (supports PLAT-03-AC6, PLAT-06). Role: BE-P · Deps T04 · Size: M
   Tests first: a task runs in the right club context; a crashed task retries once; heartbeat is recorded.
-- [ ] **F01-T35** Aggregate counts for P1 and P3 from `club_usage_daily`, nothing finer. IDs: PLAT-02-AC10, AC11. Role: BE-P · Deps T16, T18 · Size: S
+- [x] **F01-T35** Aggregate counts for P1 and P3 from `club_usage_daily`, nothing finer. IDs: PLAT-02-AC10, AC11. Role: BE-P · Deps T16, T18 · Size: S
   Tests first: counts only; no list behind a count; test activity excluded.
 - [x] **F01-T36** CI static checks wired: no `service_role`, no raw `pg`, routes declare permissions, hard-coded text lint hook, definer-function list review. IDs: CC-5, CC-2. Role: DevOps/Arch · Deps T01, T13 · Size: S
   Tests first: each check fails on a planted violation.
