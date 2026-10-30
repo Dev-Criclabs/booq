@@ -58,7 +58,7 @@ Depends on F01 tasks: T03 to T07 (database, context, tenant suite), T10 and T11 
   Tests first: unlimited changes; future date refused; an adult adds a date of birth with no price effect; a bought Student package stays valid (assertion contract with F06); each change has an audit entry with old and new.
 - [ ] **F02-T15** Date of birth history route for the owner only, filtering audit entries. IDs: AUTH-02-AC21, AC24, decision D55. Role: BE-P · Deps T14 · Size: S
   Tests first: owner sees the changes; front desk, accountant and the player do not.
-- [ ] **F02-T16** Language handling: detect the LINE app language, guest cookie, saved at first sign in, Profile toggle, shared toggle component. IDs: AUTH-02-AC25 to AC27. Role: BE-P with FE-P · Deps T09, T14 · Size: M
+- [x] **F02-T16** Language handling: detect the LINE app language, guest cookie, saved at first sign in, Profile toggle, shared toggle component. IDs: AUTH-02-AC25 to AC27. Role: BE-P with FE-P · Deps T09, T14 · Size: M
   Tests first: LINE language starts the right language; guest choice is saved at first sign in; Profile toggle changes every screen and later messages.
 
 ## D. Friend status and webhook
@@ -68,7 +68,7 @@ Depends on F01 tasks: T03 to T07 (database, context, tenant suite), T10 and T11 
 
 ## E. Front end (player app)
 
-- [ ] **F02-T18** LIFF client module: `liff.init`, silent in-client login, browser login with return path, `getIDToken` to `/auth/session`, offline handling, re-establishing a lost session silently in LINE. IDs: LINE-01-AC1 to AC3, AUTH-01-AC2, AC12. Role: FE-P · Deps T07 · Size: M
+- [x] **F02-T18** LIFF client module: `liff.init`, silent in-client login, browser login with return path, `getIDToken` to `/auth/session`, offline handling, re-establishing a lost session silently in LINE. IDs: LINE-01-AC1 to AC3, AUTH-01-AC2, AC12. Role: FE-P · Deps T07 · Size: M
   Tests first (Playwright with a LIFF stub): inside LINE sign-in finishes with no tap; in a browser one tap on Log in with LINE; a reload keeps the session; an offline error shows P-0327 and P-0328.
 - [x] **F02-T19** C1 Welcome screen: note instead of a checkbox (decision D38), Log in with LINE, Keep browsing, Thai and English, buttons never wrap. IDs: AUTH-01-AC6, LINE-01-AC2, AC6. Role: FE-P · Deps T18 · Size: S
   Tests first: no checkbox exists; the Thai longest string does not wrap the button; Keep browsing creates nothing.
@@ -83,7 +83,7 @@ Depends on F01 tasks: T03 to T07 (database, context, tenant suite), T10 and T11 
 
 ## F. Cross-checks and sweep
 
-- [ ] **F02-T24** Cross-club and abuse tests: a token for club A at club B; the same person at two clubs; rate limit on `POST /auth/session` (value from platform config, none invented); pending-session abuse. IDs: LINE-01-AC4, AC14, CC-1, CC-2. Role: QA · Deps T07, T09 · Size: M
+- [x] **F02-T24** Cross-club and abuse tests: a token for club A at club B; the same person at two clubs; rate limit on `POST /auth/session` (value from platform config, none invented); pending-session abuse. IDs: LINE-01-AC4, AC14, CC-1, CC-2. Role: QA · Deps T07, T09 · Size: M
   Tests first: this task is the tests; they must fail on a deliberately wrong audience check.
 - [ ] **F02-T25** Acceptance sweep: run the AC-to-test table in `design.md` section 13, close gaps, record results against the requirement IDs. IDs: all F02. Role: QA · Deps all · Size: M
   Done when: every AC has a passing test or a filed bug naming its ID. AUTH-02-AC9 stays marked pending (D10).

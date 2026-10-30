@@ -1,3 +1,4 @@
+import type { RateLimiter } from './rate-limit';
 import { checkRouteTable, Reply, type Route, type RouteDeps, type RouteResult, type RouteSession } from './route';
 
 // serveRoutes (apps/web transport; FA 4.3): turns a table of declared routes into one standard
@@ -14,6 +15,12 @@ export interface ServeDeps {
   resolveSession(slug: string, cookie: string | undefined): Promise<RouteSession | null | 'not_found'>;
   /** Longest request body in bytes. A setting: no default here. */
   maxBodyBytes: number;
+  /**
+   * A limit on attempts for chosen routes (for example `POST /auth/session`), counted per club address
+   * and per caller. Absent means no limit. The caller is `x-real-ip`, else the first `x-forwarded-for`
+   * entry, which is only as trustworthy as the platform in front (DevOps sets that up with the host).
+   */
+  rateLimit?: { limiter: RateLimiter; routes: readonly string[] };
 }
 
 export interface ServeContext {
@@ -35,7 +42,20 @@ const HEADERS = { 'content-type': 'application/json; charset=utf-8', 'cache-cont
 function json(status: number, body: unknown, extra: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), { status, headers: { ...HEADERS, ...extra } });
 }
-const fail = (status: number, code: string) => json(status, { code });
+/** Only short plain values go out as params: strings, finite numbers, booleans. */
+function cleanParams(params: Readonly<Record<string, unknown>> | undefined): Record<string, string | number | boolean> | undefined {
+  if (!params) return undefined;
+  const out: Record<string, string | number | boolean> = {};
+  for (const [k, v] of Object.entries(params).slice(0, 10)) {
+    if ((typeof v === 'string' && v.length <= 200) || (typeof v === 'number' && Number.isFinite(v)) || typeof v === 'boolean') out[k] = v;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+const fail = (status: number, code: string, params?: Readonly<Record<string, unknown>>) => {
+  const p = cleanParams(params);
+  return json(status, p ? { code, params: p } : { code });
+};
+const IDEMPOTENCY_KEY = /^[A-Za-z0-9._:-]{1,200}$/;
 
 interface Compiled {
   route: Route<unknown>;
@@ -134,16 +154,28 @@ function serveNow(table: readonly Route<unknown>[], deps: ServeDeps): (request: 
       if (read instanceof Response) return read;
       body = read;
     }
+    if (deps.rateLimit?.routes.includes(`${found.route.def.method} ${found.route.def.path}`)) {
+      const caller = request.headers.get('x-real-ip') ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+      const hit = deps.rateLimit.limiter.hit(`${found.route.def.method} ${found.route.def.path}|${slug}|${caller}`);
+      if (!hit.allowed) return json(429, { code: 'rate_limited' }, { 'retry-after': String(hit.retryAfterSeconds) });
+    }
     const cookie = request.headers.get('cookie') ?? undefined;
     const session = await deps.resolveSession(slug, cookie);
     if (session === 'not_found') return fail(404, 'not_found');
 
     const query: Record<string, string> = {};
     for (const [k, v] of new URL(request.url).searchParams) query[k] = v;
-    const input = { ...query, ...body, ...found.params, slug };
+    const input: Record<string, unknown> = { ...query, ...body, ...found.params, slug };
+    // The key comes only from the header: a body or query value cannot stand in for it.
+    delete input['idempotencyKey'];
+    const key = request.headers.get('idempotency-key');
+    if (key !== null) {
+      if (!IDEMPOTENCY_KEY.test(key)) return fail(400, 'bad_input');
+      input['idempotencyKey'] = key;
+    }
 
     const result: RouteResult<unknown> = await found.route.handle({ session, input, cookie, body: BODY_METHODS.has(method) ? body : undefined }, deps.routeDeps);
-    if (!result.ok) return fail(result.status, result.code);
+    if (!result.ok) return fail(result.status, result.code, result.params);
     if (result.body instanceof Reply) {
       const { status = 200, setCookie } = result.body.options;
       return json(status, result.body.body, setCookie ? { 'set-cookie': setCookie } : {});
