@@ -44,7 +44,7 @@ Effect: slots stay held after the hold time, players are blocked, no "booking re
 ## 7. Restore the database
 Use for: data loss, bad migration, corruption. **Never restore over production without the user's written approval.**
 1. Stop writes: set the club status to Paused only if the product allows (PLAT-03 keeps existing bookings), or turn on the maintenance page.
-2. Create a **new** Supabase project in the same region. Do not overwrite the current one.
+2. Create a **new** Supabase project in the same region (Singapore, D5). If production has moved to self-hosted Postgres in Thailand (`plan.md` R1), restore into a new instance there. Do not overwrite the current one.
 3. Restore into it from the Supabase daily backup, or from the nightly dump:
    - Decrypt the dump with the key from the password manager.
    - `pg_restore --no-owner --clean --if-exists --dbname "$NEW_DATABASE_URL" backup.dump` (run from a safe machine, not a laptop with other keys).
@@ -85,3 +85,21 @@ This is a product feature (PLAT-03, P3c). Ops does not pause clubs. If a club as
 
 ## 12. Preview and staging reset
 Preview database: reset from seed weekly, or on request. Staging: reset before the 7 Dec test and on request, only after telling the testers. Production is never reset.
+
+## 13. Go live: purge test data (D4)
+Product feature (F01, F13, F15). Ops steps around it. Do this with the user's go ahead, never as a side job.
+1. Check the P4 go live checks are all passed.
+2. Take a **named backup** of production and note its id. Keep it 30 days.
+3. Run the purge from the product feature. It removes only rows flagged as test data for this club.
+4. Check: counts per table logged, no test flags remain, real settings (courts, prices, staff) untouched, the next receipt number is 000001 (RCPT-01), test receipts used their own non-legal numbers.
+5. If something real was removed, stop and use the named backup (runbook 7). Do not edit rows by hand.
+6. Swap the club's Beam and LINE keys from test to live values if they differ (`secrets.md`), send one real small payment and one LINE message, then tell the user.
+
+## 14. BOOQ staff cannot sign in or lost their second factor (D3)
+1. A platform admin resets the factor after checking the person by another channel. A platform admin cannot reset their own.
+2. Never disable the second factor requirement to get someone in.
+3. If the email sender is down, invites and resets fail. Check the email service status, then the DNS records (SPF, DKIM, DMARC).
+4. Every reset goes to the P6 log.
+
+## 15. A new club's LINE provider (D7)
+Each club owns its own LINE provider. Setup steps, in order: the club creates the provider and OA, adds a named BOOQ person as admin, a BOOQ person creates the Messaging API, LINE Login and LIFF channels, sets the LIFF endpoint to the club's URL, pastes the values into the console (write only), sends a test message, and removes BOOQ's admin access if the club asks.
