@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { staffRoutes } from './routes';
 import { createStaffInviteClient } from './staff-invite-client';
+import { createTeamService } from './list';
 import { createHarness, type Harness } from '../http/testkit';
 
 // The staff management routes: admin only, thin over the signed calls to apps/staff-invite, sessions ended after a reset or deactivation.
@@ -18,7 +19,7 @@ beforeEach(async () => {
     sent.push({ path: new URL(url).pathname, body: JSON.parse(init.body) });
     return new Response(JSON.stringify(answerWith.json), { status: answerWith.status });
   }) as unknown as typeof fetch;
-  h = await createHarness(() => staffRoutes({ staff: createStaffInviteClient({ url: 'https://invite.internal', signingSecret: 's'.repeat(40), fetch: fake, now: () => NOW, endSessionsFor: async (id) => void ended.push(id) }), consoleBaseUrl: 'https://console.example/' }));
+  h = await createHarness((pdb) => staffRoutes({ staff: createStaffInviteClient({ url: 'https://invite.internal', signingSecret: 's'.repeat(40), fetch: fake, now: () => NOW, endSessionsFor: async (id) => void ended.push(id) }), consoleBaseUrl: 'https://console.example/', team: createTeamService({ db: pdb }) }));
 });
 afterEach(async () => h.close());
 
@@ -58,11 +59,21 @@ describe('staff management', () => {
     expect(sent).toEqual([]);
   });
   it('without the other app configured these answer 503 not_configured', async () => {
-    const bare = await createHarness(() => staffRoutes({ staff: null, consoleBaseUrl: '' }));
+    const bare = await createHarness((pdb) => staffRoutes({ staff: null, consoleBaseUrl: '', team: createTeamService({ db: pdb }) }));
     try {
       expect((await bare.call('POST', `/staff/${bare.ids.spec}/deactivate`, { body: {}, as: 'admin' })).body).toEqual({ code: 'not_configured' });
     } finally {
       await bare.close();
     }
+  });
+  it('the team list is admin only and shows roles and whether each can sign in', async () => {
+    const r = await h.call('GET', '/staff', { as: 'admin' });
+    expect(r.status).toBe(200);
+    expect(r.body.team.map((m: { id: string; role: string; active: boolean }) => [m.id, m.role, m.active]).sort()).toEqual(
+      [[h.ids.admin, 'platform_admin', true], [h.ids.loner, 'onboarding_specialist', true], [h.ids.spec, 'onboarding_specialist', true]].sort(),
+    );
+    expect(Object.keys(r.body.team[0]).sort()).toEqual(['active', 'displayName', 'email', 'id', 'role']);
+    expect((await h.call('GET', '/staff', { as: 'spec' })).status).toBe(403);
+    expect((await h.call('GET', '/staff', { as: null })).status).toBe(401);
   });
 });

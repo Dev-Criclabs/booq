@@ -20,6 +20,7 @@ import { adminRoutes } from '../admin/routes';
 import { createAdminService } from '../admin/admin';
 import { enrolRoutes, ENROL_RATE_LIMITED } from '../enrol/routes';
 import { createEnrolmentService, type EnrolmentProvider } from '../enrol/enrol';
+import { createTeamService } from '../staff/list';
 import { staffRoutes } from '../staff/routes';
 import { createStaffInviteClient } from '../staff/staff-invite-client';
 import { supportRoutes } from '../support/routes';
@@ -161,6 +162,7 @@ export function createPlatformTable(parts: PlatformParts): PlatformSource {
           ? createStaffInviteClient({ url: config.staffInvite.url, signingSecret: config.staffInvite.signingSecret, now: () => clock.now(), endSessionsFor: (staffId) => auth.endSessionsFor(staffId), ...(parts.staffInviteFetch ? { fetch: parts.staffInviteFetch } : {}) })
           : null,
         consoleBaseUrl: config.staffInvite?.consoleBaseUrl ?? '',
+        team: createTeamService({ db }),
       }),
       ...enrolRoutes({
         enrol: createEnrolmentService({
