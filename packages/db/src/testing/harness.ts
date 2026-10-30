@@ -39,6 +39,10 @@ export interface TestDatabase {
   seedNotice(): Promise<void>;
   /** Makes `id` a coach of `club` (F07, migration 0801): the person with the coach and player roles, the coach row and a weekly rule for every hour of every day. Safe to repeat. */
   seedCoach(club: string, id: string): Promise<void>;
+  /** A closure row to hang occupancy closure slots on (F09, migration 1002); returns its id. */
+  seedClosure(club: string): Promise<string>;
+  /** Makes a class session (F08, migrations 0901 and 0902) of `club` on `resource`: its own owner, coach and template are created, nothing is claimed in occupancy. Returns the session id; every class_seat booking names one (0903). */
+  seedClassSession(club: string, resource: string, start?: string): Promise<string>;
   close(): Promise<void>;
 }
 
@@ -129,6 +133,36 @@ function wrap(name: string): TestDatabase {
                        select $1, $2, 'weekly', d, '00:00', '24:00' from generate_series(0, 6) d
                         where not exists (select 1 from public.coach_availability_rule where club_id = $1 and coach_id = $2)`, [club, id]);
         await c.query('commit');
+      } catch (e) {
+        await c.query('rollback');
+        throw e;
+      } finally {
+        c.release();
+      }
+    },
+    async seedClosure(club) {
+      const r = await pool.query(
+        `insert into public.closure (club_id, reason, range_start, range_end, created_by)
+         values ($1, 'test closure', '2000-01-01T00:00:00Z', '2000-01-02T00:00:00Z', '00000000-0000-4000-8000-00000000c105') returning id`,
+        [club],
+      );
+      return r.rows[0].id as string;
+    },
+    async seedClassSession(club, resource, start = '2027-03-03T18:00:00+07:00') {
+      const c = await pool.connect();
+      try {
+        await c.query('begin');
+        const owner = (await c.query(`insert into public.app_user (club_id, line_user_id) values ($1, 'cs:' || gen_random_uuid()::text) returning id`, [club])).rows[0].id as string;
+        await c.query(`insert into public.app_user_role (club_id, user_id, role) values ($1, $2, 'owner'), ($1, $2, 'player')`, [club, owner]);
+        const coach = (await c.query(`insert into public.app_user (club_id, line_user_id) values ($1, 'cc:' || gen_random_uuid()::text) returning id`, [club])).rows[0].id as string;
+        await c.query(`insert into public.app_user_role (club_id, user_id, role) values ($1, $2, 'coach'), ($1, $2, 'player')`, [club, coach]);
+        await c.query(`insert into public.coach (club_id, id) values ($1, $2)`, [club, coach]);
+        const tpl = (await c.query(`insert into public.class_template (club_id, name_th, name_en, audience, coach_id, resource_id, weekday, start_time, min_players, max_players, created_by)
+                                    values ($1,'ก','Test class','adult',$2,$3,0,'18:00',1,6,$4) returning id`, [club, coach, resource, owner])).rows[0].id as string;
+        const session = (await c.query(`insert into public.class_session (club_id, template_id, start_at, end_at, name_th, name_en, audience, coach_id, resource_id, min_players, max_players)
+                                        values ($1,$2,$3::timestamptz,$3::timestamptz + interval '1 hour','ก','Test class','adult',$4,$5,1,6) returning id`, [club, tpl, start, coach, resource])).rows[0].id as string;
+        await c.query('commit');
+        return session;
       } catch (e) {
         await c.query('rollback');
         throw e;

@@ -23,17 +23,14 @@ Not startable until their lists exist: F10 enqueues are called by F07 (substitut
 
 ## B. Functions and grants
 
-- [ ] **F10-T06** Migration 0605: `app.enqueue_message(...) returns uuid` and its registration as the fifth payment port `enqueue_message` in `app.payment_ports`, `app.void_messages`, `app.cap_state`, `app.mark_undeliverable`. IDs: LINE-03, LINE-05, LINE-07-AC1 to AC4, D96. Role: BE-P · Deps T02 to T05 · Size: M
+- [x] **F10-T06** Migration 0605: `app.enqueue_message(...) returns uuid` and its registration as the fifth payment port `enqueue_message` in `app.payment_ports`, `app.void_messages`, `app.cap_state`, `app.mark_undeliverable`. IDs: LINE-03, LINE-05, LINE-07-AC1 to AC4, D96. Role: BE-P · Deps T02 to T05 · Size: M
   Also in 0605: the anonymise handler that clears `message_outbox.params` for the person, registered in `app.anonymise_handlers` (migration 0019 names it; orchestrator, 30 Oct). IDs: PDPA-01-AC5, CC-3.
   Tests first: the port is registered and `apply_payment` with the port missing fails closed; the same dedupe key enqueues once and returns the same id; `booking_released` is not enqueued for the reason `payment_unavailable`; at 80 percent no reminder row is created and queued reminders are voided with `cap` and never revived; at 100 percent on a free plan a message becomes `undeliverable`; a reminder whose hour has passed is not queued; every row of a Testing club is `is_test`.
-- [ ] **F10-T07** Migration 0606: policies and grants (the sender role, the platform reader). IDs: LINE-03, CC-2, D27. Role: BE-P · Deps T06 · Size: S
+- [x] **F10-T07** Migration 0606: policies and grants (the sender role, the platform reader). IDs: LINE-03, CC-2, D27. Role: BE-P · Deps T06 · Size: S
   Tests first: the blind suite shows BOOQ staff read no outbox row; only the sender role reads the LINE token; no club role can read it.
-- [ ] **F10-T07b** Migration 0607: settings key `reminder_hours` in `app.setting_keys`, its entry in `settings-registry.ts` and its Tennis template row (24 and 2, D116). IDs: LINE-05, D116. Role: BE-P · Deps T07, F01 registry · Size: S
-  Tests first: `reminder_hours` is in `app.setting_keys` and `settings-registry.ts` and the two tests agree; a new club's template holds `[24, 2]`; an empty list sends no reminder.
-
-## C. Sender, rich menu, health
-
-- [ ] **F10-T08** Task `outbox_sender` steps 1 to 4: claim with `SKIP LOCKED` per club, send time preconditions, cap gate, language at send time. IDs: LINE-03-AC1 to AC3, LINE-05, D93, D94. Role: BE-P · Deps T06, T07 · Size: M
+- [x] **F10-T07b** Migration 0607: the reminder hours 24 and 2 as product constants, not a club setting (PRD change log row "Scope": "Reminders fixed at 24 h and 2 h before start"; D116: the numbers are settings in code and variables in the text; corrected from "settings key `reminder_hours`" by the orchestrator, 30 Oct). They sit in `app.message_kinds.hours_before`, with `REMINDER_HOURS` in `packages/domain/src/messages/reminders.ts` kept equal by a test; `app.enqueue_booking_reminders(booking)` queues a confirmed booking's reminders for F03's confirm and move. IDs: LINE-05, D116. Role: BE-P · Deps T06 · Size: S
+  Tests first: the catalogue and the code constant agree on 24 and 2; the hours are in neither `app.setting_keys` nor `settings-registry.ts`; a confirmed booking gets its two reminders at start minus 24 and 2 hours, one made less than 24 hours ahead only the 2 hour one, less than 2 hours none; a move voids the old pair and queues a new one.
+- [x] **F10-T08** Task `outbox_sender` steps 1 to 4: claim with `SKIP LOCKED` per club, send time preconditions, cap gate, language at send time. IDs: LINE-03-AC1 to AC3, LINE-05, D93, D94. Role: BE-P · Deps T06, T07 · Size: M
   Tests first (fake LINE): a cancelled booking voids its reminder; a switch off voids a reminder, birthday and reward and not a confirmation; a profile language change changes a queued row; two sender processes send once.
 - [ ] **F10-T09** `outbox_sender` steps 5 to 7: push with `X-Line-Retry-Key`, results (sent, 429, token failure with backoff, other errors), non friend rule. IDs: LINE-03-AC5, AC9, LINE-07-AC5, D9. Role: BE-P · Deps T08 · Size: M
   Tests first: a timeout retry carries the same retry key; a 401 writes `club_health` and sends nothing to the owner by LINE; a non friend does not block checkout or the app confirmation; a sent row counts in `club_usage_daily`.

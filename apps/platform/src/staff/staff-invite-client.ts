@@ -9,13 +9,22 @@ export interface StaffInviteActor {
   staffId: string;
   stepUpFresh: boolean;
 }
-export type StaffInviteFailure = 'unauthorized' | 'forbidden' | 'step_up_required' | 'bad_input' | 'email_taken' | 'same_person' | 'last_admin' | 'not_found' | 'provider_failed' | 'unreachable' | 'internal';
-export type InviteResult = { ok: true; staffId: string } | { ok: false; code: StaffInviteFailure };
+export type StaffInviteFailure = 'unauthorized' | 'forbidden' | 'step_up_required' | 'bad_input' | 'email_taken' | 'same_person' | 'last_admin' | 'not_found' | 'provider_failed' | 'unreachable' | 'not_configured' | 'internal';
+export type InviteResult = { ok: true; staffId: string; enrolmentToken: string } | { ok: false; code: StaffInviteFailure };
 export type Done = { ok: true } | { ok: false; code: StaffInviteFailure };
+/** A reset also gives a new single-use enrolment token, so the teammate can enrol an authenticator again (F01-T17c). */
+export type ResetResult = { ok: true; enrolmentToken: string } | { ok: false; code: StaffInviteFailure };
 
-const KNOWN = new Set<string>(['unauthorized', 'forbidden', 'step_up_required', 'bad_input', 'email_taken', 'same_person', 'last_admin', 'not_found', 'provider_failed', 'internal']);
+const KNOWN = new Set<string>(['unauthorized', 'forbidden', 'step_up_required', 'bad_input', 'email_taken', 'same_person', 'last_admin', 'not_found', 'provider_failed', 'not_configured', 'internal']);
 
-export function createStaffInviteClient(deps: { url: string; signingSecret: string; fetch?: typeof fetch; now(): Date }) {
+export function createStaffInviteClient(deps: {
+  url: string;
+  signingSecret: string;
+  fetch?: typeof fetch;
+  now(): Date;
+  /** Ends every open console session of one teammate (AuthStore.deleteSessionsFor, through the sign-in module). */
+  endSessionsFor(staffId: string): Promise<void>;
+}) {
   const base = deps.url.replace(/\/+$/, '');
   const doFetch = deps.fetch ?? fetch;
   async function post(path: string, body: Record<string, unknown>): Promise<{ status: number; json: unknown } | null> {
@@ -36,16 +45,23 @@ export function createStaffInviteClient(deps: { url: string; signingSecret: stri
   return {
     async invite(actor: StaffInviteActor, input: { email: string; displayName: string; role: string }): Promise<InviteResult> {
       const r = await post('/invite', { ...base2(actor), ...input });
-      const id = (r?.json as { staffId?: unknown } | null)?.staffId;
-      return r && r.status === 200 && typeof id === 'string' ? { ok: true, staffId: id } : failure(r);
+      const j = r?.json as { staffId?: unknown; enrolmentToken?: unknown } | null;
+      return r && r.status === 200 && typeof j?.staffId === 'string' && typeof j.enrolmentToken === 'string' ? { ok: true, staffId: j.staffId, enrolmentToken: j.enrolmentToken } : failure(r);
     },
-    async resetFactor(actor: StaffInviteActor, targetStaffId: string): Promise<Done> {
+    async resetFactor(actor: StaffInviteActor, targetStaffId: string): Promise<ResetResult> {
       const r = await post('/reset-factor', { ...base2(actor), targetStaffId });
-      return r && r.status === 200 ? { ok: true } : failure(r);
+      const token = (r?.json as { enrolmentToken?: unknown } | null)?.enrolmentToken;
+      if (!r || r.status !== 200 || typeof token !== 'string') return failure(r);
+      await deps.endSessionsFor(targetStaffId); // the old factor must not keep a session open (ROLE-02-AC4)
+      return { ok: true, enrolmentToken: token };
     },
     async deactivate(actor: StaffInviteActor, targetStaffId: string): Promise<Done> {
       const r = await post('/deactivate', { ...base2(actor), targetStaffId });
-      return r && r.status === 200 ? { ok: true } : failure(r);
+      // A provider failure after the row was made inactive is still a deactivation here: sign in is refused, so end the sessions anyway.
+      if (r && r.status === 502 && (r.json as { code?: unknown } | null)?.code === 'provider_failed') await deps.endSessionsFor(targetStaffId);
+      if (!r || r.status !== 200) return failure(r);
+      await deps.endSessionsFor(targetStaffId);
+      return { ok: true };
     },
   };
 }

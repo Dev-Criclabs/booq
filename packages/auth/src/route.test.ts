@@ -41,7 +41,7 @@ describe('permission matrix', () => {
   it('a coach has no payments or revenue (ROLE-AC3) and a player no staff rights', () => {
     expect(can(['coach'], 'report.revenue.read')).toBe(false);
     expect(can(['coach'], 'customer.contact.read')).toBe(false);
-    for (const p of permissionNames()) if (!['club.read', 'datarequest.own', 'booking.read.own'].includes(p)) expect(can(['player'], p), p).toBe(false);
+    for (const p of permissionNames()) if (!['club.read', 'datarequest.own', 'booking.read.own', 'orders.read.own'].includes(p)) expect(can(['player'], p), p).toBe(false);
   });
 
   it('the owner holds every permission', () => {

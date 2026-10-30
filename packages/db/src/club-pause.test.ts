@@ -85,13 +85,17 @@ describe('pause_club (PLAT-03-AC1, AC2, AC3)', () => {
   });
 });
 
+/** Handlers registered by the migrations of later features (F06 registers one in 0508); tests add theirs on top. */
+const registeredHandlers = async () => Number((await tdb.query('select count(*) from app.pause_handlers')).rows[0].count);
+
 describe('resume_club (PLAT-01-AC10, PLAT-03-AC11)', () => {
   it('an admin resumes with a reason: Live again, the pause is closed with who, when and why', async () => {
     await tdb.setNow('2026-12-29T03:00:00Z');
     await pause(admin, 'payment problem');
     await tdb.advance('3 days 2 hours');
+    const baseline = await registeredHandlers();      // handlers other features register (F06 0508, ...)
     const r = await resume(admin, 'fixed');
-    expect({ ...r, paused_at: new Date(r.paused_at).toISOString(), resumed_at: new Date(r.resumed_at).toISOString() }).toEqual({ paused_at: '2026-12-29T03:00:00.000Z', resumed_at: '2027-01-01T05:00:00.000Z', handlers_run: 0 });
+    expect({ ...r, paused_at: new Date(r.paused_at).toISOString(), resumed_at: new Date(r.resumed_at).toISOString() }).toEqual({ paused_at: '2026-12-29T03:00:00.000Z', resumed_at: '2027-01-01T05:00:00.000Z', handlers_run: baseline });
     expect(await status()).toBe('live');
     const [p] = await pauses();
     expect(p).toMatchObject({ resume_reason: 'fixed', resumed_by: admin });
@@ -126,6 +130,7 @@ describe('app.pause_handlers (PLAT-03-AC7)', () => {
   const handled = async () => (await tdb.query(`select club_id, handler, paused_at, resumed_at from public.__handled order by handler`)).rows;
 
   it('runs every registered handler once on resume, with the club, the pause start and the resume time', async () => {
+    const baseline = await registeredHandlers();
     await register('h_one');
     await register('h_two');
     await tdb.setNow('2026-12-29T03:00:00Z');
@@ -133,7 +138,7 @@ describe('app.pause_handlers (PLAT-03-AC7)', () => {
     expect(await handled()).toEqual([]);
     await tdb.advance('2 days');
     const r = await resume(admin, 'b');
-    expect(r.handlers_run).toBe(2);
+    expect(r.handlers_run).toBe(baseline + 2);
     const rows = await handled();
     expect(rows.map((x) => x.handler)).toEqual(['h_one', 'h_two']);
     expect(new Date(rows[0].paused_at).toISOString()).toBe('2026-12-29T03:00:00.000Z');

@@ -14,10 +14,10 @@ function fake(answers: Array<{ status: number; body?: unknown }>) {
 }
 
 describe('Supabase admin adapter', () => {
-  it('invites by email and returns the new user id', async () => {
+  it('creates the user confirmed, sends no email, and returns the new user id', async () => {
     const { seen, admin } = fake([{ status: 200, body: { id: 'u-1' } }]);
     expect(await admin.inviteUser('a@booq.example')).toEqual({ authUserId: 'u-1' });
-    expect(seen[0]).toMatchObject({ method: 'POST', url: 'https://proj.example/auth/v1/invite', body: '{"email":"a@booq.example"}' });
+    expect(seen[0]).toMatchObject({ method: 'POST', url: 'https://proj.example/auth/v1/admin/users', body: '{"email":"a@booq.example","email_confirm":true}' });
     expect(seen[0]!.headers).toMatchObject({ apikey: KEY, authorization: `Bearer ${KEY}` });
   });
   it('resets by listing the factors and deleting each', async () => {
@@ -45,5 +45,21 @@ describe('Supabase admin adapter', () => {
   it('an invite answer without a user id is an error', async () => {
     const { admin } = fake([{ status: 200, body: {} }]);
     await expect(admin.inviteUser('a@booq.example')).rejects.toThrow();
+  });
+  it('sets a password; the project refusing it is weak, any other failure throws without the password', async () => {
+    const ok = fake([{ status: 200 }]);
+    expect(await ok.admin.setPassword('u-1', 'correct horse')).toBe('ok');
+    expect(ok.seen[0]).toMatchObject({ method: 'PUT', url: 'https://proj.example/auth/v1/admin/users/u-1', body: '{"password":"correct horse"}' });
+    expect(await fake([{ status: 422 }]).admin.setPassword('u-1', 'x')).toBe('weak');
+    const err = await fake([{ status: 500 }]).admin.setPassword('u-1', 'secret-pw-marker').catch((e: Error) => e);
+    expect((err as Error).message).not.toMatch(/secret-pw-marker|SERVICE-KEY/);
+  });
+  it('removes only the factors that were never verified', async () => {
+    const { seen, admin } = fake([{ status: 200, body: [{ id: 'f1', status: 'verified' }, { id: 'f2', status: 'unverified' }] }, { status: 200 }]);
+    await admin.removeUnverifiedFactors('u-1');
+    expect(seen.map((s) => `${s.method} ${s.url}`)).toEqual([
+      'GET https://proj.example/auth/v1/admin/users/u-1/factors',
+      'DELETE https://proj.example/auth/v1/admin/users/u-1/factors/f2',
+    ]);
   });
 });

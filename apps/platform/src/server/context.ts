@@ -1,4 +1,4 @@
-import { createPlatformAuth, type IdentityProvider } from '../auth/sign-in';
+import { createPlatformAuth, DEFAULT_POLICY, type IdentityProvider } from '../auth/sign-in';
 import { createDbAuditSink, createDbAuthStore, createDbStaffDirectory, IdentityUnavailable } from '../auth/adapters';
 import { authRoutes } from '../auth/routes';
 import { createRateLimiter, type RateLimiter } from '@booq/auth';
@@ -18,8 +18,15 @@ import { createTesterService } from '../testers/testers';
 import { testerRoutes } from '../testers/routes';
 import { adminRoutes } from '../admin/routes';
 import { createAdminService } from '../admin/admin';
+import { enrolRoutes, ENROL_RATE_LIMITED } from '../enrol/routes';
+import { createEnrolmentService, type EnrolmentProvider } from '../enrol/enrol';
+import { createTeamService } from '../staff/list';
+import { staffRoutes } from '../staff/routes';
+import { createStaffInviteClient } from '../staff/staff-invite-client';
 import { supportRoutes } from '../support/routes';
 import { createSupportService } from '../support/support';
+import { createWebhookTokenService } from '../webhook-token/webhook-token';
+import { webhookTokenRoutes } from '../webhook-token/routes';
 import type { Connections } from '../connections/connections';
 import type { PlatformRoute, PlatformSource } from '../http/server';
 
@@ -37,6 +44,8 @@ export interface PlatformConfig {
   appBaseUrl: string;
   /** The shared token of GET /health for the external monitor. Absent: the route is not mounted. */
   healthToken: string | null;
+  /** apps/staff-invite, which checks passwords and codes at the identity provider (D148). Absent: sign-in answers 503 identity_unavailable. */
+  staffInvite: { url: string; signingSecret: string; consoleBaseUrl: string } | null;
   /** Attempts per caller and window on the sign-in routes. Platform config; absent means no limit (set it before launch). */
   signInRateLimit: { limit: number; windowSeconds: number } | null;
 }
@@ -52,6 +61,14 @@ export function readPlatformConfig(env: Record<string, string | undefined>): Pla
   if (!/^https:\/\/[^\s/]+(\/.*)?$/.test(env['APP_BASE_URL']!)) throw new Error('APP_BASE_URL must be an https address');
   const health = env['HEALTH_TOKEN'];
   if (health !== undefined && health.length < 16) throw new Error('HEALTH_TOKEN must be at least 16 characters');
+  const inviteUrl = env['STAFF_INVITE_URL'];
+  const inviteSecret = env['STAFF_INVITE_SIGNING_SECRET'];
+  if ((inviteUrl && !inviteSecret) || (!inviteUrl && inviteSecret)) throw new Error('STAFF_INVITE_URL and STAFF_INVITE_SIGNING_SECRET are set together or not at all');
+  if (inviteUrl && !/^https?:\/\/[^\s/]+(\/.*)?$/.test(inviteUrl)) throw new Error('STAFF_INVITE_URL must be an http or https address');
+  const consoleBase = env['PLATFORM_BASE_URL'];
+  if (inviteUrl && !consoleBase) throw new Error('PLATFORM_BASE_URL is required with STAFF_INVITE_URL (enrolment links)');
+  if (consoleBase && !/^https:\/\/[^\s/]+(\/.*)?$/.test(consoleBase)) throw new Error('PLATFORM_BASE_URL must be an https address');
+  if (inviteSecret && inviteSecret.length < 32) throw new Error('STAFF_INVITE_SIGNING_SECRET must be at least 32 characters');
   const limit = env['PLATFORM_SIGNIN_RATE_LIMIT'];
   const window = env['PLATFORM_SIGNIN_RATE_WINDOW_SECONDS'];
   if ((limit && !window) || (!limit && window)) throw new Error('PLATFORM_SIGNIN_RATE_LIMIT and PLATFORM_SIGNIN_RATE_WINDOW_SECONDS are set together or not at all');
@@ -62,6 +79,7 @@ export function readPlatformConfig(env: Record<string, string | undefined>): Pla
     maxBodyBytes: Number(env['PLATFORM_MAX_BODY_BYTES']),
     appBaseUrl: env['APP_BASE_URL']!.replace(/\/+$/, ''),
     healthToken: health ?? null,
+    staffInvite: inviteUrl ? { url: inviteUrl, signingSecret: inviteSecret!, consoleBaseUrl: consoleBase! } : null,
     signInRateLimit: limit ? { limit: Number(limit), windowSeconds: Number(window) } : null,
   };
 }
@@ -92,6 +110,15 @@ export const mailerNotConnected: InviteMailer = {
   },
 };
 
+export const unavailableEnrolment: EnrolmentProvider = {
+  async startEnrolment() {
+    throw new IdentityUnavailable();
+  },
+  async finishEnrolment() {
+    throw new IdentityUnavailable();
+  },
+};
+
 export interface PlatformParts {
   db: PlatformDb;
   clock: Clock;
@@ -99,19 +126,24 @@ export interface PlatformParts {
   config: PlatformConfig;
   notifier?: OwnerNotifier;
   mailer?: InviteMailer;
+  /** First-factor enrolment at the identity provider (apps/staff-invite). Absent: enrolment answers 503 identity_unavailable. */
+  enrolment?: EnrolmentProvider;
   /** LINE and Beam probes and the secrets public key. Absent until the provider clients exist: the connection sections answer section_unavailable. */
   connections?: Connections;
+  /** For tests: the transport to apps/staff-invite. */
+  staffInviteFetch?: typeof fetch;
   /** Extra route groups, for tests and for the parts added next. */
   extraRoutes?: readonly PlatformRoute[];
 }
 
 export function createPlatformTable(parts: PlatformParts): PlatformSource {
   const { db, clock, identity, config } = parts;
+  const store = createDbAuthStore(db, { sealKey: config.signingKey });
   const auth = createPlatformAuth({
     identity,
     staff: createDbStaffDirectory(db),
     audit: createDbAuditSink(db),
-    store: createDbAuthStore(db, { sealKey: config.signingKey }), // shared by every console process (migration 0051)
+    store, // shared by every console process (migration 0051)
     clock,
     signingKey: config.signingKey,
   });
@@ -127,15 +159,33 @@ export function createPlatformTable(parts: PlatformParts): PlatformSource {
       }),
       ...ownerRoutes({ owner: createOwnerService({ db, mailer: parts.mailer ?? mailerNotConnected, baseUrl: config.appBaseUrl }) }),
       ...testerRoutes({ testers: createTesterService({ db, baseUrl: config.appBaseUrl }) }),
+      ...staffRoutes({
+        staff: config.staffInvite
+          ? createStaffInviteClient({ url: config.staffInvite.url, signingSecret: config.staffInvite.signingSecret, now: () => clock.now(), endSessionsFor: (staffId) => auth.endSessionsFor(staffId), ...(parts.staffInviteFetch ? { fetch: parts.staffInviteFetch } : {}) })
+          : null,
+        consoleBaseUrl: config.staffInvite?.consoleBaseUrl ?? '',
+        team: createTeamService({ db }),
+      }),
+      ...enrolRoutes({
+        enrol: createEnrolmentService({
+          db,
+          provider: parts.enrolment ?? unavailableEnrolment,
+          store,
+          now: () => clock.now().getTime(),
+          enrolmentMs: DEFAULT_POLICY.challengeMs,
+          maxFailedCodes: DEFAULT_POLICY.maxFailedCodes,
+        }),
+      }),
       ...adminRoutes({ admin: createAdminService({ db }) }),
       ...supportRoutes({ support: createSupportService({ db, ...(parts.connections ? { connections: parts.connections } : {}) }) }),
+      ...webhookTokenRoutes({ webhookTokens: createWebhookTokenService({ db, baseUrl: config.appBaseUrl }) }),
       ...(config.healthToken ? healthRoutes({ health: createHealthService({ db, token: config.healthToken }) }) : []),
       ...(parts.extraRoutes ?? []),
     ],
     deps: {
       authenticate: (cookie) => auth.authenticate(cookie),
       maxBodyBytes: config.maxBodyBytes,
-      ...(limiter ? { rateLimit: { limiter, routes: ['POST /auth/sign-in', 'POST /auth/second-factor', 'POST /auth/step-up'] } } : {}),
+      ...(limiter ? { rateLimit: { limiter, routes: ['POST /auth/sign-in', 'POST /auth/second-factor', 'POST /auth/step-up', ...ENROL_RATE_LIMITED] } } : {}),
     },
   };
 }

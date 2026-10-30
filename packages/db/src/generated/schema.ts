@@ -7,6 +7,12 @@ export interface AppAnonymiseHandlers {
   created_at: string;
 }
 
+export interface AppCancelHandlers {
+  name: string;
+  handler: unknown;
+  ord: number;
+}
+
 export interface AppClaimHandlers {
   handler_key: string;
   handler: unknown;
@@ -41,6 +47,13 @@ export interface AppLaunchProducers {
   guard_fn: unknown | null;
   only_payment_option: string | null;
   task: string;
+}
+
+export interface AppMessageKinds {
+  kind: string;
+  cap_class: string;
+  switch_key: string | null;
+  hours_before: number | null;
 }
 
 export interface AppMoveHandlers {
@@ -226,6 +239,16 @@ export interface PlatformStaffAssignment {
   assigned_at: string;
 }
 
+export interface PlatformStaffEnrolment {
+  token_hash: string;
+  staff_id: string;
+  purpose: string;
+  created_by: string;
+  created_at: string;
+  expires_at: string;
+  used_at: string | null;
+}
+
 export interface PlatformSupportSession {
   id: string;
   staff_id: string;
@@ -382,6 +405,25 @@ export interface PublicBooking {
   is_test: boolean;
   created_at: string;
   updated_at: string;
+  class_session_id: string | null;
+  waitlist_entry_id: string | null;
+}
+
+export interface PublicBookingCancel {
+  club_id: string;
+  id: string;
+  booking_id: string;
+  order_id: string;
+  kind: string;
+  outcome: string;
+  version: number;
+  returned: unknown;
+  credit_lost: boolean;
+  reason: string | null;
+  by_user: string | null;
+  closure_id: string | null;
+  created_at: string;
+  is_test: boolean;
 }
 
 export interface PublicBookingCoachAdd {
@@ -406,6 +448,75 @@ export interface PublicClaimRequest {
   requested_at: string;
   handled_by: string | null;
   handled_at: string | null;
+}
+
+export interface PublicClassSession {
+  club_id: string;
+  id: string;
+  template_id: string;
+  start_at: string;
+  end_at: string;
+  name_th: string;
+  name_en: string;
+  audience: string;
+  level: string | null;
+  coach_id: string;
+  resource_id: string;
+  min_players: number;
+  max_players: number;
+  drop_in_price_satang: number | null;
+  status: string;
+  attention_reason: string | null;
+  cancel_reason: string | null;
+  edited: boolean;
+  cancelled_by: string | null;
+  cancelled_at: string | null;
+  is_test: boolean;
+  created_at: string;
+}
+
+export interface PublicClassTemplate {
+  club_id: string;
+  id: string;
+  name_th: string;
+  name_en: string;
+  audience: string;
+  level: string | null;
+  coach_id: string;
+  resource_id: string;
+  weekday: number;
+  start_time: string;
+  duration_minutes: number;
+  min_players: number;
+  max_players: number;
+  drop_in_price_satang: number | null;
+  active: boolean;
+  created_by: string;
+  created_at: string;
+  ended_on: string | null;
+  is_test: boolean;
+}
+
+export interface PublicClosure {
+  club_id: string;
+  id: string;
+  reason: string;
+  range_start: string;
+  range_end: string;
+  repeat_rule: unknown | null;
+  status: string;
+  created_by: string;
+  created_at: string;
+  ended_by: string | null;
+  ended_at: string | null;
+  is_test: boolean;
+}
+
+export interface PublicClosureResource {
+  club_id: string;
+  closure_id: string;
+  resource_id: string;
+  is_test: boolean;
 }
 
 export interface PublicClub {
@@ -590,6 +701,18 @@ export interface PublicCoachPriceOverride {
   is_test: boolean;
 }
 
+export interface PublicCoachSubstitution {
+  club_id: string;
+  id: string;
+  booking_id: string;
+  from_coach_id: string;
+  to_coach_id: string;
+  by_staff_id: string;
+  reason: string;
+  is_test: boolean;
+  created_at: string;
+}
+
 export interface PublicCoachTier {
   club_id: string;
   id: string;
@@ -641,6 +764,17 @@ export interface PublicCustomerPackage {
   order_id: string | null;
   is_test: boolean;
   created_at: string;
+}
+
+export interface PublicDailyClose {
+  club_id: string;
+  id: string;
+  day: string;
+  run_by: string;
+  run_at: string;
+  totals: unknown;
+  receipt_count: number;
+  is_test: boolean;
 }
 
 export interface PublicDataExport {
@@ -711,6 +845,7 @@ export interface PublicLineConnection {
   plan_message_limit: number | null;
   secret_last4: unknown;
   tested_at: string | null;
+  webhook_token_hash: string | null;
 }
 
 export interface PublicLocation {
@@ -814,6 +949,7 @@ export interface PublicOrders {
   birthday_entitlement: boolean | null;
   quote_hash: string | null;
   priced_at: string | null;
+  zero_money_receipt_id: string | null;
   kind: string;
 }
 
@@ -986,6 +1122,43 @@ export interface PublicRateLimitHit {
   hits: number;
 }
 
+export interface PublicReceipt {
+  club_id: string;
+  id: string;
+  order_id: string;
+  payment_id: string | null;
+  kind: string;
+  series: string;
+  seq_no: number;
+  number: string;
+  status: string;
+  issued_at: string;
+  vat_flag: boolean;
+  customer_id: string | null;
+  customer_name_snapshot: string | null;
+  lines: unknown;
+  total_satang: number;
+  is_test: boolean;
+  created_at: string;
+}
+
+export interface PublicReceiptCounter {
+  club_id: string;
+  series: string;
+  last_no: number;
+  is_test: boolean;
+}
+
+export interface PublicReceiptVoid {
+  club_id: string;
+  id: string;
+  receipt_id: string;
+  reason: string;
+  voided_by: string;
+  voided_at: string;
+  is_test: boolean;
+}
+
 export interface PublicResource {
   club_id: string;
   id: string;
@@ -1039,6 +1212,30 @@ export interface PublicUserStaffNote {
   is_test: boolean;
 }
 
+export interface PublicWaitlistEntry {
+  club_id: string;
+  id: string;
+  customer_id: string;
+  subject_kind: string;
+  class_session_id: string | null;
+  resource_id: string | null;
+  slot_start_at: string | null;
+  seq: string;
+  status: string;
+  offer_no: number;
+  offered_at: string | null;
+  offer_expires_at: string | null;
+  offer_booking_id: string | null;
+  ended_reason: string | null;
+  is_test: boolean;
+  created_at: string;
+}
+
+export interface PublicWaitlistSeq {
+  club_id: string;
+  last_value: string;
+}
+
 export interface PublicWalletAccount {
   club_id: string;
   id: string;
@@ -1067,12 +1264,14 @@ export interface PublicWalletLedger {
 
 export interface Tables {
   'app.anonymise_handlers': AppAnonymiseHandlers;
+  'app.cancel_handlers': AppCancelHandlers;
   'app.claim_handlers': AppClaimHandlers;
   'app.coach_rules_hook': AppCoachRulesHook;
   'app.coach_rules_move_hook': AppCoachRulesMoveHook;
   'app.deletion_impact_handlers': AppDeletionImpactHandlers;
   'app.feature_keys': AppFeatureKeys;
   'app.launch_producers': AppLaunchProducers;
+  'app.message_kinds': AppMessageKinds;
   'app.move_handlers': AppMoveHandlers;
   'app.pause_handlers': AppPauseHandlers;
   'app.payment_ports': AppPaymentPorts;
@@ -1097,6 +1296,7 @@ export interface Tables {
   'platform.owner_contact_change': PlatformOwnerContactChange;
   'platform.platform_staff': PlatformPlatformStaff;
   'platform.staff_assignment': PlatformStaffAssignment;
+  'platform.staff_enrolment': PlatformStaffEnrolment;
   'platform.support_session': PlatformSupportSession;
   'platform.template': PlatformTemplate;
   'platform.template_item': PlatformTemplateItem;
@@ -1109,8 +1309,13 @@ export interface Tables {
   'public.auth_session': PublicAuthSession;
   'public.birthday_entitlement_use': PublicBirthdayEntitlementUse;
   'public.booking': PublicBooking;
+  'public.booking_cancel': PublicBookingCancel;
   'public.booking_coach_add': PublicBookingCoachAdd;
   'public.claim_request': PublicClaimRequest;
+  'public.class_session': PublicClassSession;
+  'public.class_template': PublicClassTemplate;
+  'public.closure': PublicClosure;
+  'public.closure_resource': PublicClosureResource;
   'public.club': PublicClub;
   'public.club_feature': PublicClubFeature;
   'public.club_invite': PublicClubInvite;
@@ -1126,11 +1331,13 @@ export interface Tables {
   'public.coach_leave': PublicCoachLeave;
   'public.coach_pay': PublicCoachPay;
   'public.coach_price_override': PublicCoachPriceOverride;
+  'public.coach_substitution': PublicCoachSubstitution;
   'public.coach_tier': PublicCoachTier;
   'public.coach_tier_price': PublicCoachTierPrice;
   'public.court_price_rule': PublicCourtPriceRule;
   'public.credit_ledger': PublicCreditLedger;
   'public.customer_package': PublicCustomerPackage;
+  'public.daily_close': PublicDailyClose;
   'public.data_export': PublicDataExport;
   'public.data_request': PublicDataRequest;
   'public.idempotency_key': PublicIdempotencyKey;
@@ -1157,11 +1364,16 @@ export interface Tables {
   'public.promo_code': PublicPromoCode;
   'public.promo_redemption': PublicPromoRedemption;
   'public.rate_limit_hit': PublicRateLimitHit;
+  'public.receipt': PublicReceipt;
+  'public.receipt_counter': PublicReceiptCounter;
+  'public.receipt_void': PublicReceiptVoid;
   'public.resource': PublicResource;
   'public.rich_menu': PublicRichMenu;
   'public.rich_menu_label': PublicRichMenuLabel;
   'public.user_consent': PublicUserConsent;
   'public.user_staff_note': PublicUserStaffNote;
+  'public.waitlist_entry': PublicWaitlistEntry;
+  'public.waitlist_seq': PublicWaitlistSeq;
   'public.wallet_account': PublicWalletAccount;
   'public.wallet_ledger': PublicWalletLedger;
 }

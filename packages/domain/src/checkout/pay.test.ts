@@ -4,7 +4,7 @@ import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
 import { CheckoutError } from './errors';
 import { findLiveHold, parsePayRequest, placeOrder, preparePay } from './pay';
 import { quoteFor } from './quote';
-import { fixtureSources, IDS, seedHunter } from './test-fixture';
+import { fakeReceiptAndMessagePorts, fixtureSources, IDS, seedHunter } from './test-fixture';
 
 // F04-T12a: the Pay gate and the reprice (R4-AC9, R8-AC1, R7-AC1, D63; design 4.5 steps 1 and 2). Nothing
 // is created by this step: a changed price returns the new quote and the player confirms again.
@@ -253,7 +253,7 @@ describe('placeOrder: entitlements and the ledger', () => {
     // A repeat of the same intent is not repriced (design 4.5 step 6): the live hold is found first.
     const src = fixtureSources();
     const choice = parsePayRequest({ courtId: COURT, hours: [HOUR_A], code: 'MINE', quoteHash: '0'.repeat(64) }).choice;
-    expect(await inTx((tx) => findLiveHold(tx, choice))).toMatchObject({ orderId: first.orderId, reused: true });
+    expect(await inTx((tx) => findLiveHold(tx, choice, ME))).toMatchObject({ orderId: first.orderId, reused: true });
     const again = await inTx(async (tx) => placeOrder(tx, ME, choice, await quoteFor(tx, ME, { ...choice, code: null }, src), src));
     expect(again).toMatchObject({ orderId: first.orderId, reused: true });
     expect((await tdb.query(`select count(*)::int as n from public.promo_redemption where code_id = $1`, [id])).rows[0].n).toBe(1);
@@ -262,5 +262,67 @@ describe('placeOrder: entitlements and the ledger', () => {
   it('the default reservation writes nothing and asks F06 nothing when no credit or wallet is used', async () => {
     const r = await placeWith({ courtId: COURT, hours: [HOUR_A] });
     expect(r.reused).toBe(false);
+  });
+});
+
+// F04-T12d: nothing left to pay confirms at once (PAY-07-AC1 to AC6, PROMO-01-AC13, R7-AC3, D64).
+// Uses app.complete_zero_money_order (0319); F13's receipt and F10's message ports are fakes here.
+describe('placeOrder: the zero money path', () => {
+  const HOUR_Z = '2026-12-02T07:00:00+07:00';
+  beforeEach(async () => fakeReceiptAndMessagePorts(tdb));
+  const ports = async () => (await tdb.query(`select port, args from public.__f04_port_log order by n`)).rows as Array<{ port: string; args: unknown[] }>;
+  const placeWith = async (body: Record<string, unknown>, over: Parameters<typeof fixtureSources>[0] = {}) => {
+    const src = fixtureSources(over);
+    const hash = (await inTx((tx) => quoteFor(tx, ME, parsePayRequest({ ...body, quoteHash: '0'.repeat(64) }).choice, src))).quoteHash;
+    const req = parsePayRequest({ ...body, quoteHash: hash });
+    return inTx(async (tx) => {
+      const r = await preparePay(tx, ME, req, src);
+      if (r.kind !== 'ready') throw new Error('expected ready');
+      return placeOrder(tx, ME, req.choice, r.quote, src);
+    });
+  };
+  const free = async () => tdb.query(`insert into public.promo_code (club_id, code_upper, kind, value, applies_to) values ($1,'FREE','percent',10000,array['court_hour'])`, [A]);
+
+  it('a 100 percent code confirms in the same request: no hold, no payment, a receipt (PAY-07-AC1, AC3, AC6, PROMO-01-AC13)', async () => {
+    await free();
+    const r = await placeWith({ courtId: COURT, hours: [HOUR_Z], code: 'FREE' });
+    expect(r).toMatchObject({ confirmed: true, holdExpiresAt: null, reused: false });
+    expect(r.receiptId).toBeTruthy();
+    expect((await tdb.query(`select status, money_satang from public.orders where id = $1`, [r.orderId])).rows[0]).toEqual({ status: 'paid', money_satang: 0 });
+    expect((await tdb.query(`select status, hold_expires_at from public.booking where order_id = $1`, [r.orderId])).rows).toEqual([{ status: 'confirmed', hold_expires_at: null }]);
+    expect(await count('payment')).toBe(0);
+    // One receipt for the order in the same series, and the Booking confirmed card (PAY-07-AC4, AC6, D64).
+    expect((await ports()).map((p) => p.port)).toEqual(['issue_receipt', 'enqueue_message']);
+    expect((await ports())[0]!.args).toEqual([r.orderId, null, 'order']);
+  });
+
+  it('the wallet covering it all confirms the same way (PAY-07-AC1, AC4)', async () => {
+    const r = await placeWith({ courtId: COURT, hours: [HOUR_Z] }, { walletBalance: async () => 50000, reserveCreditAndWallet: async () => true });
+    expect(r).toMatchObject({ confirmed: true });
+  });
+
+  it('a taken slot refuses and nothing is used up (PAY-07-AC2)', async () => {
+    await free();
+    const other = '66666666-6666-4666-8666-666666666666';
+    const c = await tdb.pool.connect();
+    try {
+      await c.query('begin');
+      await c.query(`insert into public.app_user (club_id, id, line_user_id, full_name) values ($1,$2,'L8','Taker')`, [A, other]);
+      await c.query(`insert into public.app_user_role (club_id, user_id, role) values ($1,$2,'player')`, [A, other]);
+      await c.query('commit');
+    } finally {
+      c.release();
+    }
+    const theirs = (await tdb.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'online') returning id`, [A, other])).rows[0].id as string;
+    await db.withClubTx({ ...me, userId: other }, (tx) => tx.query(`select app.reserve_court($1, $2, $3::timestamptz[])`, [theirs, COURT, [new Date(HOUR_Z).toISOString()]]));
+    const before = [await count('orders'), await count('promo_redemption'), await count('booking')];
+    await expect(placeWith({ courtId: COURT, hours: [HOUR_Z], code: 'FREE' })).rejects.toMatchObject({ message: 'slot_unavailable' });
+    expect([await count('orders'), await count('promo_redemption'), await count('booking')]).toEqual(before);
+  });
+
+  it('any failed step rolls everything back (PAY-07-AC5)', async () => {
+    const before = [await count('orders'), await count('booking')];
+    await expect(placeWith({ courtId: COURT, hours: [HOUR_Z] }, { walletBalance: async () => 50000, reserveCreditAndWallet: async () => false })).rejects.toMatchObject({ code: 'credit_unavailable' });
+    expect([await count('orders'), await count('booking')]).toEqual(before);
   });
 });

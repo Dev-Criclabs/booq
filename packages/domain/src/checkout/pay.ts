@@ -27,8 +27,8 @@ export function parsePayRequest(body: unknown): PayRequest {
 }
 
 /** Gate and reprice, inside the Pay transaction. Writes nothing. */
-export async function preparePay(tx: Tx, customerId: string, req: PayRequest, sources: QuoteSources): Promise<PreparedPay> {
-  const quote = await quoteFor(tx, customerId, req.choice, sources);
+export async function preparePay(tx: Tx, customerId: string, req: PayRequest, sources: QuoteSources, opts: { forCustomer?: boolean } = {}): Promise<PreparedPay> {
+  const quote = await quoteFor(tx, customerId, req.choice, sources, opts);
   return quote.quoteHash === req.quoteHash ? { kind: 'ready', quote } : { kind: 'price_changed', quote };
 }
 
@@ -47,6 +47,10 @@ export interface PlacedOrder {
   holdExpiresAt: string | null;
   /** A second tap found the caller's live hold for the same selection (D47): nothing new was made. */
   reused: boolean;
+  /** Nothing was left to pay: confirmed in this transaction, no hold and no charge (PAY-07). */
+  confirmed: boolean;
+  /** The receipt of a zero money order (D64); null otherwise. */
+  receiptId: string | null;
 }
 
 /** The locale key that labels each kind of line on C10, C12 and the receipt (copy-index: H-C10-Checkout). */
@@ -82,7 +86,7 @@ export async function placeOrder(tx: Tx, customerId: string, choice: QuoteReques
   const starts = [...new Set(quote.lines.map((l) => l.startsAt))].sort();
   // A second tap (D47) returns the caller's live hold before anything is counted, so the order's own code use
   // or birthday entitlement never refuses it. reserve_court repeats this lookup under the customer lock.
-  const live = await liveHold(tx, choice.courtId, choice.coachId, starts);
+  const live = await liveHold(tx, customerId, choice.courtId, choice.coachId, starts);
   if (live) return live;
   const names = await lineNames(tx, choice, quote.lines, sources);
   const group = (await tx.query<Names & { id: string }>(`select id, name_th, name_en from public.price_group where club_id = app.club_id() and id = $1`, [quote.priceGroupId])).rows[0];
@@ -112,7 +116,7 @@ export async function placeOrder(tx: Tx, customerId: string, choice: QuoteReques
   if (claim.reused === true) {
     // The caller's live hold for this selection: drop the order just made and return that one (D47).
     await tx.query('rollback to savepoint place_order');
-    return { orderId: claim.order_id, bookingIds: claim.booking_ids, holdExpiresAt: claim.hold_expires_at, reused: true };
+    return { orderId: claim.order_id, bookingIds: claim.booking_ids, holdExpiresAt: isoOrNull(claim.hold_expires_at), reused: true, confirmed: false, receiptId: null };
   }
   await tx.query('release savepoint place_order');
   // booking_ids are in start order, the same order as the quote's hours.
@@ -141,28 +145,37 @@ export async function placeOrder(tx: Tx, customerId: string, choice: QuoteReques
     ),
   ]);
   if (!(await sources.reserveCreditAndWallet(tx, orderId))) throw new CheckoutError('credit_unavailable');
-  return { orderId, bookingIds: claim.booking_ids, holdExpiresAt: claim.hold_expires_at, reused: false };
+  if (quote.moneySatang === 0) {
+    // F04-T12d (PAY-07, D64): reserve_court confirmed the bookings in the claim; the order is paid, its receipt
+    // issued in the same series and the Booking confirmed card enqueued, all in this transaction.
+    const done = await tx.query<{ receipt: string }>('select app.complete_zero_money_order($1) as receipt', [orderId]);
+    return { orderId, bookingIds: claim.booking_ids, holdExpiresAt: null, reused: false, confirmed: true, receiptId: done.rows[0]!.receipt };
+  }
+  return { orderId, bookingIds: claim.booking_ids, holdExpiresAt: isoOrNull(claim.hold_expires_at), reused: false, confirmed: false, receiptId: null };
 }
 
-/** The caller's live hold for exactly this selection, if any (D47). The Pay route asks it before repricing. */
-export async function findLiveHold(tx: Tx, choice: QuoteRequest): Promise<PlacedOrder | null> {
+const isoOrNull = (v: string | Date | null): string | null => (v === null ? null : new Date(v).toISOString());
+
+/** The live hold the caller made for this customer and exactly this selection, if any (D47); the same lookup as
+ *  reserve_court's. The Pay route asks it before repricing. */
+export async function findLiveHold(tx: Tx, choice: QuoteRequest, customerId: string): Promise<PlacedOrder | null> {
   const starts = choice.hours.map((h) => new Date(h)).filter((d) => !Number.isNaN(d.getTime())).map((d) => d.toISOString()).sort();
-  return liveHold(tx, choice.courtId, choice.coachId, [...new Set(starts)]);
+  return liveHold(tx, customerId, choice.courtId, choice.coachId, [...new Set(starts)]);
 }
 
-async function liveHold(tx: Tx, courtId: string, coachId: string | null, starts: string[]): Promise<PlacedOrder | null> {
+async function liveHold(tx: Tx, customerId: string, courtId: string, coachId: string | null, starts: string[]): Promise<PlacedOrder | null> {
   const r = (await tx.query<{ order_id: string; booking_ids: string[]; hold_expires_at: string }>(
     `select b.order_id, array_agg(b.id order by b.start_at) as booking_ids, min(b.hold_expires_at) as hold_expires_at
        from public.booking b
-      where b.club_id = app.club_id() and b.customer_id = app.user_id() and b.created_by = app.user_id()
+      where b.club_id = app.club_id() and b.customer_id = $4 and b.created_by = app.user_id()
         and b.status = 'awaiting_payment' and b.hold_expires_at > app.now()
         and b.resource_id = $1 and b.coach_id is not distinct from $2::uuid
       group by b.order_id
      having array_agg(b.start_at order by b.start_at) = $3::timestamptz[]
       limit 1`,
-    [courtId, coachId, starts],
+    [courtId, coachId, starts, customerId],
   )).rows[0];
-  return r ? { orderId: r.order_id, bookingIds: r.booking_ids, holdExpiresAt: new Date(r.hold_expires_at).toISOString(), reused: true } : null;
+  return r ? { orderId: r.order_id, bookingIds: r.booking_ids, holdExpiresAt: new Date(r.hold_expires_at).toISOString(), reused: true, confirmed: false, receiptId: null } : null;
 }
 
 // The refusals of count_promo_use ('promo:<code>') and use_birthday_entitlement ('birthday:<code>'), P0001.

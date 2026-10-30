@@ -128,7 +128,7 @@ describe('refused moves change nothing', () => {
 
   it('a move onto a closure is refused', async () => {
     const { booking } = await book(P1, 18);
-    await tdb.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id) values ($1,'closure',$2,$3,$4,'confirmed',gen_random_uuid())`, [A, COURT2, H(20), H(22)]);
+    await tdb.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id) values ($1,'closure',$2,$3,$4,'confirmed',$5)`, [A, COURT2, H(20), H(22), await tdb.seedClosure(A)]);
     expect(await move(front, booking, COURT2, 21)).toMatchObject({ ok: false, code: 'slot_unavailable' });
   });
 

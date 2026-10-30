@@ -46,8 +46,10 @@ async function busy(h: number, o: { state?: 'confirmed' | 'held'; expired?: bool
   const coach = o.coach ?? COACH;
   const day = o.day ?? 2;
   if (o.kind === 'group') {
-    await tdb.query(`insert into public.occupancy (club_id, kind, resource_id, coach_id, start_at, end_at, state, class_session_id) values ($1,'group_class',$2,$3,$4,$5,'confirmed',gen_random_uuid())`,
-      [A, COURT2, coach, H(h, day), H(h + 1, day)]);
+    const tpl = (await tdb.query(`insert into public.class_template (club_id, name_th, name_en, audience, coach_id, resource_id, weekday, start_time, min_players, max_players, created_by) values ($1,'ก','G','adult',$2,$3,3,'18:00',4,6,$4) returning id`, [A, coach, COURT2, OWNER])).rows[0].id as string;
+    const sess = (await tdb.query(`insert into public.class_session (club_id, template_id, start_at, end_at, name_th, name_en, audience, coach_id, resource_id, min_players, max_players) values ($1,$2,$3,$4,'ก','G','adult',$5,$6,4,6) returning id`, [A, tpl, H(h, day), H(h + 1, day), coach, COURT2])).rows[0].id as string;
+    await tdb.query(`insert into public.occupancy (club_id, kind, resource_id, coach_id, start_at, end_at, state, class_session_id) values ($1,'group_class',$2,$3,$4,$5,'confirmed',$6)`,
+      [A, COURT2, coach, H(h, day), H(h + 1, day), sess]);
     return null;
   }
   const order = (await tdb.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'online') returning id`, [A, uid(++orderSeq + 100)])).rows[0].id as string;

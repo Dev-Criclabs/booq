@@ -134,7 +134,7 @@ describe('slot not open: slot_unavailable and nothing partial (BOOK-03-AC8, D25)
     const o2 = await hold(P1, [H(20)], { court: COURT2 });
     await expire(o1);
     await run(worker, (tx) => tx.query(`select app.release_hold($1, 'expired')`, [o2]));
-    await tdb.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id) values ($1,'closure',$2,$3,$4,'confirmed',gen_random_uuid())`, [A, COURT1, H(18), H(19)]);
+    await tdb.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id) values ($1,'closure',$2,$3,$4,'confirmed',$5)`, [A, COURT1, H(18), H(19), await tdb.seedClosure(A)]);
     expect(await reclaim(worker, o1)).toMatchObject({ ok: false, code: 'slot_unavailable' });
     await tdb.setNow('2026-12-01T03:17:00Z');
     const t = await hold(P2, [H(20)], { court: COURT2 });
@@ -145,7 +145,7 @@ describe('slot not open: slot_unavailable and nothing partial (BOOK-03-AC8, D25)
   it('a three hour order where hour two is taken reclaims nothing', async () => {
     const order = await hold(P1, [H(18), H(19), H(20)]);
     await expire(order);
-    await tdb.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id) values ($1,'closure',$2,$3,$4,'confirmed',gen_random_uuid())`, [A, COURT1, H(19), H(20)]);
+    await tdb.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id) values ($1,'closure',$2,$3,$4,'confirmed',$5)`, [A, COURT1, H(19), H(20), await tdb.seedClosure(A)]);
     expect(await reclaim(worker, order)).toMatchObject({ ok: false, code: 'slot_unavailable' });
     expect((await statuses(order)).map((r) => r.status)).toEqual(['released', 'released', 'released']);
     expect(await occupancy()).toHaveLength(1); // only the closure
