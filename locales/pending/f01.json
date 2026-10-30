@@ -21,7 +21,8 @@
     "A-new.import_expired": "This import has expired. Upload the file again.",
     "A-new.import_not_configured": "Import is not set up yet. Please contact BOOQ.",
     "A-new.export_expired": "This export has expired. Start a new export to get a fresh download link.",
-    "A-new.export_failed": "The export could not be prepared. Please start it again."
+    "A-new.export_failed": "The export could not be prepared. Please start it again.",
+    "A-new.data_request_bad_transition": "This request has already been handled."
   },
   "th": {
     "L-new.club_paused": "BOOQ หยุดการจองออนไลน์ของ {clubName} ชั่วคราว เหตุผล: {reason} การจองที่มีอยู่และการแจ้งเตือนไม่ได้รับผลกระทบ และวันหมดอายุของแพ็กเกจและกระเป๋าเงินจะเลื่อนออกไปตามระยะเวลาที่หยุด",
@@ -44,6 +45,7 @@
     "A-new.import_expired": "การนำเข้านี้หมดอายุแล้ว กรุณาอัปโหลดไฟล์อีกครั้ง",
     "A-new.import_not_configured": "ยังไม่ได้ตั้งค่าการนำเข้า กรุณาติดต่อ BOOQ",
     "A-new.export_expired": "การส่งออกนี้หมดอายุแล้ว กรุณาเริ่มการส่งออกใหม่เพื่อรับลิงก์ดาวน์โหลดใหม่",
-    "A-new.export_failed": "เตรียมไฟล์ส่งออกไม่สำเร็จ กรุณาเริ่มใหม่อีกครั้ง"
+    "A-new.export_failed": "เตรียมไฟล์ส่งออกไม่สำเร็จ กรุณาเริ่มใหม่อีกครั้ง",
+    "A-new.data_request_bad_transition": "คำขอนี้ได้รับการดำเนินการแล้ว"
   }
 }

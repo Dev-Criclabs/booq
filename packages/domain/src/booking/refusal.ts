@@ -23,6 +23,7 @@ export const REFUSAL_TEXT_KEYS = {
   forbidden: 'P-new.forbidden',
   booking_not_found: 'P-new.booking_not_found',
   not_movable: 'A-new.not_movable',
+  live_bookings_exist: 'A-new.live_bookings_exist',
   idempotency_key_reused: 'P-new.idempotency_key_reused',
 } as const;
 
