@@ -107,6 +107,9 @@ export async function placeOrder(tx: Tx, customerId: string, choice: QuoteReques
     }),
   ]);
   const orderId = created.rows[0]!.id;
+  // Lock order (FA 3.4, BE-B 0229): customer (in create_priced_order), then the wallet and packages, then the
+  // promo row, then the claim. The keyed reserve after the lines then takes no new lock (F06, 0511).
+  await tx.query('select app.lock_wallet_and_packages($1)', [customerId]);
   if (quote.promoCodeId !== null) await entitlement(tx, 'select app.count_promo_use($1, $2)', [quote.promoCodeId, orderId]);
   if (quote.birthdayEntitlement !== null) await entitlement(tx, 'select app.use_birthday_entitlement($1, $2)', [quote.birthdayEntitlement, orderId]);
   const claim = (await tx.query<{ r: { order_id: string; booking_ids: string[]; hold_expires_at: string | null; reused?: boolean } }>(
