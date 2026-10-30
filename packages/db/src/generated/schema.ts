@@ -47,6 +47,7 @@ export interface AppMessageKinds {
   kind: string;
   cap_class: string;
   switch_key: string | null;
+  hours_before: number | null;
 }
 
 export interface AppMoveHandlers {
