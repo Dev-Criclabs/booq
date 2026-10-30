@@ -22,3 +22,9 @@ export async function readSecret(tx: Tx, privateKey: string, clubId: string, kin
   const cipher = r.rows[0]?.c ?? null;
   return cipher === null ? null : decryptSecret(privateKey, cipher, { clubId, kind });
 }
+
+/** The platform app's write: it holds the public key only. The database checks the staff member, the club and the window. */
+export async function writeSecretAsStaff(tx: Tx, publicKey: string, clubId: string, kind: SecretKind, plaintext: string): Promise<void> {
+  const e = encryptSecret(publicKey, plaintext, { clubId, kind });
+  await tx.query('select platform.write_secret($1, $2, $3, $4)', [kind, e.ciphertext, e.keyId, last4(plaintext)]);
+}

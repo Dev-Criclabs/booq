@@ -40,6 +40,8 @@ export const tables: Fragment = {
   'public.import_row': { class: 'D' },
   'public.data_export': { class: 'D', audited: true },
   'public.data_request': { class: 'D', audited: true },
+  // Owner notices of platform changes (migration 0015)
+  'public.owner_notice': { class: 'D', audited: true },
   // audit (F01-T10)
   'audit.registry': { class: 'infra' },
   'app.test_tables': { class: 'infra' },   // F01-T26
