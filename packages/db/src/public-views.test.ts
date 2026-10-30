@@ -25,6 +25,7 @@ beforeEach(async () => {
   tdb = await createTestDatabase();
   await tdb.setNow(NOW);
   await tdb.query(`insert into public.club (id, slug, name_th, name_en, status) values ($1,'a','ก','A','live'), ($2,'b','ข','B','live')`, [A, B]);
+  await tdb.seedCoach(A, COACH);   // a solo class needs a coach row (F07, migration 0801)
   await tdb.query(`insert into public.location (club_id, id, name) values ($1,$3,'M'), ($2,$4,'M')`, [A, B, LOC_A, LOC_B]);
   await tdb.query(`insert into public.resource (club_id, id, location_id, name, sport) values ($1,$3,$5,'1','tennis'), ($1,$4,$5,'2','tennis'), ($2,$6,$7,'1','tennis')`, [A, B, C1, C2, LOC_A, CB, LOC_B]);
   // 2026-12-29 is a Tuesday: ISO weekday 2. Open 08:00 to 22:00 (14 hours); Wednesday open until 24:00.
