@@ -1,6 +1,6 @@
 # F07 Solo classes, coach picker and rest rule · Requirements
 
-Status: **DRAFT for approval (gate 1).** Drafted 30 Oct 2026. Nothing here is approved until a person says so. No design or code follows until then.
+Status: **Approved 30 Oct 2026** (gate 1). Recorded in `docs/decisions.md`, round 10 ("approve all"): the F13, F09, F07 and F08 drafts and the answers D118 to D121 were approved by the user. Revision 2 applies D111, D115 and D120. Changes after approval go PRD, then hand-off, then this file. No design or code follows until the design gate.
 
 Feature: F07 Solo classes, coach picker and rest rule. Depends on: F03, F06. Requirement IDs: COACH-01, COACH-02, COACH-03, COACH-04, and the rules the hand-off has no ID for (labelled R1 to R7, local to this file). Wave 4. The coach portal screens are F12 (CPORT-01 to CPORT-07); coach pay is F12 and F13.
 
@@ -10,7 +10,7 @@ Feature: F07 Solo classes, coach picker and rest rule. Depends on: F03, F06. Req
 |---|---|---|
 | PRD | `specs/product/prd-v1.2.md` | Court booking (Add a coach at checkout, After booking); Solo classes and coach rules (Booking a solo class, Rest rule, Coach rates and pay, Substitutions); Pricing and packages; Customer app pages C5, C6, C10b; Coach portal K3, K4; Admin A7; Key flows B and G; Data model (Coach, Coach tier, Availability rule, Leave request) |
 | HO | `specs/product/handoff-v1.2.md` | Business rules as requirements (COACH-01 to COACH-04, BOOK-03, BOOK-04, BOOK-06); Data model (Coach, Coach tier, Availability rule and leave); Architecture (Integrity rules) |
-| Decisions | `docs/decisions.md` | D1, D19, D21, D22, D25, D28, D40, D49, D59, D62, D84, D85; round 1 |
+| Decisions | `docs/decisions.md` | D1, D19, D21, D22, D25, D28, D40, D49, D59, D62, D84, D85, D95, D111, D115, D120; round 1 |
 | Gaps | `docs/canvas-gaps.md` | B3, B4 |
 | QA | `docs/qa/traceability.md`, `open-questions.md`, `concurrency-tests.md` (branch `qa/test-strategy`) | COACH rows; Q-08, Q-10 |
 | Other features | F03, F04, F06, F09, F10, F11, F12 | Hold and uniqueness, price, credits, cancel, messages, A7, portal |
@@ -61,7 +61,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 - COACH-01-AC6. Given what counts toward the run, then solo classes, group classes and staff bookings all count, unpaid held hours count, and a group class counts until it is cancelled (D19, PRD). There is no override for any role (PRD).
 - COACH-01-AC7. Given the hour changes on checkout, when the player picks a different slot, then the list updates live for that exact hour, and a coach who is no longer free disappears; if a coach becomes unavailable before payment, the card disappears and the player is asked to pick again (PRD).
 - COACH-01-AC8. Given a coach whose availability or leave changes after a booking exists, when the change is saved, then existing bookings are not deleted: affected sessions are flagged for the owner (R6).
-- COACH-01-AC9. Given a leave request that is pending, when coaches are listed, then whether the coach is hidden is Q1 (QA Q-08). Approved leave always hides them.
+- COACH-01-AC9. Given a leave request that is pending, when coaches are listed, then the coach is still offered; only approved leave hides a coach (D120).
 - COACH-01-AC10. Given an inactive coach, when coaches are listed, then they are not offered.
 - COACH-01-AC11. Given the rest rule check, when two parallel bookings both try to add the 6th and 7th hour in a row for one coach, then exactly one succeeds (CONC-17).
 - COACH-01-AC12. Given staff move or create a booking in A1 or A2, when the coach would break the rest rule, then it is refused with no override (PRD Front desk rules).
@@ -93,7 +93,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 - COACH-02-AC4. Given a tier or coach with no price (the Head Coach price is empty), when the coach is listed, then the card shows no price and the coach cannot be picked until the owner sets it (F04 R2-AC3).
 - COACH-02-AC5. Given the court portion (default ฿500, a club setting), when a solo class is priced, then the court line is the court price rule for that hour (F04 R1) and coach pay is calculated on the coaching portion only (F13).
 - COACH-02-AC6. Given each coach card at checkout, then it shows name, tier, specialties, the price for this player (Adult or Student) and a Profile link that opens the coach profile (PRD).
-- COACH-02-AC7. Given a player under 18 buys an Adult item (D62), when a coach is priced, then the price group follows the date of birth on file for coaching (Student price), since a coach price is a price group price, not an item audience. See Q2.
+- COACH-02-AC7. Given the coach price, when it is priced, then it follows the price group from the date of birth on file (a player under 18 pays the Student coach price, no date of birth means Adult), not the audience of any Adult item they bought (D120, D62, D12).
 - COACH-02-AC8. Given adding a coach is optional, when the player skips it, then the booking stays a court only booking.
 - COACH-02-AC9. Given the solo class prices, then they are never hard coded: the Hunter values are club settings (HO).
 
@@ -115,7 +115,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 
 - COACH-03-AC1. Given a player with solo credits who adds a coach at court checkout (C10), when the order is priced, then the full coaching price is charged and no credit is reserved (hand-off check).
 - COACH-03-AC2. Given a player with solo credits who books through Classes, then Solo classes (C5, C6), when the order is priced, then a solo pack credit of the right tier and customer type covers the coaching line (F06 R1).
-- COACH-03-AC3. Given Add a coach after booking (from C12), when it is priced, then only the coaching portion is charged and solo credits do not apply there either (PRD: it behaves as at checkout). See Q3.
+- COACH-03-AC3. Given Add a coach after booking (from C12), when it is priced, then only the coaching portion is charged and solo credits do not apply there either (D120); the top up is its own order and its own receipt (D111).
 - COACH-03-AC4. Given a solo pack credit is tied to a tier, when it is used, then it works with any coach in that tier (PRD).
 - COACH-03-AC5. Given a solo pack credit is reserved before its package expires, when the session is after the expiry date, then the credit stays valid for that session (D85); a credit of a package bought as Student stays usable for the Student price items it was bought for after the holder turns 18 (D84), and its order of use at checkout is credit, then wallet, then money (D22).
 
@@ -157,10 +157,10 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 - R1-AC1. Given C5, when it loads, then each card shows photo, name, rate tier, specialties, ages and levels taught, languages, the next open time, and the price for the customer's type including the court (a guest sees the Adult price).
 - R1-AC2. Given C6, when it loads, then it shows bio, background, certifications such as the ITF level, and times by date, each with its assigned court, and a summary bar with the coach price plus the court price.
 - R1-AC3. Given a time when the coach is available but no court is open, when C6 is shown, then it shows as unavailable ("No court open") and cannot be selected (PRD).
-- R1-AC4. Given a time with the coach free and a court open, when the player picks it, then the system assigns the court and shows it; which court is assigned when both are open is Q4.
+- R1-AC4. Given a time with the coach free and a court open, when the player picks it, then the system assigns the court already booked for that hour if there is one, otherwise the lowest numbered open court (D120).
 - R1-AC5. Given a solo class is booked through C5 and C6, then court and coach are priced and held together in the same order (F04 R2, BOOK-03).
 - R1-AC6. Given a guest, when they browse C5 and C6, then it loads without sign in; sign in runs when they continue to book (F02 AUTH-01).
-- R1-AC7. Given a coach photo, bio or certification set by the club, when it is shown, then it is the Thai or English field for the player's language.
+- R1-AC7. Given a coach photo, bio or certification set by the club, when it is shown, then it is the Thai or English field for the player's language, and it is published only with the coach's consent, which the club keeps on record (D120).
 - R1-AC8. Given a Paused club, when C5 loads, then Classes shows as paused (F01 PLAT-03-AC5).
 
 **Meets.** PDPA: coach profile is public by the coach's role (the coach agrees when the owner publishes it; whether a consent is kept is Q5). No double booking: the court shown is only assigned at Pay (the hold). Club scope: per club. TEXT: P keys with named variables.
@@ -183,6 +183,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 - R2-AC4. Given a coach's rules are changed so that a booked hour is no longer open, when it is saved, then the booking stays and is flagged (R6).
 - R2-AC5. Given availability, leave and decisions, when any is changed, then it is audited (PLAT-04).
 - R2-AC6. Given a coach, when they view K3 and K4, then they see only their own rules and requests (CC-2).
+- R2-AC7. Given a coach is a person with a user record, when they are created, then they also hold the Player role (D115) and have a language field that defaults to their LINE app language, used for their LINE messages (D95).
 
 **Meets.** PDPA: leave type and notes are visible to the coach and the owner only. No double booking: closed times are enforced by the same offer check; a booking cannot be created in them. Club scope: per club. TEXT: K keys, Thai and English.
 
@@ -225,7 +226,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 - R4-AC3. Given a substitution, when it is saved, then each customer gets Coach changed naming the new coach (F10).
 - R4-AC4. Given a solo class customer, when the coach is changed, then they may cancel for full credit regardless of the 12 hour rule (F09 applies it).
 - R4-AC5. Given the session price, when a substitute is assigned, then the customer's price stays the same and coach pay goes to the coach who delivers (F13).
-- R4-AC6. Given the substitute would exceed the rest cap, then whether the rule applies when the owner assigns, and what happens when no substitute is free, is Q6 (QA Q-10).
+- R4-AC6. Given a substitute, when the owner assigns one, then the rest rule applies to the substitute like any booking; if no substitute is free, the owner cancels the session for full credit (D120, D19).
 - R4-AC7. Given a substitution, when it is saved, then it is audited (PLAT-04).
 
 **Meets.** PDPA: the customer is told the coach name only. No double booking: AC2 and CC-4. Club scope: per club. TEXT: Coach changed message from L keys.
@@ -247,6 +248,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 - R5-AC3. Given a solo class, when it is a future hour, then it counts toward the player's future court hours limit (D49: solo class hours count).
 - R5-AC4. Given a solo class booked on the schedule, when it is confirmed, then the Booking confirmed card names the coach and court (F10 LINE-04-AC9) and the coach gets New session (F12 CPORT-07).
 - R5-AC5. Given a solo class ends, when its slot ends, then it counts as played (no check in, F09); the coach marks Present or Absent in K5 (F12) for pay.
+- R5-AC6. Given a tier or a price changes after a session is booked, when it is saved, then the booked session keeps the price it was booked at (D120, F04 R7-AC2).
 
 **Meets.** PDPA: the booking names the coach and customer, visible to each by role. No double booking: AC1 and CC-4. Club scope: per club. TEXT: P keys.
 
@@ -264,7 +266,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 
 - R6-AC1. Given approved leave or a closed time over booked sessions, when it is saved, then those sessions are flagged for the owner in A7 and the coach is still shown on them until a substitute is chosen.
 - R6-AC2. Given a flagged session, when no substitute is picked, then the session stays booked; the owner may cancel it with full credit back (F09).
-- R6-AC3. Given a coach is deactivated with future sessions, when it is saved, then it is refused until the sessions are moved or cancelled (the same pattern as D50 for courts). The spec is silent on this; see Q7.
+- R6-AC3. Given a coach with future sessions, when the owner tries to deactivate them, then it is refused until the sessions are moved or cancelled (D120).
 
 **Meets.** PDPA: not relevant. No double booking: nothing is removed or double booked by a change. Club scope: per club. TEXT: A keys for the flag.
 
@@ -288,11 +290,4 @@ No key is added by this draft.
 
 ## Open questions
 
-1. **Pending leave (QA Q-08).** Does a leave request that is still pending hide the coach, or only approved leave?
-2. **Coach price for a player under 18 (COACH-02-AC7).** D62 lets a player under 18 buy Adult items. A coach price depends on the price group: does a player under 18 pay the Student coach price (assumed, from the date of birth), or may they choose the Adult one?
-3. **Add a coach after booking (COACH-03-AC3).** The PRD says it charges the coaching portion only. Confirm solo credits do not apply there, as at checkout.
-4. **Which court when both are open (R1-AC4).** Is it the court already booked, the lowest numbered open court, or the player's choice?
-5. **Coach profile consent.** Is a coach's photo and bio published with a consent the club keeps (PDPA)?
-6. **Substitution and the rest cap (QA Q-10).** Does the rest rule apply when the owner assigns a substitute, and what if no substitute is free (cancel for full credit)?
-7. **Deactivating a coach with future sessions (R6-AC3).** Blocked until sessions are moved (assumed), or allowed with the sessions flagged?
-8. **Coach tier change.** If a coach changes tier or the owner changes a price, does an already booked session keep its price (assumed, F04 R7-AC2)?
+All 8 earlier questions are answered by D120 and removed. None remain.
