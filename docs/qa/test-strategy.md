@@ -214,7 +214,7 @@ The PRD gives capacity: two courts, 06:00 to 24:00 = 36 slots a day, 1,080 slots
 | Solo classes | At least 20 with 3 coaches, including 3 sets of back to back hours to reach the 6 hour rest line | COACH-01 |
 | Group sessions | 6 sessions: 2 full, 2 below minimum, 1 with waitlist, 1 Student only | CLASS-01, CLASS-02 |
 | Packages | Each product bought at least once; 2 near expiry (set by fake clock) | PKG |
-| Payments | 40 Beam sandbox payments or fake Beam payments, of which 5 late, 3 wrong amount, 3 duplicates | PAY |
+| Payments | On production in the test window: **Beam sandbox payments only** (D26, D32), for example 40, of which 5 late, 3 wrong amount, 3 duplicates, as far as the sandbox can produce them (Q-31). The fake Beam drives the same cases on staging and in CI only | PAY |
 
 ### 6.3 Roles in the test
 
