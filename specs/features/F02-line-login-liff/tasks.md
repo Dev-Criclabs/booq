@@ -56,8 +56,9 @@ Depends on F01 tasks: T03 to T07 (database, context, tenant suite), T10 and T11 
   Tests first: no date of birth gives Adult; 17 years 364 days is Student, the 18th birthday in Bangkok switches to Adult; a Student item with no date of birth returns the ask code; 18 or older is refused for a Student item.
 - [x] **F02-T14** `PUT /me/profile`: name, phone, date of birth (not future), level, language; never locked; audited. IDs: AUTH-02-AC15 to AC23, AC29. Role: BE-P · Deps T08, F01-T10 · Size: M
   Tests first: unlimited changes; future date refused; an adult adds a date of birth with no price effect; a bought Student package stays valid (assertion contract with F06); each change has an audit entry with old and new.
-- [ ] **F02-T15** Date of birth history route for the owner only, filtering audit entries. IDs: AUTH-02-AC21, AC24, decision D55. Role: BE-P · Deps T14 · Size: S
+- [x] **F02-T15** Date of birth history route for the owner only, filtering audit entries. IDs: AUTH-02-AC21, AC24, decision D55. Role: BE-P · Deps T14 · Size: S
   Tests first: owner sees the changes; front desk, accountant and the player do not.
+  Built (BE-P lane C): `apps/web/src/api/dob-history/routes.ts`, `GET /customers/:id/dob-history`, permission `customer.dob-history.read` (owner only, new fragment `packages/auth/src/permissions/f02.ts`). It reads the club audit log (the F01-T10 trigger wrote the entries) for `app_user` entries where the date of birth differs between the old and new personal values, oldest first, and returns `{at, actor, old, new}` only. Front desk, accountant and the player get 403, a guest 401, a person of another club or an unknown id 404, a malformed id 400. Mounted in `mounts.ts`. `PUT /customers/{id}/dob` stays unbuilt (Q6).
 - [ ] **F02-T16** Language handling: detect the LINE app language, guest cookie, saved at first sign in, Profile toggle, shared toggle component. IDs: AUTH-02-AC25 to AC27. Role: BE-P with FE-P · Deps T09, T14 · Size: M
   Tests first: LINE language starts the right language; guest choice is saved at first sign in; Profile toggle changes every screen and later messages.
 

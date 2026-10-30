@@ -6,6 +6,7 @@ import { claimRoutes } from '../api/claim/routes';
 import { dataRequestRoutes } from '../api/data-request/routes';
 import { profileRoutes } from '../api/profile/routes';
 import { staffRoutes } from '../api/staff/routes';
+import { dobHistoryRoutes } from '../api/dob-history/routes';
 import { importRoutes } from '../api/import/routes';
 import type { WebConfig } from './context';
 
@@ -38,5 +39,6 @@ export const mounts: readonly Mount[] = [
   (m) => claimRoutes({ db: m.db, service: () => createClaimService() }),
   (m) => dataRequestRoutes({ db: m.db, service: () => createDataRequestService() }),
   (m) => staffRoutes({ db: m.db }),
+  (m) => dobHistoryRoutes({ db: m.db }),
   (m) => profileRoutes({ db: m.db, service: () => createProfileEditService({ today: () => bangkokDate(m.now()) }) }),
 ];
