@@ -50,11 +50,12 @@ async function seed(customer: string, o: { status?: string; type?: string; start
   const status = o.status ?? 'confirmed';
   const start = new Date(o.start);
   await tdb.query(
-    `insert into public.booking (club_id, order_id, type, resource_id, coach_id, start_at, end_at, customer_id, status, source, created_by, hold_expires_at, confirmed_at, released_at, release_reason)
-     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,'online',$8,$10,$11,$12,$13)`,
+    `insert into public.booking (club_id, order_id, type, resource_id, coach_id, start_at, end_at, customer_id, status, source, created_by, hold_expires_at, confirmed_at, released_at, release_reason, class_session_id)
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,'online',$8,$10,$11,$12,$13,$14)`,
     [A, order, o.type ?? 'court', o.court ?? COURT2, o.type === 'solo_class' ? (o.coach ?? 'e0e0e0e0-0000-4000-8000-000000000009') : o.coach ?? null, start, new Date(start.getTime() + 3600_000), customer, status,
       status === 'awaiting_payment' ? (o.hold ?? '2026-12-01T03:15:00Z') : null, status === 'confirmed' ? '2026-12-01T03:00:00Z' : null,
-      status === 'released' ? '2026-12-01T03:00:00Z' : null, status === 'released' ? 'expired' : null],
+      status === 'released' ? '2026-12-01T03:00:00Z' : null, status === 'released' ? 'expired' : null,
+      o.type === 'class_seat' ? await tdb.seedClassSession(A, o.court ?? COURT2) : null],
   );
 }
 const futureHours = (customer: string) =>
