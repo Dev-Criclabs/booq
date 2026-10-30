@@ -112,15 +112,15 @@ describe('applying a template (PLAT-05-AC7, AC8, AC10, AC12)', () => {
     expect(c.template_applied_at).not.toBeNull();
   });
 
-  it('products and prices wait for the handlers F04 and F06 register: they are listed as pending, and run once they exist', async () => {
+  it('products wait for the handler F06 registers: they are listed as pending, and run once it exists', async () => {
     const r = await apply(spec, 'tennis');
-    expect(r.pending.sort()).toEqual(['price', 'product']);
+    expect(r.pending).toEqual(['product']);   // F04's handlers (0310) copy the prices
     await tdb.query(`create table public.__copied (club_id uuid, kind text, key text, value jsonb)`);
     await tdb.query(`grant all on public.__copied to booq_owner`);
     await tdb.query(`create function public.__copy(p_club uuid, p_key text, p_value jsonb) returns void language sql as $$ insert into public.__copied values (p_club, 'product', p_key, p_value) $$`);
     await tdb.query(`select app.register_template_handler('product', 'public.__copy(uuid, text, jsonb)'::regprocedure)`);
     const r2 = await apply(admin, 'tennis', OTHER);
-    expect(r2).toMatchObject({ copied: { product: 10 }, pending: ['price'] });
+    expect(r2).toMatchObject({ copied: { product: 10 }, pending: [] });
     expect((await tdb.query(`select count(*)::int as n from public.__copied where club_id = $1`, [OTHER])).rows[0].n).toBe(10);
     expect((await tdb.query(`select value from public.__copied where key = 'bundle_10h'`)).rows[0].value.price_satang).toBe(450000);
   });
