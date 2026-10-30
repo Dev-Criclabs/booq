@@ -514,6 +514,17 @@ export interface PublicCoachLeave {
   created_at: string;
 }
 
+export interface PublicCoachPay {
+  club_id: string;
+  coach_id: string;
+  monthly_base_satang: number | null;
+  solo_pay_kind: string | null;
+  solo_pay_value: number | null;
+  group_pay_kind: string | null;
+  group_pay_value: number | null;
+  is_test: boolean;
+}
+
 export interface PublicCoachPriceOverride {
   club_id: string;
   coach_id: string;
@@ -1011,6 +1022,7 @@ export interface Tables {
   'public.coach': PublicCoach;
   'public.coach_availability_rule': PublicCoachAvailabilityRule;
   'public.coach_leave': PublicCoachLeave;
+  'public.coach_pay': PublicCoachPay;
   'public.coach_price_override': PublicCoachPriceOverride;
   'public.coach_tier': PublicCoachTier;
   'public.coach_tier_price': PublicCoachTierPrice;
