@@ -8,7 +8,7 @@
   },
   "scripts": {
     "lint": "node tools/lint/banned-patterns.mjs",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tests/tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tests/tsconfig.json && tsc --noEmit -p apps/web/tsconfig.json",
     "test": "vitest run",
     "test:zones": "TZ=UTC vitest run && TZ=Asia/Bangkok vitest run",
     "test:db": "vitest run packages/db packages/secrets tests/rls tests/concurrency --passWithNoTests",
