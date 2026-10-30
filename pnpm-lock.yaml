@@ -109,6 +109,9 @@ importers:
       '@booq/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@booq/line':
+        specifier: workspace:*
+        version: link:../../packages/line
       graphile-worker:
         specifier: ^0.18.0
         version: 0.18.0(typescript@5.9.3)
