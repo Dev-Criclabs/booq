@@ -97,8 +97,8 @@ T01 to T06 first (data and release), then T07 to T14 in sequence (the claim), T1
 
 ## Follow-ups added by F07 and F08 (gate 3 of those features, 30 Oct 2026)
 
-- [ ] **F03-T30** Migration 0225: `booking.release_reason` gains `offer_ended` (a waitlist offer that ended: declined, expired or passed on); F10's `booking_released` skips it as it skips `payment_unavailable`. IDs: CLASS-02-AC2, AC14, WAIT-01-AC3, D155. Role: BE-B · Deps F03-T02 (booking), F08 design C-1 · Size: S
+- [ ] **F03-T30** Migration 0226: `booking.release_reason` gains `offer_ended` (a waitlist offer that ended: declined, expired or passed on); F10's `booking_released` skips it as it skips `payment_unavailable`. IDs: CLASS-02-AC2, AC14, WAIT-01-AC3, D155. Role: BE-B · Deps F03-T02 (booking), F08 design C-1 · Size: S
   Tests first: `release_hold(booking, 'offer_ended')` releases the hold and returns every reservation through the release handlers; the reason is accepted only for a booking with a `waitlist_entry_id` once F08-T03 exists; existing reasons are unchanged.
-- [ ] **F03-T31** Migration 0226: `app.move_booking` calls the second coach rules handler `app.coach_rules_check_move(club, coach, resource, starts[], booking)` that F07-T03 registers, so a moved booking ignores its own row. IDs: COACH-01-AC11, R3 (F07), BOOK-06. Role: BE-B · Deps F03 `move_booking`, F07-T03 · Size: S
+- [ ] **F03-T31** Migration 0227: `app.move_booking` calls the second coach rules handler `app.coach_rules_check_move(club, coach, resource, starts[], booking)` that F07-T03 registers, so a moved booking ignores its own row. IDs: COACH-01-AC11, R3 (F07), BOOK-06. Role: BE-B · Deps F03 `move_booking`, F07-T03 · Size: S
   Tests first: moving a booking inside a six hour run does not count its own row twice; a move that breaks the rest rule is refused; with F07 not installed the move behaves as before.
 
