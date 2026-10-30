@@ -1149,6 +1149,14 @@ export interface PublicReceiptCounter {
   is_test: boolean;
 }
 
+export interface PublicReceiptPrint {
+  club_id: string;
+  receipt_id: string;
+  printed_by: string;
+  printed_at: string;
+  is_test: boolean;
+}
+
 export interface PublicReceiptVoid {
   club_id: string;
   id: string;
@@ -1366,6 +1374,7 @@ export interface Tables {
   'public.rate_limit_hit': PublicRateLimitHit;
   'public.receipt': PublicReceipt;
   'public.receipt_counter': PublicReceiptCounter;
+  'public.receipt_print': PublicReceiptPrint;
   'public.receipt_void': PublicReceiptVoid;
   'public.resource': PublicResource;
   'public.rich_menu': PublicRichMenu;
