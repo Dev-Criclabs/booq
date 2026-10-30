@@ -61,6 +61,8 @@ Migration numbers are 0301 to 0399 and rise with task order (the migrator refuse
 - [ ] **F04-T12d** Pay, part (d): the zero money path through the claim (no hold, no Beam, confirmed in the same transaction) and the response `{ orderId, holdExpiresAt | null, payment | null, confirmed }`. IDs: PAY-07-AC1 to AC5, PROMO-01-AC13, R7-AC3, decision D64. Role: BE-C · Deps T12c · Size: S
   Tests first: zero money confirms in the same transaction with no charge; a taken slot refuses and nothing is used up; a 100 percent code follows the zero path; any failed step rolls everything back.
   Receipt: calls `app.issue_receipt` through `app.payment_ports` (the F13 issue_receipt port; a fake until F13 exists), in this task (F13 design; orchestrator 30 Oct).
+- [x] **F04-T13-db** Migration 0320: `app.customer_dob_for_pricing(customer) returns date` (definer, granted to `booq_app`, owner and front desk only): the date of birth or null, for staff Pay to pick the price group; `customer: not found` for a person who is missing, of another club, inactive, anonymised or an unclaimed import. IDs: R2-AC1, ROLE-01-AC4, D12, D35, CC-1. Role: Architect · Deps T12b-db · Size: S
+  Tests first: `customer-dob-for-pricing.test.ts`.
 - [ ] **F04-T13** `GET /orders/{id}` and the staff routes `POST /staff/orders/quote` and `/pay`. IDs: R7-AC2, ROLE-01-AC4, CC-2. Role: BE-C · Deps T12d · Size: S
   Tests first: own or staff only; the snapshot is unchanged after prices and names change; staff booking as a player pays as a player.
   Also (moved from F03-T22, which no longer has `POST /staff/bookings`): a staff booking awaiting payment holds the slot for the hold time (D43).
