@@ -9,6 +9,7 @@ export const CHECKOUT_TEXT_KEYS = {
   selection_invalid: 'P-new.not_on_the_hour',
   price_not_set: 'P-new.price_not_set',
   coach_price_not_set: 'P-new.coach_price_not_set',
+  coach_at_checkout_disabled: 'P-new.coach_at_checkout_disabled',
   add_on_not_for_sale: 'P-new.add_on_not_for_sale',
   code_not_valid: 'P-new.code_not_valid',
   code_expired: 'P-new.code_expired',
