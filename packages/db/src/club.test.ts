@@ -57,11 +57,7 @@ describe('club (PLAT-01)', () => {
     expect(r.rows).toEqual([{ slug: 'club-a' }]);
     await expect(db.withClubTx(ctx(A), (tx) => tx.query(`update public.club set status = 'live'`))).rejects.toThrow(/permission denied/i);
     await expect(db.withClubTx(ctx(A), (tx) => tx.query(`update public.club set slug = 'zzz'`))).rejects.toThrow(/permission denied/i);
-    // Writing needs an audit source; F01-T11 makes withClubTx set it.
-    const ok = await db.withClubTx(ctx(A), async (tx) => {
-      await tx.query(`select set_config('app.source', 'admin', true)`);
-      return tx.query(`update public.club set name_en = 'Renamed'`);
-    });
+    const ok = await db.withClubTx({ ...ctx(A), source: 'admin' }, (tx) => tx.query(`update public.club set name_en = 'Renamed'`));
     expect(ok.rowCount).toBe(1);
   });
 

@@ -11,7 +11,9 @@ export type ProblemKind =
   | 'wrong-schema-for-class'
   | 'is-test-not-registered'
   | 'is-test-registered-without-column'
-  | 'is-test-trigger-missing';
+  | 'is-test-trigger-missing'
+  | 'audit-trigger-missing'
+  | 'audit-undeclared';
 
 export interface Problem {
   kind: ProblemKind;
@@ -111,6 +113,27 @@ export async function checkTableClasses(db: Pick<Pool, 'query'>, registry: Regis
     }
     for (const key of registered.keys()) {
       if (!rows.some((t) => `${t.schema}.${t.name}` === key)) problems.push({ kind: 'is-test-registered-without-column', table: key, detail: 'table does not exist' });
+    }
+  }
+
+  // Audited tables (F01-T11): the registry's `audited` flag, audit.registry and the audit_row trigger agree.
+  const aud = await db.query(`select to_regclass('audit.registry') is not null as present`);
+  if (aud.rows[0].present) {
+    const { rows: ar } = await db.query(
+      `select r.table_schema || '.' || r.table_name as key,
+              exists (select 1 from pg_trigger g
+                       where g.tgrelid = to_regclass(quote_ident(r.table_schema) || '.' || quote_ident(r.table_name))
+                         and g.tgname = 'audit_row' and not g.tgisinternal) as has_trigger
+         from audit.registry r`,
+    );
+    const inAudit = new Map(ar.map((r) => [r.key as string, r.has_trigger as boolean]));
+    for (const [key, entry] of Object.entries(registry)) {
+      if (!entry.audited || !seen.has(key)) continue;
+      if (inAudit.get(key) !== true) problems.push({ kind: 'audit-trigger-missing', table: key });
+    }
+    for (const [key, hasTrigger] of inAudit) {
+      if (!registry[key]?.audited) problems.push({ kind: 'audit-undeclared', table: key });
+      else if (!hasTrigger && !problems.some((p) => p.kind === 'audit-trigger-missing' && p.table === key)) problems.push({ kind: 'audit-trigger-missing', table: key });
     }
   }
 

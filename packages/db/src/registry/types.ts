@@ -11,6 +11,8 @@ export interface TableEntry {
   scope?: 'club' | 'self';
   /** Columns of an S table that look personal but are allowed (for example the owner contact, decision D2). */
   allowColumns?: string[];
+  /** Changes are audited (F01 design 8): needs a row in audit.registry and the audit_row trigger. */
+  audited?: boolean;
 }
 
 /** One feature's tables, keyed by "schema.table". */
