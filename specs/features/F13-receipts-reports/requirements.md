@@ -112,7 +112,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, R- receipt boards. Boards: R-R
 - Club scope: legal details per club from setup (P2 step 1).
 - TEXT: every label from L keys; the legal name and address are club settings, not keys.
 
-**Canvas.** R-Receipt-TH, R-Receipt-EN (QA notes the boards are not in the repo; Product to export images or a text list, Q6), H-C17-Profile-receipts.
+**Canvas.** R-Receipt-TH, R-Receipt-EN (in the repo in the canvas backup, `docs/orchestrator/canvas-backup/12ae5a85-7762-44b9-9b19-9df906c1e373/project/R-Receipt-EN.dc.html and R-Receipt-TH.dc.html`; the spec wins over the canvas and the sample data is not copied, `docs/canvas-gaps.md` B5 and B9), H-C17-Profile-receipts.
 
 ---
 
@@ -267,5 +267,5 @@ Answered by D106, D112 and D119 and removed: what a void does, the receipt year,
 
 Still open and not parked:
 
-3. **Canvas boards for the receipt (QA RCPT-02).** The R-Receipt boards are not in the repo. Product to export images or a text list so the comparison can be tested.
+3. **Canvas boards for the receipt (QA RCPT-02).** Settled: the R-Receipt boards are in the repo in the canvas backup (`docs/orchestrator/canvas-backup/12ae5a85-7762-44b9-9b19-9df906c1e373/project/R-Receipt-EN.dc.html and R-Receipt-TH.dc.html`), so the comparison can be tested. The spec wins over the canvas; the sample data (numbers, dates, expiry) is not copied (`docs/canvas-gaps.md` B5, B9).
 4. **Report formulas (R5).** The rows marked Proposal need the user's approval (D119 invited this proposal).

@@ -1,6 +1,6 @@
 # F13 Receipts, reports and daily close · Design
 
-Status: **DRAFT for approval (gate 2).** Drafted 30 Oct 2026 from the approved F13 requirements (`requirements.md`, approved 30 Oct 2026, decisions D106, D112, D119 applied; Q4 VAT layout and Q12 retention are parked). The Architect reviews it. A change to anything below goes through the PRD, then the hand-off, then this file. Tasks (gate 3) follow approval.
+Status: **Approved 30 Oct 2026 (gate 2, D153).** Drafted 30 Oct 2026 from the approved F13 requirements (`requirements.md`, approved 30 Oct 2026, decisions D106, D112, D119 applied; Q4 VAT layout and Q12 retention are parked). The Architect's review findings of 30 Oct 2026 are folded in. A change to anything below goes through the PRD, then the hand-off, then this file. Tasks (gate 3) follow approval.
 
 Feature: F13 Receipts, reports and daily close. Requirement IDs: RCPT-01, RCPT-02, RCPT-03 and the local rules R1 to R5 of the requirements. Depends on F05. Wave 3.
 
@@ -32,11 +32,12 @@ F13 uses the number block 0701 to 0799 (assumption A-1; the build plan names blo
 | `0701_receipt.sql` | `receipt`, `receipt_counter` (FA §2.4), `receipt_void`; append-only triggers; unique indexes |
 | `0702_issue_receipt.sql` | `app.issue_receipt` and its helpers; test series handling |
 | `0703_payment_port.sql` | Registers the F13 port in `app.payment_ports` (§4.1) |
-| `0704_daily_close.sql` | `daily_close` |
-| `0705_coach_payout.sql` | `coach_payout`, `coach_payout_adjustment` |
-| `0706_report_views.sql` | The report views and functions of §4.7 |
-| `0707_grants_policies.sql` | Policies and grants; the accountant column limits (D35) |
-| `0708_settings_keys.sql` | Registry rows: none are new (`receipt_prefix` is `club.receipt_prefix` from P2 step 1, `vat_enabled` is F01); a CHECK that Go live needs the prefix (D106) is F01's checklist item |
+| `0704_void_receipt.sql` | `app.void_receipt` (§4.3) |
+| `0705_daily_close.sql` | `daily_close` and `app.run_daily_close` |
+| `0706_report_views_a.sql` | Report views: cash by type, package sales, online against staff, no show rate, new against returning |
+| `0707_report_views_b.sql` | Report views: revenue earned, value owed, occupancy, partner report |
+| `0709_coach_payout.sql` | `coach_payout`, `coach_payout_adjustment` and the payout functions (late number: waits on the F07 and F12 coach pay fields) |
+| `0710_grants_policies.sql` | Policies and grants; the accountant column limits (D35). No new settings rows: `receipt_prefix` is `club.receipt_prefix` from P2 step 1 and `vat_enabled` is F01; a CHECK that Go live needs the prefix (D106) is F01's checklist item |
 
 ### 3.1 `receipt` (class D)
 
@@ -70,7 +71,7 @@ A real receipt takes `series = Bangkok year of issue` from `app.now()` (FA §7),
 - **In one transaction**, with the counter lock taken **last** in the lock order of FA §3.4: build the snapshot from the order, its lines and payments; take the series (real or test, §3.2); `insert into receipt_counter ... on conflict (club_id, series) do update set last_no = receipt_counter.last_no + 1 returning last_no`; insert the receipt. A rollback undoes both, so a failed confirmation leaves no gap and a confirmed one always has its number (RCPT-01-AC2, AC3).
 - **Idempotent:** if the unique key already holds a receipt for the order (or the payment for a wallet credit), return its id and write nothing; a repeated callback changes nothing.
 - **Callers (the events of R4):** `apply_payment` after `applied` and `applied_late` (kind `order`), after a wallet outcome (kind `wallet_credit`, D37, D74, D79, D112), and after a staff wrong amount credit; F04's zero money confirm (D64, no payment id); F05's cash route; `grant_package` orders as part of the same paid order. A refund to the wallet on a cancel or closure calls nothing (D119).
-- **Refusals:** an order of another club, an order with no confirmed payment and not zero money, or a missing `club.receipt_prefix` raises (`receipt:prefix_missing`), which rolls the payment back rather than issue a number with no prefix; Go live is blocked on the prefix so this does not occur in Live (D106).
+- **Refusals:** an order of another club, an order with no confirmed payment and not zero money, or a missing `club.receipt_prefix` **for the real series** raises (`receipt:prefix_missing`), which rolls the payment back rather than issue a number with no prefix. The test series (a club in Testing) uses the `TEST` prefix and needs no club prefix, so a Testing club without one never fails here (Architect review of 30 Oct); Go live is blocked on the prefix so the raise does not occur in Live (D106).
 
 ### 4.2 Money by method (FA §2.4)
 
@@ -175,7 +176,7 @@ First real receipt after Go live is 000001 of its year and the test series never
 
 New keys in `locales/pending/F13.json`: Void, Copy of receipt, Test receipt, the wallet credit receipt wording, receipt lines for credit, wallet and each method, daily close labels and totals, void reason, report titles and labels, payout labels, export confirmation; writers own the wording (D51). Existing L keys first (for example L-0061).
 
-Boards: R-Receipt-TH, R-Receipt-EN, H-A14-Receipts, H-A13-Reports, G-A13b-Coach-payouts, H-C17-Profile-receipts and the T- twins; G-C17-Privacy for what stays on record. The R-Receipt boards are not in the repo (Q3 of the requirements).
+Boards: R-Receipt-TH, R-Receipt-EN, H-A14-Receipts, H-A13-Reports, G-A13b-Coach-payouts, H-C17-Profile-receipts and the T- twins; G-C17-Privacy for what stays on record. The R-Receipt boards are in the canvas backup (`docs/orchestrator/canvas-backup/12ae5a85-7762-44b9-9b19-9df906c1e373/project/R-Receipt-EN.dc.html and R-Receipt-TH.dc.html`); the spec wins over the canvas and the sample data is not copied (`docs/canvas-gaps.md` B5, B9).
 
 ## 13. Assumptions to confirm (recommended defaults, D147)
 

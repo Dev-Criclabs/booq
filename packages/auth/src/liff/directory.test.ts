@@ -15,9 +15,9 @@ function fakeDb(rows: Record<string, unknown>[], seen: { sql: string; params: un
 describe('createDbDirectory', () => {
   it('finds a club by slug through app.club_sign_in_target and returns the server-side fields', async () => {
     const seen: { sql: string; params: unknown[]; ctx: any }[] = [];
-    const d = createDbDirectory(fakeDb([{ club_id: 'c1', status: 'live', liff_id: 'L', login_channel_id: 'LC' }], seen));
-    expect(await d.clubBySlug('hunter')).toEqual({ clubId: 'c1', status: 'live', liffId: 'L', loginChannelId: 'LC' });
-    expect(seen[0]).toMatchObject({ sql: 'select club_id, status, liff_id, login_channel_id from app.club_sign_in_target($1)', params: ['hunter'] });
+    const d = createDbDirectory(fakeDb([{ club_id: 'c1', status: 'live', liff_id: 'L', login_channel_id: 'LC', default_language: 'en' }], seen));
+    expect(await d.clubBySlug('hunter')).toEqual({ clubId: 'c1', status: 'live', liffId: 'L', loginChannelId: 'LC', defaultLanguage: 'en' });
+    expect(seen[0]).toMatchObject({ sql: 'select club_id, status, liff_id, login_channel_id, default_language from app.club_sign_in_target($1)', params: ['hunter'] });
     expect(seen[0]!.ctx.userId).toBeNull();
   });
   it('a club with no LINE connection yet cannot sign anyone in', async () => {
