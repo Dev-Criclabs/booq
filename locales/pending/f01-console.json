@@ -142,6 +142,21 @@
     "X-new.weekday_4": "Thursday",
     "X-new.weekday_5": "Friday",
     "X-new.weekday_6": "Saturday",
-    "X-new.weekday_7": "Sunday"
+    "X-new.weekday_7": "Sunday",
+    "X-new.launch_title": "Launch · {clubName}",
+    "X-new.launch_back": "Back to the club",
+    "X-new.launch_link": "Launch checks",
+    "X-new.launch_not_testing": "Results can only be recorded while the club is in Testing.",
+    "X-new.launch_not_recorded": "This check is worked out from the club's data and cannot be recorded by hand.",
+    "X-new.launch_admin_only": "Only a platform admin can record results.",
+    "X-new.launch_by_hand": "Recorded by hand",
+    "X-new.launch_derived": "Worked out from the club's data",
+    "X-new.launch_mark_pass": "Mark passed",
+    "X-new.launch_mark_fail": "Mark failed",
+    "X-new.launch_mark_pending": "Mark waiting",
+    "X-new.launch_recorded": "The result was recorded.",
+    "X-new.launch_all_pass": "Every check has passed.",
+    "X-new.launch_some_open": "{count} checks have not passed yet.",
+    "X-new.launch_empty": "No checks are required yet. A BOOQ admin must set the list in the settings."
   }
 }
