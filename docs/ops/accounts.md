@@ -44,3 +44,36 @@ When an account is ready, the **You** or **Club** person adds DevOps as a member
 3. Test LINE and Beam sandbox values into staging, and into Hunter's Testing configuration on production.
 4. Health route, job heartbeats, token check and Beam callback counters.
 5. First restore drill.
+
+## F02-T00: LINE test setup (exact list)
+
+Why: F02-T00 checks that the user ID from LINE Login is the same ID the Messaging API uses to push to that person (design Q33, LINE-01-AC5), and that the Add friend option works as decided (D38). If the IDs differ, the F02 design reopens, so do this before F02 is built.
+
+**You do** (a company LINE Business ID, not a personal one; names in the LINE consoles may differ a little from these):
+1. In LINE Developers, create **one test provider**. Name it so nobody mistakes it for a club (for example "BOOQ test"). It is the staging test provider from row 6 above.
+2. In that provider, create **one LINE Login channel**. Note its **channel ID** and **channel secret**.
+3. In the same provider, create **one Messaging API channel** (it comes with an Official Account) and link it to the Login channel. Note its **channel secret** and issue a **channel access token**. Pick the language of the account; make it Thai.
+4. In the Login channel, create **one LIFF app**:
+   - Endpoint URL: `https://{domain}/c/{slug}` as in the task. The domain is not decided yet (D6), so use the staging address DevOps gives you (a stable HTTPS address from the hosting provider). The URL can be edited later.
+   - Scope: the profile and OpenID scopes the F02 design asks for (`openid`, `profile`).
+   - **Add friend option: On (normal)** (D38).
+   - Note the **LIFF ID**.
+5. Choose **one test user**: a real LINE account of someone on the team. They **add the test Official Account as a friend**, and open the LIFF app once from the phone.
+6. Give **DevOps** the values through the safe route (`secrets.md`). Never paste channel secrets or tokens into chat or the repo.
+
+**DevOps does:** set the Messaging API webhook URL to a throwaway receiver that records only `source.userId`, no message text (a small script in `infra/`, not written yet because it needs your staging address); sign in through LIFF as the test user and compare the Login `sub` with the webhook `source.userId`; send one push to that ID and confirm it arrives; write the result (IDs match, or not) into `design.md` section 3.3 of F02; delete the throwaway receiver and rotate the test channel token afterwards.
+
+**Done when:** a note in F02 `design.md` section 3.3 says the IDs match. If they do not, stop and tell the Orchestrator.
+
+## Beam Playground (for F05, before its build starts)
+
+Why: the F05 design guesses a few things about Beam that its public documentation does not say (`design.md` section 3.3, G1 to G13). DevOps checks them in Beam's Playground, which "doesn't move real money", and writes the answers back before the F05 build starts. This needs Hunter's Playground keys, not live keys.
+
+**You and the club do:**
+1. Hunter (the club) has, or applies for, a Beam merchant account. This is row 10 above. The Playground is separate from production: its keys, host and webhooks are different and isolated.
+2. In the Beam dashboard, for the **Playground**, get: the **merchant ID**, the **Playground API key**, and the **HMAC key** for webhooks (Beam shows it under Developers, Webhooks). Ask Beam, if it is not shown. Keep production keys out of this step.
+3. Register a **Playground webhook URL** in the dashboard. DevOps gives you the URL once the staging address exists. It carries a long random token in its path (`/api/webhooks/beam/{token}`), so treat it like a secret.
+4. Give DevOps the three values through the safe route (a password manager entry shared with DevOps, or a GitHub environment secret in an environment named `beam-playground`). Not in chat, not in the repo.
+5. Ask Beam sales for the confirmed fees and whether the Playground can re-send a webhook (open items in the F05 design).
+
+**DevOps does:** run the checks G1 to G13 against the Playground with those keys, one by one, and write what happened under section 3.3 of the F05 design (G1 amount unit, G2 and G3 expiry, G4 referenceId, G5 lookup fields, G6 one HMAC key, G7 webhook delivery and Mark as Succeeded, G8 idempotency key, G9 read-only key test call, G10 image, G11 answer time, G12 UTC timestamps, G13 long webhook path). If any guess is wrong, the "If wrong" column of the design says what changes, and the Orchestrator is told. At the end the Playground keys stay in the Testing configuration of Hunter on production (D16) and the live keys are added only at Go live (runbook 13).

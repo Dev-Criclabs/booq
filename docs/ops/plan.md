@@ -139,18 +139,21 @@ Status page: not for 7 Dec. Revisit after Hunter's soft launch.
 
 ## 7. CI/CD
 
-`.github/workflows/ci.yml` (written now, passes on an empty repo):
+`.github/workflows/ci.yml`, adapted to the pnpm monorepo (build plan sections 2 and 4). Tested locally against the F01-T01 scaffold; it has not run on GitHub yet.
 
-| Job | Runs now | When code exists |
+| Job | Runs now | What it runs |
 |---|---|---|
-| Detect code | yes | tells the others whether `package.json` exists |
-| Locale files | yes | JSON valid, en and th have the same keys (X keys are English only), same `{variables}`. Warns until `LOCALE_STRICT=true` |
-| lint, typecheck, test, locale:audit, text:check | skipped | run as `npm|pnpm|yarn run <name>`. A missing script is a notice until `CI_STRICT=true`, then it fails |
+| checks (matrix) | yes | `pnpm run lint`, `pnpm run typecheck`, `pnpm run test` under TZ=UTC and under TZ=Asia/Bangkok, `tools/i18n/audit.mjs --no-csv` (locale check), `tools/i18n/lint-hardcoded-text.mjs apps packages`, the locale tool self tests |
+| wording guard | yes, pull requests only | `tools/i18n/check-wording.mjs origin/<base>` (TEXT-04). The writers' refined files go in a pull request labelled `wording-update`, which skips it |
+| repository rules | partly | lockfile drift (a warning until `CI_STRICT`), then `tools/check-table-classes.mjs`, `tools/check-audit-triggers.mjs`, `tools/check-migrations.mjs` (duplicate or out of order migration numbers) when each exists |
+| database tests and generated types | when `supabase/config.toml` exists | Supabase local stack (`supabase start`, which applies every migration from scratch), `pnpm run test:db`, then `pnpm run db:types` and a check that nothing changed |
 | CI result | yes | one status to require in branch protection |
 
-Script contract for the other roles: `lint`, `typecheck`, `test`, `locale:audit` and `text:check` in `package.json`. `locale:audit` and `text:check` are Content/i18n's (Development Plan, role 9). `test` must use fakes and no network. CI uses no secrets. Please turn on `CI_STRICT` when F01 lands.
+Contract with other roles: the three `tools/check-*.mjs` names, and the root scripts `test:db` and `db:types`, are my proposal; the Architect may rename them (F01-T05, T36), then CI is edited to match. A missing one is a notice until you set the repository variable `CI_STRICT=true`, then it fails. Turn `CI_STRICT` on when F01-T05 and F01-T36 have landed. CI uses no secrets. Tests use the fakes and no network.
 
-Still to add when code exists, each needs a person's call so they are not in this first workflow: RLS tests against a CI Postgres, Playwright end to end run against a preview, dependency audit, build, migration dry run, deploy jobs.
+Found while testing: `pnpm install --frozen-lockfile` rewrote `pnpm-lock.yaml` (it adds the workspace packages, 24 lines). The F01-T01 owner should commit the refreshed lockfile. CI warns about it now.
+
+Still to add when they exist, each needs a person's call: Playwright end to end run against a preview, dependency audit, build, deploy jobs. The `supabase` CLI flags in the database job are from memory and must be checked the first time the job runs.
 
 Repository settings to apply by the user (cannot be done from a file): protect `main`, require the `CI result` check and a review, enable secret scanning and push protection, enable Dependabot alerts.
 
