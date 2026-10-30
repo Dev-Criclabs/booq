@@ -151,3 +151,62 @@ function serveNow(table: readonly Route<unknown>[], deps: ServeDeps): (request: 
     return json(200, result.body);
   }
 }
+
+export interface WebhookContext {
+  params: Promise<{ token: string }>;
+}
+
+/**
+ * A provider's call to one public route that is not under a club address (the LINE webhook, F02-T17). The club comes from the
+ * token in the path, which the handler looks up; this function knows no club and no session. The handler gets the exact text of
+ * the body (`rawBody`) and the headers, because the provider signs the bytes; the body is not parsed here. Answers are JSON codes.
+ */
+export type WebhookSource = { hook: Route<unknown>; deps: Pick<ServeDeps, 'routeDeps' | 'maxBodyBytes'> };
+export function serveWebhook(hook: Route<unknown>, deps: Pick<ServeDeps, 'routeDeps' | 'maxBodyBytes'>): (request: Request, context: WebhookContext) => Promise<Response>;
+/** Or `serveWebhook(() => ({ hook, deps }))` to build them on the first request, when the deployment's settings are read. */
+export function serveWebhook(source: () => WebhookSource): (request: Request, context: WebhookContext) => Promise<Response>;
+export function serveWebhook(first: Route<unknown> | (() => WebhookSource), second?: Pick<ServeDeps, 'routeDeps' | 'maxBodyBytes'>): (request: Request, context: WebhookContext) => Promise<Response> {
+  if (typeof first === 'function') {
+    let built: ((request: Request, context: WebhookContext) => Promise<Response>) | undefined;
+    return async (request, context) => {
+      try {
+        built ??= (() => {
+          const s = first();
+          return serveWebhook(s.hook, s.deps);
+        })();
+      } catch {
+        return fail(500, 'internal');
+      }
+      return built(request, context);
+    };
+  }
+  return serveWebhookNow(first, second!);
+}
+
+function serveWebhookNow(
+  hook: Route<unknown>,
+  deps: Pick<ServeDeps, 'routeDeps' | 'maxBodyBytes'>,
+): (request: Request, context: WebhookContext) => Promise<Response> {
+  const problems = checkRouteTable([hook.def]);
+  if (problems.length) throw new Error(`webhook route: ${problems.map((p) => p.problem).join('; ')}`);
+  if (hook.def.public !== true) throw new Error('webhook route must be public: it is authenticated by its signature, not a session');
+  return async (request, context) => {
+    try {
+      if (request.method.toUpperCase() !== hook.def.method) return fail(405, 'method_not_allowed');
+      const { token } = await context.params;
+      const declared = Number(request.headers.get('content-length'));
+      if (Number.isFinite(declared) && declared > deps.maxBodyBytes) return fail(413, 'payload_too_large');
+      const rawBody = await request.text();
+      if (new TextEncoder().encode(rawBody).length > deps.maxBodyBytes) return fail(413, 'payload_too_large');
+      const headers: Record<string, string> = {};
+      request.headers.forEach((v, k) => {
+        headers[k.toLowerCase()] = v;
+      });
+      const result = await hook.handle({ session: null, input: { token }, rawBody, headers }, deps.routeDeps);
+      if (!result.ok) return fail(result.status, result.code);
+      return json(200, result.body instanceof Reply ? result.body.body : result.body);
+    } catch {
+      return fail(500, 'internal');
+    }
+  };
+}

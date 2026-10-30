@@ -31,7 +31,7 @@ export const tables: Fragment = {
   'public.club_invite': { class: 'D', audited: true },
   'public.club_tester': { class: 'D', audited: true },
   // Connections and secrets (F01-T09, migration 0012). Secrets are write-only.
-  'public.line_connection': { class: 'S', audited: true },
+  'public.line_connection': { class: 'S', audited: true, allowColumns: ['webhook_token_hash'] },
   'public.payment_connection': { class: 'S', audited: true, allowColumns: ['webhook_token_hash_test', 'webhook_token_hash_live'] },
   'public.club_secret': { class: 'S', audited: true },
   'public.club_secret_read': { class: 'D' },

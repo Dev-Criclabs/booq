@@ -8,6 +8,7 @@
     "@booq/auth": "workspace:*",
     "@booq/db": "workspace:*",
     "@booq/domain": "workspace:*",
+    "@booq/secrets": "workspace:*",
     "@booq/time": "workspace:*",
     "next": "16.4.2",
     "react": "19.3.1",

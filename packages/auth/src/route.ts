@@ -34,13 +34,17 @@ export interface RouteRequest {
   cookie?: string | undefined;
   /** The JSON body exactly as sent, for routes that must reject unknown fields. `input` is the merge of query, body and path. */
   body?: unknown;
+  /** Webhooks only (serveWebhook): the body as the exact text received, for a signature over the bytes. */
+  rawBody?: string | undefined;
+  /** Webhooks only: the request headers, names in lower case. */
+  headers?: Readonly<Record<string, string>> | undefined;
 }
 
 export interface RouteDeps {
   hasFeature(clubId: string, featureKey: string): Promise<boolean>;
 }
 
-export type RouteContext = RouteSession & { input: unknown; cookie?: string | undefined; body?: unknown };
+export type RouteContext = RouteSession & { input: unknown; cookie?: string | undefined; body?: unknown; rawBody?: string | undefined; headers?: Readonly<Record<string, string>> | undefined };
 
 /** A handler returns this to set a status or a cookie along with the body. The transport unwraps it. */
 export class Reply<T> {
@@ -99,7 +103,7 @@ export function route<T>(def: RouteDeclaration, handler: (ctx: RouteContext) => 
         if (!(await deps.hasFeature(session.clubId, def.feature))) return { ok: false, status: 403, code: 'feature_disabled' };
       }
       try {
-        const ctx = { ...(session as RouteSession), input: req.input, cookie: req.cookie, body: req.body };
+        const ctx = { ...(session as RouteSession), input: req.input, cookie: req.cookie, body: req.body, rawBody: req.rawBody, headers: req.headers };
         return { ok: true, status: 200, body: await handler(ctx) };
       } catch (e) {
         if (e instanceof RouteError) return { ok: false, status: e.status, code: e.code };
