@@ -38,6 +38,7 @@ begin
   return true;
 end $$;
 alter function app.message_params_ok(jsonb) owner to booq_owner;
+revoke all on function app.message_params_ok(jsonb) from public;
 
 create table public.message_outbox (
   club_id uuid not null,
