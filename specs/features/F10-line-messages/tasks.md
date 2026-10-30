@@ -75,3 +75,9 @@ Not startable until their lists exist: F10 enqueues are called by F07 (substitut
 Open question for the orchestrator (Q1): `owner_cap_paid_over` once a month is in the design only. Recommended default: keep once a month; the reviewer asked to confirm or drop it.
 
 Order: T01 to T05 first (T01 can run alongside), then T06, T07, then T08, T09, T10, T11 in parallel where deps allow, T12, T13, the routes, the screens, then F. About 22 tasks, each under a day.
+
+## Follow-up added by F08 (gate 3 of that feature, 30 Oct 2026)
+
+- [ ] **F10-T23** Catalogue additions: the always sent kinds `waitlist_ended` and `class_session_changed` (Flex template, keys in `locales/pending/F10.json`, dedupe keys `waitlist_ended:{entry_id}` and `class_changed:{session_id}:{version}`), and the sender calls `app.waitlist_pass_on` for an undeliverable `waitlist_offer`. IDs: CLASS-02-AC2, AC11, LINE-05, LINE-07-AC5, LINE-07-AC6. Role: BE-P · Deps T06, T10, F08-T06 · Size: S
+  Tests first: each kind renders in Thai and English with no text in the template; an undeliverable offer on a free plan at 100 percent passes to the next entry; the messages are always sent (not dropped at 80 percent).
+

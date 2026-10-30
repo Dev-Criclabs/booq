@@ -42,6 +42,7 @@ Depends on: F01 T09 (connections and secrets), T18, T34 (worker); F03 T13, T14 (
   Tests first: under and over payments are credited in full; front desk and owner only; the flag opens on a mismatch and resolves.
 - [ ] **F05-T07** Migration 0408: cash at the front desk (`app.take_cash`): reason code and note, cancels a pending Beam payment of the order, confirms through `confirm_booking`, receipt, audit. IDs: PAY-06, decision D56. Role: Arch · Deps T05a · Size: S
   Tests first: reason code and note rules; only front desk and owner; allowed for packages; audited; a receipt; a later cancel returns to the wallet; the pending Beam payment is cancelled.
+  Receipt: calls `app.issue_receipt` through `app.payment_ports` (the F13 issue_receipt port; a fake until F13 exists), in this task (F13 design; orchestrator 30 Oct).
 
 ## C. Callback, reconcile, jobs
 
