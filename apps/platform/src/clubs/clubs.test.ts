@@ -25,7 +25,7 @@ beforeEach(async () => {
   admin = await staff('admin@booq.example', 'platform_admin', '99999999-0000-4000-8000-000000000001', 'Ada Admin');
   spec = await staff('spec@booq.example', 'onboarding_specialist', '99999999-0000-4000-8000-000000000002', 'Sam Specialist');
   other = await staff('other@booq.example', 'onboarding_specialist', '99999999-0000-4000-8000-000000000003', 'Olu Other');
-  templateId = (await tdb.query(`insert into platform.template (key, name) values ('tennis', 'Tennis') returning id`)).rows[0].id;
+  templateId = (await tdb.query(`select id from platform.template where key = 'tennis'`)).rows[0].id;   // seeded by migration 0018
   pdb = createPlatformDb({ connectionString: tdb.url, max: 1 });
   svc = createClubService({ db: pdb });
 });

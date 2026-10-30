@@ -210,7 +210,7 @@ describe('editing (PLAT-02-AC2 to AC5, AC7)', () => {
     expect((await tdb.query(`select feature_key, enabled from public.club_feature order by 1`)).rows).toEqual([{ feature_key: 'coaching', enabled: true }, { feature_key: 'waitlist', enabled: false }]);
 
     expect((await svc.putSetup(spec, TEST, 'plan', { plan_trial_ends_at: '2027-01-31T00:00:00Z' })).ok).toBe(true);
-    const t = await tdb.query(`insert into platform.template (key, name) values ('tennis', 'Tennis') returning id`);
+    const t = await tdb.query(`select id from platform.template where key = 'tennis'`);   // seeded by migration 0018
     expect((await svc.putSetup(spec, TEST, 'template', { template_id: t.rows[0].id })).ok).toBe(true);
     expect((await tdb.query(`select template_id from public.club where id = $1`, [TEST])).rows[0].template_id).toBe(t.rows[0].id);
   });
