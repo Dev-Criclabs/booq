@@ -164,7 +164,12 @@ describe('the day and the money (RCPT-03-AC1, AC2)', () => {
     try {
       await c.query('begin');
       await c.query('set local session_replication_role = replica');   // the fixture ledger needs no packages
-      await c.query(`insert into public.credit_ledger (club_id, package_id, change, reason, order_line_id, created_at, dedupe_key) values ($1, gen_random_uuid(), 0, 'use', $2, '2026-12-29T06:00:00Z', 'u1'), ($1, gen_random_uuid(), 0, 'use', $2, '2026-12-29T06:00:00Z', 'u2')`, [A, x.line]);
+      const pk = (await c.query(
+        `insert into public.customer_package (club_id, customer_id, product_id, product_snapshot, credits_total, purchase_date, expires_at)
+         values ($1,$2,gen_random_uuid(),'{"price_satang": 100000}'::jsonb, 5, '2026-12-01', '2027-06-01T00:00:00Z') returning id`,
+        [A, PLAYER],
+      )).rows[0].id as string;
+      await c.query(`insert into public.credit_ledger (club_id, package_id, change, reason, order_line_id, created_at, dedupe_key) values ($1, $3, 0, 'use', $2, '2026-12-29T06:00:00Z', 'u1'), ($1, $3, 0, 'use', $2, '2026-12-29T06:00:00Z', 'u2')`, [A, x.line, pk]);
       await c.query(`insert into public.wallet_ledger (club_id, customer_id, change_satang, reason, order_id, order_line_id, created_at, dedupe_key) values ($1,$2,-10000,'spend',$3,$4,'2026-12-29T06:00:00Z','s1'), ($1,$2,2500,'return',$3,$4,'2026-12-29T07:00:00Z','r1')`, [A, PLAYER, x.order, x.line]);
       await c.query('commit');
     } finally {
@@ -173,7 +178,7 @@ describe('the day and the money (RCPT-03-AC1, AC2)', () => {
     const t = await preview('2026-12-29');
     expect(t['methods']).toEqual({ beam: 0, cash: 0 });
     expect(t['money_total_satang']).toBe(0);
-    expect(t['credit_used']).toEqual({ count: 2, value_satang: 40000 });
+    expect(t['credit_used']).toEqual({ count: 2, value_satang: 40000 });  
     expect([t['wallet_used_satang'], t['wallet_returned_satang']]).toEqual([10000, 2500]);
     expect(t['receipts']).toHaveLength(1);
   });
