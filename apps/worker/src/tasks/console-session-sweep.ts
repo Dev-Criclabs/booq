@@ -1,6 +1,6 @@
 import type { Db } from '@booq/db';
 
-// console_session_sweep (migrations 0051 and 0055). Deletes console sign-in challenges that expired, sessions older than the
+// console_session_sweep (migrations 0051 and 0056). Deletes console sign-in challenges that expired, sessions older than the
 // absolute limit, login states with nothing to remember, and staff enrolment links that expired or were used that long ago. The function reads and returns no club data, so the
 // task runs in the system context. The limit comes from worker config and must not be shorter than the console's own.
 export const CONSOLE_SESSION_SWEEP = 'console_session_sweep';

@@ -120,6 +120,7 @@ describe('startPayment', () => {
     expect(alerts).toEqual([{ kind: 'beam_unreachable', clubId: A }]);
     expect((await tdb.query(`select status, restore_reason from public.promo_redemption where order_id = $1`, [order])).rows).toEqual([{ status: 'restored', restore_reason: 'payment_unavailable' }]);
     expect(await count(`select count(*) as n from public.owner_flag`)).toBe(0);
+    expect((await tdb.query(`select check_key, status, reason from platform.club_health where club_id = $1`, [A])).rows).toEqual([{ check_key: 'beam_charge', status: 'failed', reason: 'unreachable' }]);
     expect(await inTx((tx) => findLiveHold(tx, parsePayRequest({ courtId: COURT, hours: [HOUR], quoteHash: '0'.repeat(64) }).choice, ME))).toBeNull();
   });
 
@@ -128,6 +129,7 @@ describe('startPayment', () => {
     const order = await placed();
     expect(await startPayment(deps(), me, order)).toEqual({ ok: false, code: 'payment_unavailable' });
     expect(alerts).toEqual([{ kind: 'beam_keys_missing', clubId: A }]);
+    expect((await tdb.query(`select check_key, status, reason from platform.club_health where club_id = $1`, [A])).rows).toEqual([{ check_key: 'beam_keys', status: 'failed', reason: 'keys_missing' }]);
     expect(await count(`select count(*) as n from public.owner_flag where kind = 'key_check_failed'`)).toBe(1);
     expect(beam.createRequests).toHaveLength(0);
   });
@@ -146,6 +148,16 @@ describe('startPayment', () => {
     expect(await startPayment(deps(), me, order)).toEqual({ ok: false, code: 'payment_unavailable' });
     expect(alerts).toEqual([{ kind: 'qr_margin_unset', clubId: A }]);
     expect(beam.createRequests).toHaveLength(0);
+  });
+
+  it('a recorded charge sets both Beam checks ok again on the health tile (F05-T04c)', async () => {
+    await tdb.query(`insert into platform.club_health (club_id, check_key, status, reason) values ($1,'beam_charge','failed','unreachable')`, [A]);
+    const order = await placed();
+    expect((await startPayment(deps(), me, order)).ok).toBe(true);
+    expect((await tdb.query(`select check_key, status, reason from platform.club_health where club_id = $1 order by check_key`, [A])).rows).toEqual([
+      { check_key: 'beam_charge', status: 'ok', reason: null },
+      { check_key: 'beam_keys', status: 'ok', reason: null },
+    ]);
   });
 
   it('the key is never in an alert, a result or the stored rows', async () => {

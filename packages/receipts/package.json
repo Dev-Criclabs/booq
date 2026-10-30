@@ -1,0 +1,14 @@
+{
+  "name": "@booq/receipts",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@expo-google-fonts/sarabun": "0.4.1",
+    "pdfkit": "0.17.1"
+  },
+  "devDependencies": {
+    "@types/pdfkit": "0.17.3"
+  }
+}

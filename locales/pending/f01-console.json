@@ -41,6 +41,22 @@
     "X-new.staff_forbidden": "Only a platform admin can manage the team.",
     "X-new.staff_step_up_required": "Confirm your second factor again before this action.",
     "X-new.staff_unavailable": "The team service is not available right now. Try again in a few minutes.",
-    "X-new.staff_bad_input": "Check the name, email and role and try again."
+    "X-new.staff_bad_input": "Check the name, email and role and try again.",
+    "X-new.signin_title": "Sign in to the BOOQ console",
+    "X-new.signin_code_hint": "Enter the code from your authenticator app.",
+    "X-new.signin_submit": "Sign in",
+    "X-new.signin_invalid_credentials": "The email or password is not right.",
+    "X-new.signin_locked": "Too many wrong attempts. This account is locked for a while. Try again later.",
+    "X-new.signin_challenge_invalid": "This sign-in step has expired. Enter your email and password again.",
+    "X-new.signin_unavailable": "Sign-in is not available right now. Try again in a few minutes.",
+    "X-new.signin_rate_limited": "Too many attempts. Wait a moment and try again.",
+    "X-new.signin_link": "Sign in",
+    "X-new.signout": "Sign out",
+    "X-new.stepup_title": "Confirm it is you",
+    "X-new.stepup_hint": "This action needs a fresh check. Enter your password and the code from your authenticator app.",
+    "X-new.stepup_submit": "Confirm",
+    "X-new.stepup_cancel": "Cancel",
+    "X-new.stepup_failed": "The password or the code is not right.",
+    "X-new.stepup_session_ended": "Your session has ended. Sign in again."
   }
 }
