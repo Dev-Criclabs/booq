@@ -173,7 +173,7 @@ describe('staff booking routes (F03-T22 move and release)', () => {
   it('front desk moves a booking; a conflict is 409 slot_unavailable and nothing changes (BOOK-04-AC7)', async () => {
     const { id } = await book(18);
     await book(19, P2);
-    expect(await move().handle({ session: as(DESK, 'front_desk', 'player'), input: { id, courtId: COURT1, start: '2026-12-02T19:00:00+07:00' } }, deps)).toEqual({ ok: false, status: 409, code: 'slot_unavailable' });
+    expect(await move().handle({ session: as(DESK, 'front_desk', 'player'), input: { id, courtId: COURT1, start: '2026-12-02T19:00:00+07:00' } }, deps)).toEqual({ ok: false, status: 409, code: 'slot_unavailable', params: { by: 'resource' } });
     const ok = await move().handle({ session: as(DESK, 'front_desk', 'player'), input: { slug: 'club-a', id, courtId: COURT2, start: '2026-12-02T19:00:00+07:00' } }, deps);
     expect(ok).toMatchObject({ ok: true, body: { id, court: { id: COURT2 }, start: '2026-12-02T19:00:00+07:00' } });
   });
