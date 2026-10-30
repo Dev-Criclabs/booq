@@ -94,6 +94,12 @@ importers:
 
   packages/auth: {}
 
+  packages/beam:
+    dependencies:
+      '@booq/domain':
+        specifier: workspace:*
+        version: link:../domain
+
   packages/db:
     dependencies:
       pg:

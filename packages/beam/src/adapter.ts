@@ -1,4 +1,4 @@
-import type { ChargeLookup, ChargeStatus, CreateCharge, CreatedCharge, KeySet, PaymentGateway } from '../../domain/src/payments/gateway';
+import type { ChargeLookup, ChargeStatus, CreateCharge, CreatedCharge, KeySet, PaymentGateway } from '@booq/domain';
 
 // The Beam adapter (F05-T03; design 3.1, 5.1; FA 6.3). Only what Beam's public docs state: HTTP Basic
 // merchantId:apiKey, POST /api/v1/charges for a QR PromptPay charge in satang with x-beam-idempotency-key,
