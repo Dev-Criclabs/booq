@@ -462,6 +462,66 @@ export interface PublicClubTester {
   is_test: boolean;
 }
 
+export interface PublicCoach {
+  club_id: string;
+  id: string;
+  tier_id: string | null;
+  bio_th: string | null;
+  bio_en: string | null;
+  certifications_th: string | null;
+  certifications_en: string | null;
+  specialties_th: string[] | null;
+  specialties_en: string[] | null;
+  ages_levels_th: string | null;
+  ages_levels_en: string | null;
+  languages: string[] | null;
+  photo_path: string | null;
+  profile_consent_at: string | null;
+  profile_consent_by: string | null;
+  published: boolean;
+  active: boolean;
+  is_test: boolean;
+  created_at: string;
+}
+
+export interface PublicCoachAvailabilityRule {
+  club_id: string;
+  id: string;
+  coach_id: string;
+  kind: string;
+  weekday: number | null;
+  on_date: string | null;
+  start_time: string;
+  end_time: string;
+  is_test: boolean;
+  created_at: string;
+}
+
+export interface PublicCoachLeave {
+  club_id: string;
+  id: string;
+  coach_id: string;
+  start_date: string;
+  end_date: string;
+  from_hour: number | null;
+  to_hour: number | null;
+  type: string | null;
+  note: string | null;
+  status: string;
+  decided_by: string | null;
+  decided_at: string | null;
+  is_test: boolean;
+  created_at: string;
+}
+
+export interface PublicCoachPriceOverride {
+  club_id: string;
+  coach_id: string;
+  price_group_id: string;
+  price_satang: number;
+  is_test: boolean;
+}
+
 export interface PublicCoachTier {
   club_id: string;
   id: string;
@@ -948,6 +1008,10 @@ export interface Tables {
   'public.club_status_change': PublicClubStatusChange;
   'public.club_template_copy': PublicClubTemplateCopy;
   'public.club_tester': PublicClubTester;
+  'public.coach': PublicCoach;
+  'public.coach_availability_rule': PublicCoachAvailabilityRule;
+  'public.coach_leave': PublicCoachLeave;
+  'public.coach_price_override': PublicCoachPriceOverride;
   'public.coach_tier': PublicCoachTier;
   'public.coach_tier_price': PublicCoachTierPrice;
   'public.court_price_rule': PublicCourtPriceRule;
