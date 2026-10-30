@@ -17,6 +17,7 @@ Shared decisions are in `docs/architecture/foundation.md`, cited as **FA §n**; 
 | R2 (wallet funding and use) | §4.1; §4.3 |
 | R3 (buying a package) | §4.4; §5 |
 | Imported balances and claims (PLAT-06-AC3, AC7; D13, D105) | §4.8 |
+| Payment ports called by `app.apply_payment` (F05; `docs/architecture/apply-payment.md`) | §4.9 |
 | CC-1 to CC-6 | §10 |
 
 ## 2. What this design does not build
@@ -37,6 +38,7 @@ F06 uses the number block 0501 to 0599.
 | `0506_jobs_support.sql` | Sweep queries as functions; dedupe indexes |
 | `0507_grants_policies.sql` | Policies and grants for the tables, views and functions above |
 | `0508_settings_keys.sql` | Registry rows: `wallet_expiry_days` (unset allowed), `package_expiry_reminder_days` (list, Tennis template 14 and 3, D116) |
+| `0510_payment_ports.sql` | Registers the three F06 ports in `app.payment_ports` (§4.9): `reserve_credit_and_wallet`, `grant_package`, `credit_wallet`; `wallet_ledger.payment_id` column |
 | `0509_claim_handler.sql` | The reason `import_transfer` added to both ledger CHECKs; `app.f06_claim_transfer(club, imported, claimant)` registered in `app.claim_handlers` as `wallet_transfer`; the inert guard (§4.8) |
 
 A merged migration is never edited; a fix is a new migration (build plan).
@@ -65,7 +67,7 @@ All run `SECURITY DEFINER` with a fixed search path, take `club_id` from `app.cl
 ### 4.1 Wallet
 
 - **`app.wallet_credit(customer, amount_satang, reason, ref, staff null, note null)`** writes a positive row. Allowed reasons by caller: `refund` (F09, returned money), `late_payment`, `wrong_amount`, `duplicate_payment` (F05), `referral_reward` (F14), `return` (F04 restore), `adjust` (staff, note required), `import` (F01 import, owner). `dedupe_key` supplied by the caller (for example `late_payment:{payment_id}`, `referral:{referral_id}`) so a repeat credits once.
-- **`app.wallet_spend(customer, amount_satang, order_id, line_id)`** locks the anchor, reads the sum, requires `sum >= amount`, inserts a negative `spend` row tied to the order (reserve pattern, FA §2.3). A deferred constraint trigger checks `balance >= 0` as a backstop (PKG-01-AC7, AC8; D83).
+- **`app.wallet_spend(customer, amount_satang, order_id, line_id)`** locks the anchor, reads the sum, requires `sum >= amount`, inserts a negative `spend` row tied to the order (reserve pattern, FA §2.3), `dedupe_key spend:{order_line}:{attempt}` numbered the same way as credit reserves so a late reclaim can spend again. A deferred constraint trigger checks `balance >= 0` as a backstop (PKG-01-AC7, AC8; D83).
 - **`app.wallet_return(order_id, reason)`** writes the compensating `return` rows for an order's spend rows when a hold ends (F04 R7-AC6) or a cancel returns wallet use (D21). One call returns each spend once (`dedupe_key return:{spend_id}`).
 - **`app.wallet_adjust(customer, delta, note)`** (staff): refuses when the result would be negative (D83); needs a non empty note; audited.
 - **`app.wallet_expire(...)`**: only when the club has set `wallet_expiry_days` (D89); see §4.7.
@@ -73,7 +75,7 @@ All run `SECURITY DEFINER` with a fixed search path, take `club_id` from `app.cl
 ### 4.2 Credits
 
 - **`app.eligible_credits(customer, line_spec, at)`** (called by F04 pricing): returns active packages whose credit type, tier and price group fit the line, ordered by earliest `expires_at`, then id (so the credit nearest expiry is used first). A Student credit fits only the Student item it was bought for, also after the holder turns 18 (D84, R4-AC6 of F04).
-- **`app.credit_reserve(package, booking, order_line)`** locks the package row, checks `credits_left >= 1` and `expires_at > at`, inserts a `reserve` row (change -1, `dedupe_key reserve:{order_line}`) in the same transaction as the booking (R1-AC1, CC-4). Two parallel bookings for the last credit give exactly one success (PKG-01-AC8).
+- **`app.credit_reserve(package, booking, order_line)`** locks the package row, checks `credits_left >= 1` and `expires_at > at`, inserts a `reserve` row (change -1, `dedupe_key reserve:{order_line}:{attempt}`) in the same transaction as the booking (R1-AC1, CC-4). `attempt` is one more than the number of `reserve` rows already written for that order line, counted under the package lock: a hold that is released writes a `return`, and a late payment that reclaims the order reserves the same line again (`apply_payment`, F05), so the key must differ each time while a repeated call of the same attempt still writes once. Two parallel bookings for the last credit give exactly one success (PKG-01-AC8).
 - **`app.credit_return(booking, reason)`**: writes `return` (+1) for a reserved credit of a booking cancelled in time or released; if the package is already expired and the booking is cancelled by the player after expiry, no return is written and the credit is lost (D85, CANCEL-01-AC11); a closure return still returns the credit (F09 CANCEL-03-AC12; the extension is the owner's action, D118).
 - **`app.credit_use(booking)`** (job `session_start`): converts the reservation into a `use` row (change 0) once the session starts (R1-AC3).
 - **`app.credit_forfeit(booking, staff, note)`**: writes `forfeit` (change 0) for late cancel or no show (CANCEL-01-AC10).
@@ -87,7 +89,7 @@ F04's Pay transaction calls `credit_reserve` and `wallet_spend` for each line's 
 
 ### 4.4 Granting a package (R3, PKG-02)
 
-- **`app.grant_package(order, product, customer)`** is called by F05 when the Beam callback is verified (or by staff cash, F05 PAY-06). In one transaction it inserts the `customer_package` row with `purchased_at = app.now()`, `credits_total`, the product snapshot and `expires_at`, and it enqueues the expiry reminder outbox rows (§4.5). Unique `(club_id, order_id, product_id)` makes a repeat harmless.
+- **`app.grant_package(order)`** (the port of §4.9; the products and the customer are read from the order's `package` lines) is called by `app.apply_payment` (F05) when a package order is paid, and by staff cash (F05 PAY-06). In one transaction it inserts the `customer_package` row with `purchased_at = app.now()`, `credits_total`, the product snapshot and `expires_at`, and it enqueues the expiry reminder outbox rows (§4.5). Unique `(club_id, order_id, product_id)` makes a repeat harmless. One call grants every package line of the order; a line is granted once.
 - **Expiry arithmetic (PKG-02-AC2; D20):** `expires_at = (purchase_date + validity_months months) at 23:59:59.999 Asia/Bangkok`, with the day clamped to the last day of the month when the day does not exist (30 Nov plus 3 months is 28 Feb, 29 in a leap year). It is computed in SQL on `date` values in the Bangkok zone, never from UTC dates (FA §7). A test table covers 31 Oct, 30 Nov, 29 Dec across the year end, 31 Aug plus 6 months, 29 Feb 2028 plus 12 months, and the sample 5 Jan 2027 plus 3 months giving 5 Apr 2027 (Gaps B5).
 - **Student products** refuse a buyer whose date of birth makes them 18 or older (PKG-02-AC6; F04 R1-AC6). Adults without a date of birth are not Student.
 - **Package with a booking (Flow H, I):** one order, one bill: F04 adds the package line and the credit that covers one hour or session now; `grant_package` runs before the booking's `credit_reserve` inside the confirm transaction so the reserve finds the new package (R3-AC2, AC3).
@@ -106,6 +108,22 @@ At `grant_package`, `extend_package` and pause, F06 enqueues outbox rows `packag
 - **`app.extend_package(package, new_expires_at, reason, staff)`** (owner only, one package at a time, D88): requires a non empty reason, `new_expires_at` at 23:59:59.999 Bangkok on a later day, writes `package_extension` (`kind owner`), updates `expires_at`, voids and re-enqueues reminders, audits (PKG-03-AC5).
 - **`app.extend_for_pause(club, pause_id, length)`** (called by F01 resume in the same transaction, PLAT-03): for every package of the club with `expires_at >= pause start`, adds the exact pause length to `expires_at` then sets the time to 23:59:59.999 of the resulting Bangkok day (D90, PKG-03-AC7), one `package_extension` (`kind pause`) per package, and the same for the wallet expiry when set. A pause shorter than a day moves expiry by the exact length and then runs to 23:59 (D90).
 - **Wallet expiry (D89):** `wallet_expiry_days` is unset by default (never expires). When first set, the settings route warns staff and records the date; `app.wallet_expire(customer)` is called by a sweep only for clubs with the setting, writing an `expire` wallet row for the remainder of balances older than the setting by the FIFO rule of Q1 below. With the setting empty the function refuses to run.
+
+### 4.9 Payment ports (`app.payment_ports`, contract in `docs/architecture/apply-payment.md`)
+
+`app.apply_payment` (F05) reaches F06 only through the registry `app.payment_ports (port, handler regprocedure)`. Migration `0510_payment_ports.sql` registers these three ports; a port that is not registered raises `payment:port_missing:{port}` and rolls the whole payment back, so F06 must be registered before F05 can confirm a payment. All three run `SECURITY DEFINER`, take the club from `app.club_id()`, are executable by `booq_worker` only (the webhook and lookup run as the worker), and run inside `apply_payment`'s transaction, so any raise rolls the whole case back.
+
+| Port | Registered function | Arguments | Result and outcomes | Idempotency |
+|---|---|---|---|---|
+| `reserve_credit_and_wallet` | `app.port_reserve_credit_and_wallet(p_order uuid) returns boolean` | the order whose lines carry the frozen allocation (`credit_package_id`, `credit_units`, `wallet_satang`, F04 §4.3) | **true**: every credit and every wallet part of every line is reserved, in the lock order of FA §3.4, as one sub-block. **false** and **nothing written**: any credit is missing, used up or expired, the wallet is short, or the customer is not claimed or not active. Never partially reserves: a savepoint covers all lines. Used by the late reclaim (`apply_payment` step 6), after `app.reapply_order_entitlements` | Per line `reserve:{order_line}:{attempt}` and `spend:{order_line}:{attempt}` (§4.1, §4.2); a line already reserved and not returned is skipped, so a second call after success returns true and writes nothing |
+| `grant_package` | `app.port_grant_package(p_order uuid) returns void` (the function of §4.4) | a paid package order | Creates a `customer_package` for each `package` line, with product snapshot, `credits_total`, `purchased_at = app.now()` and `expires_at` per D20, and enqueues the expiry reminders (§4.5). **Raises** (`payment:grant:order_not_package`, `payment:grant:product_missing`) when the order has no package line or a product is gone, which rolls the payment back rather than taking money without a package. For a package bought with a booking the booking's credit is reserved after the grant inside the same transaction (§4.4) | Unique `(club_id, order_id, product_id)` on `customer_package` |
+| `credit_wallet` | `app.port_credit_wallet(p_order_kind text, p_customer uuid, p_amount_satang integer, p_reason text, p_dedupe_key text, p_payment uuid) returns uuid` | `p_order_kind` is `wallet_credit` (the only value used; any other raises); `p_reason` one of `late_payment`, `duplicate_payment`, `wrong_amount`, `refund` (an unlisted reason raises `payment:wallet:reason`); `p_amount_satang > 0` | Writes the wallet ledger row with that reason and `payment_id`, and creates the order of kind `wallet_credit` with one line of kind `wallet_credit` for the amount (FA §2.4, D37), both in the caller's transaction. **Returns the wallet ledger row id.** The order id is `wallet_ledger.order_id`, which `apply_payment` reads to hand to the F13 port `issue_receipt`. The customer must exist; a deleted (anonymised) account still receives the credit (D109) | `dedupe_key` (for example `late_payment:{payment}`): the same key returns the same ledger row id and creates no second order |
+
+**Arguments and outcomes in one sentence each.** `reserve_credit_and_wallet` answers whether the late reclaim may keep the booking; `grant_package` turns a paid package order into packages or raises; `credit_wallet` turns money that cannot confirm anything into wallet value plus an order the receipt can attach to.
+
+**Naming.** If the Architect renames a port, only the registry rows in 0510 and the table above change. The ports hold no business rule of their own; they call the functions of §4.1 to §4.4.
+
+**Tests.** Port missing raises and leaves the payment pending; `reserve_credit_and_wallet` returns false and writes nothing when the wallet is short or a package expired, and true twice writes once; a released then reclaimed order reserves again with `attempt` 2 and the balance equals the ledger sum; `grant_package` twice grants once and raises on a non package order; `credit_wallet` twice with one dedupe key returns one id, one order, one row; an unlisted reason raises; the wallet balance after a wallet outcome equals the amount received.
 
 ### 4.8 Imported balances and the claim transfer (decisions D13, D105; migration 0103 on `main`)
 
@@ -212,6 +230,9 @@ Recommended defaults, each marked so the orchestrator can confirm or amend them 
 | A-9 | The new ledger reason `import_transfer` (credit and wallet) is added by migration 0509 and recorded in the PRD and hand-off first | Orchestrator request; D78 and the hand-off enumerate reasons |
 | A-10 | Value imported for an unclaimed player counts as owed to customers in the value owed report (it is a liability of the club), shown on its own line until claimed | D57; the report is F13's, to confirm |
 | A-11 | A claimed package keeps its original expiry; the owner may extend it afterwards (D88) | D13, D88 |
+| A-12 | `credit_wallet` returns the ledger row id (as the contract says) and `apply_payment` reads the order id from `wallet_ledger.order_id`; if the Architect prefers the port to return the order id, only the port and the registry row change | `apply-payment.md` |
+| A-13 | Reserve and spend dedupe keys carry an attempt number so a late reclaim can reserve again after a release | FA §2.3 comment on re-reserve; found while naming the ports |
+| A-14 | `reserve_credit_and_wallet` is all or nothing for the whole order and writes nothing when it returns false | `apply-payment.md` ("re-reserve ... false when it cannot") |
 
 ## 14. Open items
 
