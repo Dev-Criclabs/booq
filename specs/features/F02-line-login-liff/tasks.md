@@ -22,7 +22,7 @@ Depends on F01 tasks: T03 to T07 (database, context, tenant suite), T10 and T11 
 
 ## B. Verifying and signing in
 
-- [ ] **F02-T04** LINE verify client with an interface, a real and a fake (valid, wrong audience, expired, bad signature, unreachable). IDs: LINE-01-AC4, AC11, CC-2. Role: BE-P · Deps QA fake LINE · Size: M
+- [x] **F02-T04** LINE verify client with an interface, a real and a fake (valid, wrong audience, expired, bad signature, unreachable). IDs: LINE-01-AC4, AC11, CC-2. Role: BE-P · Deps QA fake LINE · Size: M
   Tests first: a token for club A's channel is refused at club B; an offline response creates nothing and returns the offline code.
 - [ ] **F02-T05** Club resolver and status gate: slug to club, `clubUrl()` for every deep link, 404 for unknown or not visible, Draft and Testing only for testers. IDs: AUTH-01-AC13 to AC15, BOOK-02-AC3. Role: BE-P · Deps F01-T28 · Size: M
   Tests first: unknown slug 404; Draft and Testing 404 for guests and non-testers; a link for club A never signs in to club B; slug and session club mismatch is 404.
