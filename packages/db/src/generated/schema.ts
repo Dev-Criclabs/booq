@@ -41,6 +41,11 @@ export interface AppPauseHandlers {
   created_at: string;
 }
 
+export interface AppPaymentPorts {
+  port: string;
+  handler: unknown;
+}
+
 export interface AppReleaseHandlers {
   name: string;
   handler: unknown;
@@ -764,6 +769,7 @@ export interface Tables {
   'app.feature_keys': AppFeatureKeys;
   'app.move_handlers': AppMoveHandlers;
   'app.pause_handlers': AppPauseHandlers;
+  'app.payment_ports': AppPaymentPorts;
   'app.release_handlers': AppReleaseHandlers;
   'app.setting_keys': AppSettingKeys;
   'app.setup_steps': AppSetupSteps;
