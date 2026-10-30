@@ -1,0 +1,567 @@
+<title>Booq Copy Editor</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Noto+Sans+Thai:wght@400;500;600&display=swap">
+<style>
+/* Layout: sticky toolbar over a single column of rows; each row pairs reference text with a yellow edit box. */
+:root{
+  --bg:#F1F3EC; --card:#FBFCF8; --ink:#1D241F; --head:#24392B; --muted:#58635B;
+  --line:rgba(29,36,31,.16); --accent:#3F5E46; --accent-ink:#FFFFFF; --soft:#E3E7DE;
+  --edit:#FFF3BF; --edit-line:#D9BE4F; --ok:#DDEADB; --ok-ink:#2F4A36;
+  --warn:#F5ECCB; --warn-ink:#6B5310; --err:#F3E1DC; --err-ink:#8A3E30; --focus:#1F5FBF;
+  --ui:'DM Sans',ui-sans-serif,system-ui,'Noto Sans Thai',sans-serif;
+  --th:'Noto Sans Thai','DM Sans',Tahoma,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121814; --card:#1A231D; --ink:#E6EBE4; --head:#CFE3CF; --muted:#9AA79C;
+  --line:rgba(230,235,228,.18); --accent:#8DB890; --accent-ink:#13201A; --soft:#243029;
+  --edit:#3A3519; --edit-line:#8C7B2A; --ok:#24372A; --ok-ink:#BFE0C4;
+  --warn:#3B3418; --warn-ink:#EAD58A; --err:#3B2420; --err-ink:#F0B5A8; --focus:#8FB6F2; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121814; --card:#1A231D; --ink:#E6EBE4; --head:#CFE3CF; --muted:#9AA79C;
+  --line:rgba(230,235,228,.18); --accent:#8DB890; --accent-ink:#13201A; --soft:#243029;
+  --edit:#3A3519; --edit-line:#8C7B2A; --ok:#24372A; --ok-ink:#BFE0C4;
+  --warn:#3B3418; --warn-ink:#EAD58A; --err:#3B2420; --err-ink:#F0B5A8; --focus:#8FB6F2; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+.wrap{max-width:1180px;margin:0 auto}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:14px 12px;border-bottom:1px solid var(--line)}
+.bar{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;justify-content:space-between}
+h1{margin:0;font-size:20px;font-weight:700;color:var(--head);letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:13px}
+.seg{display:inline-flex;border:1.5px solid var(--accent);border-radius:999px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:8px 18px;min-height:40px;font-weight:600;color:var(--accent)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.btn{border:1.5px solid var(--accent);background:transparent;color:var(--accent);border-radius:999px;padding:7px 16px;min-height:40px;font-weight:600}
+.btn.solid{background:var(--accent);color:var(--accent-ink)}
+.btn.small{min-height:34px;padding:4px 12px;font-size:13px}
+.btn[disabled]{opacity:.5;cursor:default}
+.stats{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px 12px;font-size:13px;color:var(--muted)}
+.stat b{color:var(--ink);font-variant-numeric:tabular-nums;font-size:15px;margin-right:4px}
+.progress{height:6px;border-radius:99px;background:var(--soft);margin-top:10px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--accent);width:0}
+.filters{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;align-items:center}
+.filters input[type=search],.filters select{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-height:40px}
+.filters input[type=search]{flex:1 1 220px;min-width:0}
+.chk{display:inline-flex;gap:6px;align-items:center;font-size:14px}
+.notice{margin-top:12px;padding:10px 14px;border-radius:12px;background:var(--warn);color:var(--warn-ink);font-size:14px}
+.notice.err{background:var(--err);color:var(--err-ink)}
+details.how{margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+details.how summary{cursor:pointer;font-weight:600;color:var(--head)}
+details.how ul{margin:8px 0 0;padding-left:20px;color:var(--muted);font-size:14px}
+.list{display:flex;flex-direction:column;gap:14px;margin-top:16px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:16px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+@media (max-width:820px){.row{grid-template-columns:minmax(0,1fr)}}
+.keyline{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+.key{font-weight:700;font-variant-numeric:tabular-nums;color:var(--head)}
+.area{font-size:12px;color:var(--muted)}
+.badges{display:flex;flex-wrap:wrap;gap:6px}
+.pill{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600;background:var(--soft);color:var(--muted)}
+.pill.ok{background:var(--ok);color:var(--ok-ink)}
+.pill.warn{background:var(--warn);color:var(--warn-ink)}
+.pill.err{background:var(--err);color:var(--err-ink)}
+.lab{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:10px 0 3px}
+.txt{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.txt.th,.ta.th{font-family:var(--th);line-height:1.6}
+.txt.ref{color:var(--muted)}
+.ta{display:block;width:100%;min-height:76px;resize:vertical;background:var(--edit);border:1.5px solid var(--edit-line);border-radius:12px;padding:10px 12px;font-size:16px;line-height:1.5}
+.checks{margin-top:6px;display:flex;flex-direction:column;gap:4px;font-size:13px}
+.checks .e{color:var(--err-ink);background:var(--err);padding:3px 10px;border-radius:8px}
+.checks .w{color:var(--warn-ink);background:var(--warn);padding:3px 10px;border-radius:8px}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center}
+.note{flex:1 1 180px;min-width:0;background:transparent;border:1px solid var(--line);border-radius:10px;padding:6px 10px;min-height:34px;font-size:13px}
+.ask{margin-top:10px}
+.askbox{background:var(--soft);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:999px;padding:3px 12px;font-size:13px;min-height:30px}
+.askline{display:flex;gap:8px}
+.askline input{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:7px 10px;min-height:38px}
+.opt{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px}
+.opt .why{font-size:13px;color:var(--muted)}
+.more{display:flex;justify-content:center;margin-top:18px}
+.empty{padding:40px 16px;text-align:center;color:var(--muted)}
+.review{margin-top:14px}
+@media (prefers-reduced-motion:no-preference){.progress i{transition:width .3s}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="bar">
+      <div>
+        <h1>Booq Copy Editor</h1>
+        <div class="sub" id="sub"></div>
+      </div>
+      <div class="bar" style="gap:10px">
+        <div class="seg" role="group" aria-label="Language">
+          <button id="b-en" type="button" aria-pressed="true">English</button>
+          <button id="b-th" type="button" aria-pressed="false">Thai</button>
+        </div>
+        <button class="btn" id="x-json" type="button" hidden>Export file</button>
+        <button class="btn" id="x-csv" type="button" hidden>Export changes</button>
+      </div>
+    </div>
+    <div class="progress" aria-hidden="true"><i id="prog"></i></div>
+    <div class="stats" id="stats"></div>
+    <div class="filters">
+      <input id="q" type="search" placeholder="Search key or text" aria-label="Search key or text">
+      <select id="area" aria-label="Area"></select>
+      <select id="status" aria-label="Status"></select>
+      <label class="chk"><input id="rules" type="checkbox"> Rule rows only</label>
+      <button class="btn small" id="review-btn" type="button" hidden>Ask Claude to review these rows</button>
+    </div>
+  </header>
+
+  <div id="notices"></div>
+  <details class="how">
+    <summary>How this works</summary>
+    <ul>
+      <li>Edit in the yellow box. Your change saves by itself and every writer sees it live.</li>
+      <li>Keep every word in curly braces, like {amount} or {date}. The app fills these in. A row with a missing or new one cannot be marked ready.</li>
+      <li>Rows that state a rule (cancellation, credits, payment, timing) show a Rule tag. If you change one, it needs a product check before it counts, so a wording change never changes a rule by accident.</li>
+      <li>When the English writer changes a row, the matching Thai row shows Recheck until the Thai writer confirms it.</li>
+      <li>Ask Claude on any row for options, a shorter or more premium version, or a check of your text. Nothing changes until you press Use.</li>
+      <li>Export file gives the full language file with your changes. Export changes gives a list of what changed.</li>
+    </ul>
+  </details>
+
+  <div id="review" class="review" hidden></div>
+  <div class="list" id="list" aria-live="polite"></div>
+  <div class="empty" id="empty" hidden>No rows match these filters.</div>
+  <div class="more" id="more" hidden><button class="btn" id="more-btn" type="button"></button></div>
+</div>
+
+<script type="application/json" id="data">/*__DATA__*/</script>
+<script>
+(function(){
+'use strict';
+const D = JSON.parse(document.getElementById('data').textContent);
+const AREAS = {P:'Player app',A:'Club admin',K:'Coach portal',L:'LINE and receipts',X:'Platform console'};
+const PAGE = 40;
+const store = {get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const fromHash = () => { const h = location.hash.replace('#',''); return h==='thai'?'th':h==='english'?'en':null; };
+let lang = fromHash() || store.get('copy-lang') || 'en';
+if (lang !== 'en' && lang !== 'th') lang = 'en';
+const other = l => l === 'en' ? 'th' : 'en';
+const LNAME = {en:'English', th:'Thai'};
+const docs = {en:new Map(), th:new Map()};
+let db = null, sample = null, downloads = null, userCap = null, me = '';
+const f = {q:'', area:'all', status:'all', rules:false};
+let shown = PAGE, lastKeys = [];
+const rowEls = new Map(), rowState = new Map(), timers = new Map();
+const $ = id => document.getElementById(id);
+
+function h(tag, props, ...kids){
+  const el = document.createElement(tag);
+  if (props) for (const [k,v] of Object.entries(props)) {
+    if (v == null || v === false) continue;
+    if (k === 'class') el.className = v;
+    else if (k === 'text') el.textContent = v;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else if (k === 'value') el.value = v;
+    else if (v === true) el.setAttribute(k, '');
+    else el.setAttribute(k, v);
+  }
+  for (const c of kids.flat()) { if (c == null || c === false) continue; el.append(c.nodeType ? c : document.createTextNode(String(c))); }
+  return el;
+}
+
+/* ---------- rules and checks ---------- */
+const RULE = /cancel|refund|forfeit|credit|wallet|package|bundle|expir|valid|hold|held|pay|paid|price|policy|waitlist|minutes|hours|free|ยกเลิก|คืน|เครดิต|วอลเล็ต|แพ็ก|ชำระ|ราคา|ฟรี|นโยบาย|ชั่วโมง|นาที|หมดอายุ|รายชื่อรอ/i;
+const rule = new Set(Object.keys(D.en).filter(k => RULE.test(D.en[k]) || RULE.test(D.th[k] || '')));
+const vars = s => new Set(String(s).match(/\{\w+\}/g) || []);
+
+function cur(l,k){ const d = docs[l].get(k); return d && typeof d.text === 'string' ? d.text : D[l][k]; }
+function isEdited(l,k){ const d = docs[l].get(k); return !!d && typeof d.text === 'string' && d.text !== D[l][k]; }
+function needsProduct(l,k){ const d = docs[l].get(k); return isEdited(l,k) && rule.has(k) && !(d && d.productChecked); }
+function needsRecheck(k){
+  const e = docs.en.get(k);
+  if (!e || typeof e.text !== 'string' || e.text === D.en[k]) return false;
+  const t = docs.th.get(k);
+  return !(t && t.checkedEn === e.text);
+}
+function validate(l,k,text){
+  const errors = [], warns = [];
+  const a = vars(D[l][k]), b = vars(text);
+  const miss = [...a].filter(x => !b.has(x)), extra = [...b].filter(x => !a.has(x));
+  if (!text.trim()) errors.push('The text is empty.');
+  if (miss.length) errors.push('Missing ' + miss.join(' ') + '. Put it back where it belongs.');
+  if (extra.length) errors.push('Not in the original: ' + extra.join(' ') + '. Remove it.');
+  if (/(^|\D)25\d\d(\D|$)/.test(text.replace(/\{\w+\}/g,''))) warns.push('This looks like a Buddhist year. Use the international year, like 2026.');
+  if (/\s{2,}/.test(text) || /^\s|\s$/.test(text)) warns.push('Extra spaces at the start, end or middle.');
+  const bl = D[l][k].length;
+  if (text.length > bl * 1.3 + 8) warns.push('About ' + Math.round((text.length / bl - 1) * 100) + '% longer than the current text. Check that it fits on the screen.');
+  return {errors, warns};
+}
+const edited = [], total = () => Object.keys(D[lang]).length;
+
+/* ---------- saving ---------- */
+function ensureDoc(k){
+  let d = docs[lang].get(k);
+  if (!d) { d = {text:D[lang][k], base:D[lang][k], status:'draft', note:'', productChecked:false}; docs[lang].set(k,d); }
+  return d;
+}
+function touch(k, patch){
+  const l = lang;
+  const d = Object.assign({}, ensureDoc(k), patch, {by:me, at:new Date().toISOString(), base:D[l][k]});
+  if (patch && 'text' in patch && patch.text !== (docs[l].get(k) || {}).text) { d.productChecked = false; if (d.status === 'ready') d.status = 'draft'; }
+  docs[l].set(k, d);
+  const id = l + ':' + k;
+  clearTimeout(timers.get(id));
+  timers.set(id, setTimeout(() => { timers.delete(id); persist(l,k); }, 700));
+  setSave('Saving');
+}
+async function persist(l,k){
+  const d = docs[l].get(k);
+  if (!db || !d) { setSave(db ? '' : 'Not saved: this view cannot store edits'); return; }
+  const ref = db.collection(l).doc(k);
+  try {
+    const blank = d.text === D[l][k] && !d.note && d.status !== 'ready' && !d.productChecked && !d.checkedEn;
+    if (blank) { docs[l].delete(k); await ref.delete(); }
+    else await ref.set(d);
+    setSave('Saved ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}));
+  } catch (e) {
+    setSave('');
+    notice('Your last change did not save (' + (e && e.code ? e.code : 'error') + '). Keep this page open and try the change again.', true);
+  }
+}
+let saveText = '';
+function setSave(t){ saveText = t; renderSub(); }
+
+/* ---------- rendering ---------- */
+function renderSub(){
+  $('sub').textContent = LNAME[lang] + ' view · ' + total() + ' rows · ' + D.meta.source + (saveText ? ' · ' + saveText : '');
+}
+function counters(){
+  const keys = Object.keys(D[lang]);
+  let ed = 0, ready = 0, prod = 0, rc = 0, er = 0;
+  for (const k of keys) {
+    const e = isEdited(lang,k), d = docs[lang].get(k);
+    if (e) { ed++; if (validate(lang,k,cur(lang,k)).errors.length) er++; }
+    if (d && d.status === 'ready') ready++;
+    if (needsProduct(lang,k)) prod++;
+    if (lang === 'th' && needsRecheck(k)) rc++;
+  }
+  const s = [['Edited', ed], ['Ready', ready], ['Product check', prod]];
+  if (lang === 'th') s.push(['Recheck', rc]);
+  s.push(['Errors', er]);
+  $('stats').replaceChildren(...s.map(([n,v]) => h('div', {class:'stat'}, h('b', {text:String(v)}), n)));
+  $('prog').style.width = (keys.length ? Math.round(ed / keys.length * 100) : 0) + '%';
+  return {er};
+}
+function notice(msg, isErr){
+  const el = h('div', {class:'notice' + (isErr ? ' err' : ''), role:'status'}, msg);
+  $('notices').replaceChildren(el);
+}
+function badgesEl(k){
+  const l = lang, d = docs[l].get(k), out = [];
+  if (rule.has(k)) out.push(h('span', {class:'pill warn', text:'Rule'}));
+  if (isEdited(l,k)) out.push(h('span', {class:'pill', text:'Edited'}));
+  if (d && d.status === 'ready') out.push(h('span', {class:'pill ok', text:'Ready'}));
+  if (needsProduct(l,k)) out.push(h('span', {class:'pill warn', text:'Product check needed'}));
+  if (d && d.productChecked) out.push(h('span', {class:'pill ok', text:'Product checked'}));
+  if (l === 'th' && needsRecheck(k)) out.push(h('span', {class:'pill err', text:'English changed: recheck'}));
+  if (d && d.base && d.base !== D[l][k]) out.push(h('span', {class:'pill warn', text:'Original text changed since this edit'}));
+  if (isEdited(l,k) && validate(l,k,cur(l,k)).errors.length) out.push(h('span', {class:'pill err', text:'Fix variables'}));
+  if (d && d.by && isEdited(l,k)) out.push(h('span', {class:'pill', text:'by ' + d.by}));
+  return h('div', {class:'badges'}, out);
+}
+function checksEl(k){
+  const v = validate(lang, k, cur(lang,k));
+  const isNew = !isEdited(lang,k);
+  return h('div', {class:'checks'}, isNew ? [] : [v.errors.map(x => h('div', {class:'e', text:x})), v.warns.map(x => h('div', {class:'w', text:x}))]);
+}
+function refreshRow(k){
+  const el = rowEls.get(k); if (!el) return;
+  el.querySelector('.badges').replaceWith(badgesEl(k));
+  el.querySelector('.checks').replaceWith(checksEl(k));
+}
+function setText(k, text){
+  const ta = rowEls.get(k) && rowEls.get(k).querySelector('textarea');
+  touch(k, {text});
+  if (ta) { ta.value = text; fit(ta); }
+  refreshRow(k); counters();
+}
+function fit(t){ t.style.height = 'auto'; t.style.height = Math.max(76, t.scrollHeight + 2) + 'px'; }
+
+function buildRow(k){
+  const l = lang, o = other(l), d = docs[l].get(k);
+  const refText = cur(o,k);
+  const ta = h('textarea', {class:'ta' + (l === 'th' ? ' th' : ''), id:'ta-' + k, 'aria-label':LNAME[l] + ' text for ' + k, spellcheck: l === 'en' ? 'true' : 'false', lang:l});
+  ta.value = cur(l,k);
+  ta.addEventListener('input', () => { fit(ta); touch(k, {text:ta.value}); refreshRow(k); counters(); });
+  const note = h('input', {class:'note', type:'text', placeholder:'Note for the team', 'aria-label':'Note for ' + k, value:(d && d.note) || ''});
+  note.addEventListener('change', () => { touch(k, {note:note.value}); });
+  const acts = [];
+  const ready = !!(d && d.status === 'ready');
+  const rb = h('button', {class:'btn small' + (ready ? ' solid' : ''), type:'button', text:ready ? 'Ready' : 'Mark ready'});
+  rb.addEventListener('click', () => {
+    if (!ready && validate(l,k,cur(l,k)).errors.length) { notice('Fix the variables in ' + k + ' before marking it ready.', true); return; }
+    touch(k, {status: ready ? 'draft' : 'ready'}); renderRow(k, true); counters();
+  });
+  acts.push(rb);
+  if (needsProduct(l,k)) {
+    const pb = h('button', {class:'btn small', type:'button', text:'Product checked'});
+    pb.addEventListener('click', () => { touch(k, {productChecked:true}); renderRow(k, true); counters(); });
+    acts.push(pb);
+  }
+  if (l === 'th' && needsRecheck(k)) {
+    const cb = h('button', {class:'btn small', type:'button', text:'Thai rechecked'});
+    cb.addEventListener('click', () => { touch(k, {checkedEn: cur('en',k)}); renderRow(k, true); counters(); });
+    acts.push(cb);
+  }
+  if (isEdited(l,k) || (d && (d.note || d.status === 'ready'))) {
+    const xb = h('button', {class:'btn small', type:'button', text:'Reset'});
+    xb.addEventListener('click', () => {
+      docs[l].delete(k); clearTimeout(timers.get(l + ':' + k)); timers.delete(l + ':' + k);
+      if (db) db.collection(l).doc(k).delete().catch(() => {});
+      renderRow(k, true); counters();
+    });
+    acts.push(xb);
+  }
+  if (sample) {
+    const ab = h('button', {class:'btn small', type:'button', text:'Ask Claude'});
+    ab.addEventListener('click', () => { const st = rowState.get(k) || {}; st.open = !st.open; rowState.set(k, st); renderAsk(k); });
+    acts.push(ab);
+  }
+  acts.push(note);
+
+  const row = h('article', {class:'row', 'data-key':k},
+    h('div', null,
+      h('div', {class:'keyline'}, h('span', {class:'key', text:k}), h('span', {class:'area', text:AREAS[k[0]] || ''})),
+      badgesEl(k),
+      h('div', {class:'lab', text:'Current text'}),
+      h('p', {class:'txt' + (l === 'th' ? ' th' : ''), text:D[l][k], lang:l}),
+      h('div', {class:'lab', text:LNAME[o] + ' reference' + (isEdited(o,k) ? ' (edited)' : '')}),
+      h('p', {class:'txt ref' + (o === 'th' ? ' th' : ''), text:refText || '(none, this row is not translated)', lang:o})
+    ),
+    h('div', null,
+      h('label', {class:'lab', for:'ta-' + k, style:'display:block;margin-top:0', text:'Your ' + LNAME[l] + ' text'}),
+      ta, checksEl(k), h('div', {class:'acts'}, acts), h('div', {class:'ask'})
+    )
+  );
+  requestAnimationFrame(() => fit(ta));
+  return row;
+}
+function renderRow(k, force){
+  const old = rowEls.get(k); if (!old) return;
+  if (!force && old.contains(document.activeElement) && document.activeElement.tagName === 'TEXTAREA') { refreshRow(k); return; }
+  const el = buildRow(k); old.replaceWith(el); rowEls.set(k, el); renderAsk(k);
+}
+function passes(k){
+  const l = lang;
+  if (f.area !== 'all' && k[0] !== f.area) return false;
+  if (f.rules && !rule.has(k)) return false;
+  const d = docs[l].get(k), ed = isEdited(l,k);
+  switch (f.status) {
+    case 'unedited': if (ed) return false; break;
+    case 'edited': if (!ed) return false; break;
+    case 'ready': if (!(d && d.status === 'ready')) return false; break;
+    case 'product': if (!needsProduct(l,k)) return false; break;
+    case 'recheck': if (!(l === 'th' && needsRecheck(k))) return false; break;
+    case 'errors': if (!(ed && validate(l,k,cur(l,k)).errors.length)) return false; break;
+  }
+  if (f.q) {
+    const q = f.q.toLowerCase();
+    if (!(k + ' ' + D[l][k] + ' ' + cur(l,k) + ' ' + (D[other(l)][k] || '')).toLowerCase().includes(q)) return false;
+  }
+  return true;
+}
+function renderList(){
+  rowEls.clear();
+  lastKeys = Object.keys(D[lang]).filter(passes);
+  const list = $('list'); list.replaceChildren();
+  for (const k of lastKeys.slice(0, shown)) { const el = buildRow(k); rowEls.set(k, el); list.append(el); }
+  for (const k of rowEls.keys()) renderAsk(k);
+  const left = lastKeys.length - shown;
+  $('more').hidden = left <= 0;
+  $('more-btn').textContent = 'Show ' + Math.min(PAGE, Math.max(left,0)) + ' more (' + Math.max(left,0) + ' left)';
+  $('empty').hidden = lastKeys.length > 0;
+  $('review-btn').hidden = !sample || lastKeys.length === 0;
+  renderSub(); counters();
+}
+function buildFilters(){
+  const areaSel = $('area');
+  const counts = {}; for (const k of Object.keys(D[lang])) counts[k[0]] = (counts[k[0]] || 0) + 1;
+  areaSel.replaceChildren(h('option', {value:'all', text:'All areas'}), ...Object.keys(counts).map(a => h('option', {value:a, text:(AREAS[a] || a) + ' (' + counts[a] + ')'})));
+  areaSel.value = f.area;
+  const st = [['all','All rows'],['unedited','Not edited'],['edited','Edited'],['ready','Ready'],['product','Needs product check'],['errors','Has errors']];
+  if (lang === 'th') st.splice(5, 0, ['recheck','English changed: recheck']);
+  $('status').replaceChildren(...st.map(([v,t]) => h('option', {value:v, text:t})));
+  $('status').value = f.status;
+}
+function switchLang(l){
+  if (l === lang) return;
+  lang = l; store.set('copy-lang', l); try { history.replaceState(null, '', l === 'th' ? '#thai' : '#english'); } catch(e){}
+  f.area = 'all'; f.status = 'all'; shown = PAGE; $('review').hidden = true;
+  syncSeg(); buildFilters(); renderList();
+}
+function syncSeg(){
+  $('b-en').setAttribute('aria-pressed', lang === 'en'); $('b-th').setAttribute('aria-pressed', lang === 'th');
+  document.documentElement.lang = lang === 'th' ? 'th' : 'en';
+}
+
+/* ---------- Claude ---------- */
+const GUIDE = [
+ 'BOOQ is a booking platform for premium sports clubs in Thailand. The first club is Hunter Tennis Club. Readers are players, club owners, front desk staff and coaches. Tone: calm, precise, warm and premium. Never loud, never casual slang.',
+ 'Hard rules: keep every {variable} exactly as written and add none. Dates use the international year (2026, never 2569). Sentence case. No emoji. Keep numbers, times and policy meaning exactly. This is wording only. If the text states a rule about cancellation, credits, wallet, payment, timing or expiry, say so in your note so a product owner can check it.',
+ 'Use "Open" for availability, never "Free". "Free" only where nothing is charged, such as free cancellation. Buttons must not wrap, so keep button text short. Prefer plain words.',
+ 'Thai terms to keep: คอร์ต (court), คลาสเดี่ยว (solo class), คลาสกลุ่ม (group class), รายชื่อรอ (waitlist), วอลเล็ต (wallet), เครดิต (credit). Thai should read as natural written Thai with a polite, refined register, not a word-for-word translation of the English.'
+].join('\n');
+function promptFor(k, mode, instruction){
+  const l = lang, o = other(l);
+  const head = GUIDE + '\n\nWrite in: ' + LNAME[l] + '\nScreen area: ' + (AREAS[k[0]] || k[0]) + '\nKey: ' + k +
+    '\nCurrent text in the app files: ' + D[l][k] + '\nWriter\'s working text: ' + cur(l,k) +
+    '\n' + LNAME[o] + ' reference: ' + (cur(o,k) || '(none)') + '\nVariables that must stay: ' + ([...vars(D[l][k])].join(' ') || 'none');
+  if (mode === 'check') return head + '\n\nReview the working text for clarity, tone, naturalness, meaning against the reference, and the rules above. Reply with only JSON: {"verdict":"ok" or "fix","issues":["short issue"],"fix":"improved text, or empty if ok","ruleNote":"short note if this states a rule, else empty"}';
+  return head + '\n\nWriter\'s request: ' + (instruction || 'Give 3 alternative wordings.') + '\nReply with only JSON: {"options":[{"text":"wording","why":"one short reason","ruleNote":"short note if it states a rule, else empty"}]} with exactly 3 options.';
+}
+function errCopy(c){
+  if (c === 'not_granted' || c === 'sampling_disabled') return 'Claude is not available to you here. Ask the owner of this page to allow it.';
+  if (c === 'rate_limited') return 'Too many requests. Wait a moment and try again.';
+  if (c === 'prompt_too_large') return 'That was too long to send.';
+  return 'Claude could not answer. Try again.';
+}
+async function ask(k, mode, instruction){
+  const st = rowState.get(k) || {}; st.open = true; st.busy = true; st.error = null; st.result = null; st.mode = mode;
+  const ctl = new AbortController(); st.ctl = ctl; rowState.set(k, st); renderAsk(k);
+  try { st.result = await sample.json(promptFor(k, mode, instruction), {signal:ctl.signal, cache:false}); }
+  catch (e) { st.error = e && e.code === 'cancelled' ? null : errCopy(e && e.code); }
+  st.busy = false; st.ctl = null; renderAsk(k);
+}
+function useBtn(k, text){
+  return h('button', {class:'btn small', type:'button', text:'Use this', onclick:() => { setText(k, text); }});
+}
+function renderAsk(k){
+  const el = rowEls.get(k); if (!el) return;
+  const box = el.querySelector('.ask'); const st = rowState.get(k);
+  if (!st || !st.open) { box.replaceChildren(); return; }
+  const input = h('input', {type:'text', placeholder:'Tell Claude what you want', 'aria-label':'What to ask Claude about ' + k});
+  const go = () => { const v = input.value.trim(); if (v) ask(k, 'options', v); };
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); go(); } });
+  const chip = (t, fn) => h('button', {class:'chip', type:'button', text:t, onclick:fn, disabled:st.busy});
+  const parts = [
+    h('div', {class:'chips'},
+      chip('3 options', () => ask(k, 'options', 'Give 3 alternative wordings.')),
+      chip('Shorter', () => ask(k, 'options', 'Give 3 shorter versions with the same meaning.')),
+      chip('More premium', () => ask(k, 'options', 'Give 3 versions with a calmer, more premium tone.')),
+      chip('Simpler', () => ask(k, 'options', 'Give 3 simpler, plainer versions.')),
+      chip('From ' + LNAME[other(lang)], () => ask(k, 'options', 'Write ' + LNAME[lang] + ' that carries the meaning of the ' + LNAME[other(lang)] + ' reference.')),
+      chip('Check my text', () => ask(k, 'check'))),
+    h('div', {class:'askline'}, input, h('button', {class:'btn small solid', type:'button', text:'Ask', onclick:go, disabled:st.busy}))
+  ];
+  if (st.busy) parts.push(h('div', {class:'sub'}, 'Claude is thinking. ', h('button', {class:'chip', type:'button', text:'Stop', onclick:() => st.ctl && st.ctl.abort()})));
+  if (st.error) parts.push(h('div', {class:'notice err', text:st.error}));
+  const r = st.result;
+  if (r && Array.isArray(r.options)) {
+    for (const o of r.options.slice(0,3)) {
+      if (!o || typeof o.text !== 'string') continue;
+      const bad = validate(lang, k, o.text).errors.length;
+      parts.push(h('div', {class:'opt'},
+        h('p', {class:'txt' + (lang === 'th' ? ' th' : ''), text:o.text, lang}),
+        o.why ? h('div', {class:'why', text:String(o.why)}) : null,
+        o.ruleNote ? h('div', {class:'pill warn', text:'Rule: ' + String(o.ruleNote)}) : null,
+        bad ? h('div', {class:'pill err', text:'Variables do not match the original'}) : useBtn(k, o.text)));
+    }
+  } else if (r && r.verdict) {
+    parts.push(h('div', {class:'opt'},
+      h('div', {class:'pill ' + (r.verdict === 'ok' ? 'ok' : 'warn'), text:r.verdict === 'ok' ? 'Looks good' : 'Suggested fix'}),
+      ...(Array.isArray(r.issues) ? r.issues.map(x => h('div', {class:'why', text:'• ' + String(x)})) : []),
+      r.ruleNote ? h('div', {class:'pill warn', text:'Rule: ' + String(r.ruleNote)}) : null,
+      r.fix && typeof r.fix === 'string' ? h('p', {class:'txt' + (lang === 'th' ? ' th' : ''), text:r.fix, lang}) : null,
+      r.fix && typeof r.fix === 'string' && !validate(lang, k, r.fix).errors.length ? useBtn(k, r.fix) : null));
+  }
+  box.replaceChildren(h('div', {class:'askbox'}, parts));
+}
+let reviewCtl = null;
+async function reviewRows(){
+  const keys = lastKeys.slice(0, Math.min(shown, 15));
+  if (!keys.length) return;
+  const panel = $('review'); panel.hidden = false;
+  panel.replaceChildren(h('div', {class:'notice'}, 'Claude is reviewing ' + keys.length + ' rows. ', h('button', {class:'chip', type:'button', text:'Stop', onclick:() => reviewCtl && reviewCtl.abort()})));
+  reviewCtl = new AbortController();
+  const items = keys.map(k => '- ' + k + ' | current: ' + cur(lang,k).replace(/\n/g,' ') + ' | ' + LNAME[other(lang)] + ': ' + (cur(other(lang),k) || '').replace(/\n/g,' ')).join('\n');
+  const p = GUIDE + '\n\nReview these ' + LNAME[lang] + ' rows. For each, say whether it is fine. Flag only real problems: unclear or awkward wording, tone off the brief, meaning that differs from the ' + LNAME[other(lang)] + ' reference, or a missing or added variable. Give a better wording where you flag one.\n\n' + items + '\n\nReply with only JSON: {"items":[{"key":"...","ok":true or false,"issue":"short issue if not ok","suggestion":"better wording if not ok"}]}';
+  try {
+    const r = await sample.json(p, {signal:reviewCtl.signal, cache:false});
+    const rows = (r && Array.isArray(r.items) ? r.items : []).filter(x => x && keys.includes(x.key));
+    const bad = rows.filter(x => !x.ok);
+    panel.replaceChildren(h('div', {class:'askbox'},
+      h('div', {class:'bar'}, h('strong', {text:'Claude reviewed ' + keys.length + ' rows: ' + (bad.length ? bad.length + ' to look at' : 'nothing to fix')}),
+        h('button', {class:'btn small', type:'button', text:'Close', onclick:() => { panel.hidden = true; }})),
+      ...bad.map(x => h('div', {class:'opt'},
+        h('div', {class:'keyline'}, h('span', {class:'key', text:x.key}), h('span', {class:'why', text:String(x.issue || '')})),
+        typeof x.suggestion === 'string' && x.suggestion ? h('p', {class:'txt' + (lang === 'th' ? ' th' : ''), text:x.suggestion, lang}) : null,
+        typeof x.suggestion === 'string' && x.suggestion && !validate(lang, x.key, x.suggestion).errors.length
+          ? h('button', {class:'btn small', type:'button', text:'Use this', onclick:() => { setText(x.key, x.suggestion); }}) : null))));
+  } catch (e) {
+    panel.replaceChildren(h('div', {class:'notice' + (e && e.code === 'cancelled' ? '' : ' err'), text:e && e.code === 'cancelled' ? 'Review stopped.' : errCopy(e && e.code)}));
+  }
+}
+
+/* ---------- export ---------- */
+async function exportJson(){
+  const {er} = counters();
+  if (er) { notice(er + ' edited row' + (er === 1 ? ' has' : 's have') + ' variable errors. Open the "Has errors" filter and fix them before exporting, so the app files stay valid.', true); return; }
+  const out = {}; for (const k of Object.keys(D[lang])) out[k] = cur(lang,k);
+  try { await downloads.save({filename:lang + '.json', data:JSON.stringify(out, null, 2) + '\n'}); notice('Saved ' + lang + '.json with all changes applied. Send it to the developer.', false); }
+  catch (e) { if (e && e.code !== 'declined') notice('The file could not be saved (' + (e && e.code) + ').', true); }
+}
+const csvCell = s => '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"';
+async function exportCsv(){
+  const rows = [['key','area','before','after','status','product_checked','rule_row','note','by','at']];
+  for (const k of Object.keys(D[lang])) {
+    const d = docs[lang].get(k); if (!d) continue;
+    if (!isEdited(lang,k) && !d.note && d.status !== 'ready') continue;
+    rows.push([k, AREAS[k[0]] || '', D[lang][k], cur(lang,k), d.status || 'draft', d.productChecked ? 'yes' : 'no', rule.has(k) ? 'yes' : 'no', d.note || '', d.by || '', d.at || '']);
+  }
+  if (rows.length === 1) { notice('Nothing has changed yet.', false); return; }
+  try { await downloads.save({filename:lang + '-changes.csv', data:'﻿' + rows.map(r => r.map(csvCell).join(',')).join('\r\n') + '\r\n'}); }
+  catch (e) { if (e && e.code !== 'declined') notice('The file could not be saved (' + (e && e.code) + ').', true); }
+}
+
+/* ---------- wire up ---------- */
+$('b-en').addEventListener('click', () => switchLang('en'));
+$('b-th').addEventListener('click', () => switchLang('th'));
+let qt = null;
+$('q').addEventListener('input', e => { clearTimeout(qt); qt = setTimeout(() => { f.q = e.target.value.trim(); shown = PAGE; renderList(); }, 200); });
+$('area').addEventListener('change', e => { f.area = e.target.value; shown = PAGE; renderList(); });
+$('status').addEventListener('change', e => { f.status = e.target.value; shown = PAGE; renderList(); });
+$('rules').addEventListener('change', e => { f.rules = e.target.checked; shown = PAGE; renderList(); });
+$('more-btn').addEventListener('click', () => { shown += PAGE; renderList(); });
+$('review-btn').addEventListener('click', reviewRows);
+$('x-json').addEventListener('click', exportJson);
+$('x-csv').addEventListener('click', exportCsv);
+window.addEventListener('hashchange', () => { const l = fromHash(); if (l) switchLang(l); });
+
+syncSeg(); buildFilters(); renderList();
+
+(async function connect(){
+  const c = window.claude;
+  if (!c || !c.use) { notice('This page is not connected, so edits cannot be saved. Open it from claude.ai.', true); return; }
+  try { userCap = await c.use('user'); if (userCap) me = (await userCap.name()) || ''; } catch(e){}
+  try { downloads = await c.use('downloads'); } catch(e){}
+  if (downloads) { $('x-json').hidden = false; $('x-csv').hidden = false; }
+  try { sample = await c.use('sample'); } catch(e){}
+  if (sample) renderList();
+  try { db = await c.use('db'); } catch(e){}
+  if (!db) { notice('Edits cannot be saved in this view. You can still try wording and export from this page.', true); return; }
+  for (const l of ['en','th']) {
+    db.collection(l).onSnapshot(snap => {
+      const prev = docs[l], next = new Map();
+      snap.docs.forEach(s => next.set(s.id, s.data()));
+      for (const id of timers.keys()) if (id.startsWith(l + ':')) { const kk = id.slice(3); if (prev.has(kk)) next.set(kk, prev.get(kk)); else next.delete(kk); }
+      const changed = new Set();
+      for (const k of new Set([...prev.keys(), ...next.keys()])) if (JSON.stringify(prev.get(k)) !== JSON.stringify(next.get(k))) changed.add(k);
+      docs[l] = next;
+      for (const k of changed) { if (rowEls.has(k)) renderRow(k, false); }
+      counters();
+    }, e => notice('Live updates stopped (' + (e && e.code) + '). Reload the page to reconnect.', true));
+  }
+})();
+})();
+</script>

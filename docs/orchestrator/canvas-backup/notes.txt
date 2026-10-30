@@ -1,0 +1,148 @@
+dict_keys(['kind', 'maxW', 'page', 'text', 'w', 'x', 'y'])
+htitle1 | hifi1 | Step 3.1 · Hi-fi · Core booking · Palette D, DM Sans
+htitle2 | hifi2 | Step 3.2 · Hi-fi · Solo and group classes, packages
+htitle3 | hifi3 | Step 3.3 · Hi-fi · Account screens
+n01 | wire1 | Browse first. A guest sees Home, courts, classes, coaches and packages without signing in. This sheet appears when they tap to book or buy. Inside LINE sign in is silent, so it shows only in a browser. The add friend checkbox is LINE Login's own option.
+n02 | wire1 | First booking only. Name, phone and consent. Date of birth is asked only for a student price, and level is set later in Profile. Language follows the LINE app.
+n03 | wire1 | Returning player view. A new player with no booking sees a Book your first hour card in place of Next booking. Birthday banner only shows in the birth month.
+n04 | wire1 | Every slot state carries a word, never colour alone. Taken slots offer Join waitlist. The summary bar appears once an hour is picked. Multi hour select works by tapping consecutive slots on one court.
+n05 | wire1 | Flow 0 has no credits, so the credits row reads None. Add-on prices are TBD in the spec. Birthday discount row only appears in the birth month.
+n06 | wire1 | The countdown is the 15 minute slot hold. After upload a small checking overlay sits on this screen (hi-fi). Only a verified slip confirms the booking. If the hold runs out the slot is released and a LINE message tells the player.
+n08 | wire1 | Add a coach turns the court hour into a lesson and charges only the difference (Flow A).
+n21 | wire2 | Classes tab holds Solo and Group side by side. Card price is the all-in price, coach plus court. Next open time already accounts for an open court. Head Coach price is TBD.
+n22 | wire2 | One flow, no juggling. Each time row carries its court. Hours when the coach is available but both courts are taken show as Coach available, no court, so the player sees why it can't be picked. Hours that would be the coach's 7th in a row are never offered (rest rule, spec 5.2).
+n23 | wire2 | Players only see their own audience, so there is no Adult or Student toggle. Full classes show Join waitlist in place of Book. Flow C starts here.
+n24 | wire2 | Shows group credit first when the player has one, with drop-in price as the fallback. Group class prices are TBD in the spec.
+n26 | wire2 | Final offer (v1.2). 10 hours ฿4,500 and 20 hours ฿8,000, both soft opening special. 5 hour bundle and monthly unlimited dropped. Buying follows Flow H.
+n27 | wire2 | Opened from the LINE message. 30 minute claim window by default. Decline or time out passes the spot to the next person.
+n2b | wire2 | Coach and court on one checkout, one PromptPay payment, one hold. Then C11 and C12 as in Batch 1. Coach ฿800 + court ฿500, confirmed. A solo pack credit covers coaching only, so the ฿500 court fee is still paid each booking.
+n31 | wire3 | Every booking type in one list, each with its status chip. Waitlist tab holds class and court waitlists with queue position.
+n32 | wire3 | Flow D. The sheet states the outcome before the player confirms. Under 12 hours it reads This credit will be forfeited, with Keep booking as the main button.
+n33 | wire3 | Balances are a ledger, so every line in history links to its booking or reason. LINE reminders go out 14 and 3 days before a package expires.
+n34 | wire3 | Flow E. Referral and birthday reward amounts are TBD in the spec, shown as placeholders. Gift vouchers were removed from scope (v1.2).
+n35 | wire3 | Language toggle also lives in the Home header. Receipts download as PDF, Thai or English. PDPA data copy and deletion requests start here.
+n41 | wire4 | Coach role opens here inside LINE. Sessions in time order with court, type and players. Tap a session to open K5. Coaches never see payments or other coaches.
+n42 | wire4 | Present or Absent per player. Marking feeds check-in and coach pay, since no-shows still count as delivered. Notes are private to coaches and admins.
+n43 | wire4 | Week agenda with lessons, classes, leave and blocked court times, each labelled by type, not colour alone.
+n44 | wire4 | Weekly rules plus one-off changes. Both feed solo class booking straight away, combined with court availability. Rest rule from spec 5.2, at most 6 teaching hours in a row, is applied on top.
+n45 | wire4 | Flow G starts here. The form warns when booked sessions fall in the period, so the coach knows a substitute is needed. Leave types are placeholders.
+n46 | wire4 | Pay numbers per coach are TBD in the spec, shown as placeholders. Pay counts sessions attended or marked no-show, not ones cancelled within policy.
+n51 | wire5 | Day view, two court columns. Each booking type carries a label as well as a fill. Click an empty slot to create (A2), drag to move with a conflict check and a LINE message to the player.
+n52 | wire5 | Flow F walk-in. Cash needs a reason code because the club is QR first. Adding a coach here also respects the 6 hour rest rule. Existing bookings open in the same panel with history.
+n53 | wire5 | Runs on a tablet at reception. Not checked in 15 minutes after start is flagged Late. At the end of the slot it becomes No-show and staff can reverse it with a reason.
+n55 | wire5 | Search by name, phone or LINE name. Filters from spec 5.9. Export to CSV.
+n56 | wire5 | Every balance change needs a reason and goes to the audit log. Extending a package is Owner only, so front desk sees it disabled.
+n57 | wire5 | Affected bookings are listed before confirming. Confirm cancels them, returns full credit and sends the Club closed this slot LINE message.
+n61 | wire6 | Flow G owner side. Approve leave, then pick a substitute for each flagged session. The substitute list only shows coaches who are available and under their 6 hour limit.
+n62 | wire6 | Templates generate the weekly sessions. Below minimum alert fires a set time before start. Cancelling returns full credit and messages every player.
+n63 | wire6 | Every price is a setting, nothing hard coded. Solo class shows coaching plus court, ฿800 + ฿500, as agreed. TBD prices stay as editable placeholders.
+n64 | wire6 | One promo code per order. Each code says whether it stacks with the birthday discount. Partner report lives in Reports.
+n66 | wire6 | Owed to customers adds wallet balances to unused package credit. The spec only counts package credit, so this is a suggested change to confirm.
+n67 | wire6 | Receipt numbers never get reused. Void needs the Owner and a reason, reprints are marked Copy. Daily close totals match the bank statement.
+n69 | wire6 | All business rules in one place, including the new coach rest rule. Wallet expiry is an open question, shown as TBD.
+n6a | wire6 | Staff sign in with LINE from an invite link. The audit log is read only and searchable by staff, customer, record type and date.
+vtitle | visual | Step 2 · Palette A · Clubhouse light
+vtitleB | visual | Palette B · Morning court
+vtitleC | visual | Palette C · Clay court
+vtitleD | visual | Palette D · Sage garden
+vtitleE | visual | Palette E · Twilight court, dark
+vtitleF | visual | Palette F · White clubhouse, B background with A gold
+vtitleG | visual | Palette G · White heritage, B background with original amber
+w1title | wire1 | Step 1.1 · Batch 1 · Core booking · Flow 0
+w2title | wire2 | Step 1.2 · Batch 2 · Solo and group classes, packages · Flows B and C
+w3title | wire3 | Step 1.3 · Batch 3 · Account · Flows D and E
+w4title | wire4 | Step 1.4 · Batch 4 · Coach portal · Flow G
+w5title | wire5 | Step 1.5 · Batch 5 · Admin front desk · Flow F
+w6title | wire6 | Step 1.6 · Batch 6 · Admin owner · Flow G
+w7title | wire7 | Step 1.7 · Purchase flows. Top row Flow H court bundle, bottom row Packages tabs and Flow I group pack
+n70 | wire7 | Flow H main path, bought from Packages. No date, court or add ons. Validity starts on purchase, expiry date shown up front.
+n71 | wire7 | Same PromptPay screen as C11, but nothing is held. The QR is valid 15 minutes, then the order is cancelled and nothing is charged.
+n73 | wire7 | Purchase confirmed. No check in QR because nothing is booked yet. Book a court now opens C4, where checkout uses bundle hours first.
+n74 | wire7 | Flow H shortcut. Shown only when a player with no court hours pays full price. Use a bundle instead swaps this bill for the one on the right.
+n75 | wire7 | One bill, one payment, one 15 minute hold. Pays on the normal C11 (slot held), then ends on C12 with the QR and hours left.
+n76 | wire7 | Home quick action Packages opens C9 on Court bundles (Step 1.2). Solo pack covers coaching only, so the court note is always visible.
+n77 | wire7 | Flow I alternative path. Buy goes to C10P, C11P and C12P with Find a class in place of Book a court.
+n79 | wire7 | Shown when the player has no group credits. Pack is preselected as best value. Students see ฿500 drop in and the ฿3,200 pack.
+n710 | wire7 | One bill for the pack and the seat. Pays on the normal C11 with the seat held.
+n711 | wire7 | Booking confirmed with QR, plus the pack meter and expiry.
+htitle4 | hifi4 | Step 3.4 · Hi-fi · Purchase flows. Top row Flow H court bundle, bottom row Packages tabs and Flow I group pack
+htitle5 | hifi5 | Step 3.5 · Hi-fi · Coach portal · Flow G
+htitle6 | hifi6 | Step 3.6 · Hi-fi · Admin front desk · Flow F
+htitle7 | hifi7 | Step 3.7 · Hi-fi · Admin owner · Flow G
+ns10 | states1 | Skeleton grid while slots load. Shapes match the real grid so nothing jumps when data arrives.
+ns11 | states1 | Every slot carries a word, never colour alone. The banner points to the next day with open hours.
+ns12 | states1 | Shared error for any screen. Always says whether anything was booked or charged.
+ns13 | states1 | 15 minute hold expired. The slot is released and the LINE message goes out.
+ns15 | states1 | Popup when the automatic check says the slip doesn't match. Nothing is booked. The player uploads the right slip, or taps Chat with us on LINE if they're sure it was right. The club's admin checks it in the LINE OA chat and the front desk books or adds wallet credit (A2 or A6).
+ns16 | states1 | First visit or nothing upcoming. Two clear ways to start.
+stitle1 | states1 | Step 4.1 · States · Core booking · loading, full, error, payment outcomes, empty
+nt10 | thai1 | Thai uses Noto Sans Thai with DM Sans for numbers. Dates use the international year, short days as ส. and months as ม.ค.
+nt11 | thai1 | Slot words stay short (ว่าง, ไม่ว่าง, รอคิว) so both courts fit side by side at 375 px.
+nt12 | thai1 | Found in the Thai pass. The policy line overflowed and the Apply button wrapped, so both got shorter Thai wording. Rule for build, content areas scroll and buttons never wrap.
+nt13 | thai1 | Fits as is. Account name placeholder stays until the club confirms the PromptPay account.
+nt14 | thai1 | Found in the Thai pass. Taller Thai lines pushed the Add a coach card under the Done button, so the QR is smaller here. Same fix should apply to English.
+ttitle1 | thai1 | Step 4.2 · Thai · Core booking · Flow 0 in Thai
+nl0 | line1 | Six tiles, Thai first with English beneath, so one image works for both languages. Book a court is the butter tile because it is the most used. Export at 2500 × 1686 for LINE Official Account Manager. Each tile opens its page directly inside LINE. Book a court goes straight to C4 Book a court, the court schedule, not Home.
+nl1 | line1 | Flex Message card sent when payment is confirmed or credit is used. Booking details only, no QR. Wording is fixed in code.
+nl2 | line1 | Sent 24 h and 2 h before start. The 2 h version notes that free cancellation has passed.
+nl3 | line1 | Claim spot opens C16 inside LINE with the 30 minute countdown. Decline passes the spot on straight away.
+nl4 | line1 | Non VAT receipt in an unbroken sequence. Legal name ทีที รีครีเอชั่น จำกัด and tax ID 0135569018041 are set. Address and branch are still placeholders.
+nl5 | line1 | Same layout in Thai. Customers pick the language when downloading from Profile and receipts.
+ltitle | line1 | Step 5 · LINE rich menu, message cards and PDF receipt
+ng0 | hifi8 | Flow C. Sheet after tapping Waitlist on a court slot or full class. Nothing charged, place in line, 30 minute claim window.
+ng1 | hifi8 | Every waitlist the player is in, with place in line and Leave waitlist.
+ng2 | hifi8 | Flow A. Bundle hours cover the booking, ฿0 due, Confirm booking skips payment.
+ng3 | hifi8 | Flow A step 5. Opens from C12. Only coaches available at that hour and under the 6 hour limit. Pays the coaching part only.
+ng4 | hifi8 | The court booking becomes a solo class. Example uses ฿500 wallet, ฿300 left by PromptPay.
+ng5 | hifi8 | Solo credit covers coaching. The ฿500 court fee is paid by a bundle hour here, or wallet or PromptPay (your decision).
+ng6 | hifi8 | Under 12 hours. States the forfeit first, Keep booking is the main button.
+ng7 | hifi8 | Flow G player side. Opens from the Coach changed LINE message. Free cancel even inside 12 hours.
+ng8 | hifi8 | No bookings or credits yet. First hour card, friend's code banner when they came from a referral link.
+ng9 | hifi8 | Full screen check in QR from My bookings or Home, brightness up.
+ng10 | hifi8 | Date of birth is locked for players because it sets Adult or Student pricing. My suggestion, please confirm.
+ng11 | hifi8 | PDPA copy and deletion requests, handled by the front desk and logged.
+ng12 | hifi8 | Banner on the 1st of the birth month, tracks the one package and one solo class discount.
+ng13 | hifi8 | Referral code pre-applied on the friend's first purchase. Counts as the one promo code.
+nga0 | hifi8 | View, move, change coach, add an add on, or cancel with wallet return or forfeit and a reason.
+nga1 | hifi8 | Front desk sells a bundle or pack, paid by counter QR, wallet or cash with reason.
+nga2 | hifi8 | Required by the spec. Sessions per coach, adjustments, Mark paid.
+htitle8 | hifi8 | Step 3.8 · Hi-fi · The 12 gaps from the full flow review, numbered as in the review
+n54b | wire5 | Backup only. This page appears in the menu only while automatic slip checking is down or the owner has turned it off in Settings. Holds stretch to 60 minutes. Staff tick all four lines, including checking the money arrived in the club bank app, before Approve unlocks. Doesn't match sends the player the same popup as C11, with Chat with us on LINE.
+nh6b | hifi6 | Backup only. This page appears in the menu only while automatic slip checking is down or the owner has turned it off in Settings. Holds stretch to 60 minutes. Staff tick all four lines, including checking the money arrived in the club bank app, before Approve unlocks. Doesn't match sends the player the same popup as C11, with Chat with us on LINE.
+ns17 | states1 | Backup mode. The checker is down, so the hold stretches to 60 minutes and the front desk checks the slip by hand in A4. The result comes in LINE.
+w8_P1-Clubs | wire8 | Start of Flow J and Flow K. Alerts sort to the top. New club opens the P2 wizard.
+w8_P2-Step1-Basics | wire8 | Legal name, tax ID, branch and address print on receipts. The owner LINE ID is where the invite goes.
+w8_P2-Step2-Plan | wire8 | One BOOQ plan at ฿1,900 a month for every club, shown read only. Only trial end and billing start are set here. More plans can come later.
+w8_P2-Step3-Courts | wire8 | Sport sets the labels players see. Each court is a resource with a sport, type, lights and players, so other sports fit later. A club can add more locations. Bookings stay 60 minutes on the hour for every club.
+w8_P2-Step4-LINE | wire8 | Each value has its own Test. A club can't go to Testing until all pass.
+w8_P2-Step5-Payments | wire8 | Each club picks Beam or slip checking. Beam shown here, with a connection test. Money goes straight to the club.
+w8_P3-Club-detail | wire8 | Shows what is missing and who owes it. Owner invite and live checks sit beside the checklist.
+w8_A0-Setup-checklist | wire8 | New club admin page for the owner, shown until the club is live. Steps 7 and 8 open the existing Pricing (A9) and Coaches (A7) pages.
+w8_P4-Launch | wire8 | Step 9. Test mode first, then the go live checklist. Go live clears test bookings.
+w8_P3-Club-alert | wire8 | Flow K step 2. A failed check names the cause and what players lose.
+w8_P3b-Support-view | wire8 | Live clubs are look only. Draft and Testing clubs open in edit mode. A live club owner can allow changes for 24 hours in Settings. Every visit and change is logged.
+w8_P3c-Pause-club | wire8 | Platform admin only. Reason required. Players can still use existing bookings, expiry dates move forward, new booking and buying turn off.
+w8_P5-Templates | wire8 | Sport templates. Tennis is Hunter's setup with the final offer. Padel and pickleball are still to build. Editing a template never changes a club that already used it.
+w8_P6-Team-audit | wire8 | Platform roles and a log of every platform action.
+w8title | wire8 | Step 1.8 · Platform console wireframes. Top row Flow J onboard a new club, bottom row Flow K support a live club, then P5 Templates and P6 Team and audit log
+w8_P5b-Templates-blank | wire8 | Clicking Blank shows an empty product list. The club starts with no products and the owner adds everything in Pricing. Booking length stays fixed. Go live is blocked until there is at least one product and every rule is set.
+h9title | hifi9 | Step 3.9 · Hi-fi · Platform console. Top row Flow J onboard a new club, bottom row Flow K support a live club, then P5 Templates and P6 Team and audit log
+h9pa | hifi9 | While a club is paused this banner sits on top of every club admin page. Message BOOQ opens a LINE chat with the BOOQ team.
+h9pc | hifi9 | Player view while paused. Book, Classes and Packages are off everywhere they appear. Existing bookings still show. The same message shows if a player opens a booking link.
+h1guest | hifi1 | Browse first. A guest sees the same Home without personal cards. Sign in with LINE comes up at checkout, or from the Sign in button.
+h1c4entry | hifi1 | Entry point. The LINE rich menu Book a court tile opens this court schedule directly, not Home. Home and the Courts tab also lead here.
+w1c4entry | wire1 | Entry point. The LINE rich menu Book a court tile opens this page directly, not Home.
+h1coach | hifi1 | Add a coach at checkout. Shows only coaches available at this exact hour (working, not on leave, under their 6 hour limit), with each coach's price for the player type. Profile opens the coach profile. Picking one turns the court hour into a solo class: court ฿500 plus coaching. Skipping it keeps a court only booking.
+w8_P2-Step5b-Payments-slip | wire8 | Same step with PromptPay and slip checking chosen. The slip test uses a sample slip. Backup slip check (A4) only applies to this option.
+h1beam | hifi1 | Clubs on the Beam option. The QR is made by Beam for this booking, so there is no slip to upload. The booking confirms by itself when the payment arrives. Clubs on slip checking use C11 above.
+n_A09b-Pricing | wire6 | Platform settings every club fills in. Price groups replace fixed Adult and Student, court prices allow peak and weekend rates, and each club keeps its own add-ons. Hunter keeps Adult and Student and one ฿500 price.
+n_H-A09b-Prici | hifi7 | Platform settings every club fills in. Price groups replace fixed Adult and Student, court prices allow peak and weekend rates, and each club keeps its own add-ons. Hunter keeps Adult and Student and one ฿500 price.
+s6_F1 | step6 | F1 · Hunter player books a court and pays with Beam. Press Play on screen 1 and tap the main button on each screen.
+s6_F1b | step6 | F1b · Player at a club on slip checking pays and uploads a slip. Press Play on screen 1 and tap the main button on each screen.
+s6_F2 | step6 | F2 · Player buys a package, then books with it. Press Play on screen 1 and tap the main button on each screen.
+s6_F3 | step6 | F3 · Front desk morning. Press Play on screen 1 and tap the main button on each screen.
+s6_F4 | step6 | F4 · BOOQ onboards a new club. Press Play on screen 1 and tap the main button on each screen.
+s6_F5a | step6 | F5a · BOOQ fixes a LINE alert. Press Play on screen 1 and tap the main button on each screen.
+s6_F5b | step6 | F5b · BOOQ pauses a club. Press Play on screen 1 and tap the main button on each screen.
+s6_prev | step6 | What the club and players see while a club is paused. These two are previews, not part of the clickable flow.
+s6title | step6 | Step 6 · Clickable flows. Five prototypes built from the hi-fi screens. Each row is one flow, play it from screen 1
