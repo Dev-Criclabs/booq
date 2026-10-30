@@ -104,8 +104,8 @@ export interface ExpectedOutcome {
   booking: 'confirmed' | 'unchanged' | 'not-confirmed';
   /** Wallet ledger row created automatically by this delivery. */
   walletCredit: 'none' | 'amount-paid';
-  /** New receipts issued by this delivery. 'undecided' = D25 says issued for money received, accountant to confirm. */
-  receipts: 0 | 1 | 'undecided';
+  /** New receipts issued by this delivery. A late payment that goes to the wallet gets its own receipt for the money received (D37). */
+  receipts: 0 | 1;
   confirmedCards: 0 | 1;
   /** A LINE message to the player explaining a late payment that went to the wallet (D25). */
   lateWalletMessage: boolean;
@@ -187,10 +187,10 @@ export const BEAM_SCENARIOS: ScenarioSpec[] = [
     id: 'BEAM-05b-late-taken',
     title: 'Late callback after the hold, slot taken or held, or coach lost, or closure',
     requirements: ['PAY-03', 'BOOK-04'],
-    decisions: ['D18', 'D25'],
+    decisions: ['D18', 'D25', 'D37'],
     steps: ['As above, but another hold, booking or closure now covers the slot (solo class: court and coach both must be free)', 'Payment reported'],
-    // D25: a receipt is issued for money received (accountant to confirm).
-    expected: { ...BASE, booking: 'not-confirmed', walletCredit: 'amount-paid', receipts: 'undecided', lateWalletMessage: true, nothingElseChanged: false, open: ['D25 receipt, accountant to confirm', 'Q-25'] },
+    // D25, D37: the wallet credit gets its own receipt for the money received.
+    expected: { ...BASE, booking: 'not-confirmed', walletCredit: 'amount-paid', receipts: 1, lateWalletMessage: true, nothingElseChanged: false, open: ['Q-25 (receipt number series and year)'] },
   },
 ];
 

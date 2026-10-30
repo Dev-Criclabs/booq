@@ -39,7 +39,6 @@ Questions already open elsewhere are not repeated: `canvas-gaps.md` C1 (correcte
 
 | # | Pri | Req | Question | Waits |
 |---|---|---|---|---|
-| Q-20 | B | PAY-03 | D25 answers "still open", the solo class case and the LINE message. **Still open, with the accountant:** whether a receipt is issued for a late wallet credit. Until then the tests mark it undecided | PAY-03 tests |
 | Q-21 | B | PAY-04 | Is the package QR validity ("[15] minutes") the same club setting as the hold time (10, 15 or 20)? If a payment arrives after the unpaid package order was cancelled, does the value go to the wallet like PAY-03? | PAY-04 tests |
 | Q-22 | B | PAY-06 | What are the cash reason codes (list)? Is cash allowed for packages? Which roles (Front desk and Owner only?) | PAY-06 tests |
 | Q-24 | B | PDPA-01 | "Delete on request": receipts must keep an unbroken legal sequence, ledgers must balance, and audit entries are needed. Does delete mean anonymise the player and keep the financial rows? What does "copy of my data" contain (staff notes? slips?) | PDPA tests, RLS-R01 |
@@ -74,6 +73,7 @@ QA tests and the fakes follow these. Wording of the rules is in the decision log
 | Q-32 | LINE-06 | D17 (new LINE-07) |
 | Q-28 | PLAT-06, P1, P3, P4 | D2, D14 |
 | Q-30 | PLAT-04, PKG-01 | D28 |
+| Q-20 | PAY-03 | D25, D37 (a late payment that goes to the wallet gets its own receipt for the money received) |
 | Q-19 | PAY-02 | D24, D36 (validly signed wrong amount: recorded, flagged for the owner, answered with a success status so Beam stops retrying) |
 | Q-29 | PLAT-02, roles | D27, D3, D15, D35 (Accountant sees names, not phone numbers or dates of birth) |
 | Q-33 | PLAT-07, D16 | D32 (two Beam key sets, test and live; Testing uses test; the key swap is a P4 go live item with a smoke test; test LINE pushes use the real OA and count toward the cap) |
