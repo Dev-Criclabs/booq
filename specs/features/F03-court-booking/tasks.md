@@ -14,7 +14,7 @@ Depends on: F01 T03 to T07 (database, context, tenant suite), T08 (settings), T1
   Tests first (direct SQL, bypassing the app): an overlapping court row is rejected; an overlapping coach row on another court is rejected; back-to-back hours both succeed; a solo class row with only a court is rejected.
 - [x] **F03-T03** Booking time rules in `packages/time` and `packages/domain/booking`: on the hour, window by Bangkok date (day 30 inclusive), hour started (player) versus hour ended (staff), last start 23:00. IDs: BOOK-01-AC1, AC3, AC4, AC5, AC12, decisions D39, D42. Role: BE-B · Deps F01-T02 · Size: M
   Tests first (controllable clock): day 30 accepted and day 31 refused at 23:59 and 00:01 Bangkok; at 18:10 a player cannot book 18:00 and staff can; 24:00 never a start.
-- [ ] **F03-T04** Opening hours and resource reader (weekday hours, `24:00` close, active flag). IDs: BOOK-01-AC3, AC9. Role: BE-B · Deps F01-T06 · Size: S
+- [x] **F03-T04** Opening hours and resource reader (weekday hours, `24:00` close, active flag). IDs: BOOK-01-AC3, AC9. Role: BE-B · Deps F01-T06 · Size: S
   Tests first: hours differ by weekday; an inactive court is not offered and requests for it are refused.
 - [x] **F03-T05** `app.hold_minutes(club)` reading the setting (the one place F16 will override) and the `hold_setting_unset` rule. IDs: BOOK-03-AC3, decision D52. Role: BE-B · Deps F01-T08 · Size: S
   Tests first: only 10, 15 or 20 read back; an unset setting refuses a payment hold but not a PAY-07 booking.
