@@ -13,7 +13,7 @@ export interface DataRequestRouteDeps {
   service(): Service;
 }
 
-const STATUS: Record<DataRequestErrorCode, number> = { forbidden: 403, not_found: 404, bad_transition: 409, erasure_not_available: 503 };
+const STATUS: Record<DataRequestErrorCode, number> = { forbidden: 403, not_found: 404, bad_transition: 409, future_booking: 409, already_erased: 409 };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ACTIONS: readonly DataRequestAction[] = ['start', 'done', 'decline'];
 const bad = () => new RouteError(400, 'bad_input');
@@ -39,6 +39,11 @@ export function dataRequestRoutes(deps: DataRequestRouteDeps): Route<unknown>[] 
       return inClub(ctx, (s, tx) => s.create(tx, actor(ctx), { kind }));
     }),
     route({ method: 'GET', path: '/me/data-requests', permission: 'datarequest.own' }, (ctx) => inClub(ctx, (s, tx) => s.listOwn(tx, actor(ctx)))),
+    route({ method: 'GET', path: '/data-requests/:id/impact', permission: 'datarequest.handle' }, (ctx) => {
+      const id = (ctx.input as { id?: unknown } | null)?.id;
+      if (typeof id !== 'string' || !UUID.test(id)) throw bad();
+      return inClub(ctx, (s, tx) => s.deletionImpact(tx, actor(ctx), id));
+    }),
     route({ method: 'GET', path: '/data-requests', permission: 'datarequest.handle' }, (ctx) => inClub(ctx, (s, tx) => s.listOpen(tx, actor(ctx)))),
     route({ method: 'POST', path: '/data-requests/:id/handle', permission: 'datarequest.handle' }, (ctx) => {
       const i = ctx.input as { id?: unknown; action?: unknown; note?: unknown } | null;

@@ -23,7 +23,9 @@
     "A-new.export_expired": "This export has expired. Start a new export to get a fresh download link.",
     "A-new.export_failed": "The export could not be prepared. Please start it again.",
     "A-new.data_request_bad_transition": "This request has already been handled.",
-    "A-new.claim_not_open": "This claim has already been handled."
+    "A-new.claim_not_open": "This claim has already been handled.",
+    "A-new.data_request_future_booking": "This player has a booking that has not happened yet. Cancel it first, then confirm the deletion.",
+    "A-new.data_request_already_erased": "This player's data has already been deleted."
   },
   "th": {
     "L-new.club_paused": "BOOQ หยุดการจองออนไลน์ของ {clubName} ชั่วคราว เหตุผล: {reason} การจองที่มีอยู่และการแจ้งเตือนไม่ได้รับผลกระทบ และวันหมดอายุของแพ็กเกจและกระเป๋าเงินจะเลื่อนออกไปตามระยะเวลาที่หยุด",
@@ -48,6 +50,8 @@
     "A-new.export_expired": "การส่งออกนี้หมดอายุแล้ว กรุณาเริ่มการส่งออกใหม่เพื่อรับลิงก์ดาวน์โหลดใหม่",
     "A-new.export_failed": "เตรียมไฟล์ส่งออกไม่สำเร็จ กรุณาเริ่มใหม่อีกครั้ง",
     "A-new.data_request_bad_transition": "คำขอนี้ได้รับการดำเนินการแล้ว",
-    "A-new.claim_not_open": "คำขอยืนยันตัวตนนี้ได้รับการดำเนินการแล้ว"
+    "A-new.claim_not_open": "คำขอยืนยันตัวตนนี้ได้รับการดำเนินการแล้ว",
+    "A-new.data_request_future_booking": "ผู้เล่นมีการจองที่ยังไม่ถึงกำหนด กรุณายกเลิกการจองก่อน แล้วจึงยืนยันการลบข้อมูล",
+    "A-new.data_request_already_erased": "ข้อมูลของผู้เล่นรายนี้ถูกลบไปแล้ว"
   }
 }
