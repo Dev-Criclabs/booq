@@ -203,6 +203,15 @@ Open:
 
 DevOps will not invent any product rule. Anything the monitoring surfaces that looks like a rule question goes to the Orchestrator.
 
+## 12. Supabase spike items (once a Supabase project exists)
+
+Collected here so none is lost. Each result is written into the document named.
+1. Custom roles through the pooler, `btree_gist`, a direct or session connection for the worker, and that `graphile_worker` can be created by the queue role (`worker.md`).
+2. Backups and the restore drill (section 4).
+3. **Staff sign-in paths:** password grant and the second-factor challenge and verify in `apps/staff-invite/src/supabase-identity.ts` against a real project (`platform.md`, seven checks).
+4. Forged `x-real-ip` and `x-forwarded-for` on the hosted web deploy (`web.md`).
+5. Beam Playground checks G1 to G13 (`accounts.md`).
+
 ## 11. Smoke tests on real services
 
 ### S-1: real LIFF on a device (C1 and C2 inside the LINE app)
