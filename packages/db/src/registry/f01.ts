@@ -27,6 +27,7 @@ export const tables: Fragment = {
   'platform.console_session': { class: 'P' },     // 0051: console sign-in state, ids hashed, reached only through definer functions
   'platform.console_challenge': { class: 'P' },
   'platform.console_login_state': { class: 'P' },
+  'platform.staff_enrolment': { class: 'P' },     // 0055: single-use first-factor links for BOOQ staff, token stored as a hash
   'platform.worker_heartbeat': { class: 'P' },   // migration 0007; counts only
   // People (F01-T12, migration 0003): club data, BOOQ staff never.
   'public.app_user': { class: 'D', audited: true },

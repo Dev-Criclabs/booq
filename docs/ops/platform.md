@@ -14,8 +14,20 @@ BOOQ staff sign in with email and a second factor (D3). The password check happe
 | `APP_BASE_URL` | yes | `https` address of the club app, for owner and tester invite links |
 | `HEALTH_TOKEN` | optional | 16+ characters. Absent means the health route is not mounted, so the external monitor has nothing to poll: **required for the 7 Dec test** (`worker.md`) |
 | `PLATFORM_SIGNIN_RATE_LIMIT`, `PLATFORM_SIGNIN_RATE_WINDOW_SECONDS` | pair, both or neither | Whole numbers. With neither there is no limit: **required before the 7 Dec test**, same rule as the web pair. Security's `boq_totp_max_failures` (5, then a 15 minute lock) is a separate rule in the app. Values are Security's to approve; the web proposal was 10 per 60 s |
-| `STAFF_INVITE_URL` **(branch)** | pair with the next, both or neither | `http` or `https` address of the staff-invite function. Without the pair, console sign-in answers 503 |
-| `STAFF_INVITE_SIGNING_SECRET` **(branch)** | pair with the previous | **Secret.** 32+ characters. The same value is set in `apps/staff-invite`. The console signs its requests to the function with it |
+| `STAFF_INVITE_URL` **(branch)** | group of three with the next two: all or none | `http` or `https` address of the staff-invite function. Without the group, console sign-in answers 503 |
+| `STAFF_INVITE_SIGNING_SECRET` **(branch)** | same group | **Secret.** 32+ characters. The same value is set in `apps/staff-invite`. The console signs its requests to the function with it |
+| `PLATFORM_BASE_URL` **(branch)** | required whenever `STAFF_INVITE_URL` is set | `https` address of **the console itself** (not the club app; that is `APP_BASE_URL`). It is the base of the staff enrolment link an admin sends to a new teammate. If it is wrong, every enrolment link points to the wrong place. Set it to the console's real public address once the console is hosted |
+
+### Platform config values (database table `platform.config`, set by a BOOQ admin, no defaults)
+
+These are not environment variables. They are rows an admin enters in the console, and the code ships none (no invented settings). Known so far, all to be set **before the 7 Dec test**:
+
+| Key | What happens if it is unset | Value |
+|---|---|---|
+| `console_enrolment_ttl_hours` **(branch)** | Issuing a staff enrolment link is refused (`enrolment:not_configured`), so **no new BOOQ teammate can be invited or have a second factor reset**. The number is hours the single-use link stays valid; it must be above 0 | **No value proposed.** A BOOQ admin decides. (Security's `invite_ttl_hours` figures are for club invites, a different setting) |
+| `pay_tap_limit_count`, `pay_tap_limit_window_seconds` | No limit on new payment holds (F03 design 4.8, D61) | Security proposes 5 holds per 600 s (`threat-model.md` section 6); approval is Security's and the owner's |
+
+The first BOOQ admin account needs a way in before this works (first-admin bootstrap): that is the Architect's and BE-P's design, not set here. Add any other `platform.config` key to this table when a feature adds one.
 
 ## `apps/staff-invite` (the only holder of Supabase keys)
 

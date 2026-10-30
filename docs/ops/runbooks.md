@@ -126,3 +126,17 @@ Engineers are BOOQ staff, so reading club data breaks the promise that BOOQ neve
 4. Only the two named holders of database owner access (hardware keys) can grant it. The `booq_owner` password is not known to any person; migrations run through CI.
 5. Provider access logs are kept and a named person reviews them monthly.
 6. Afterwards: remove the access, close the ticket, note whether anything was changed (it should not be).
+
+## 17. Create the first BOOQ admin (D163) — placeholder, the script has not landed
+Needed once per environment, before the 7 Dec readiness check, because no teammate can be invited until an admin exists. The script is BE-P's and was not on any branch when I checked (30 Oct). **Do not write the command here until it exists; fill in steps 2 to 4 from its own documentation.**
+
+Known from the decision (D163): a one-off operator script that DevOps runs. It creates the first admin and prints **one enrolment link**. It **refuses once any admin exists**, and the link life is an **argument** (confirmed by the orchestrator: it covers that one bootstrap link, so `console_enrolment_ttl_hours` does not have to be set before the first run; the new admin sets it in the console before inviting anyone else).
+
+1. Decide who the first admin is (a named person, with the hardware key or authenticator they will enrol) and write it in the ops record. The user approves the name.
+2. *(to fill in)* Which credential the script runs with and where it runs. It must not use a personal laptop with other keys, and the credential is not left behind afterwards.
+3. *(to fill in)* Run it with the link life chosen by the user. Copy the printed link **once**, and send it to the named person by a different channel than the one used for the request. Never paste the link into chat or a ticket, because it is single use but grants admin enrolment.
+4. The person opens the link, sets a password and enrols their authenticator. Confirm they can sign in with the second factor.
+5. Confirm a second run **refuses**. Then set `console_enrolment_ttl_hours` in `platform.config` (`platform.md`) and have the first admin invite the others.
+6. Record in the ops record: date, who ran it, who was created, that the link was used. Remove any credential used for the run.
+7. Repeat for every environment that has a console (staging, production). Never reuse a link or an admin across them.
+

@@ -28,8 +28,10 @@ export function createSupabaseAdmin(options: SupabaseAdminOptions): SupabaseAdmi
   }
   const id = (authUserId: string) => encodeURIComponent(authUserId);
   return {
+    // The user is created confirmed and with no email sent: the link that lets them in is our own single-use enrolment
+    // link (migration 0055), handed over by the admin, so its life and its use are ours to set and to log.
     async inviteUser(email) {
-      const u = (await call('POST', '/invite', { email })) as { id?: unknown } | null;
+      const u = (await call('POST', '/admin/users', { email, email_confirm: true })) as { id?: unknown } | null;
       if (!u || typeof u.id !== 'string') throw new Error('identity provider gave no user id');
       return { authUserId: u.id };
     },
@@ -39,6 +41,20 @@ export function createSupabaseAdmin(options: SupabaseAdminOptions): SupabaseAdmi
     },
     async banUser(authUserId) {
       await call('PUT', `/admin/users/${id(authUserId)}`, { ban_duration: BAN_FOR_GOOD });
+    },
+    async setPassword(authUserId, password) {
+      const res = await doFetch(`${base}/auth/v1/admin/users/${id(authUserId)}`, {
+        method: 'PUT',
+        headers: { apikey: options.serviceRoleKey, authorization: `Bearer ${options.serviceRoleKey}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      if (res.status === 422) return 'weak'; // the project's own password rule refused it
+      if (!res.ok) throw new Error(`identity provider answered ${res.status} for PUT`);
+      return 'ok';
+    },
+    async removeUnverifiedFactors(authUserId) {
+      const factors = (await call('GET', `/admin/users/${id(authUserId)}/factors`)) as Array<{ id?: unknown; status?: unknown }> | null;
+      for (const f of factors ?? []) if (typeof f.id === 'string' && f.status !== 'verified') await call('DELETE', `/admin/users/${id(authUserId)}/factors/${encodeURIComponent(f.id)}`);
     },
     async emailOf(authUserId) {
       const u = (await call('GET', `/admin/users/${id(authUserId)}`)) as { email?: unknown } | null;
