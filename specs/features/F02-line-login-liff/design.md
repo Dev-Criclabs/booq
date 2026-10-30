@@ -46,6 +46,8 @@ Read on 30 Oct 2026 from `developers.line.biz`. Nothing here is taken from memor
 
 **User ID parity (Q33), a setup task before the build.** The docs do not say that the Login `sub` is the same user ID the Messaging API uses for push when both channels are in one provider; LINE-01-AC5 relies on it. Before F02 is built, a person tests it with a real LINE account: one Login channel, one Official Account, one provider, one test user; sign in through LIFF, then send a push to the `sub` and read the `source.userId` of a webhook event from the same user. This is task F02-T00 in `tasks.md`. If the ids differ, the push target must be learned from webhook events and linked to the player, which changes the player record, and this design is reopened.
 
+**User ID check result (F02-T00, 30 Oct 2026): the IDs match.** On the BOOQ test provider (LINE Login channel 2012300015, LIFF app 2012300015-WIi1jtLB, linked Messaging API channel) one test user signed in through LIFF and then messaged the Official Account. The Login `sub` and the webhook `source.userId` were the same value (`match: true` on the throwaway receiver `infra/line-parity`, deployed at booq-line-parity.vercel.app). The design stands as written. Still to do: delete the throwaway receiver project and reissue the test channel access token.
+
 ## 4. Sign-in flow
 
 ### 4.1 Pieces
