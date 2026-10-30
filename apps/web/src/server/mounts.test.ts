@@ -17,7 +17,7 @@ const paths = (extra: Parameters<typeof createWebTable>[0]['extraMounts'] = []) 
 describe('route mounts', () => {
   it('the table holds the sign-in routes and every mounted feature, each declaring access', () => {
     const all = paths();
-    for (const p of ['POST /auth/session', 'POST /auth/profile', 'POST /auth/logout', 'GET /public/config', 'POST /imports', 'GET /claims', 'GET /data-requests', 'POST /me/data-requests']) {
+    for (const p of ['POST /auth/session', 'POST /auth/profile', 'POST /auth/logout', 'GET /public/config', 'POST /imports', 'GET /claims', 'GET /data-requests', 'POST /me/data-requests', 'GET /me/profile', 'PUT /me/profile']) {
       expect(all, p).toContain(p);
     }
     expect(mounts.length).toBeGreaterThanOrEqual(3);
