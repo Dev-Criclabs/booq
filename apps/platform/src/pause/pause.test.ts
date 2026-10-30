@@ -23,7 +23,7 @@ const resume = (who: string, body: unknown, fresh = true, club = CLUB) => svc.re
 
 beforeEach(async () => {
   tdb = await createTestDatabase();
-  await tdb.query(`insert into public.club (id, slug, name_th, name_en, status, owner_line, default_language) values ($1, 'a', 'ก', 'Club A', 'live', '@owner', 'en')`, [CLUB]);
+  await tdb.query(`insert into public.club (id, slug, name_th, name_en, status, owner_line, default_language) values ($1, 'a', 'ก', 'Club A', 'live', 'U00000000000000000000000000000004', 'en')`, [CLUB]);
   admin = await staff('admin@booq.example', 'platform_admin', '99999999-0000-4000-8000-000000000001', 'Ada Admin');
   spec = await staff('spec@booq.example', 'onboarding_specialist', '99999999-0000-4000-8000-000000000002', 'Sam Specialist');
   await tdb.query(`insert into platform.staff_assignment (staff_id, club_id) values ($1, $2)`, [spec, CLUB]);
@@ -43,7 +43,7 @@ describe('pause (PLAT-03-AC1 to AC3, AC10)', () => {
     expect(await status()).toBe('paused');
     const row = (await p6()).find((x) => x.action === 'club.paused');
     expect(row).toMatchObject({ name: 'Ada Admin', club_id: CLUB, reason: 'payment problem' });
-    expect(notices).toEqual([{ clubId: CLUB, kind: 'club_paused', templateKey: 'L-new.club_paused', params: { clubName: 'Club A', reason: 'payment problem' }, ownerLine: '@owner' }]);
+    expect(notices).toEqual([{ clubId: CLUB, kind: 'club_paused', templateKey: 'L-new.club_paused', params: { clubName: 'Club A', reason: 'payment problem' }, ownerLine: 'U00000000000000000000000000000004' }]);
   });
 
   it('refuses a missing or blank reason (PLAT-03-AC2): nothing changes and the owner is not told', async () => {

@@ -21,7 +21,9 @@
     "P-new.coach_rules_not_installed": "Booking with a coach is not available yet.",
     "P-new.order_not_found": "We could not find this booking. Please start again.",
     "P-new.forbidden": "You cannot do this.",
-    "P-new.idempotency_key_reused": "This request was already used. Please try again."
+    "P-new.idempotency_key_reused": "This request was already used. Please try again.",
+    "P-new.booking_not_found": "We could not find this booking.",
+    "A-new.not_movable": "This booking can no longer be moved."
   },
   "th": {
     "P-new.hold_setting_unset": "ยังจองแบบชำระเงินไม่ได้ในขณะนี้ กรุณาติดต่อสนามกีฬา",
@@ -44,6 +46,8 @@
     "P-new.coach_rules_not_installed": "ยังจองพร้อมโค้ชไม่ได้ในขณะนี้",
     "P-new.order_not_found": "ไม่พบการจองนี้ กรุณาเริ่มใหม่อีกครั้ง",
     "P-new.forbidden": "คุณไม่มีสิทธิ์ทำรายการนี้",
-    "P-new.idempotency_key_reused": "คำขอนี้ถูกใช้ไปแล้ว กรุณาลองใหม่อีกครั้ง"
+    "P-new.idempotency_key_reused": "คำขอนี้ถูกใช้ไปแล้ว กรุณาลองใหม่อีกครั้ง",
+    "P-new.booking_not_found": "ไม่พบการจองนี้",
+    "A-new.not_movable": "การจองนี้ไม่สามารถย้ายได้อีกต่อไป"
   }
 }
