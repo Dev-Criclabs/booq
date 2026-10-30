@@ -30,6 +30,17 @@ describe('console_session_sweep', () => {
     expect((await tdb.query('select id_hash from platform.console_session')).rows).toEqual([{ id_hash: hash('b') }]);
     expect((await tdb.query('select id_hash from platform.console_challenge')).rows).toEqual([{ id_hash: hash('d') }]);
   });
+  it('also removes staff enrolment links that expired or were used longer ago than the limit, and keeps the rest', async () => {
+    const link = (h: string, expires: string, used: string | null) =>
+      tdb.query(`insert into platform.staff_enrolment (token_hash, staff_id, purpose, created_by, expires_at, used_at) values ($1,$2,'invite',$2, app.now() + $3::interval, case when $4::text is null then null else app.now() + $4::interval end)`, [hash(h), staff, expires, used]);
+    await link('a', '-9 hours', null); // expired long ago
+    await link('b', '1 hour', '-9 hours'); // used long ago
+    await link('c', '-30 minutes', null); // expired recently
+    await link('d', '12 hours', null); // still live
+    await link('e', '12 hours', '-1 hour'); // used recently
+    expect(await consoleSessionSweep({ db: worker, absoluteSeconds: 8 * 3600 })()).toBe(2);
+    expect((await tdb.query('select token_hash from platform.staff_enrolment order by token_hash')).rows.map((r) => r.token_hash)).toEqual([hash('c'), hash('d'), hash('e')]);
+  });
   it('keeps a login state that holds failures or a lock', async () => {
     await tdb.query(`insert into platform.console_login_state (staff_id, failures, locked_until) values ($1, 3, null)`, [staff]);
     expect(await consoleSessionSweep({ db: worker, absoluteSeconds: 3600 })()).toBe(0);

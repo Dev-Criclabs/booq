@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:zones": "TZ=UTC vitest run && TZ=Asia/Bangkok vitest run",
     "test:db": "vitest run packages/db packages/secrets tests/rls tests/concurrency --passWithNoTests",
-    "db:types": "vite-node tools/db-types.run.ts"
+    "db:types": "vite-node tools/db-types.run.ts",
+    "bootstrap:admin": "vite-node apps/staff-invite/bin/bootstrap-admin.run.ts --"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

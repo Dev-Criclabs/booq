@@ -1,0 +1,40 @@
+/* The platform console's styles: plain and accessible until the X boards for these pages are on the canvas. Readable at
+   200% zoom and on a phone; focus is always visible; buttons never wrap; the content scrolls. */
+:root {
+  --bg: #f6f7f4;
+  --card: #ffffff;
+  --ink: #1d241f;
+  --mu: #4a554d;
+  --ln: rgba(29, 36, 31, 0.2);
+  --ac: #2f5a3a;
+  --ac-ink: #ffffff;
+  --err: #a31d1d;
+  --font: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.5; }
+.page { max-width: 480px; margin: 0 auto; padding: 24px 16px 48px; }
+.page.wide { max-width: 960px; }
+h1 { font-size: 24px; margin: 0 0 16px; }
+h2 { font-size: 18px; margin: 24px 0 8px; }
+.form { display: flex; flex-direction: column; gap: 8px; }
+.form.inline { background: var(--card); border: 1px solid var(--ln); border-radius: 12px; padding: 16px; margin: 16px 0; max-width: 480px; }
+label, .label { font-weight: 600; font-size: 14px; color: var(--mu); }
+input, select { width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid var(--ln); border-radius: 8px; font: inherit; background: #fff; color: inherit; }
+:focus-visible { outline: 3px solid #1a5fb4; outline-offset: 2px; }
+.btn { min-height: 44px; padding: 0 20px; border: 0; border-radius: 999px; background: var(--ac); color: var(--ac-ink); font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.btn.secondary { background: transparent; color: var(--ac); border: 2px solid var(--ac); }
+.btn.small { min-height: 36px; padding: 0 14px; font-size: 14px; }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.error { color: var(--err); margin: 4px 0; }
+.secret { display: block; margin-top: 4px; padding: 12px; background: var(--card); border: 1px dashed var(--ln); border-radius: 8px; font-size: 18px; letter-spacing: 0.08em; overflow-wrap: anywhere; user-select: all; }
+.link-box { background: var(--card); border: 2px solid var(--ac); border-radius: 12px; padding: 16px; margin: 16px 0; }
+.link-box input { font-size: 14px; }
+.row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.team { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--ln); }
+.team th, .team td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--ln); vertical-align: middle; overflow-wrap: anywhere; }
+.team thead th { font-size: 13px; color: var(--mu); }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 640px) { .team { display: block; overflow-x: auto; } }

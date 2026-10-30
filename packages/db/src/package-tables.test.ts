@@ -128,8 +128,10 @@ describe('customer_package (PKG-02-AC4)', () => {
     await grant();                         // no order (an imported package): not limited by the rule
     await grant();
   });
-  it('credits are whole and positive; the expiry is after the purchase', async () => {
-    await expect(grant({ credits_total: 0 })).rejects.toThrow(/check/i);
+  it('credits are whole and positive (zero only for a claim copy without an order, 0510); the expiry is after the purchase', async () => {
+    await expect(grant({ credits_total: 0, order_id: await pricedOrder() })).rejects.toThrow(/credits_total_check/);
+    await expect(grant({ credits_total: -1 })).rejects.toThrow(/credits_total_check/);
+    await grant({ credits_total: 0 });
     await expect(grant({ expires_at: '2027-01-01T00:00:00Z' })).rejects.toThrow(/expiry_after_purchase/);
     await expect(grant({ product_snapshot: '[]' })).rejects.toThrow(/snapshot_shape/);
   });
