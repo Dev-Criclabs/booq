@@ -14,6 +14,36 @@ Decisions made by the user, newest first. Each is also written into the PRD chan
 | D36 | A validly signed Beam callback with the wrong amount: record it, flag it for the owner, return a success status so Beam stops retrying (refines D24) |
 | Open | Whether a late payment that goes to the wallet gets its own receipt is with the accountant |
 
+## 30 Oct 2026, round 8 (approved as recommended)
+
+Approved by the user: the architect's F01 and F02 task lists and F03 design (assumptions A-1 to A-3), and the spec drafter's F04 and F05 requirements with the answers below.
+
+| # | Decision |
+|---|---|
+| D59 | Group class seats do not count toward the future court hours limit (F03 A-1) |
+| D60 | A paused club refuses new holds from staff as well as players; the owner can still manage existing bookings (A-2) |
+| D61 | A per-player limit on repeated Pay taps exists as a platform setting; Security sets the value (A-3) |
+| D62 | A player under 18 may buy Adult items (F04 Q1) |
+| D63 | The server prices at Pay; if the price changed since checkout opened, the player sees the new price and confirms again (Q2) |
+| D64 | A receipt is issued for a zero money order, in the same series, showing how it was paid (Q3) |
+| D65 | If a code does not stack with the birthday discount, the larger discount wins (Q4) |
+| D66 | A code use is counted at Pay and restored when the hold ends or the booking is cancelled 12+ hours ahead (Q5) |
+| D67 | A discount is split across hours by each hour's price; cancelling one hour restores that hour's share; the code use is restored only if every hour is cancelled (Q6) |
+| D68 | Minimum spend is checked on the order total before credits and wallet (Q7) |
+| D69 | Amounts show as whole baht when whole, otherwise with two decimals (Q8) |
+| D70 | A restored code reduces the partner redemption count (Q9) |
+| D71 | A validly signed callback for an unknown charge is answered with success and flagged; a bad signature is rejected (F05 Q3) |
+| D72 | If a charge fails inside the hold, a second tap creates a new charge in the same hold (Q4) |
+| D73 | If a callback never arrives, the server may check Beam's charge status and confirm only when amount and reference match; recorded in the audit log (Q5) |
+| D74 | The package QR time is its own setting, default 15 minutes; a payment after the order was cancelled goes to the wallet with its own receipt (Q6) |
+| D75 | Alerts: wrong amount is an owner banner in the admin; bad signature, failed key check and unreachable Beam show in P1; a failed key check also reaches the owner (Q7) |
+| D76 | Only the order reference is sent to Beam (Q8) |
+| D77 | Wrong amount: the player sees the payment was received and the club is checking; staff credit the full amount received (including any overpayment) to the wallet (Q9) |
+| D78 | Wallet reasons: refund, late_payment, wrong_amount, duplicate_payment, referral_reward, spend, return, adjust, import, and expire only if wallet expiry is set (Q10) |
+| D79 | A wrong amount credit gets its own receipt (Q11) |
+| D80 | The Beam QR expiry is set slightly before the hold ends; the margin is a platform setting (Q12) |
+| User tasks | Beam merchant account, fees and sandbox keys (F05 Q1 and Q2) are the user's to arrange |
+
 ## 30 Oct 2026, round 7 (approved as recommended)
 
 Approved by the user: the F01 and F02 designs (branch `architect/foundation`) and the F03, F11 and F12 requirements (branch `spec/f01-f02-requirements`).
