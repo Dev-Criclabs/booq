@@ -25,6 +25,8 @@ async function fakePorts(missing: string[] = [], reserveOk = true) {
     issue_receipt: ['(o uuid, p uuid, k text) returns uuid', `insert into public.__log (port, args) values ('issue_receipt', jsonb_build_array(o, p, k)); select gen_random_uuid()`],
   };
   for (const [port, [sig, body]] of Object.entries(defs)) {
+    // The real port, once its feature's migration registers it (F10 0605 for enqueue_message), gives way to the fake.
+    await tdb.query(`delete from app.payment_ports where port = $1`, [port]);
     if (missing.includes(port)) continue;
     await tdb.query(`create function public.__${port}${sig.split(' returns')[0]} ${sig.slice(sig.indexOf('returns'))} language sql as $$ ${body} $$`);
     await tdb.query(`select app.register_payment_port($1, $2::regprocedure)`, [port, `public.__${port}(${sig.slice(1, sig.indexOf(')')).split(', ').map((x) => x.split(' ')[1]).join(', ')})`]);
