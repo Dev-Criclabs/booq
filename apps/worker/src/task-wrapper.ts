@@ -21,13 +21,25 @@ export interface TaskHelpers {
 
 export type ClubTaskHandler<P extends { clubId: string }> = (tx: Tx, payload: P) => Promise<void>;
 
-export function clubTask<P extends { clubId: string }>(db: Db, handler: ClubTaskHandler<P>) {
+export interface ClubTaskOptions {
+  /** The name shown in the audit log for changes the task makes (the task's own name). */
+  actorLabel?: string;
+}
+
+export function clubTask<P extends { clubId: string }>(db: Db, handler: ClubTaskHandler<P>, options: ClubTaskOptions = {}) {
   return async (payload: unknown, helpers: TaskHelpers): Promise<void> => {
     const clubId = (payload as { clubId?: unknown } | null | undefined)?.clubId;
     if (typeof clubId !== 'string' || !UUID.test(clubId)) throw new TaskRefusedError('the payload has no valid club id');
     const jobId = helpers.job?.id;
     await db.withClubTx(
-      { clubId, userId: null, roles: [], ...(jobId === undefined ? {} : { requestId: `job:${jobId}` }) },
+      {
+        clubId,
+        userId: null,
+        roles: [],
+        source: 'job',
+        ...(options.actorLabel === undefined ? {} : { actorLabel: options.actorLabel }),
+        ...(jobId === undefined ? {} : { requestId: `job:${jobId}` }),
+      },
       (tx) => handler(tx, payload as P),
     );
   };

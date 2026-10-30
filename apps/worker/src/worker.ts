@@ -25,7 +25,7 @@ export const HOUSEKEEPING = 'housekeeping';
 export async function startWorker(options: WorkerOptions): Promise<RunningWorker> {
   const taskList: TaskList = {};
   for (const [name, handler] of Object.entries(options.tasks)) {
-    const task = clubTask(options.db, handler);
+    const task = clubTask(options.db, handler, { actorLabel: name });
     taskList[name] = async (payload, helpers) => {
       try {
         await recordTaskRun(options.db, name, () => task(payload, helpers));
