@@ -206,6 +206,7 @@ export function ClubDetailScreen({ id }: { id: string }) {
                 ))}
               </ul>
               <h2>{t('X-0154')}</h2>
+              <p><a href={`/clubs/${encodeURIComponent(id)}/launch`} data-testid="launch-link">{t('X-new.launch_link')}</a></p>
               <ul className="checks" data-testid="launch">
                 {club.progress.launch.map((i) => (
                   <li key={i.item} data-testid={`launch-${i.item}`}>

@@ -46,6 +46,7 @@ export function errorKey(status: number, code: string | undefined): string {
   const byCode: Record<string, string> = {
     look_only: 'X-new.club_look_only', section_unavailable: 'X-new.club_section_unavailable', invalid: 'X-new.club_invalid', bad_input: 'X-new.club_invalid',
     reason_required: 'X-new.club_reason_required', transition_not_allowed: 'X-new.club_transition_not_allowed', use_pause: 'X-new.club_use_pause',
+    not_testing: 'X-new.launch_not_testing', not_recorded: 'X-new.launch_not_recorded',
     owner_contact_missing: 'X-new.club_owner_contact_missing', mail_failed: 'X-new.club_mail_failed', not_configured: 'X-new.club_not_configured',
   };
   return (code && byCode[code]) || 'X-new.club_unavailable';

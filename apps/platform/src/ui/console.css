@@ -57,3 +57,6 @@ input, select { width: 100%; min-height: 44px; padding: 8px 12px; border: 1px so
 .checks li { padding: 4px 0; }
 .field { display: flex; flex-direction: column; gap: 4px; }
 h3 { font-size: 16px; margin: 16px 0 4px; }
+.settings { list-style: none; padding: 0; margin: 16px 0; max-width: 560px; }
+.settings li { margin-bottom: 12px; }
+textarea { width: 100%; padding: 8px 12px; border: 1px solid var(--ln); border-radius: 8px; font: inherit; background: #fff; color: inherit; }
