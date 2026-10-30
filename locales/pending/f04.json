@@ -1,0 +1,31 @@
+{
+  "_note": "Proposed by BE-C for F04 (D51). Numbers to be assigned by Content; wording drafted, writers own it. Reused existing keys: P-0442 (paused); from locales/pending/f03.json: P-new.club_not_available, P-new.resource_inactive, P-new.not_on_the_hour.",
+  "en": {
+    "P-new.checkout_bad_input": "Something in your choice is not right. Please go back and pick again.",
+    "P-new.price_not_set": "This hour has no price yet, so it cannot be booked. Please contact the club.",
+    "P-new.coach_price_not_set": "This coach cannot be booked yet. Please pick another coach.",
+    "P-new.add_on_not_for_sale": "This add-on is not available.",
+    "P-new.code_not_valid": "This code is not valid.",
+    "P-new.code_expired": "This code cannot be used today.",
+    "P-new.code_wrong_audience": "This code is not for your price group.",
+    "P-new.code_out_of_scope": "This code does not apply to what you picked.",
+    "P-new.code_below_minimum": "This code needs a booking of at least ฿{amount}.",
+    "P-new.code_first_booking_only": "This code is for a first booking only.",
+    "P-new.code_used_up": "This code has been used up.",
+    "P-new.code_not_for_solo_class": "Partner codes cannot be used on a solo class."
+  },
+  "th": {
+    "P-new.checkout_bad_input": "ข้อมูลที่เลือกไม่ถูกต้อง กรุณาย้อนกลับและเลือกใหม่",
+    "P-new.price_not_set": "ชั่วโมงนี้ยังไม่มีราคา จึงยังจองไม่ได้ กรุณาติดต่อสนามกีฬา",
+    "P-new.coach_price_not_set": "ยังจองโค้ชคนนี้ไม่ได้ กรุณาเลือกโค้ชคนอื่น",
+    "P-new.add_on_not_for_sale": "รายการเสริมนี้ไม่มีให้บริการ",
+    "P-new.code_not_valid": "โค้ดนี้ใช้ไม่ได้",
+    "P-new.code_expired": "โค้ดนี้ใช้ในวันนี้ไม่ได้",
+    "P-new.code_wrong_audience": "โค้ดนี้ไม่ใช่สำหรับกลุ่มราคาของคุณ",
+    "P-new.code_out_of_scope": "โค้ดนี้ใช้กับรายการที่คุณเลือกไม่ได้",
+    "P-new.code_below_minimum": "โค้ดนี้ใช้ได้กับยอดจองตั้งแต่ ฿{amount} ขึ้นไป",
+    "P-new.code_first_booking_only": "โค้ดนี้ใช้ได้กับการจองครั้งแรกเท่านั้น",
+    "P-new.code_used_up": "โค้ดนี้ถูกใช้ครบแล้ว",
+    "P-new.code_not_for_solo_class": "โค้ดพาร์ทเนอร์ใช้กับคลาสเดี่ยวไม่ได้"
+  }
+}

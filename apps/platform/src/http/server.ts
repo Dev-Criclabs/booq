@@ -113,7 +113,7 @@ function serveNow(table: readonly PlatformRoute[], deps: PlatformServeDeps): Pla
       const { route } = found;
 
       if (deps.rateLimit?.routes.includes(`${route.def.method} ${route.def.path}`)) {
-        const hit = deps.rateLimit.limiter.hit(`${route.def.method} ${route.def.path}|${callerOf(request)}`);
+        const hit = await deps.rateLimit.limiter.hit(`${route.def.method} ${route.def.path}|${callerOf(request)}`);
         if (!hit.allowed) return json(429, { code: 'rate_limited' }, { 'retry-after': String(hit.retryAfterSeconds) });
       }
 

@@ -1,12 +1,14 @@
-import { createClaimService, createDataRequestService, createImportService, createProfileEditService, normalizePhone } from '@booq/domain';
+import { createClaimService, createDataRequestService, createImportService, createProfileEditService, quoteSources, normalizePhone } from '@booq/domain';
 import type { Route } from '@booq/auth';
 import type { Db } from '@booq/db';
 import { bangkokDate } from '@booq/time';
 import { playerBookingRoutes, publicScheduleRoutes, staffBookingRoutes } from '../api/booking/routes';
+import { checkoutRoutes } from '../api/checkout/routes';
 import { claimRoutes } from '../api/claim/routes';
 import { dataRequestRoutes } from '../api/data-request/routes';
 import { profileRoutes } from '../api/profile/routes';
 import { importRoutes } from '../api/import/routes';
+import { noticeRoutes } from '../api/notice/routes';
 import type { WebConfig } from './context';
 
 // The route registry. Each feature adds ONE line to `mounts` and keeps its routes in plain form
@@ -38,5 +40,7 @@ export const mounts: readonly Mount[] = [
   (m) => claimRoutes({ db: m.db, service: () => createClaimService() }),
   (m) => dataRequestRoutes({ db: m.db, service: () => createDataRequestService() }),
   (m) => [publicScheduleRoutes, playerBookingRoutes, staffBookingRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
+  (m) => noticeRoutes({ db: m.db, clubBySlug: m.clubBySlug }),
   (m) => profileRoutes({ db: m.db, service: () => createProfileEditService({ today: () => bangkokDate(m.now()) }) }),
+  (m) => checkoutRoutes({ db: m.db, clubBySlug: m.clubBySlug, sources: quoteSources }),
 ];
