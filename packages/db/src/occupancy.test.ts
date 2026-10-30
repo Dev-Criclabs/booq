@@ -130,14 +130,14 @@ describe('one hour on the hour, except a closure (BOOK-01-AC1)', () => {
     await expect(claim({ from: at(10), to: at(12) })).rejects.toThrow(/check/i);
   });
   it('a closure may be any range and holds no coach', async () => {
-    const closure = '00000000-0000-4000-8000-0000000000e1';
+    const closure = await tdb.seedClosure(A);
     await claim({ kind: 'closure', from: at(8, 30), to: at(17, 45), closure, booking: null });
     await expect(
-      claim({ kind: 'closure', resource: COURT2, coach: COACH, from: at(8), to: at(9), closure: '00000000-0000-4000-8000-0000000000e2', booking: null }),
+      claim({ kind: 'closure', resource: COURT2, coach: COACH, from: at(8), to: at(9), closure: await tdb.seedClosure(A), booking: null }),
     ).rejects.toThrow(/check/i);
   });
   it('a closure blocks a booking on the same court', async () => {
-    await claim({ kind: 'closure', from: at(8), to: at(18), closure: '00000000-0000-4000-8000-0000000000e1', booking: null });
+    await claim({ kind: 'closure', from: at(8), to: at(18), closure: await tdb.seedClosure(A), booking: null });
     await expect(claim({})).rejects.toThrow(/occupancy_no_overlap_resource/);
   });
   it('the end is after the start', async () => {

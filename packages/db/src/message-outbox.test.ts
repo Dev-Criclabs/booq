@@ -111,22 +111,19 @@ describe('message_outbox (F10-T02, LINE-03-AC6, CC-1, CC-3)', () => {
     expect(idx.indexdef).toMatch(/\(send_at\) WHERE \(status = 'pending'::text\)/);
   });
 
-  it('another club’s rows are not reachable, and no application role reads the outbox yet (CC-1)', async () => {
+  it('another club’s rows are not reachable (CC-1); the app and platform roles read nothing (grants: F10-T07)', async () => {
     await put();
     await put({ club: B, user: PB });
     const c = await tdb.pool.connect();
     try {
-      // No application role holds a grant before F10-T07.
-      for (const role of ['booq_app', 'booq_worker', 'booq_platform']) {
+      for (const role of ['booq_app', 'booq_platform']) {
         await c.query('begin');
         await c.query(`set local role ${role}`);
         await expect(c.query('select 1 from public.message_outbox')).rejects.toThrow(/permission denied/);
         await c.query('rollback');
       }
-      // Even with a grant and an open policy, the restrictive tenant policy keeps a club to its own rows.
+      // The sender reads under the restrictive tenant policy: its own club's rows only.
       await c.query('begin');
-      await c.query('grant select on public.message_outbox to booq_worker');
-      await c.query('create policy t_open on public.message_outbox for select to booq_worker using (true)');
       await c.query('set local role booq_worker');
       await c.query(`select set_config('app.club_id', $1, true)`, [A]);
       const rows = (await c.query('select club_id from public.message_outbox')).rows;

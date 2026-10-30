@@ -41,8 +41,8 @@ async function reserve(starts: string[], opts: { club?: string; court?: string; 
   }
   return order;
 }
-const closure = (court: string, from: string, to: string) =>
-  tdb.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id) values ($1,'closure',$2,$3,$4,'confirmed',gen_random_uuid())`, [A, court, from, to]);
+const closure = async (court: string, from: string, to: string) =>
+  tdb.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id) values ($1,'closure',$2,$3,$4,'confirmed',$5)`, [A, court, from, to, await tdb.seedClosure(A)]);
 const hourOf = (day: Awaited<ReturnType<typeof scheduleFor>>, court: string, h: number) =>
   day.courts.find((c) => c.id === court)!.hours.find((x) => x.start === `${day.date}T${String(h).padStart(2, '0')}:00:00+07:00`)!;
 

@@ -43,6 +43,12 @@ export interface AppLaunchProducers {
   task: string;
 }
 
+export interface AppMessageKinds {
+  kind: string;
+  cap_class: string;
+  switch_key: string | null;
+}
+
 export interface AppMoveHandlers {
   name: string;
   handler: unknown;
@@ -226,6 +232,16 @@ export interface PlatformStaffAssignment {
   assigned_at: string;
 }
 
+export interface PlatformStaffEnrolment {
+  token_hash: string;
+  staff_id: string;
+  purpose: string;
+  created_by: string;
+  created_at: string;
+  expires_at: string;
+  used_at: string | null;
+}
+
 export interface PlatformSupportSession {
   id: string;
   staff_id: string;
@@ -384,6 +400,23 @@ export interface PublicBooking {
   updated_at: string;
 }
 
+export interface PublicBookingCancel {
+  club_id: string;
+  id: string;
+  booking_id: string;
+  order_id: string;
+  kind: string;
+  outcome: string;
+  version: number;
+  returned: unknown;
+  credit_lost: boolean;
+  reason: string | null;
+  by_user: string | null;
+  closure_id: string | null;
+  created_at: string;
+  is_test: boolean;
+}
+
 export interface PublicBookingCoachAdd {
   club_id: string;
   order_id: string;
@@ -406,6 +439,75 @@ export interface PublicClaimRequest {
   requested_at: string;
   handled_by: string | null;
   handled_at: string | null;
+}
+
+export interface PublicClassSession {
+  club_id: string;
+  id: string;
+  template_id: string;
+  start_at: string;
+  end_at: string;
+  name_th: string;
+  name_en: string;
+  audience: string;
+  level: string | null;
+  coach_id: string;
+  resource_id: string;
+  min_players: number;
+  max_players: number;
+  drop_in_price_satang: number | null;
+  status: string;
+  attention_reason: string | null;
+  cancel_reason: string | null;
+  edited: boolean;
+  cancelled_by: string | null;
+  cancelled_at: string | null;
+  is_test: boolean;
+  created_at: string;
+}
+
+export interface PublicClassTemplate {
+  club_id: string;
+  id: string;
+  name_th: string;
+  name_en: string;
+  audience: string;
+  level: string | null;
+  coach_id: string;
+  resource_id: string;
+  weekday: number;
+  start_time: string;
+  duration_minutes: number;
+  min_players: number;
+  max_players: number;
+  drop_in_price_satang: number | null;
+  active: boolean;
+  created_by: string;
+  created_at: string;
+  ended_on: string | null;
+  is_test: boolean;
+}
+
+export interface PublicClosure {
+  club_id: string;
+  id: string;
+  reason: string;
+  range_start: string;
+  range_end: string;
+  repeat_rule: unknown | null;
+  status: string;
+  created_by: string;
+  created_at: string;
+  ended_by: string | null;
+  ended_at: string | null;
+  is_test: boolean;
+}
+
+export interface PublicClosureResource {
+  club_id: string;
+  closure_id: string;
+  resource_id: string;
+  is_test: boolean;
 }
 
 export interface PublicClub {
@@ -590,6 +692,18 @@ export interface PublicCoachPriceOverride {
   is_test: boolean;
 }
 
+export interface PublicCoachSubstitution {
+  club_id: string;
+  id: string;
+  booking_id: string;
+  from_coach_id: string;
+  to_coach_id: string;
+  by_staff_id: string;
+  reason: string;
+  is_test: boolean;
+  created_at: string;
+}
+
 export interface PublicCoachTier {
   club_id: string;
   id: string;
@@ -711,6 +825,7 @@ export interface PublicLineConnection {
   plan_message_limit: number | null;
   secret_last4: unknown;
   tested_at: string | null;
+  webhook_token_hash: string | null;
 }
 
 export interface PublicLocation {
@@ -987,6 +1102,43 @@ export interface PublicRateLimitHit {
   hits: number;
 }
 
+export interface PublicReceipt {
+  club_id: string;
+  id: string;
+  order_id: string;
+  payment_id: string | null;
+  kind: string;
+  series: string;
+  seq_no: number;
+  number: string;
+  status: string;
+  issued_at: string;
+  vat_flag: boolean;
+  customer_id: string | null;
+  customer_name_snapshot: string | null;
+  lines: unknown;
+  total_satang: number;
+  is_test: boolean;
+  created_at: string;
+}
+
+export interface PublicReceiptCounter {
+  club_id: string;
+  series: string;
+  last_no: number;
+  is_test: boolean;
+}
+
+export interface PublicReceiptVoid {
+  club_id: string;
+  id: string;
+  receipt_id: string;
+  reason: string;
+  voided_by: string;
+  voided_at: string;
+  is_test: boolean;
+}
+
 export interface PublicResource {
   club_id: string;
   id: string;
@@ -1074,6 +1226,7 @@ export interface Tables {
   'app.deletion_impact_handlers': AppDeletionImpactHandlers;
   'app.feature_keys': AppFeatureKeys;
   'app.launch_producers': AppLaunchProducers;
+  'app.message_kinds': AppMessageKinds;
   'app.move_handlers': AppMoveHandlers;
   'app.pause_handlers': AppPauseHandlers;
   'app.payment_ports': AppPaymentPorts;
@@ -1098,6 +1251,7 @@ export interface Tables {
   'platform.owner_contact_change': PlatformOwnerContactChange;
   'platform.platform_staff': PlatformPlatformStaff;
   'platform.staff_assignment': PlatformStaffAssignment;
+  'platform.staff_enrolment': PlatformStaffEnrolment;
   'platform.support_session': PlatformSupportSession;
   'platform.template': PlatformTemplate;
   'platform.template_item': PlatformTemplateItem;
@@ -1110,8 +1264,13 @@ export interface Tables {
   'public.auth_session': PublicAuthSession;
   'public.birthday_entitlement_use': PublicBirthdayEntitlementUse;
   'public.booking': PublicBooking;
+  'public.booking_cancel': PublicBookingCancel;
   'public.booking_coach_add': PublicBookingCoachAdd;
   'public.claim_request': PublicClaimRequest;
+  'public.class_session': PublicClassSession;
+  'public.class_template': PublicClassTemplate;
+  'public.closure': PublicClosure;
+  'public.closure_resource': PublicClosureResource;
   'public.club': PublicClub;
   'public.club_feature': PublicClubFeature;
   'public.club_invite': PublicClubInvite;
@@ -1127,6 +1286,7 @@ export interface Tables {
   'public.coach_leave': PublicCoachLeave;
   'public.coach_pay': PublicCoachPay;
   'public.coach_price_override': PublicCoachPriceOverride;
+  'public.coach_substitution': PublicCoachSubstitution;
   'public.coach_tier': PublicCoachTier;
   'public.coach_tier_price': PublicCoachTierPrice;
   'public.court_price_rule': PublicCourtPriceRule;
@@ -1158,6 +1318,9 @@ export interface Tables {
   'public.promo_code': PublicPromoCode;
   'public.promo_redemption': PublicPromoRedemption;
   'public.rate_limit_hit': PublicRateLimitHit;
+  'public.receipt': PublicReceipt;
+  'public.receipt_counter': PublicReceiptCounter;
+  'public.receipt_void': PublicReceiptVoid;
   'public.resource': PublicResource;
   'public.rich_menu': PublicRichMenu;
   'public.rich_menu_label': PublicRichMenuLabel;

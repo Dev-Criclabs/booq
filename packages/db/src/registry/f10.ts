@@ -8,4 +8,5 @@ export const tables: Fragment = {
   'public.rich_menu': { class: 'S' },                       // F10-T04 (0603): one active menu per club (D92)
   'platform.club_line_usage': { class: 'P' },               // F10-T05 (0604): counts per club and Bangkok month; state derived
   'platform.club_health': { class: 'P' },                   // F10-T05 (0604): LINE token and usage health
+  'app.message_kinds': { class: 'infra' },                 // F10-T06 (0605): the message catalogue (design 5.4)
 };
