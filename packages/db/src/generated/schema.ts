@@ -390,6 +390,23 @@ export interface PublicBooking {
   updated_at: string;
 }
 
+export interface PublicBookingCancel {
+  club_id: string;
+  id: string;
+  booking_id: string;
+  order_id: string;
+  kind: string;
+  outcome: string;
+  version: number;
+  returned: unknown;
+  credit_lost: boolean;
+  reason: string | null;
+  by_user: string | null;
+  closure_id: string | null;
+  created_at: string;
+  is_test: boolean;
+}
+
 export interface PublicClaimRequest {
   club_id: string;
   id: string;
@@ -1105,6 +1122,7 @@ export interface Tables {
   'public.auth_session': PublicAuthSession;
   'public.birthday_entitlement_use': PublicBirthdayEntitlementUse;
   'public.booking': PublicBooking;
+  'public.booking_cancel': PublicBookingCancel;
   'public.claim_request': PublicClaimRequest;
   'public.club': PublicClub;
   'public.club_feature': PublicClubFeature;
