@@ -35,7 +35,6 @@ const STATUS: Record<BookingErrorCode, number> = {
   outside_window: 400,
   in_the_past: 400,
   not_releasable: 409,
-  club_paused: 409,
   forbidden: 403,
 };
 // A refusal raised by a booking function in the database (BK001, message = the code; design 4.2).
@@ -141,7 +140,7 @@ export function playerBookingRoutes(deps: BookingRouteDeps): BookingRoute<unknow
 /**
  * F03-T22 (move and release): PUT /staff/bookings/:id/move and POST /staff/bookings/:id/release (design 5.3).
  * Front desk and owner only: booking.move to move, booking.create.staff to abandon a hold (design 5.3, 8).
- * In a Paused club only the owner may act (D60).
+ * In a Paused club owner and front desk may still act on existing bookings (D107).
  */
 export function staffBookingRoutes(deps: BookingRouteDeps): BookingRoute<unknown>[] {
   const staff = <T>(method: 'PUT' | 'POST', path: string, permission: string, fn: (tx: Tx, c: ClubContext, input: Record<string, unknown>) => Promise<T>) =>
