@@ -1,6 +1,6 @@
 # F08 Group classes and waitlist · Design
 
-Status: **DRAFT for approval (gate 2).** Drafted 30 Oct 2026 from the approved F08 requirements (`requirements.md`, approved 30 Oct 2026, decisions D19, D44, D45, D48, D59, D62, D84, D121, D147 applied). The Architect reviews it. A change to anything below goes through the PRD, then the hand-off, then this file. Tasks (gate 3) follow approval.
+Status: **Approved 30 Oct 2026 (gate 2, D155).** The answers D157 are folded in; the changes of section 12 are tasks in the owning features' lists. Drafted 30 Oct 2026 from the approved F08 requirements (`requirements.md`, approved 30 Oct 2026, decisions D19, D44, D45, D48, D59, D62, D84, D121, D147 applied). The Architect reviews it. A change to anything below goes through the PRD, then the hand-off, then this file. Tasks (gate 3) follow approval.
 
 Feature: F08 Group classes and waitlist. Requirement IDs: CLASS-01, CLASS-02, WAIT-01. Depends on F06 (and on F03, F04, F05, F10). Wave 4.
 
@@ -111,13 +111,13 @@ Two players taking or claiming the last seat both call a function that locks the
 
 ### 4.8 Joining and leaving the waitlist (CLASS-02-AC1, AC8, AC12, AC16, WAIT-01-AC1)
 
-`app.join_waitlist(subject, customer)`: signed in (a guest signs in first, F02); the club accepts bookings; **for a class session**: scheduled, `class_visible`, the player holds no live seat (`already_seated`, CLASS-02-AC12), the session is full (otherwise they should book: `not_full`); **for a court slot** (WAIT-01): the hour is in the future inside the booking window and is **taken** in `public_slot_state` (a held slot is not joinable by default, Q2); the player holds no live booking at that slot. It inserts the entry with the next `seq`, charges nothing and holds nothing. A repeat returns the existing entry. `app.leave_waitlist(entry)`: own entry only; `waiting` becomes `left`; an `offered` entry is declined first (§4.10). The Waitlist tab (C13) shows the player's own entries with their own position (CLASS-02-AC8).
+`app.join_waitlist(subject, customer)`: signed in (a guest signs in first, F02); the club accepts bookings; **for a class session**: scheduled, `class_visible`, the player holds no live seat (`already_seated`, CLASS-02-AC12), the session is full (otherwise they should book: `not_full`); **for a court slot** (WAIT-01): the hour is in the future inside the booking window and is **taken** or **held** in `public_slot_state` (a hold can end, so a held hour shows Join waitlist like a taken one, D157; matches F03-T20); the player holds no live booking at that slot. It inserts the entry with the next `seq`, charges nothing and holds nothing. A repeat returns the existing entry. `app.leave_waitlist(entry)`: own entry only; `waiting` becomes `left`; an `offered` entry is declined first (§4.10). The Waitlist tab (C13) shows the player's own entries with their own position (CLASS-02-AC8).
 
 A **court slot entry** ends (`ended`, reason `slot_passed`) when its hour starts (WAIT-01-AC4): the `offer_expiry` job sweeps these. A class entry ends when its session starts, is cancelled or when the player takes a seat in it (`joined_seat`).
 
 ### 4.9 Offers (CLASS-02-AC2, AC5, AC14, AC15, WAIT-01-AC2, AC3)
 
-**An offer is a held booking.** `app.waitlist_advance(subject)` runs in the transaction that frees a spot or seat (it is called by the F08 release handler, by `cancel_session` of a single seat, by F09's cancel and closure functions, A-7, and by the `offer_expiry` job). It takes the subject lock (session row, or an advisory lock on `(club, resource, slot_start_at)` for a court slot) and then, **while a spot is free and an entry is waiting**:
+**An offer is a held booking.** `app.waitlist_advance(subject)` runs in the transaction that frees a spot or seat (it is called by the F08 release handler, by `cancel_session` of a single seat, by the `f08_cancel` handler that F09's cancel and closure run, A-7, and by the `offer_expiry` job). It takes the subject lock (session row, or an advisory lock on `(club, resource, slot_start_at)` for a court slot) and then, **while a spot is free and an entry is waiting**:
 
 1. **Cut off.** If `start_at - app.now() < waitlist_no_offer_hours`, make no offer (CLASS-02-AC5). An offer already open stands when the mark passes (CLASS-02-AC15): the open offer is a held booking and nothing ends it but its own time, a decline or a claim.
 2. **Free spot.** For a class: `max_players - taken > 0` (§3.3). For a court slot: no `occupancy` row, no closure, and the hour is inside opening hours and not past (the same conditions as an Open slot).
@@ -157,7 +157,7 @@ F09's closure function covers court slots and sessions. For a closed court hour 
 
 ### 4.13 The release handler
 
-`app.f08_release(order, reason)` is registered in `app.release_handlers` with `ord` 50 (the rule: F04 10, F05 20, F06 30, F08 and F10 above 40). For each released booking of the order: a held **class seat** that came from an offer is an ended offer (§4.10, entry `expired` unless it was declined, which sets its own status first); a released **court booking or seat** that was not an offer frees the spot, so `waitlist_advance` runs for its subject. A `released` booking whose reason is `closed` or whose session is cancelled does not advance (nothing to offer). The handler is idempotent through the entry status guard.
+`app.f08_release(order, reason)` is registered in `app.release_handlers` with `ord` 50 (the rule: F04 10, F05 20, F06 30, F07 35, F08 50, F10 60). For each released booking of the order: a held **class seat** that came from an offer is an ended offer (§4.10, entry `expired` unless it was declined, which sets its own status first); a released **court booking or seat** that was not an offer frees the spot, so `waitlist_advance` runs for its subject. A `released` booking whose reason is `closed` or whose session is cancelled does not advance (nothing to offer). The handler is idempotent through the entry status guard.
 
 ## 5. API routes (prefix `/api/c/{slug}`)
 
@@ -272,9 +272,9 @@ F08 depends on these. Each needs its own PRD, hand-off or design change before t
 |---|---|---|
 | C-1 | F03 | `booking.release_reason` gains `offer_ended`; F10's `booking_released` skips it, as it skips `payment_unavailable` |
 | C-2 | F04 | `order_line.kind` gains `class_seat`; Pay calls `app.take_seat` for it; a class seat is priced from credit, wallet or the drop in price; Pay accepts an offer's held booking and order (the claim, §4.11) |
-| C-3 | F03, F07 | `app.coach_rules_check` signature is fixed with F07: `(club, coach, start_at, end_at, ignore_session) returns text` (null when allowed, otherwise the code `coach_leave`, `coach_rest`, `outside_availability`) |
+| C-3 | F07 | F08 calls F07's `app.coach_check(club, coach, starts[], ignore_booking) returns text` (null when bookable, else the first refusal code; F07 §5.1) with the one start of the session. F07 adds a default argument `ignore_session uuid` so that a session being edited does not collide with its own `occupancy` row. (An earlier draft of this line named a different signature; F07's is the one built.) |
 | C-4 | F10 | The catalogue gains `waitlist_ended` and `class_session_changed` (both always sent); F10's sender calls `app.waitlist_pass_on` for an undeliverable `waitlist_offer` |
-| C-5 | F09 | `app.return_value(booking, reason)` and the free cancel flag for a session edit; F09's cancel and closure call `app.waitlist_advance` for the freed subject |
+| C-5 | F09 | F09 names step 3 of its cancel as `app.return_booking_value(booking, kind)` (credit, wallet and money returns with their keys) so that F08's `cancel_session` can call it for every seat; F09 gives players of an edited session a free cancel flag; F08 registers `app.f08_cancel` in F09's `app.cancel_handlers` at `ord` 30, and that handler calls `app.waitlist_advance` (F09 does not call it directly) |
 | C-6 | F03 | `booking` gains `class_session_id` and `waitlist_entry_id` (migration 0903 of F08, an addition to the table, no existing column changes) and the F03 `public_slot_state` includes the court slot offer hold as `held` (already so, since an offer hold is an `occupancy` row) |
 
 ## 13. Assumptions to confirm (recommended defaults, D147)
@@ -287,11 +287,11 @@ F08 depends on these. Each needs its own PRD, hand-off or design change before t
 | A-4 | A declined or expired offer is final for that entry and spot; the player may join again and goes to the back | CLASS-02-AC4 ("no further offer for it") |
 | A-5 | (Q1) One player may be on several waitlists; a player with a live offer at a start time is skipped for another offer at the same start time and keeps their place | D121 sets no maximum and says nothing on this; avoids two overlapping holds for one person |
 | A-6 | An offer's end is `least(now + claim time, start)` | A hold cannot outlast the hour; when the cut off is 0 it matters |
-| A-7 | F09 owns the value return and calls `waitlist_advance`; F08's `cancel_session` calls F09's `return_value` | F09 CANCEL-03 style (CLASS-01-AC13) |
+| A-7 | F09 owns the value return (`return_booking_value`); F08's `f08_cancel` handler in `cancel_handlers` calls `waitlist_advance`, and F08's `cancel_session` calls `return_booking_value` for every seat | F09 CANCEL-03 style (CLASS-01-AC13) |
 | A-8 | A session edited by the owner lets its players cancel free; the flag is F09's | CLASS-01-AC10 |
 | A-9 | `needs_attention` sessions are shown to the owner in A8 (list and count banner), with no LINE message to the owner | F10 catalogue has no owner kind for it; the owner reads A8 |
 | A-10 | `class_generate` runs once a day after Bangkok midnight and at template save | BOOK window moves at Bangkok midnight |
-| A-11 | Join Waitlist is not offered on a Held court slot (Q2) | A held slot returns to Open or becomes Taken within the hold time; an offer to the waiting list happens only when a slot opens |
+| A-11 | Join Waitlist is offered on a Taken and on a Held court slot (D157, Q2 answered) | A hold can end and the slot then goes to the first in line; matches F03-T20 |
 | A-12 | The roster shows name and level; the level is the club's own text on the template or the player's level field if one exists (F11 A6); no date of birth ever | CC-3 |
 
 ## 14. Text keys and canvas boards
@@ -302,7 +302,7 @@ Boards: H-C07-Group-classes, H-C08-Class-detail, H-C08b-Class-pack-choice, H-C16
 
 ## 15. Open items
 
-1. **Q1 One player on several waitlists.** Recommended default: allowed, and a player with a live offer at the same start time is skipped for another offer at that time without losing their place (A-5). The orchestrator confirms or amends.
-2. **Q2 Join waitlist on a Held slot (F03 Q2).** Recommended default: not shown on a Held slot (A-11); it shows on Taken. The orchestrator confirms.
-3. **Q3 Drop in price of a class.** The requirements say a seat can be paid at a drop in price, but no approved document says where that price is set or whether it is per template, per level or per audience. Recommended default: a nullable `drop_in_price_satang` on the class template (null means no drop in price and the seat needs a credit or wallet), set by the owner in A8, with no default value (never invent a price). The user confirms where the price lives; F04 prices it (C-2).
+1. **Q1 One player on several waitlists. Answered, D157:** allowed. Recommended default: allowed, and a player with a live offer at the same start time is skipped for another offer at that time without losing their place (A-5). The orchestrator confirms or amends.
+2. **Q2 Join waitlist on a Held slot (F03 Q2). Answered, D157:** a held hour shows Join waitlist like a taken one.
+3. **Q3 Drop in price of a class. Answered, D157:** a nullable price on the class template with no default, a club setting; F04 prices it (C-2). Draft text: The requirements say a seat can be paid at a drop in price, but no approved document says where that price is set or whether it is per template, per level or per audience. Recommended default: a nullable `drop_in_price_satang` on the class template (null means no drop in price and the seat needs a credit or wallet), set by the owner in A8, with no default value (never invent a price). The user confirms where the price lives; F04 prices it (C-2).
 4. **Changes C-1 to C-6** above need the Architect and the owners of F03, F04, F09 and F10 before the dependent tasks start.

@@ -80,3 +80,9 @@ Migration numbers are 0301 to 0399 and rise with task order (the migrator refuse
 ## E. Sweep
 
 - [ ] **F04-T21** Acceptance sweep: this task is the tests. It closes every acceptance criterion of `requirements.md` (R1 to R8, PAY-07, PROMO-01) that has no test of its own, with a script that fails for an ID without one; no hard-coded text, no client amount, test orders excluded from reports. IDs: all F04 ACs, CC-2, CC-5, D33. Role: QA · Deps T12d, T14, T15 · Size: M
+
+## Follow-up added by F08 (gate 3 of that feature, 30 Oct 2026)
+
+- [ ] **F04-T22** Migration 0314 or the next free `03xx` number: `order_line.kind` gains `class_seat`; Pay calls `app.take_seat` (F08-T05) for it; a class seat is priced from credit, wallet or the class template's drop in price (null means no drop in price, D157); Pay accepts an offer's held booking and order as the claim instead of making a second reservation. IDs: CLASS-01-AC14, AC15, CLASS-02-AC3, AC6, R4 (F04), D157. Role: BE-C · Deps F04-T12 (Pay), F08-T05 · Size: M
+  Tests first: a seat paid by credit then wallet then money (D22); a null drop in price needs credit or wallet; claiming an offer pays the held booking and reserves nothing twice; an expired offer answers `spot_gone`; a group credit of the wrong audience is refused.
+
