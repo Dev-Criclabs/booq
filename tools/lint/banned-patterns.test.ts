@@ -33,6 +33,28 @@ describe('F01-T01 banned patterns (FA 4.5 static checks)', () => {
     expect(findViolations('apps/web/src/a.ts', 'const readSecretValue = 1; // read_secrets list')).toEqual([]);
   });
 
+  describe('report-not-test (F01-T29; PLAT-07-AC7; D33)', () => {
+    const rule = (path: string, code: string) => findViolations(path, code).map((x) => x.rule);
+    it('flags a report module that reads a table with is_test without the helper', () => {
+      for (const path of ['packages/domain/src/reports/revenue.ts', 'apps/web/src/reports/bookings.ts', 'packages/domain/src/daily-close/close.ts', 'apps/platform/src/usage/x.report.ts']) {
+        expect(rule(path, "tx.query(`select count(*) from public.booking where status = 'confirmed'`)"), path).toContain('report-not-test');
+        expect(rule(path, 'tx.query("select 1 from booking b join payment p on p.club_id = b.club_id")'), path).toContain('report-not-test');
+      }
+    });
+    it('passes when the statement uses notTest() or names is_test', () => {
+      const path = 'packages/domain/src/reports/revenue.ts';
+      expect(rule(path, "tx.query(`select count(*) from public.booking b where ${notTest('b')}`)")).toEqual([]);
+      expect(rule(path, "tx.query(`select count(*) from public.booking where is_test = false`)")).toEqual([]);
+    });
+    it('ignores tables without the flag, and files that are not report modules', () => {
+      expect(rule('packages/domain/src/reports/a.ts', "tx.query(`select * from public.club_setting`)")).toEqual([]);
+      expect(rule('packages/domain/src/booking/a.ts', "tx.query(`select * from public.booking`)")).toEqual([]);
+    });
+    it('does not take a table-like word in prose or a look-alike name', () => {
+      expect(rule('packages/domain/src/reports/a.ts', "// the booking count is built from the occupancy table\nconst x = 'from booking_rules';")).toEqual([]);
+    });
+  });
+
   it('scans source files and skips node_modules and build output', () => {
     expect(isScanned('apps/web/src/a.ts')).toBe(true);
     expect(isScanned('packages/db/src/a.mjs')).toBe(true);

@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { PlatformDb } from '@booq/db';
+import { LINE_USER_ID } from '../line-id';
 
 // POST /clubs (P2 step 1) and GET /clubs/{id} progress (P3) (F01-T23 part a; PLAT-01-AC1, AC2, AC9;
 // design 5.2 and 7.1). Transport-neutral, like the other platform services.
@@ -47,6 +48,7 @@ function validate(body: unknown): Record<string, string> | null {
   if (REQUIRED.some((k) => out[k] === undefined)) return null;
   if (out['owner_email'] !== undefined && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(out['owner_email'])) return null;
   if (out['template_id'] !== undefined && !UUID.test(out['template_id'])) return null;
+  if (out['owner_line'] !== undefined && !LINE_USER_ID.test(out['owner_line'])) return null;
   return out;
 }
 
@@ -67,8 +69,10 @@ export function createClubService(deps: { db: PlatformDb }) {
     if (!actor.stepUpFresh) return { ok: false, code: 'step_up_required' };
 
     const id = randomUUID();
-    const cols = ['id', ...Object.keys(values), 'created_by_staff'];
-    const params = [id, ...Object.values(values), staff.id];
+    // The template is applied (copied) after the club exists, not set as a column (PLAT-05-AC7, AC12).
+    const { template_id: templateId, ...columns } = values;
+    const cols = ['id', ...Object.keys(columns), 'created_by_staff'];
+    const params = [id, ...Object.values(columns), staff.id];
     try {
       await db.withPlatformTx({ staffId: staff.id, staffLabel: staff.display_name, clubId: id }, async (tx) => {
         await tx.query(`insert into public.club (${cols.join(', ')}) values (${cols.map((_, i) => `$${i + 1}`).join(', ')})`, params);
@@ -76,11 +80,15 @@ export function createClubService(deps: { db: PlatformDb }) {
           await tx.query('insert into platform.staff_assignment (staff_id, club_id) values ($1, $2)', [staff.id, id]);
         }
         await tx.query(`select platform.write_audit('club.created', $1, 'club', $2, $3::jsonb, null, null)`, [id, id, JSON.stringify({ slug: values['slug'] })]);
+        if (templateId !== undefined) {
+          // The P6 entry for the template is written by app.apply_template itself.
+          await tx.query('select app.apply_template($1)', [templateId]);
+        }
       });
     } catch (e) {
       const code = (e as { code?: string }).code ?? '';
       if (code === '23505') return { ok: false, code: 'slug_taken' };
-      if (/^(22|23)/.test(code)) return { ok: false, code: 'invalid' };
+      if (/^(22|23)/.test(code) || /^template:/.test((e as Error).message)) return { ok: false, code: 'invalid' };
       throw e;
     }
     return { ok: true, id };

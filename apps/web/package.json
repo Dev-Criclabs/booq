@@ -7,6 +7,14 @@
   "dependencies": {
     "@booq/auth": "workspace:*",
     "@booq/db": "workspace:*",
-    "@booq/domain": "workspace:*"
+    "@booq/domain": "workspace:*",
+    "@booq/time": "workspace:*",
+    "next": "16.4.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0"
   }
 }

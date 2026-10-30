@@ -23,7 +23,7 @@ async function queueConnectionsGone(): Promise<void> {
   const end = Date.now() + 10000;
   while (Date.now() < end) {
     const { rows } = await tdb.query(
-      "select count(*)::int as n from pg_stat_activity where datname = current_database() and pid <> pg_backend_pid() and query like '%graphile_worker%'",
+      "select count(*)::int as n from pg_stat_activity where datname = current_database() and pid <> pg_backend_pid() and (query ilike '%graphile_worker%' or query ilike 'listen%')",
     );
     if (rows[0].n === 0) return;
     await new Promise((r) => setTimeout(r, 25));

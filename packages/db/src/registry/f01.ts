@@ -44,13 +44,24 @@ export const tables: Fragment = {
   'public.owner_notice': { class: 'D', audited: true },
   // audit (F01-T10)
   'audit.registry': { class: 'infra' },
-  'app.test_tables': { class: 'infra' },   // F01-T26
+  'app.test_tables': { class: 'infra' },
+  'app.anonymise_handlers': { class: 'infra' },          // F01-T33 (0019)
+  'app.deletion_impact_handlers': { class: 'infra' },   // F01-T33 (0019)
   'public.audit_entry': { class: 'D' },
   'public.audit_erasure': { class: 'D' },
   // pause and resume (F01-T22): work to run when a club resumes; written only by migrations
   'app.pause_handlers': { class: 'infra' },
   // setup steps that block Draft to Testing (F01-T23): registered by migrations only
   'app.setup_steps': { class: 'infra' },
+  'app.launch_producers': { class: 'infra' },
   // owner contact changes that need a second admin (F01-T23 part b)
   'platform.owner_contact_change': { class: 'P' },
+  // the list of feature switches (F01-T25): written by migrations only
+  'app.feature_keys': { class: 'infra' },
+  // what to copy when a template is applied, for features that own the tables (F01-T24): written by migrations only
+  'app.template_handlers': { class: 'infra' },
+  // the club settings that can exist (F01-T08): written by migrations only
+  'app.setting_keys': { class: 'infra' },
+  // which template items a club has been given by a handler (F01-T24 follow-up): only the definer functions write it
+  'public.club_template_copy': { class: 'S' },
 };

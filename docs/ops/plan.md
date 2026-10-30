@@ -86,13 +86,15 @@ Targets (proposed, for the user to accept): **recovery point 24 hours** (1 hour 
 
 ## 5. Monitoring and alerting
 
+Worker configuration, schedules and the Supabase connection notes are in `docs/ops/worker.md`.
+
 Principle: monitoring sees **system health and counts, never personal data**. Logs must not hold names, phone numbers, LINE user IDs, slip images, or message text. Error tracking is set to strip request bodies. This keeps BOOQ staff on the right side of "never see a club's players, bookings, payments".
 
 | Signal | How | Alert when | Severity |
 |---|---|---|---|
 | App uptime and sign-in path | External probe (every 1 min) on the health route and the LIFF entry URL | 2 failures in a row | Page |
 | Court grid speed | Synthetic probe against a seeded test club on staging and a read-only health club in production | p95 over 2 s for 15 min | Warn |
-| **Server job failures** (hold expiry, reminders, package expiry, waitlist offers, birthday and referral jobs) | Each job writes a row to a `job_runs` heartbeat table and calls a heartbeat URL on success (dead man's switch). Job runner choice is the Architect's | A job fails, or has not reported within 2x its schedule. **Hold expiry** is the sharpest: a missed run leaves slots blocked | Page for hold expiry and reminders, warn for the rest |
+| **Server job failures** (hold release, reminders, package expiry, waitlist offers, birthday and referral jobs) | The worker writes `platform.worker_heartbeat` (last success, failures, queue lag, dead jobs; counts only). An external monitor polls a counts-only health route in `apps/platform` (request to BE-P, `worker.md`). Hold release ticks every 20 s | A task fails, or has not succeeded within 2x its schedule; dead jobs above 0; hold-release lag over 90 s for two readings. **Hold release** is the sharpest: a late tick blocks nobody (the claim releases expired holds) but leaves side effects undone | Page for hold release and reminders, warn for the rest |
 | Backlog of expired holds | Count of holds past their expiry time still marked held | More than 0 for 5 min | Page |
 | **LINE Messaging API token expiry or revocation** | Daily check per club: call LINE `GET /v2/bot/info` with the club's token. Also on every send: a 401 or 403 raises the alert | Any non-200 from the info call, or a 401 on a send. Also at 7 days before expiry if the token type has an expiry. Matches **LINE-06** (P1 alerts when the token fails) | Page (reminders and confirmations stop) |
 | LINE message quota | Daily call to LINE's message quota consumption endpoints per club | **70%** of the plan (alert) and **80%** (reminders stop), as decided in LINE-07 and D17. Booking and payment messages are never blocked. Test messages count (D32). The free plan stops at 300 messages, so any club on Free must be watched | Warn at 70%, page at 80%. The thresholds are platform settings, not DevOps's; DevOps only wires the alert |

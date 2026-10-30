@@ -108,22 +108,23 @@ describe('opening hours, locations, resources (CC-1, CC-4)', () => {
 
 describe('features and settings (PLAT-05, CC-1)', () => {
   it('club A cannot read, update, delete or insert for club B', async () => {
-    await tdb.query(`insert into public.club_feature (club_id, feature_key, enabled) values ($1, 'coaching', true), ($2, 'coaching', false)`, [A, B]);
-    await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1, 'k', '1'), ($2, 'k', '2')`, [A, B]);
+    await tdb.query(`insert into public.club_feature (club_id, feature_key, enabled) values ($1, 'coach_add_at_checkout', true), ($2, 'coach_add_at_checkout', false)`, [A, B]);
+    await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1, 'package_qr_minutes', '1'), ($2, 'package_qr_minutes', '2')`, [A, B]);
     for (const table of ['club_feature', 'club_setting']) {
       const r = await db.withClubTx(ctx(A), (tx) => tx.query(`select club_id from public.${table}`));
       expect(r.rows, table).toEqual([{ club_id: A }]);
+      if (table === 'club_feature') continue;   // the owner cannot write switches at all (review 0038)
       const d = await db.withClubTx(ctx(A), (tx) => tx.query(`delete from public.${table} where club_id = $1`, [B]));
       expect(d.rowCount, table).toBe(0);
     }
     await expect(
-      db.withClubTx(ctx(A), (tx) => tx.query(`insert into public.club_setting (club_id, key, value) values ($1, 'x', '1')`, [B])),
+      db.withClubTx(ctx(A), (tx) => tx.query(`insert into public.club_setting (club_id, key, value) values ($1, 'wallet_expiry_months', '1')`, [B])),
     ).rejects.toThrow(/row-level security/i);
   });
 
   it('a setting value is json and the row has an updated time from the clock', async () => {
     await tdb.setNow('2026-12-29T03:00:00Z');
-    await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1, 'hold', '{"minutes": 15}')`, [A]);
+    await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1, 'cancel_window_hours', '{"minutes": 15}')`, [A]);
     const r = await tdb.query(`select updated_at from public.club_setting where club_id = $1`, [A]);
     expect(new Date(r.rows[0].updated_at).toISOString()).toBe('2026-12-29T03:00:00.000Z');
   });

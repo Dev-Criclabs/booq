@@ -48,7 +48,7 @@ When an account is ready, the **You** or **Club** person adds DevOps as a member
 
 ## F02-T00: LINE test setup (exact list)
 
-**Progress (30 Oct 2026):** LINE test steps 1 to 4: in progress 30 Oct (the user is creating the test provider, channels and LIFF app). The LIFF endpoint URL waits for the staging address below.
+**Progress (30 Oct 2026):** done. Test provider `BOOQ test`, LINE Login channel 2012300015 (published), linked Messaging API channel and Official Account, LIFF app 2012300015-WIi1jtLB, receiver at https://booq-line-parity.vercel.app (Vercel project `booq-line-parity`, Hobby). Result: the Login `sub` equals the webhook `source.userId` (F02 design 3.3). Left: delete the Vercel project and reissue the test channel access token when F02 no longer needs the receiver.
 
 **Fastest way to a stable HTTPS address.** Nothing hosts yet, so no address exists. The Supabase staging project is not needed for this. In order:
 1. **You** create the hosting account and team (row 4 above; Vercel is the recommendation, still open) with two-factor on, and invite DevOps.

@@ -40,9 +40,9 @@ Depends on: F01 T03 to T07 (database, context, tenant suite), T08 (settings), T1
   Review amendment: SR-07. `confirm_now` is not a parameter: the function confirms only when the order's frozen amount due is zero or a cash payment record exists; `reclaim_order` is callable only from the payment path. Extra tests: `confirm_now` cannot be forced; a player cannot call `reclaim_order`.
 - [x] **F03-T14** `app.reclaim_order` for a late payment. IDs: BOOK-03-AC7, AC8, decision D25. Role: BE-B · Deps T13 · Size: M
   Tests first: slot open reclaims and confirms; slot taken, held or closed raises `slot_unavailable`; a solo class with the coach busy raises it and leaves nothing partial.
-- [ ] **F03-T15** `app.move_booking` (staff): in-place update, conflicts re-checked by the constraints, coach rules, customer message enqueued. IDs: BOOK-04-AC7. Role: BE-B · Deps T08 · Size: M
+- [x] **F03-T15** `app.move_booking` (staff): in-place update, conflicts re-checked by the constraints, coach rules, customer message enqueued. IDs: BOOK-04-AC7. Role: BE-B · Deps T08 · Size: M
   Tests first: a move onto a taken slot or a busy coach is refused and nothing changes; a successful move enqueues one message.
-- [ ] **F03-T16** Opening hours and court change guard `app.count_live_occupancy`, called by the F01 `PUT /hours` and `PUT /resources/{id}` routes. IDs: decision D50. Role: BE-B · Deps T08, F01-T08 · Size: S
+- [x] **F03-T16** Opening hours and court change guard `app.count_live_occupancy`, called by the F01 `PUT /hours` and `PUT /resources/{id}` routes. IDs: decision D50. Role: BE-B · Deps T08, F01-T08 · Size: S
   Tests first: shortening hours or deactivating a court over a live booking is refused with the closure hint; with no bookings it succeeds.
 
 ## B. Views, policies, jobs
@@ -53,14 +53,14 @@ Depends on: F01 T03 to T07 (database, context, tenant suite), T08 (settings), T1
 - [x] **F03-T18** Migration 0206 policies and grants, registry entries, tenant isolation and platform blind suites extended to F03 tables. IDs: CC-1, PLAT-02-AC1, PDPA-01-AC1. Role: Arch · Deps T01, T02, F01-T07, T18 · Size: S
   Tests first: club A cannot see club B bookings; `booq_platform` is denied on every F03 table.
   - Built (Architect): `0221_booking_policies.sql` (the design's 0206). Reads only: staff roles read the club's orders, bookings and occupancy; a player their own orders and bookings; a coach the bookings that name them; the worker reads in the club's context. No write grant to any app role (definer functions only). `booking-policies.test.ts` covers tenant isolation, roles, no-context, direct writes refused, and BOOQ staff blind to every F03 table and both views.
-- [ ] **F03-T19** `hold_release` worker task: batch by order, per-order club-context transaction, lag heartbeat. IDs: BOOK-03-AC5, AC6. Role: BE-B · Deps T06, F01-T34 · Size: S
+- [x] **F03-T19** `hold_release` worker task: batch by order, per-order club-context transaction, lag heartbeat. IDs: BOOK-03-AC5, AC6. Role: BE-B · Deps T06, F01-T34 · Size: S
   Tests first: orders release together; the job after a lazy release does nothing; the lag metric is recorded.
 
 ## C. Routes
 
-- [ ] **F03-T20** Public routes `GET /courts`, `/schedule/days`, `/schedule` with `no-store`. IDs: BOOK-01-AC6, AC14, BOOK-02-AC1, AC2, AC5. Role: BE-B · Deps T17 · Size: M
+- [x] **F03-T20** Public routes `GET /courts`, `/schedule/days`, `/schedule` with `no-store`. IDs: BOOK-01-AC6, AC14, BOOK-02-AC1, AC2, AC5. Role: BE-B · Deps T17 · Size: M
   Tests first: guest access works; the response has the seven states (the client adds Selected), `mine` only for a signed in player, `waitlist` flag; a full day reports Day full.
-- [ ] **F03-T21** Player routes `GET /bookings/{id}` and `POST /bookings/{id}/release`. IDs: BOOK-03-AC14, ROLE-AC4. Role: BE-B · Deps T06, T13 · Size: S
+- [x] **F03-T21** Player routes `GET /bookings/{id}` and `POST /bookings/{id}/release`. IDs: BOOK-03-AC14, ROLE-AC4. Role: BE-B · Deps T06, T13 · Size: S
   Tests first: another player's booking is 404; releasing a confirmed booking is refused.
 - [ ] **F03-T22** Staff routes `POST /staff/bookings`, `PUT /staff/bookings/{id}/move`, `POST /staff/bookings/{id}/release`, with permissions and the Paused rule (owner may still manage existing bookings). IDs: BOOK-04-AC7, decisions D43, D60. Role: BE-B · Deps T10, T15 · Size: M
   Tests first: front desk and owner only; a staff booking awaiting payment holds for the hold time; in a Paused club front desk is refused and the owner can move and release.
@@ -86,6 +86,9 @@ Depends on: F01 T03 to T07 (database, context, tenant suite), T08 (settings), T1
 ## Follow-ups owned by other features (listed so nothing is lost)
 
 F04 calls `reserve_court` from its Pay route and builds the order lines on the `orders` shell. F05 calls `confirm_booking` and `reclaim_order`. F06 registers its release handler. F07 registers `coach_rules_check`. F08 registers the waitlist advance handler and owns the Join waitlist screens. F09 calls `release_hold` for closures. F10 supplies the outbox behind the released and moved messages.
+
+- [ ] **F03-T29** Migration 0222 or the next free `02xx` number: `app.add_coach_to_booking(booking, coach)` (definer): claims the coach on an existing confirmed court booking under the same exclusion constraint, turns the booking into a solo class, runs the coach rules hook, and refuses with `slot_unavailable by coach` when the coach is busy. IDs: BOOK-04-AC2, AC3, R2-AC9 (F04), decision D111. Role: Arch · Deps F03-T02, T09 · Size: S
+  Tests first: a busy coach refuses and the booking is unchanged; a free coach is claimed and the occupancy row now holds court and coach; a second coach on the same hour is refused by the database; another club's booking is not found; only the booking's owner or staff may add a coach.
 
 ## Order and size
 

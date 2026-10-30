@@ -19,7 +19,7 @@ describe('refusal codes map to locale keys (CC-5, design 4.2)', () => {
       'sign_in_required', 'club_paused', 'club_not_available', 'hold_setting_unset', 'not_on_the_hour',
       'not_consecutive', 'outside_hours', 'outside_window', 'in_the_past', 'hour_started', 'resource_inactive',
       'limit_reached', 'slot_unavailable', 'coach_unavailable', 'rest_rule', 'coach_rules_not_installed',
-      'too_many_attempts', 'order_not_found', 'forbidden', 'idempotency_key_reused',
+      'too_many_attempts', 'order_not_found', 'forbidden', 'booking_not_found', 'not_movable', 'live_bookings_exist', 'idempotency_key_reused',
     ];
     for (const c of codes) expect(REFUSAL_TEXT_KEYS).toHaveProperty(c);
   });

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from './tx';
 import { createPlatformDb, type PlatformDb } from './platform-tx';
 import { createTestDatabase, type TestDatabase } from './testing/harness';
+import { completeSetup, recordLaunchChecks } from './setup-fixture';
 
 // F01-T23 part b / migration 0035: the owner invite (SR-01, D122), owner_verified, and the
 // second-admin rule for owner contact changes (review T18 R5; design 7.1; ROLE-02-AC8).
@@ -61,7 +62,7 @@ beforeEach(async () => {
   loner = await staff('l@booq.example', 'onboarding_specialist', '99999999-0000-4000-8000-000000000003', 'Lee Loner');
   await tdb.query(`insert into platform.staff_assignment (staff_id, club_id) values ($1, $2)`, [spec, CLUB]);
   pdb = createPlatformDb({ connectionString: tdb.url, max: 1 });
-  db = createDb({ connectionString: tdb.url, max: 1 });
+  db = createDb({ connectionString: tdb.url, max: 3 });
 });
 afterEach(async () => {
   await pdb.end();
@@ -70,25 +71,27 @@ afterEach(async () => {
 });
 
 describe('creating the owner invite (SR-01, D122)', () => {
-  it('an admin or assigned specialist creates it: kind owner, owner and player roles, bound to the owner LINE id, expiry from config', async () => {
+  it('an admin or assigned specialist creates it: kind owner, owner and player roles, unbound until the first person redeems it (D151), expiry from config', async () => {
     await tdb.setNow('2026-12-01T03:00:00Z');
     const id = await invite(spec);
     expect(id).toMatch(/^[0-9a-f-]{36}$/);
     const r = (await tdb.query(`select kind, roles, bound_line_user_id, created_by_staff, token_hash, expires_at from public.club_invite where id = $1`, [id])).rows[0];
-    expect(r).toMatchObject({ kind: 'owner', bound_line_user_id: OWNER_LINE, created_by_staff: spec, token_hash: HASH1 });
+    expect(r).toMatchObject({ kind: 'owner', bound_line_user_id: null, created_by_staff: spec, token_hash: HASH1 });
     expect([...r.roles].sort()).toEqual(['owner', 'player']);
     const ttl = Number((await tdb.query(`select value from platform.config where key = 'invite_ttl_hours'`)).rows[0].value);
     expect(new Date(r.expires_at).getTime()).toBe(new Date('2026-12-01T03:00:00Z').getTime() + ttl * 3600_000);
     expect((await invite(adminA, HASH2)).length).toBeGreaterThan(0);
   });
 
-  it('refuses an unassigned specialist (not found), a club with no owner LINE id or email, and a bad token hash', async () => {
+  it('refuses an unassigned specialist (not found), a club with no owner email, and a bad token hash; the owner LINE id is only a contact (D151)', async () => {
     await expect(invite(loner)).rejects.toThrow(/not_found/);
-    await expect(invite(adminA, HASH1, OTHER)).rejects.toThrow(/owner_contact_missing/); // OTHER has no owner_line
-    await tdb.query(`update public.club set owner_line = 'U2', owner_email = null where id = $1`, [OTHER]);
+    await tdb.query(`update public.club set owner_email = null where id = $1`, [OTHER]);
     await expect(invite(adminA, HASH1, OTHER)).rejects.toThrow(/owner_contact_missing/);
+    await tdb.query(`update public.club set owner_email = 'pim@example.com' where id = $1`, [OTHER]);
+    await expect(invite(adminA, 'short', OTHER)).rejects.toThrow(/token_hash/);
     await expect(invite(adminA, 'short')).rejects.toThrow(/token_hash/);
     expect((await tdb.query(`select count(*)::int as n from public.club_invite`)).rows[0].n).toBe(0);
+    expect(await invite(adminA, HASH1, OTHER)).toMatch(/^[0-9a-f-]{36}$/);        // no owner LINE id needed
   });
 
   it('a fresh invite ends the older unused one: only the newest can be redeemed', async () => {
@@ -107,14 +110,54 @@ describe('creating the owner invite (SR-01, D122)', () => {
   });
 });
 
+describe('creating invites at once (review C4) and the P6 entry (review C2)', () => {
+  it('two parallel creations for one club leave exactly one live invite', async () => {
+    const two = createPlatformDb({ connectionString: tdb.url, max: 2 });
+    try {
+      const make = (who: string, hash: string) =>
+        two.withPlatformTx(as(who), async (tx) => (await tx.query(`select platform.create_owner_invite($1, $2) as id`, [CLUB, hash])).rows[0]?.id as string);
+      await Promise.all([make(adminA, HASH1), make(adminB, HASH2)]);
+      const live = await tdb.query(`select count(*)::int as n from public.club_invite where club_id = $1 and kind = 'owner' and used_at is null and expires_at > clock_timestamp()`, [CLUB]);
+      expect(live.rows[0].n).toBe(1);
+      expect((await tdb.query(`select count(*)::int as n from public.club_invite where club_id = $1 and kind = 'owner'`, [CLUB])).rows[0].n).toBe(2);
+    } finally {
+      await two.end();
+    }
+  });
+
+  it('the redemption entry in P6 goes through the same key filter as every other entry', async () => {
+    const r = await tdb.query(`select prosrc from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'app' and p.proname = 'owner_invite_redeemed'`);
+    expect(r.rows[0].prosrc).toContain('platform.assert_setup_detail');
+  });
+});
+
 describe('redemption (SR-01, D122, ROLE-02-AC8)', () => {
-  it('only the bound LINE id can redeem; the owner gets owner and player; the invite is single use', async () => {
+  it('the first person to redeem takes the owner and player roles and the invite binds to them; nobody else can use the link (D151)', async () => {
     await invite(adminA);
-    expect(await redeem(HASH1, 'Uother', '0811111111', '33333333-3333-4333-8333-333333333333')).toEqual([]);
-    const ok = await redeem(HASH1);
-    expect(ok).toHaveLength(1);
-    expect([...(ok[0]?.roles ?? [])].sort()).toEqual(['owner', 'player']);
-    expect(await redeem(HASH1)).toEqual([]);
+    const first = await redeem(HASH1, 'Uother', '0811111111', '33333333-3333-4333-8333-333333333333');
+    expect(first).toHaveLength(1);
+    expect([...(first[0]?.roles ?? [])].sort()).toEqual(['owner', 'player']);
+    expect((await tdb.query(`select bound_line_user_id, used_by_user from public.club_invite`)).rows).toEqual([{ bound_line_user_id: 'Uother', used_by_user: '33333333-3333-4333-8333-333333333333' }]);
+    expect(await redeem(HASH1)).toEqual([]);                 // a second LINE user with the same link gets nothing
+    expect(await redeem(HASH1, 'Uother', '0811111111', '33333333-3333-4333-8333-333333333333')).toEqual([]);   // single use, also for the first
+    expect((await tdb.query(`select role from public.app_user_role where role = 'owner'`)).rows).toHaveLength(1);
+  });
+
+  it('two different people redeeming the same link at once: one winner, one bound LINE id, one owner', async () => {
+    await invite(adminA);
+    const U2 = '44444444-4444-4444-8444-444444444444';
+    const results = await Promise.all([redeem(HASH1, OWNER_LINE, '0812345678'), redeem(HASH1, 'Usecond', '0811111111', U2)]);
+    expect(results.map((r) => r.length).sort()).toEqual([0, 1]);
+    const inv = (await tdb.query(`select bound_line_user_id, used_by_user from public.club_invite`)).rows[0];
+    const winnerLine = inv.used_by_user === OWNER_USER ? OWNER_LINE : 'Usecond';
+    expect(inv.bound_line_user_id).toBe(winnerLine);
+    expect((await tdb.query(`select count(*)::int as n from public.app_user_role where role = 'owner'`)).rows[0].n).toBe(1);
+  });
+
+  it('an owner invite that was made bound (an older row) still honours its binding', async () => {
+    await tdb.query(`insert into public.club_invite (club_id, token_hash, kind, roles, bound_line_user_id, created_by_staff, expires_at) values ($1, $2, 'owner', '{owner,player}', $3, $4, app.now() + interval '1 day')`, [CLUB, HASH2, OWNER_LINE, adminA]);
+    expect(await redeem(HASH2, 'Uother', '0811111111', '33333333-3333-4333-8333-333333333333')).toEqual([]);
+    expect(await redeem(HASH2)).toHaveLength(1);
   });
 
   it('writes P6 and the club audit entry with the redeemer name and typed phone, and records owner_signed_in', async () => {
@@ -143,14 +186,13 @@ describe('redemption (SR-01, D122, ROLE-02-AC8)', () => {
   });
 
   it('Go live is refused while the owner is unverified, even with every other check passed (SR-01)', async () => {
+    await completeSetup(tdb, CLUB);
+    await recordLaunchChecks(tdb, CLUB);
     await invite(adminA);
     await redeem(HASH1, OWNER_LINE, '0999999999');
-    const keys = (await tdb.query(`select value from platform.config where key = 'required_launch_checks'`)).rows[0].value.map((x: { key: string }) => x.key) as string[];
-    for (const k of keys.filter((k) => k !== 'owner_signed_in' && k !== 'owner_verified')) {
-      await tdb.query(`insert into platform.launch_check (club_id, check_key, result) values ($1, $2, 'pass')`, [CLUB, k]);
-    }
     const b = await tdb.query(`select app.status_blockers($1, 'testing', 'live') as b`, [CLUB]);
-    expect(b.rows[0].b).toEqual([{ item: 'owner_verified', owed_by: 'booq', result: 'fail' }]);
+    // the unverified owner is an open failure too, so no_open_launch_failure waits with it
+    expect(b.rows[0].b).toEqual([{ item: 'owner_verified', owed_by: 'booq', result: 'fail' }, { item: 'no_open_launch_failure', owed_by: 'booq', result: 'pending' }]);
   });
 });
 
@@ -228,11 +270,21 @@ describe('changing the owner contact (review T18 R5; design 7.1)', () => {
 
   it('an admin who requests a change cannot approve their own; another admin can reject it', async () => {
     await invite(adminA);
-    const r = await change(adminB, { owner_line: 'U9' });
+    const r = await change(adminB, { owner_line: 'U00000000000000000000000000000003' });
     await expect(decide(adminB, r.request_id, true)).rejects.toThrow(/same_admin/);
     await decide(adminA, r.request_id, false);
     expect((await tdb.query(`select owner_line from public.club where id = $1`, [CLUB])).rows[0].owner_line).toBe(OWNER_LINE);
     expect((await tdb.query(`select status, decided_by from platform.owner_contact_change where id = $1`, [r.request_id])).rows[0]).toEqual({ status: 'rejected', decided_by: adminA });
+  });
+
+  it('the owner LINE id must be a LINE user id: U and 32 hex characters (D122), in the table and in the change function', async () => {
+    const bad = ['@nok', 'U1', 'u00000000000000000000000000000001', 'U0000000000000000000000000000000G', 'U000000000000000000000000000000012', ' U00000000000000000000000000000001'];
+    for (const v of bad) {
+      await expect(tdb.query(`update public.club set owner_line = $2 where id = $1`, [CLUB, v]), v).rejects.toThrow(/club_owner_line_format|check/i);
+      await expect(change(spec, { owner_line: v }), v).rejects.toThrow(/invalid_field/);
+    }
+    expect((await tdb.query(`select owner_line from public.club where id = $1`, [CLUB])).rows[0].owner_line).toBe(OWNER_LINE);
+    expect(await change(spec, { owner_line: 'U0000000000000000000000000000000a' })).toMatchObject({ applied: true });
   });
 
   it('accepts only the four owner columns, and not for a club the caller cannot see or cannot edit', async () => {

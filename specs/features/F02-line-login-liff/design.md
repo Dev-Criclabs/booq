@@ -46,6 +46,8 @@ Read on 30 Oct 2026 from `developers.line.biz`. Nothing here is taken from memor
 
 **User ID parity (Q33), a setup task before the build.** The docs do not say that the Login `sub` is the same user ID the Messaging API uses for push when both channels are in one provider; LINE-01-AC5 relies on it. Before F02 is built, a person tests it with a real LINE account: one Login channel, one Official Account, one provider, one test user; sign in through LIFF, then send a push to the `sub` and read the `source.userId` of a webhook event from the same user. This is task F02-T00 in `tasks.md`. If the ids differ, the push target must be learned from webhook events and linked to the player, which changes the player record, and this design is reopened.
 
+**User ID check result (F02-T00, 30 Oct 2026): the IDs match.** On the BOOQ test provider (LINE Login channel 2012300015, LIFF app 2012300015-WIi1jtLB, linked Messaging API channel) one test user signed in through LIFF and then messaged the Official Account. The Login `sub` and the webhook `source.userId` were the same value (`match: true` on the throwaway receiver `infra/line-parity`, deployed at booq-line-parity.vercel.app). The design stands as written. Still to do: delete the throwaway receiver project and reissue the test channel access token.
+
 ## 4. Sign-in flow
 
 ### 4.1 Pieces
@@ -185,6 +187,8 @@ F02 migrations continue F01's numbering from 0100. Rules and conventions as FA ย
 Columns added to F01's `app_user`: `display_name`, `full_name` (null until consent), `phone`, `phone_normalized`, `date_of_birth` (date, null allowed), `language` (`th` or `en`), `level` (null or one of the four levels), `line_friend` (bool, null), `line_friend_checked_at`, `active`. Unique `(club_id, line_user_id)`; index `(club_id, phone_normalized)` (not unique). A view `duplicate_phone_flags` finds shared phones within a club, visible to owner and front desk; no stored flag (FA ยง2.2). `staff_notes` is not here: it is `user_staff_note` (F01), so the player's own row can never carry it.
 
 Existing audit trigger covers `app_user` including `date_of_birth`.
+
+**Phone convention (one rule for sign-up, import and claim).** `phone` keeps what was typed (or the international form from `normalizePhone`, with `+`); `phone_normalized` is **digits only**, with a Thai number in international form without the plus (`66812345678`): the value `normalizePhone` returns with the `+` removed. The column CHECK is `^[0-9]{6,15}$`. F02-T09 sign-up, the player import (F01-T31) and `app.request_claim` all compare and store `phone_normalized` in that form, so the match is an exact equality. A claim also needs the imported record to be `claim_state = 'unclaimed'` (migration 0103): an imported player has no LINE id and that state, so an ordinary player who has not signed in yet can never be matched.
 
 ### 7.2 Sessions (migration `0102_auth_session.sql`)
 

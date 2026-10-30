@@ -25,7 +25,7 @@ beforeEach(async () => {
   admin = await staff('admin@booq.example', 'platform_admin', '99999999-0000-4000-8000-000000000001', 'Ada Admin');
   spec = await staff('spec@booq.example', 'onboarding_specialist', '99999999-0000-4000-8000-000000000002', 'Sam Specialist');
   other = await staff('other@booq.example', 'onboarding_specialist', '99999999-0000-4000-8000-000000000003', 'Olu Other');
-  templateId = (await tdb.query(`insert into platform.template (key, name) values ('tennis', 'Tennis') returning id`)).rows[0].id;
+  templateId = (await tdb.query(`select id from platform.template where key = 'tennis'`)).rows[0].id;
   pdb = createPlatformDb({ connectionString: tdb.url, max: 1 });
   svc = createClubService({ db: pdb });
 });
@@ -36,10 +36,10 @@ afterEach(async () => {
 
 describe('creating a club (PLAT-01-AC1)', () => {
   it('a specialist creates a Draft club, is assigned to it, and sees it afterwards', async () => {
-    const r = await create(spec, valid({ owner_name: 'Nok', owner_phone: '0812345678', owner_line: '@nok', owner_email: 'nok@example.com', template_id: templateId, receipt_prefix: 'HTC' }));
+    const r = await create(spec, valid({ owner_name: 'Nok', owner_phone: '0812345678', owner_line: 'U00000000000000000000000000000002', owner_email: 'nok@example.com', template_id: templateId, receipt_prefix: 'HTC' }));
     if (!r.ok) throw new Error(r.code);
     const club = (await tdb.query(`select status, created_by_staff, template_id, receipt_prefix, owner_line from public.club where id = $1`, [r.id])).rows[0];
-    expect(club).toEqual({ status: 'draft', created_by_staff: spec, template_id: templateId, receipt_prefix: 'HTC', owner_line: '@nok' });
+    expect(club).toEqual({ status: 'draft', created_by_staff: spec, template_id: templateId, receipt_prefix: 'HTC', owner_line: 'U00000000000000000000000000000002' });
     expect((await tdb.query(`select staff_id from platform.staff_assignment where club_id = $1`, [r.id])).rows).toEqual([{ staff_id: spec }]);
     expect((await svc.getProgress(spec, r.id)).ok).toBe(true);
     expect(await svc.getProgress(other, r.id)).toEqual({ ok: false, code: 'not_found' });
@@ -60,6 +60,17 @@ describe('creating a club (PLAT-01-AC1)', () => {
     expect(a.rows).toEqual([{ actor_type: 'platform_staff', actor_label: 'Sam Specialist' }]);
   });
 
+  it('starting from Tennis copies its rules and hours into the club; Padel (to build) and an unknown template are refused', async () => {
+    const r = await create(spec, valid({ template_id: templateId }));
+    if (!r.ok) throw new Error(r.code);
+    expect((await tdb.query(`select value from public.club_setting where club_id = $1 and key = 'hold_minutes'`, [r.id])).rows).toEqual([{ value: 15 }]);
+    expect((await tdb.query(`select count(*)::int as n from public.opening_hours where club_id = $1`, [r.id])).rows[0].n).toBe(7);
+    expect((await p6()).filter((x) => x.action === 'club.template_applied')).toMatchObject([{ name: 'Sam Specialist', club_id: r.id, detail: { template: 'tennis' } }]);
+    const padel = (await tdb.query(`select id from platform.template where key = 'padel'`)).rows[0].id;
+    expect(await create(spec, valid({ slug: 'other', template_id: padel }))).toEqual({ ok: false, code: 'invalid' });
+    expect((await tdb.query(`select count(*)::int as n from public.club where slug = 'other'`)).rows[0].n).toBe(0);
+  });
+
   it('a club always starts as Draft: status and the window cannot be sent', async () => {
     for (const extra of [{ status: 'live' }, { allow_booq_changes_until: '2030-01-01T00:00:00Z' }, { created_by_staff: admin }, { id: 'x' }]) {
       expect(await create(spec, valid(extra)), JSON.stringify(extra)).toEqual({ ok: false, code: 'invalid' });
@@ -71,7 +82,7 @@ describe('creating a club (PLAT-01-AC1)', () => {
     const bad: Array<Record<string, unknown>> = [
       { slug: 'x', name_th: 'ก' }, { ...valid(), slug: 'Bad Slug' }, { ...valid(), slug: '-x' }, { ...valid(), name_en: '' },
       { ...valid(), owner_email: 'not-an-email' }, { ...valid(), name_en: 'x'.repeat(201) }, { ...valid(), template_id: 'aaaaaaaa-0000-4000-8000-0000000000ff' },
-      { ...valid(), owner_phone: 5 }, { ...valid(), default_language: 'de' },
+      { ...valid(), owner_phone: 5 }, { ...valid(), owner_line: '@nok' }, { ...valid(), owner_line: 'U1' }, { ...valid(), default_language: 'de' },
     ];
     for (const body of bad) expect(await create(spec, body), JSON.stringify(body)).toEqual({ ok: false, code: 'invalid' });
     expect(await create(spec, null)).toEqual({ ok: false, code: 'invalid' });
@@ -102,7 +113,7 @@ describe('progress (P3, PLAT-01-AC2, AC9)', () => {
       ['basics', false, 'booq'], ['plan', false, 'booq'], ['courts_hours', false, 'booq'], ['line', false, 'booq'], ['payments', false, 'booq'],
     ]);
     expect(p.progress.launch).toHaveLength(10);
-    expect(p.progress.launch.every((l) => l.result === 'missing')).toBe(true);
+    expect(p.progress.launch.every((l) => l.result === (l.item === 'no_open_launch_failure' ? 'pass' : 'pending'))).toBe(true);
   });
 
   it('an unknown or malformed club id and an unknown staff member answer not_found', async () => {

@@ -49,14 +49,14 @@ afterEach(async () => {
 describe('reading the setup projection', () => {
   it('shows setup only: club, hours, courts, settings, switches, with a mode', async () => {
     await tdb.query(`insert into public.opening_hours (club_id, weekday, open, close) values ($1, 1, '06:00', '24:00')`, [TEST]);
-    await tdb.query(`insert into public.club_feature (club_id, feature_key, enabled) values ($1, 'coaching', true)`, [TEST]);
+    await tdb.query(`insert into public.club_feature (club_id, feature_key, enabled) values ($1, 'coach_add_at_checkout', true)`, [TEST]);
     const r = await svc.getSetup(spec, TEST);
     if (!r.ok) throw new Error(r.code);
     expect(r.setup.mode).toBe('edit');
     expect(r.setup.club).toMatchObject({ id: TEST, slug: 'testing', status: 'testing', name_en: 'Testing' });
     expect(r.setup.hours).toHaveLength(1);
     expect(r.setup.settings).toEqual([{ key: 'hold_minutes', value: 15 }]);
-    expect(r.setup.features).toEqual([{ feature_key: 'coaching', enabled: true }]);
+    expect(r.setup.features).toEqual([{ feature_key: 'coach_add_at_checkout', enabled: true }]);
     expect(r.setup.locations).toHaveLength(1);
     expect(Object.keys(r.setup).sort()).toEqual(['club', 'features', 'hours', 'locations', 'mode', 'resources', 'settings']);
   });
@@ -141,7 +141,7 @@ describe('editing (PLAT-02-AC2 to AC5, AC7)', () => {
   });
 
   it('an owner contact change after an owner invite waits for another admin: the other columns save, the contact does not', async () => {
-    await tdb.query(`update public.club set owner_line = 'U1', owner_email = 'o@example.com' where id = $1`, [TEST]);
+    await tdb.query(`update public.club set owner_line = 'U00000000000000000000000000000002', owner_email = 'o@example.com' where id = $1`, [TEST]);
     await tdb.query(`insert into public.club_invite (club_id, token_hash, kind, roles, bound_line_user_id, created_by_staff, expires_at) values ($1, $2, 'owner', '{owner,player}', 'U1', $3, now() + interval '1 day')`, [TEST, 'c'.repeat(64), admin]);
     const r = await svc.putSetup(spec, TEST, 'basics', { name_en: 'Renamed', owner_phone: '0899999999' });
     expect(r).toMatchObject({ ok: true, changed: ['name_en'], pendingOwnerContact: expect.stringMatching(/^[0-9a-f-]{36}$/) });
@@ -182,7 +182,7 @@ describe('editing (PLAT-02-AC2 to AC5, AC7)', () => {
 
   it('refuses unknown sections, unknown or protected fields, wrong types and values the database rejects', async () => {
     expect(await svc.putSetup(spec, TEST, 'nope', {})).toEqual({ ok: false, code: 'invalid' });
-    for (const body of [{ status: 'live' }, { allow_booq_changes_until: '2030-01-01' }, { name_en: 5 }, { default_language: 'de' }, {}, null, []]) {
+    for (const body of [{ status: 'live' }, { allow_booq_changes_until: '2030-01-01' }, { name_en: 5 }, { default_language: 'de' }, { owner_line: '@nok' }, {}, null, []]) {
       expect(await svc.putSetup(spec, TEST, 'basics', body), JSON.stringify(body)).toEqual({ ok: false, code: 'invalid' });
     }
     expect(await name(TEST)).toBe('Testing');
@@ -206,13 +206,16 @@ describe('editing (PLAT-02-AC2 to AC5, AC7)', () => {
     expect((await svc.putSetup(spec, TEST, 'resources-hours', { resources: [{ id, active: false }] })).ok).toBe(true);
     expect((await tdb.query(`select active, lights from public.resource`)).rows).toEqual([{ active: false, lights: true }]);
 
-    expect((await svc.putSetup(spec, TEST, 'features', { features: { coaching: true, waitlist: false } })).ok).toBe(true);
-    expect((await tdb.query(`select feature_key, enabled from public.club_feature order by 1`)).rows).toEqual([{ feature_key: 'coaching', enabled: true }, { feature_key: 'waitlist', enabled: false }]);
+    expect((await svc.putSetup(spec, TEST, 'features', { features: { coach_add_at_checkout: true, backup_mode: false } })).ok).toBe(true);
+    expect(await svc.putSetup(spec, TEST, 'features', { features: { gift_vouchers: true } })).toEqual({ ok: false, code: 'invalid' }); // only the switches the spec names exist (PLAT-05-AC6)
+    expect((await tdb.query(`select feature_key, enabled from public.club_feature order by 1`)).rows).toEqual([{ feature_key: 'backup_mode', enabled: false }, { feature_key: 'coach_add_at_checkout', enabled: true }]);
 
     expect((await svc.putSetup(spec, TEST, 'plan', { plan_trial_ends_at: '2027-01-31T00:00:00Z' })).ok).toBe(true);
-    const t = await tdb.query(`insert into platform.template (key, name) values ('tennis', 'Tennis') returning id`);
+    const t = await tdb.query(`select id from platform.template where key = 'blank'`);
     expect((await svc.putSetup(spec, TEST, 'template', { template_id: t.rows[0].id })).ok).toBe(true);
     expect((await tdb.query(`select template_id from public.club where id = $1`, [TEST])).rows[0].template_id).toBe(t.rows[0].id);
+    // A template is a start: a second one is refused, and so is one that is still to build (PLAT-05-AC11).
+    expect(await svc.putSetup(spec, TEST, 'template', { template_id: t.rows[0].id })).toEqual({ ok: false, code: 'invalid' });
   });
 
   it('a P6 detail never carries player, booking or secret data', async () => {

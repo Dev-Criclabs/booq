@@ -66,7 +66,7 @@ describe('what the purge removes and what it keeps', () => {
     await person(A, TESTER, 'L2', ['player'], true);                   // tester account: test data
     await tdb.query(`insert into public.t_ledger (club_id, amount) values ($1, 5), ($1, 7), ($2, 9)`, [A, B]); // all test (clubs are in Testing)
     await tdb.query(`insert into public.user_consent (club_id, user_id, notice_version, language) values ($1,$2,'v1','th'), ($1,$3,'v1','th')`, [A, TESTER, OWNER]);
-    await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1, 'hold', '15')`, [A]);
+    await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1, 'cancel_window_hours', '15')`, [A]);
   });
 
   it('deletes only the test rows of that club, and nothing of another club', async () => {
