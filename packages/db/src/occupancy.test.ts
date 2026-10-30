@@ -166,13 +166,14 @@ describe('state, parents and club (CC-1)', () => {
     await claim({});
     expect((await tdb.query('select is_test from public.occupancy')).rows).toEqual([{ is_test: true }]);
   });
-  it('the app roles hold no privilege: only the definer functions write (SR-07)', async () => {
-    for (const priv of ['insert', 'update', 'delete', 'select']) {
+  it('no role writes the table directly (only the definer functions, SR-07); BOOQ staff cannot even read it; the app roles read it by policy (migration 0221)', async () => {
+    for (const priv of ['insert', 'update', 'delete']) {
       for (const role of ['booq_app', 'booq_worker', 'booq_platform']) {
         const r = await tdb.query('select has_table_privilege($1, $2, $3) as ok', [role, 'public.occupancy', priv]);
         expect(r.rows[0].ok, `${role} ${priv}`).toBe(false);
       }
     }
+    expect((await tdb.query(`select has_table_privilege('booq_platform', 'public.occupancy', 'select') as ok`)).rows[0].ok).toBe(false);
   });
   it('is registered as club data and passes the structure check', async () => {
     const reg = await collectRegistry();

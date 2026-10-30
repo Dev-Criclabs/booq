@@ -47,10 +47,12 @@ Depends on: F01 T03 to T07 (database, context, tenant suite), T08 (settings), T1
 
 ## B. Views, policies, jobs
 
-- [ ] **F03-T17** Public views `public_slot_state` and `public_day_state`, with the tenant and club-visibility rules built in. IDs: BOOK-01-AC6, AC7, BOOK-03-AC4, CC-3. Role: Arch · Deps T02 · Size: M
+- [x] **F03-T17** Public views `public_slot_state` and `public_day_state`, with the tenant and club-visibility rules built in. IDs: BOOK-01-AC6, AC7, BOOK-03-AC4, CC-3. Role: Arch · Deps T02 · Size: M
   Tests first: expired holds are not shown as held; no booking id, customer, coach or order appears; a snapshot test fails if a field is added; Draft clubs are invisible to guests.
-- [ ] **F03-T18** Migration 0206 policies and grants, registry entries, tenant isolation and platform blind suites extended to F03 tables. IDs: CC-1, PLAT-02-AC1, PDPA-01-AC1. Role: Arch · Deps T01, T02, F01-T07, T18 · Size: S
+  - Built (Architect): `0220_public_views.sql` (the design's 0205; numbers up to 0219 were taken). `public_slot_state` (club, court, start, state held/taken/closed; closures expanded to the Bangkok hours they touch; expired holds not shown) and `public_day_state` (free hours per active court for today and the next 30 days, from the weekday's opening hours). Both carry the tenant filter and the visibility rule (Live or Paused: everyone; Testing: `app.is_club_tester()`; Draft: nobody); `booq_app` and `booq_worker` only. Hours already past today are not subtracted in the view; the schedule route does that.
+- [x] **F03-T18** Migration 0206 policies and grants, registry entries, tenant isolation and platform blind suites extended to F03 tables. IDs: CC-1, PLAT-02-AC1, PDPA-01-AC1. Role: Arch · Deps T01, T02, F01-T07, T18 · Size: S
   Tests first: club A cannot see club B bookings; `booq_platform` is denied on every F03 table.
+  - Built (Architect): `0221_booking_policies.sql` (the design's 0206). Reads only: staff roles read the club's orders, bookings and occupancy; a player their own orders and bookings; a coach the bookings that name them; the worker reads in the club's context. No write grant to any app role (definer functions only). `booking-policies.test.ts` covers tenant isolation, roles, no-context, direct writes refused, and BOOQ staff blind to every F03 table and both views.
 - [ ] **F03-T19** `hold_release` worker task: batch by order, per-order club-context transaction, lag heartbeat. IDs: BOOK-03-AC5, AC6. Role: BE-B · Deps T06, F01-T34 · Size: S
   Tests first: orders release together; the job after a lazy release does nothing; the lag metric is recorded.
 
