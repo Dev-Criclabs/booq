@@ -44,6 +44,7 @@ const counts = async () => ({
 
 beforeEach(async () => {
   tdb = await createTestDatabase();
+  await tdb.seedNotice();   // sign-up checks the current notice version (D152)
   server = await line.serve();
   await tdb.query(`insert into public.club (id, slug, name_th, name_en, status) values ($1,'a','ก','A','live')`, [A]);
   await tdb.query(`insert into public.line_connection (club_id, login_channel_id, liff_id) values ($1,'loginA','liffA')`, [A]);
