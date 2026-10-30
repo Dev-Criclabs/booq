@@ -5,8 +5,7 @@
 --     A payment whose receipt is void at the time of the close is not counted and is listed as void. A late or wrong amount payment is
 --     counted in the method it arrived by and is also listed as credited to the wallet.
 --   * Credit use and wallet use are separate non money lines (D119): credit use is the credit_ledger `use` rows of the day, each
---     priced at its package's price per credit (the price paid, frozen in the package snapshot, over the credits it holds; an
---     imported package has no price and counts as 0); wallet use is the `spend` rows of the day and
+--     priced at the credit value frozen on its order line divided by its credit units; wallet use is the `spend` rows of the day and
 --     wallet returned is the `return` rows.
 --   * A void made in the day is listed on that day, whenever the receipt was issued (D119); it never reopens an earlier day.
 --   * Test rows are left out (D33). A close run in a Testing club is itself a test row and goes at Go live.
@@ -72,10 +71,10 @@ begin
          coalesce(jsonb_agg(jsonb_build_object('number', receipt_number, 'method', method, 'amount_satang', amount) order by receipt_number) filter (where receipt_status = 'void'), '[]'::jsonb)
     into v_beam, v_cash, v_voided_pay from pay;
 
-  select jsonb_build_object('count', count(*), 'value_satang', coalesce(round(sum(coalesce((pk.product_snapshot ->> 'price_satang')::numeric, 0) / pk.credits_total)), 0)::bigint)
+  select jsonb_build_object('count', count(*), 'value_satang', coalesce(round(sum(l.credit_value_satang::numeric / nullif(l.credit_units, 0))), 0)::bigint)
     into v_credit
     from public.credit_ledger u
-    join public.customer_package pk on pk.club_id = u.club_id and pk.id = u.package_id
+    join public.order_line l on l.club_id = u.club_id and l.id = u.order_line_id
    where u.club_id = p_club and u.reason = 'use' and not u.is_test and u.created_at >= v_from and u.created_at < v_to;
 
   select coalesce(sum(-w.change_satang) filter (where w.reason = 'spend'), 0), coalesce(sum(w.change_satang) filter (where w.reason = 'return'), 0)
