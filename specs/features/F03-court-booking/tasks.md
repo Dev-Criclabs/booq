@@ -35,7 +35,7 @@ Depends on: F01 T03 to T07 (database, context, tenant suite), T08 (settings), T1
   Tests first: a second tap, a tap on a second device, and the same key in parallel return one order and the same `hold_expires_at`; no second hold exists.
 - [ ] **F03-T12** Limit on repeated Pay taps: `pay_tap` table (0207), platform config keys, `too_many_attempts`, the `pay_tap_limit_set` launch check. IDs: decision D61. Role: BE-B · Deps T08, F01-T27b · Size: S
   Tests first: attempts beyond the platform limit are refused; a repeat tap returning the same hold does not count; an unset limit fails the launch check; no value is built into code.
-- [ ] **F03-T13** `app.confirm_booking` and the PAY-07 path (`confirm_now`): guarded status change, hold cleared, same transaction. IDs: BOOK-03-AC7, AC9, BOOK-04-AC8. Role: BE-B · Deps T08 · Size: M
+- [x] **F03-T13** `app.confirm_booking` and the PAY-07 path (`confirm_now`): guarded status change, hold cleared, same transaction. IDs: BOOK-03-AC7, AC9, BOOK-04-AC8. Role: BE-B · Deps T08 · Size: M
   Tests first: a confirmed booking has no hold; confirm and expiry at the same instant give exactly one outcome (FA T10); a taken slot refuses a PAY-07 order and nothing is used up.
   Review amendment: SR-07. `confirm_now` is not a parameter: the function confirms only when the order's frozen amount due is zero or a cash payment record exists; `reclaim_order` is callable only from the payment path. Extra tests: `confirm_now` cannot be forced; a player cannot call `reclaim_order`.
 - [ ] **F03-T14** `app.reclaim_order` for a late payment. IDs: BOOK-03-AC7, AC8, decision D25. Role: BE-B · Deps T13 · Size: M
