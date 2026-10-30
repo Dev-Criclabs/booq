@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { Reply, route, RouteError, type RouteSession } from './route';
-import { serveRoutes } from './serve';
+import { serveRoutes, type ServeDeps } from './serve';
 import { findUndeclaredRoutes } from './check';
 
 // F02 / apps/web transport: serveRoutes turns a table of declared routes into a standard
 // (Request, ctx) => Response handler. No Next.js import here: Request and Response are web standards.
 const SESSION: RouteSession = { clubId: 'c1', userId: 'u1', roles: ['player'] };
-const deps = (over: Partial<Parameters<typeof serveRoutes>[1]> = {}) => ({
+const deps = (over: Partial<ServeDeps> = {}) => ({
   routeDeps: { hasFeature: async () => true },
   resolveSession: async (_slug: string, cookie: string | undefined) => (cookie === 'good' ? SESSION : null),
   maxBodyBytes: 1000,
@@ -17,6 +17,7 @@ const table = [
   route({ method: 'GET', path: '/me/bookings', needsPerson: true }, async (ctx) => ({ user: ctx.userId })),
   route({ method: 'POST', path: '/echo/:id', public: true }, async (ctx) => ({ input: ctx.input })),
   route({ method: 'POST', path: '/login', public: true }, async (ctx) => new Reply({ ok: true, cookie: ctx.cookie ?? null }, { setCookie: 'a=b; Path=/' })),
+  route({ method: 'POST', path: '/raw-body', public: true }, async (ctx) => ({ body: ctx.body, input: ctx.input })),
   route({ method: 'GET', path: '/boom', public: true }, async () => {
     throw new Error('secret internals');
   }),
@@ -103,6 +104,34 @@ describe('serveRoutes', () => {
     const r = await call(handler(), 'POST', '/api/c/hunter/echo/1', { raw: '{"__proto__":{"polluted":true},"a":1}' });
     expect(((await r.json()) as { input: Record<string, unknown> }).input['a']).toBe(1);
     expect(({} as Record<string, unknown>)['polluted']).toBeUndefined();
+  });
+});
+
+describe('body and lazy setup', () => {
+  it('a route also gets the body exactly as sent, apart from the merged input', async () => {
+    const r = await call(handler(), 'POST', '/api/c/hunter/raw-body?q=1', { body: { roles: ['owner'], a: 1 } });
+    expect(await r.json()).toEqual({ body: { roles: ['owner'], a: 1 }, input: { q: '1', roles: ['owner'], a: 1, slug: 'hunter' } });
+  });
+  it('built on the first request, once; a failing setup answers 500 and is retried', async () => {
+    let builds = 0;
+    const lazy = serveRoutes(() => {
+      builds += 1;
+      return { table, deps: deps() };
+    });
+    expect(builds).toBe(0);
+    await call(lazy, 'GET', '/api/c/hunter/public/config');
+    await call(lazy, 'GET', '/api/c/hunter/public/config');
+    expect(builds).toBe(1);
+    let first = true;
+    const flaky = serveRoutes(() => {
+      if (first) {
+        first = false;
+        throw new Error('settings missing');
+      }
+      return { table, deps: deps() };
+    });
+    expect((await call(flaky, 'GET', '/api/c/hunter/public/config')).status).toBe(500);
+    expect((await call(flaky, 'GET', '/api/c/hunter/public/config')).status).toBe(200);
   });
 });
 

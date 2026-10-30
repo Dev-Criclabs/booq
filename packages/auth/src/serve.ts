@@ -45,7 +45,33 @@ function matchPath(segments: string[], actual: string[]): Record<string, string>
   return params;
 }
 
-export function serveRoutes(table: readonly Route<unknown>[], deps: ServeDeps): (request: Request, context: ServeContext) => Promise<Response> {
+export type ServeSource = { table: readonly Route<unknown>[]; deps: ServeDeps };
+
+/**
+ * `serveRoutes(table, deps)`, or `serveRoutes(() => ({ table, deps }))` to build them on the first
+ * request: a deployment's settings are read then, so a build does not need them.
+ */
+export function serveRoutes(table: readonly Route<unknown>[], deps: ServeDeps): (request: Request, context: ServeContext) => Promise<Response>;
+export function serveRoutes(source: () => ServeSource): (request: Request, context: ServeContext) => Promise<Response>;
+export function serveRoutes(first: readonly Route<unknown>[] | (() => ServeSource), second?: ServeDeps): (request: Request, context: ServeContext) => Promise<Response> {
+  if (typeof first === 'function') {
+    let built: ((request: Request, context: ServeContext) => Promise<Response>) | undefined;
+    return async (request, context) => {
+      try {
+        built ??= (() => {
+          const s = first();
+          return serveRoutes(s.table, s.deps);
+        })();
+      } catch {
+        return fail(500, 'internal');
+      }
+      return built(request, context);
+    };
+  }
+  return serveNow(first, second!);
+}
+
+function serveNow(table: readonly Route<unknown>[], deps: ServeDeps): (request: Request, context: ServeContext) => Promise<Response> {
   const problems = checkRouteTable(table.map((r) => r.def));
   if (problems.length) throw new Error(`route table: ${problems.map((p) => `${p.method ?? '?'} ${p.path ?? '?'}: ${p.problem}`).join('; ')}`);
   const compiled: Compiled[] = table.map((route) => ({ route, segments: route.def.path.split('/').filter(Boolean) }));
@@ -101,7 +127,7 @@ export function serveRoutes(table: readonly Route<unknown>[], deps: ServeDeps): 
       for (const [k, v] of new URL(request.url).searchParams) query[k] = v;
       const input = { ...query, ...body, ...found.params, slug };
 
-      const result: RouteResult<unknown> = await found.route.handle({ session, input, cookie }, deps.routeDeps);
+      const result: RouteResult<unknown> = await found.route.handle({ session, input, cookie, body: BODY_METHODS.has(method) ? body : undefined }, deps.routeDeps);
       if (!result.ok) return fail(result.status, result.code);
       if (result.body instanceof Reply) {
         const { status = 200, setCookie } = result.body.options;
