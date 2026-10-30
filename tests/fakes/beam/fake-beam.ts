@@ -41,6 +41,8 @@ export interface PayOptions {
   otherKeyBase64?: string;
   /** false = nothing was paid at Beam (an attacker just posts to the endpoint). Default true. */
   markPaid?: boolean;
+  /** End of the hold, as the app set it. Beam does not know it; the fake records afterHoldEnd from it. */
+  holdEndsAt?: string;
 }
 
 /**
@@ -130,7 +132,9 @@ export class FakeBeam {
       transactionTime: now,
       ...(opts.amount !== undefined ? { amount: opts.amount } : {}),
     });
-    return this.deliver('charge.succeeded', body, target, opts.signing ?? 'correct', opts.otherKeyBase64);
+    const rec = await this.deliver('charge.succeeded', body, target, opts.signing ?? 'correct', opts.otherKeyBase64);
+    if (opts.holdEndsAt) rec.afterHoldEnd = Date.parse(rec.at) > Date.parse(opts.holdEndsAt);
+    return rec;
   }
 
   /** charge.failed. failureCode values are not documented in the pages read; pass any string. */
@@ -246,7 +250,7 @@ export class FakeBeam {
         eventName,
         chargeId: body.chargeId,
         signingMode: signing,
-        afterExpiry: this.clock.now().getTime() > expiry,
+        afterQrExpiry: this.clock.now().getTime() > expiry,
         delivery,
       };
       this.deliveries.push(rec);

@@ -14,12 +14,14 @@ Why fakes and not mocks: PAY-02, PAY-03, LINE-03 and LINE-04 are about what cros
 | `beam/wire.ts` | Beam's documented signature: base64 HMAC-SHA256 over the exact body, `x-beam-event` header |
 | `beam/wire.vector.ts` | The docs' test vector (body to be pasted from the docs page) |
 | `beam/fake-beam.ts` | `FakeBeam`: create charge, pay, fail, deliver, redeliver, retry, HTTP façade, refund trap |
-| `beam/scenarios.ts` | The five scenarios as runners, plus the catalogue of what the app must do |
+| `beam/scenarios.ts` | The scenarios as runners, plus the catalogue of what the app must do |
 | `line/types.ts` | Club channels, users, pushes, rich menu, faults |
 | `line/fake-line.ts` | `FakeLine`: push recording per club and language, ID token verify, friendship, quota, rich menu, optional HTTP server |
 | `line/flex.ts` | Flex inspector: texts, actions, limits, confirmed card check, text-from-locale check |
 | `line/rich-menu.ts` | Six tile deep link check |
 | `line/liff-stub.ts` | `window.liff` stand in for Playwright |
+| `fakes.spec.ts` | 23 self tests of the fakes (run by `pnpm vitest run tests`) |
+| `../acceptance/` | `spec-ids.ts`, `generate.ts` (regenerates the skeletons and `docs/qa/acceptance-coverage.md`), `coverage.spec.ts` (every criterion ID appears, D126), and the generated `F*.spec.ts` skeletons |
 | `../support/parallel.ts` | `raceAll`, `repeat`, `tally` for concurrency tests |
 
 ## 2. How a test wires a fake to the app
@@ -63,7 +65,7 @@ Built on Beam's public docs (https://docs.beamcheckout.com, read 30 Oct 2026). I
 
 ### 3.2 What stays a guess (Q-31)
 
-No event id and no timestamp in the webhook (so the fake sends none; no replay protection can be tested); what an expired QR becomes (the fake leaves it PENDING, the docs say an abandoned payment can stay PENDING for good); whether a QR can still be paid after `expiryTime` (the fake allows it, because D18 and PAY-03 define a late payment as one Beam reports after the hold ends); backoff intervals (the fake uses 2, 4, 8 ... seconds on the fake clock); `failureCode` values; the idempotency response on a repeat (the fake returns the same charge); and whether a sandbox PromptPay QR can be paid by a tester at all, which decides if D26 works on 7 Dec.
+No event id and no timestamp in the webhook (so the fake sends none; no replay protection can be tested); what an expired QR becomes (the fake leaves it PENDING, the docs say an abandoned payment can stay PENDING for good); whether a QR can still be paid after `expiryTime` (the fake allows it, so a payment can arrive between the QR expiry and the hold end, D80); backoff intervals (the fake uses 2, 4, 8 ... seconds on the fake clock); `failureCode` values; the idempotency response on a repeat (the fake returns the same charge); and whether a sandbox PromptPay QR can be paid by a tester at all, which decides if D26 works on 7 Dec.
 
 ### 3.3 Interface
 
@@ -82,7 +84,11 @@ The catalogue is `BEAM_SCENARIOS` in `scenarios.ts`. Expected outcomes come from
 | 2 | **Bad signature** | `badSignature(mode)` for 5 modes; `signedWithOtherClubKey` | **Rejected, logged and alerted** (D24); nothing else changes (PAY-02). 4xx |
 | 3 | **Wrong amount** (1 satang less, 1 satang more, baht sent for satang, double) | `wrongAmount(variant)` | Validly signed, so it is accepted as a message but the booking is **not confirmed**, the order is **flagged for the owner**, and staff credit the wallet with a reason (D24). Answered with a **success status** so Beam stops retrying (D36) |
 | 4 | **Duplicate callback** | `duplicateCallbackSequential`, `duplicateCallbackParallel` | **Ignored with success** (D24). After all copies: the effect of one payment. Concurrency version CONC-26 |
-| 5 | **Late callback after hold** | `lateCallbackAfterHold(variant, {beforePay})` | The QR expired when the hold ended (D18). `slot-still-open`: **approved**. `slot-taken-confirmed`, `slot-held-by-other`, `solo-coach-lost` (court and coach both must be free, otherwise all of it), `closure-created`: not confirmed, **amount paid goes to the wallet**, player gets a LINE message, its own receipt for the money received (D25, D37) |
+| 5a | **Paid after the QR expiry, inside the hold** | `paidAfterQrExpiryInsideHold` | The QR expires slightly before the hold ends, by a platform margin (D80). Only a payment after the **hold end** is late (PAY-02-AC2, D25, D126), so this one **confirms normally**. QA picks no margin value: the fake reads the QR expiry from the charge the app created and the hold end from the app (`ScenarioContext.holdEndsAt`), and fails the scenario if the QR does not expire before the hold end |
+| 5b | **Late callback after the hold end** | `lateCallbackAfterHold(variant, {beforePay})` | `slot-still-open`: **approved**. `slot-taken-confirmed`, `slot-held-by-other`, `solo-coach-lost` (court and coach both must be free), `closure-created`, `club-paused` and `account-deleted` (D107, D109): not confirmed, the **whole amount goes to the wallet**, the player gets a LINE message, and the wallet credit gets its own receipt (D25, D37) |
+| 6 | **Unknown charge** | `unknownCharge` | A validly signed callback for a charge the app has no order for: answered with success and flagged; nothing confirmed or credited (D71) |
+
+Wrong amount (scenario 3) also expects: the player is told in the app and by LINE when it can be sent (D77, D112); staff later credit the full amount received and that credit has its own receipt (D77, D79); a duplicate payment credit gets its own receipt (D112). Those later steps are staff actions, tested outside the fake.
 
 Every scenario also asserts `beam.assertNoRefunds()`, that the LINE pushes match the catalogue, and that the oracle invariants of `docs/qa/concurrency-tests.md` section 2 hold.
 
