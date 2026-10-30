@@ -45,7 +45,7 @@ Still open
 | # | Question | Notes |
 |---|---|---|
 | C1 | ~~What happens to an already-bought Student package when the holder becomes an Adult?~~ | Settled 30 Oct 2026: it stays valid and usable until its expiry. Only new purchases follow the current price group. (Adult becoming Student via a DOB correction is not covered; treat the same way unless told otherwise) |
-| C2 | Does "value still owed to customers" in reports include wallet balances? | Canvas note says the earlier spec counted package credit only |
+| C2 (settled, D57) | Does "value still owed to customers" in reports include wallet balances? | Canvas note says the earlier spec counted package credit only |
 | C3 | ~~Behaviour at a club's LINE monthly message cap~~ | Settled 30 Oct 2026: LINE-07 |
 | C4 | Rich menu: A0 offers three editable labels, the image has six tiles | LINE-02 says six tiles, each a deep link |
 | C5 | A0 "Show the club address in the app" toggle | PRD contradicts itself (see A7) |

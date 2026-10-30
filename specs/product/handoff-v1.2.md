@@ -184,11 +184,13 @@ These are the starting requirements for the feature specs. Each acceptance check
 |-----------|------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
 | AUTH-01   | Players browse without signing in. LINE Login runs only at checkout or purchase                                                                            | Given a guest on C4, when they tap Continue, then LINE Login starts and they return to C10 with the slot kept                               |
 | AUTH-02   | First sign in asks only full name, phone and PDPA consent. Date of birth only for a student price. Players can correct it later in Profile; it is never locked. Phone is typed, not verified by code; duplicate phones at one club are flagged for staff. A player with no date of birth gets Adult prices; an adult may add a date of birth voluntarily; every change to it is audited and visible to the owner | Given a new player, when they pick an Adult item, then no date of birth field shows                                                         |
-| BOOK-01   | Bookings are 60 minutes on the hour, inside opening hours, up to \[30\] days ahead                                                                         | A request for 18:30 or 61 days ahead is refused by the server                                                                               |
+| BOOK-01   | Bookings are 60 minutes on the hour, inside opening hours, up to \[30\] days ahead. Players cannot book an hour that has already started (booking starts from the next full hour); staff can book it for walk ins. 23:00 is the last start. The booking window runs to today plus [30] days by Bangkok calendar date, so day 30 is bookable. Changing opening hours or removing a court while bookings exist is blocked; the owner uses a closure instead | A request for 18:30 or 61 days ahead is refused by the server                                                                               |
 | BOOK-02   | The rich menu Book a court tile opens C4 directly                                                                                                          | Tapping the tile lands on C4, not C3                                                                                                        |
-| BOOK-03   | Tapping Pay holds the slot (and the coach, if picked) for \[15\] minutes, choice 10, 15 or 20                                                              | Given a held slot, then other players see it as held and cannot select it; after the hold it is released and the player gets a LINE message |
+| BOOK-03   | Tapping Pay holds the slot (and the coach, if picked) for \[15\] minutes, choice 10, 15 or 20. A staff made booking awaiting payment holds the slot for the same hold time. A second tap on Pay returns the same hold and QR. A hold keeps its original end time if the hold setting changes. A closure over a held slot cancels the hold and tells the player; a payment that arrives later follows PAY-03 | Given a held slot, then other players see it as held and cannot select it; after the hold it is released and the player gets a LINE message |
 | BOOK-04   | No double booking of a court or a coach, including during holds                                                                                            | Two parallel requests for the same slot: exactly one succeeds                                                                               |
-| BOOK-05   | A player holds at most \[TBD\] future court hours                                                                                                          | Setting left empty means no limit until the owner sets it                                                                                   |
+| BOOK-05   | A player holds at most \[TBD\] future court hours. Counts all of the player's future hours: confirmed, paid by bundle credit, solo class and unpaid held hours. Staff bookings count, but staff can override the limit with a logged reason | Setting left empty means no limit until the owner sets it                                                                                   |
+| BOOK-06 | A selection of several hours is one order with one booking per hour, so cancel, no show and the future hours count work hour by hour; one receipt per order. There is no separate limit on hours in one selection (BOOK-05 governs) | Given a two hour selection, when the player cancels one hour, then only that hour is cancelled |
+| WAIT-01 | The court slot waitlist uses the same rules as the class waitlist (claim time, no offers within the cut off). F08 owns it; F03 shows Join waitlist on a taken slot | Given a taken slot, when the player taps Join waitlist, then they are added with a position and nothing is charged |
 | COACH-01  | C10 shows only coaches who work that hour, are not on leave, not booked and under 6 hours in a row                                                         | A coach on leave never appears; a 7th hour in a row never appears                                                                           |
 | COACH-02  | Picking a coach makes it a solo class: court ฿500 plus that coach's price for the player's price group                                                     | Adult with a Coach tier coach pays ฿1,300                                                                                                   |
 | COACH-03  | Solo pack credits do not apply to a coach added at court checkout. They apply only when booking through Classes, Solo classes                              | Given a player with solo credits, when they add a coach on C10, then the full coaching price is charged                                     |
@@ -233,11 +235,11 @@ Each club has its own LINE Official Account, LINE Login channel, LIFF app and ri
 
 | ID      | Requirement                                                                                                                                                                                                                                                                       | Acceptance check                  |
 |---------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------|
-| LINE-01 | Inside LINE, LIFF login is silent. In a browser the player taps Log in with LINE once. Sign in prompts adding the OA as a friend                                                                                                                                                  |                                   |
+| LINE-01 | Inside LINE, LIFF login is silent. In a browser the player taps Log in with LINE once. Sign in prompts adding the OA as a friend. Add the Official Account as a friend through LINE's own consent screen (the LIFF add friend option set to On normal); C1 shows a plain note and has no checkbox (30 Oct 2026) |                                   |
 | LINE-02 | Rich menu has 6 tiles, each a deep link to its own page: Book a court (C4), Solo classes, Group classes, Packages, My bookings, Refer a friend                                                                                                                                    | Each tile opens its page directly |
 | LINE-03 | Messages are push messages from the club's OA in the player's language, with fixed Thai and English wording in code. Templates fill in the club's name, logo and rules                                                                                                            | No message editor in the admin    |
 | LINE-04 | Booking confirmed is a Flex Message rich card sent the moment a booking confirms: court or class, date, time, coach, amount paid, receipt number, View booking and Add to calendar                                                                                                | Matches L-Msg-Confirmed           |
-| LINE-05 | Other messages: reminders 24 h and 2 h before, booking released, cancellation result, club closed this slot, coach changed, waitlist offer, package expiring 14 and 3 days before, birthday discount, referral reward, coach session changes, leave decision, class below minimum |                                   |
+| LINE-05 | Other messages: reminders 24 h and 2 h before, booking released, cancellation result, club closed this slot, coach changed, waitlist offer, package expiring 14 and 3 days before, birthday discount, referral reward, coach session changes, leave decision, class below minimum. Booking released is also sent to Beam clubs when the hold ends |                                   |
 | LINE-06 | P1 shows LINE messages used this month per club against its plan, and alerts when the Messaging API token fails                                                                                                                                                                   |                                   |
 | LINE-07 | Message cap: at 70% of the plan's monthly limit show an alert in P1 and a banner in the club admin; at 80% stop sending the 24 h and 2 h reminders and keep every other message; at 100% on a paid plan keep sending and tell the owner, on the free plan show the confirmation in the app and pass unsendable waitlist offers on. Bookings and payments are never blocked. Thresholds are platform wide | Given a club at 80% of its limit, when a booking is confirmed, then the confirmation is sent and no reminder is queued |
 
@@ -269,6 +271,34 @@ Permissions are enforced on the server and every record is scoped to one club. B
 | ROLE-02 | BOOQ staff sign in with email plus a second factor, separate from LINE | Given a BOOQ staff account, when it signs in, then LINE is not used and a second factor is required |
 | PLAT-07 | Data made in Testing status is flagged as test, takes receipt numbers from its own non legal series, and is purged at Go live. BOOQ staff see pass or fail only | Given a test payment, then its receipt number is not in the real sequence; after Go live the first real receipt is number 000001 |
 | PDPA-01 | The club is the data controller, BOOQ the processor. Consent at first sign in, copy or delete on request, slips and staff notes staff only, daily backups                                                                          |
+
+## Club admin and coach portal requirement IDs
+
+Added 30 Oct 2026. These IDs name the pages for the F11 and F12 specs; each points to the feature that owns the rule. Acceptance checks are in `specs/features/F11-club-admin/requirements.md` and `F12-coach-portal/requirements.md`.
+
+| ID | Page | Roles |
+|----|------|-------|
+| ADMIN-01 | Shell and navigation (sidebar shows the union of what a person's roles allow) | All staff |
+| ADMIN-02 | A0 Setup checklist | Owner |
+| ADMIN-03 | A1 Calendar | Front desk, Owner |
+| ADMIN-04 | A2 Booking detail and create (cash reason codes: No banking app, QR failed at the counter, Other with a note; cash allowed for packages) | Front desk, Owner |
+| ADMIN-05 | A4 Backup slip check (slip clubs only, built with F16, not for Hunter) | Front desk, Owner |
+| ADMIN-06 | A5 Customers | Front desk, Owner |
+| ADMIN-07 | A6 Customer profile (date of birth history visible to the owner only) | Front desk, Owner |
+| ADMIN-08 | A7 Coaches | Owner |
+| ADMIN-09 | A8 Group classes | Owner |
+| ADMIN-10 | A9 Products and pricing | Owner |
+| ADMIN-11 | A9b Price groups and add-ons | Owner |
+| ADMIN-12 | A10 Promotions | Owner |
+| ADMIN-13 | A12 Closures | Front desk, Owner |
+| ADMIN-14 | A13 Reports ("value owed to customers" = unused package credit plus wallet balances, shown separately) | Owner, Accountant |
+| ADMIN-15 | A14 Receipts | Owner, Accountant |
+| ADMIN-16 | A16 Settings | Owner |
+| ADMIN-17 | A17 Staff and audit log | Owner |
+| CPORT-01 to CPORT-06 | K1 Today, K2 Schedule, K3 Availability, K4 Leave, K5 Session detail, K6 Earnings | Coach |
+| CPORT-07 | Session change messages to coaches | Coach |
+
+The A0 "Show the club address in the app" toggle is removed: the app never shows the address. The rich menu has six tiles with fixed links; the owner edits each tile's label in Thai and English.
 
 ## Language, design system and open items
 
