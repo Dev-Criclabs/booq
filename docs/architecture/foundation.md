@@ -1,8 +1,8 @@
 # BOOQ foundation architecture (proposal)
 
-Status: **DRAFT, revision 6, for approval by a person. Nothing here is approved.** Author role: Architect / data. Branch `architect/foundation`. 30 Oct 2026.
+Status: **DRAFT, revision 7, for approval by a person. Nothing here is approved.** Author role: Architect / data. Branch `architect/foundation`. 30 Oct 2026.
 
-Revision 2 applies the decisions in `docs/decisions.md` (decisions D1 to D15 and round 2b). Those numbers are the decisions log's. This document's own recommendations are numbered R1 to R16 to avoid a clash. Revision 6 applies D37 (a late payment that goes to the wallet gets its own receipt, so a receipt can exist without a booking or package item: §2.4, §2.3, §6.6). Revision 5 applies decisions D32 to D36 (two Beam key sets per club, test data excluded everywhere, encryption layers, what the Accountant sees, the wrong-amount callback answer). Revision 4 applies decisions D18 to D31 (round 4), records what Beam's and LINE's public documentation say and do not say (§6.1, §6.2, §5.6), and fixes two assumptions the documentation disproved (a push to a non-friend is not rejected, §5.3; Beam sends no event id, §6.5). Revision 3 added the LINE message cap (LINE-07, decision D17) to sections 2.2, 4.4, 5.3 and 5.4 and the tests in 5.6, and notes decision D16 (the 7 Dec test runs on production) in section 2.6. Answered questions are listed in section 10.1 and removed from review; the open ones carry a recommendation in section 10.2 so they can be approved in bulk.
+Revision 2 applies the decisions in `docs/decisions.md` (decisions D1 to D15 and round 2b). Those numbers are the decisions log's. This document's own recommendations are numbered R1 to R16 to avoid a clash. Revision 7 applies D38 to D52 where they touch the foundation (one booking and one `occupancy` row per booked hour, D40; a per-customer lock for the future-hours check, D49; day 30 bookable, D42; the friend prompt, D38) and records the approval of the F01 and F02 designs. Revision 6 applies D37 (a late payment that goes to the wallet gets its own receipt, so a receipt can exist without a booking or package item: §2.4, §2.3, §6.6). Revision 5 applies decisions D32 to D36 (two Beam key sets per club, test data excluded everywhere, encryption layers, what the Accountant sees, the wrong-amount callback answer). Revision 4 applies decisions D18 to D31 (round 4), records what Beam's and LINE's public documentation say and do not say (§6.1, §6.2, §5.6), and fixes two assumptions the documentation disproved (a push to a non-friend is not rejected, §5.3; Beam sends no event id, §6.5). Revision 3 added the LINE message cap (LINE-07, decision D17) to sections 2.2, 4.4, 5.3 and 5.4 and the tests in 5.6, and notes decision D16 (the 7 Dec test runs on production) in section 2.6. Answered questions are listed in section 10.1 and removed from review; the open ones carry a recommendation in section 10.2 so they can be approved in bulk.
 
 This is the shared design every feature relies on. It is not a feature `design.md`. F01's `design.md` comes after F01's requirements are approved, and it will cite this file.
 
@@ -269,7 +269,7 @@ Notes:
 
 - Ranges are half-open `[)`, so 18:00-19:00 and 19:00-20:00 do not collide.
 - A row exists only while the claim is live (held or confirmed). Cancelling, releasing, or finishing deletes the `occupancy` row; the `booking` row keeps the business history and status. So the constraint never has to know about "expired" or "cancelled".
-- Court bookings can be multi-hour (BOOK, "one or more consecutive hours"): one row, a range of N hours.
+- A court selection of several hours is **one order with one booking per hour** (BOOK-06, decision D40), so each hour has its own `occupancy` row of one hour; the hours are inserted together in one transaction, so the whole selection is claimed or none of it. Back-to-back hours do not collide because ranges are half-open. Cancel, no show and the future-hours count then work hour by hour.
 - A group class session claims its court and its coach too (`kind = group_class`). Seat holders do not claim the court; seats are counted (§3.6).
 - A court booking that becomes a solo class after the fact ("Add a coach" on C12) is an `UPDATE occupancy SET coach_id = ..., kind = 'solo_class'`. The coach constraint is re-checked by the database in that single statement.
 - Moving a booking in A1 is an `UPDATE` of the range. The database re-checks both constraints, so "moving checks conflicts" (spec) is guaranteed, not just coded. The rest rule and availability are checked by the same function first (§3.3).
@@ -302,6 +302,7 @@ Typed errors the API returns are codes with parameters, for example `slot_unavai
 
 Isolation is READ COMMITTED. Correctness comes from constraints plus row locks taken in a fixed order, which every feature design must follow:
 
+0. the customer's advisory lock `pg_advisory_xact_lock(hash(club_id, customer_id))`, taken by any request that checks the future-hours limit (BOOK-05, decision D49), so two parallel requests from one player are serialised
 1. coach row (`FOR UPDATE`)
 2. `wallet_account` and `customer_package` rows, ascending id
 3. `booking` and `class_session` rows, ascending id
@@ -660,7 +661,7 @@ Thailand uses UTC+7 all year, no daylight saving, so wall time and instants map 
 | A calendar date (date of birth, closure day, report day, expiry date) | `date` in Bangkok |
 | Which day a booking belongs to | The Bangkok date of `start_at`. Index and group on `(start_at at time zone 'Asia/Bangkok')::date` (immutable because the zone is a literal) |
 | Cancel window | `start_at - now() >= interval '12 hours'` (setting). Instants, no zone issue |
-| Booking window "N days ahead" | Last bookable Bangkok date = today + N. Whether day N itself is allowed is Q11 |
+| Booking window "N days ahead" | Last bookable Bangkok date = today + N, **inclusive**: day 30 is bookable (decision D42). Hours are compared by their Bangkok calendar date, so the window changes at Bangkok midnight |
 | Age and student price | Computed from `date_of_birth` and the Bangkok date; the price switches on the 18th birthday. No date of birth on file means Adult prices (D12). A Student package already bought stays valid when the holder becomes an Adult (round 1) |
 | Package validity | Calendar months from the purchase date, ending at 23:59 Asia/Bangkok on that day; if that day does not exist, the last day of the month (31 Jan + 1 month = end of Feb). Pause extensions use the same rule (decision D20). Stored as `expires_on date`; the package is usable while `now()` is before the start of the next Bangkok day. A purchase on 5 Jan with 3 months expires 5 Apr, which resolves canvas gap B5 |
 | Daily close, reports, coach month | Bangkok calendar day / month |
@@ -801,14 +802,14 @@ Decisions D32 to D36 (this revision): D32 two Beam key sets and test LINE messag
 
 | Q | Question | Recommendation | Decides | Blocks |
 |---|---|---|---|---|
-| Q11 | Booking window edge | By Bangkok date: today through today + N, both inclusive | Product | F03 |
+| Q11 | Booking window edge | Decided: day 30 is bookable, by Bangkok calendar date (D42) | Decided | F03 |
 | Q12 | Coach on a multi-hour court selection | The coach picker shows only when exactly one hour is selected, matching "coaches available for that exact hour" | Product | F03, F07 |
 | Q13 | Class session versus an existing booking or closure | The booking or closure wins; the session is flagged "needs attention" for the owner | Product | F08 |
 | Q29 | Which accounts the Go live purge removes | Tester player accounts and their data are purged; owner, staff and coach accounts, which come from invitations and setup, are kept | Product | F15 |
 | Q24 (residual) | The Beam facts the docs do not state (§6.2) | Check each in the Playground with the club's sandbox keys and record the answers in the F05 design; the interface already isolates them | DevOps | F05 |
 | Q31 (residual) | LINE: month boundary and time zone, whether a free plan returns `none` or `limited`, freshness of the figures, Thai plan names | Check against a real club account; until then plan kind and limit are entered by hand (§5.6) | DevOps | F10 |
-| Q32 | The C1 checkbox "Add {club} as a LINE friend" (LINE-01-AC6) assumes a per-login choice. LINE's LIFF setting "Add friend option" (On normal, On aggressive, Off) is per LIFF app, not per login | Spec and platform differ, so this stops for a person. Recommendation: set the LIFF app to On (normal), where the add-friend choice sits on LINE's own consent screen, and turn the C1 checkbox into a note without a control. Needs a spec change | Product | F02 |
-| Q33 | The docs do not say that the LINE user ID from Login is the same as the Messaging API user ID under one provider. LINE-01-AC5 relies on it | Test with a real club account (one Login channel, one Official Account, one provider) before F02 is built. If they differ, the push target must be learned from the webhook | DevOps | F02 |
+| Q32 | The C1 friend checkbox | Decided (D38): LIFF Add friend option On (normal); C1 shows a plain note and no checkbox | Decided | F02 |
+| Q33 | The docs do not say that the LINE user ID from Login is the same as the Messaging API user ID under one provider. LINE-01-AC5 relies on it | Test with a real club account (one Login channel, one Official Account, one provider) before F02 is built. If they differ, the push target must be learned from the webhook | DevOps | F02 setup task F02-T00 |
 
 ### 10.3 Open and not decidable here
 
@@ -819,7 +820,7 @@ Decisions D32 to D36 (this revision): D32 two Beam key sets and test LINE messag
 
 ## 11. What happens next
 
-1. A person reviews this file. Q11, Q12, Q13, Q29, Q32 and Q33 are the only open rows; Q32 needs a spec decision before the F02 design can be approved.
+1. The F01 and F02 designs are approved (decisions round 7). Open rows here: Q12 (coach picker on a multi-hour selection, now answered in part by D40 and left to F07), Q13, Q29 and Q33 (a pre-build test, F02-T00).
 2. `specs/features/F01-platform-foundation/design.md` and `specs/features/F02-line-login-liff/design.md` are drafted from this document (gate 2, for approval).
 3. The claim function, ledgers and receipts counter get their own design sections in the F03, F06 and F13 designs, each citing the section here and adding a test list.
 4. DevOps spike (small): custom roles through the Supabase pooler, `btree_gist`, a direct connection for the worker, backups, the Beam Playground checks (§6.2) and the LINE checks (Q31, Q33).

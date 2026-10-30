@@ -1,6 +1,6 @@
 # F01 Platform foundation · Design
 
-Status: **DRAFT for approval (gate 2).** Drafted 30 Oct 2026 by the Architect role. Requirements were approved on 30 Oct 2026 (`docs/decisions.md`, round 4). Nothing here is approved until a person says so. No tasks and no code follow until then.
+Status: **Approved 30 Oct 2026** (gate 2; `docs/decisions.md`, round 7, approved as recommended; the assumptions in section 12 were approved with the design). Drafted 30 Oct 2026 by the Architect role; revised for decisions D32 to D37. Tasks are in `tasks.md` (gate 3). A change to anything below goes through the PRD, then the hand-off, then this file.
 
 Feature: F01 Platform foundation. Requirement IDs: PLAT-01 to PLAT-07, ROLE-01, ROLE-02, PDPA-01 (the IDs ROLE-01, ROLE-02 and PLAT-07 are proposed IDs from the requirements; the PRD and hand-off still need them). Wave 1.
 
@@ -312,7 +312,7 @@ Rules: the 60 minute booking length is not a key and cannot be created (a CHECK 
 - **TEXT (CC-5):** no text in code. Routes return codes. The keys used are listed per screen in §13; every new key is added in both files by the content role and sent to the writers. X keys are English only. Dates use the international year.
 - **Other (CC-6):** Bangkok time (FA §7), satang, no invented values (the registry and templates hold only spec values; TBD stays empty).
 
-## 12. Assumptions the design makes where the requirements are open
+## 12. Assumptions approved with this design
 
 These need a person's yes or no; none changes the tables much.
 

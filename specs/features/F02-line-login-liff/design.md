@@ -1,6 +1,6 @@
 # F02 LINE Login, LIFF and first sign in · Design
 
-Status: **DRAFT for approval (gate 2).** Drafted 30 Oct 2026 by the Architect role. Requirements were approved on 30 Oct 2026 (`docs/decisions.md`, round 4). Nothing here is approved until a person says so. No tasks and no code follow until then. **Two points need a spec decision before this design can be approved: Q32 and Q33 (section 3.3).**
+Status: **Approved 30 Oct 2026** (gate 2; `docs/decisions.md`, round 7, approved as recommended; the assumptions in section 14 were approved with the design). Drafted 30 Oct 2026 by the Architect role. Decision D38 settles the friend prompt (section 3.3) and is built as the default. User ID parity (Q33) is a setup task before the build, not a decision. Tasks are in `tasks.md` (gate 3). A change to anything below goes through the PRD, then the hand-off, then this file.
 
 Feature: F02 LINE Login, LIFF and first sign in. Requirement IDs: AUTH-01, AUTH-02, LINE-01. Depends on F01 (club, roles, consent, invites, testers). Wave 1.
 
@@ -40,11 +40,11 @@ Read on 30 Oct 2026 from `developers.line.biz`. Nothing here is taken from memor
 - Whether the user ID differs across providers (it is expected to, which D7 relies on).
 - Any lifetime of a LIFF ID token beyond the one hour, refresh behaviour for LIFF tokens, domain rules for the endpoint URL beyond https, and the full text of `liff.getFriendship()` (part of that page was summarised, not read verbatim).
 
-### 3.3 Two points that stop for a decision
+### 3.3 Friend prompt (decision D38) and the user ID check
 
-**Q32. The friend checkbox on C1.** LINE-01-AC6 says the checkbox "Add {club} as a LINE friend" on C1 decides whether LINE asks for the friend at sign in. LINE's LIFF setting for this is per LIFF app (On normal, On aggressive, Off), not per login, so a checkbox on our screen cannot switch it for one login. Options: (a) LIFF "Add friend option" set to `On (normal)`: the choice appears on LINE's own consent screen, where the player can untick it, and C1 shows a plain note with no checkbox (**recommended**, needs a spec change to AC6 and a canvas change); (b) keep the checkbox and, when ticked, open the Official Account's add-friend link after sign in, which is a second step; (c) `Off` and rely on the in-app ask (D9) only. This design builds (a) behind a platform config so (b) or (c) is a small change, but the rule is the spec's and **needs a person to choose**.
+**Friend prompt (D38).** The club's LIFF app is registered with the LIFF setting **Add friend option = On (normal)**. LINE's own consent screen then offers to add the Official Account, selected by default for a certified provider, and the player can untick it there. C1 shows a plain note and **no checkbox**. LINE-01-AC6 and the C1 board change accordingly (the requirement file and the canvas follow the decision log). Whatever the player chooses, signing in and booking continue (LINE-01-AC7). The Official Account must be linked to the club's LINE Login channel, in the same provider, one Official Account per channel (§3.1); the link is a setup step in P2 step 4.
 
-**Q33. User ID parity.** If Login's `sub` is not the Messaging API user ID, pushes would not reach the person. The design stores `sub` as `line_user_id` (the key) and treats the webhook `source.userId` as the same id. This must be tested with a real club account (one Login channel, one Official Account, one provider) before the build. If they differ, the push target must be learned from webhook events and linked, which changes the player record.
+**User ID parity (Q33), a setup task before the build.** The docs do not say that the Login `sub` is the same user ID the Messaging API uses for push when both channels are in one provider; LINE-01-AC5 relies on it. Before F02 is built, a person tests it with a real LINE account: one Login channel, one Official Account, one provider, one test user; sign in through LIFF, then send a push to the `sub` and read the `source.userId` of a webhook event from the same user. This is task F02-T00 in `tasks.md`. If the ids differ, the push target must be learned from webhook events and linked to the player, which changes the player record, and this design is reopened.
 
 ## 4. Sign-in flow
 
@@ -145,7 +145,7 @@ A BOOQ tester signs in with LINE as an ordinary player account, never with the B
 
 `app_user.line_friend` is `true`, `false` or `null` (unknown), with `line_friend_checked_at`.
 
-- **Add-friend prompt at sign in:** per Q32 (§3.3).
+- **Add-friend prompt at sign in:** LINE's own consent screen, from the LIFF setting On (normal) (§3.3, D38). The app shows no checkbox.
 - **While using the app:** the client calls `liff.getFriendship()` after sign in (needs the `profile` scope) and posts the result; the webhook `follow` and `unfollow` events keep it current (§5.4).
 - **Never blocks anything:** booking, paying and confirmation proceed whatever the value (AC7, AC8).
 - **Effect:** FA §5.3 owns the sender rule: a known non-friend gets no push, and the confirmation is shown in the app with the add-account ask (a new P key). How often the ask repeats is F02 Q5 (assumption A-7: on the confirmation screen and on Home until the player is a friend, shown at most once per session).
@@ -270,4 +270,4 @@ Each needs a yes or no from a person; none changes the tables much.
 | A-15 | No cookies or analytics beyond the session and language cookies | Q14 |
 | A-16 | A deleted player signing in again is a brand new player with a new consent | Q15 |
 
-Open and not assumed: Q1 (consent for players under 18, D10, pending legal input), Q32 (friend checkbox) and Q33 (user ID parity), both in §3.3.
+Open and not assumed: Q1 (consent for players under 18, D10, pending legal input). Q33 (user ID parity) is a setup task (§3.3), not a question.
