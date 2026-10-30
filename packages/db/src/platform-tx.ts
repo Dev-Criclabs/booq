@@ -1,13 +1,13 @@
 import pg from 'pg';
 
-// withPlatformTx (FA 4.4, F01-T18): the only way apps/platform reaches the database. Every call
+// withStaffTx (FA 4.4, F01-T18): the only way apps/platform reaches the database. Every call
 // runs in a transaction as booq_platform with the staff member as a transaction-local setting,
 // so the row policies in migration 0008 can decide per staff member and a pooled connection
 // never carries one request's identity into the next. With no staff the policies see nothing.
 //
 // The pool is never exported. The role has no privilege on club data (D tables) at all.
 
-export interface PlatformContext {
+export interface StaffContext {
   /** The signed-in BOOQ staff member, or null where none is known yet (sign in). */
   staffId: string | null;
   requestId?: string;
@@ -20,41 +20,41 @@ export interface PlatformContext {
   actorLabel?: string;
 }
 
-export interface PlatformTx {
+export interface StaffTx {
   query<R extends pg.QueryResultRow = pg.QueryResultRow>(text: string, params?: unknown[]): Promise<pg.QueryResult<R>>;
 }
 
-export interface PlatformDbOptions {
+export interface StaffDbOptions {
   connectionString: string;
   max?: number;
   maxRetries?: number;
 }
 
-export interface PlatformDb {
+export interface StaffDb {
   /** The handler may run more than once (deadlock retry), so it must be safe to repeat. */
-  withPlatformTx<T>(ctx: PlatformContext, fn: (tx: PlatformTx) => Promise<T>): Promise<T>;
+  withStaffTx<T>(ctx: StaffContext, fn: (tx: StaffTx) => Promise<T>): Promise<T>;
   end(): Promise<void>;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const RETRYABLE = new Set(['40P01', '40001']);
 
-export function createPlatformDb(options: PlatformDbOptions): PlatformDb {
+export function createStaffDb(options: StaffDbOptions): StaffDb {
   const maxRetries = options.maxRetries ?? 3;
   const pool = new pg.Pool({ connectionString: options.connectionString, max: options.max ?? 5 });
   pool.on('error', () => undefined);
 
   return {
-    async withPlatformTx<T>(ctx: PlatformContext, fn: (tx: PlatformTx) => Promise<T>): Promise<T> {
-      if (ctx.staffId !== null && !UUID.test(ctx.staffId)) throw new Error('withPlatformTx: staff id must be a uuid or null');
-      if (ctx.supportSessionId !== undefined && !UUID.test(ctx.supportSessionId)) throw new Error('withPlatformTx: support session id must be a uuid');
-      if (ctx.clubId !== undefined && !UUID.test(ctx.clubId)) throw new Error('withPlatformTx: club id must be a uuid');
+    async withStaffTx<T>(ctx: StaffContext, fn: (tx: StaffTx) => Promise<T>): Promise<T> {
+      if (ctx.staffId !== null && !UUID.test(ctx.staffId)) throw new Error('withStaffTx: staff id must be a uuid or null');
+      if (ctx.supportSessionId !== undefined && !UUID.test(ctx.supportSessionId)) throw new Error('withStaffTx: support session id must be a uuid');
+      if (ctx.clubId !== undefined && !UUID.test(ctx.clubId)) throw new Error('withStaffTx: club id must be a uuid');
       for (let attempt = 0; ; attempt += 1) {
         const client = await pool.connect();
         let ended = false;
-        const tx: PlatformTx = {
+        const tx: StaffTx = {
           async query(text, params) {
-            if (ended) throw new Error('withPlatformTx: this transaction has ended');
+            if (ended) throw new Error('withStaffTx: this transaction has ended');
             return client.query(text, params as unknown[]);
           },
         };
