@@ -115,6 +115,26 @@ export interface PlatformAuditLog {
   support_session_id: string | null;
 }
 
+export interface PlatformClubHealth {
+  club_id: string;
+  check_key: string;
+  status: string;
+  reason: string | null;
+  changed_at: string;
+  checked_at: string;
+}
+
+export interface PlatformClubLineUsage {
+  club_id: string;
+  month: string;
+  used: number;
+  line_consumption: number | null;
+  message_limit: number | null;
+  plan_kind: string | null;
+  source: string;
+  synced_at: string | null;
+}
+
 export interface PlatformClubUsageDaily {
   club_id: string;
   day: string;
@@ -125,6 +145,27 @@ export interface PlatformClubUsageDaily {
 export interface PlatformConfig {
   key: string;
   value: unknown;
+}
+
+export interface PlatformConsoleChallenge {
+  id_hash: string;
+  staff_id: string;
+  expires_at: string;
+  provider_token_enc: string | null;
+}
+
+export interface PlatformConsoleLoginState {
+  staff_id: string;
+  failures: number;
+  locked_until: string | null;
+}
+
+export interface PlatformConsoleSession {
+  id_hash: string;
+  staff_id: string;
+  created_at: string;
+  last_seen_at: string;
+  step_up_at: string;
 }
 
 export interface PlatformExportRequest {
@@ -850,6 +891,14 @@ export interface PublicPartner {
   contact: string | null;
 }
 
+export interface PublicPayTap {
+  club_id: string;
+  id: string;
+  user_id: string;
+  at: string;
+  is_test: boolean;
+}
+
 export interface PublicPayment {
   club_id: string;
   id: string;
@@ -962,6 +1011,27 @@ export interface PublicResource {
   active: boolean;
 }
 
+export interface PublicRichMenu {
+  club_id: string;
+  id: string;
+  line_rich_menu_id: string | null;
+  image_sha256: string;
+  labels_hash: string;
+  status: string;
+  error: string | null;
+  rendered_at: string | null;
+  uploaded_at: string | null;
+  created_at: string;
+}
+
+export interface PublicRichMenuLabel {
+  club_id: string;
+  id: string;
+  tile: number;
+  label_th: string | null;
+  label_en: string | null;
+}
+
 export interface PublicUserConsent {
   club_id: string;
   id: string;
@@ -1026,8 +1096,13 @@ export interface Tables {
   'app.test_tables': AppTestTables;
   'audit.registry': AuditRegistry;
   'platform.audit_log': PlatformAuditLog;
+  'platform.club_health': PlatformClubHealth;
+  'platform.club_line_usage': PlatformClubLineUsage;
   'platform.club_usage_daily': PlatformClubUsageDaily;
   'platform.config': PlatformConfig;
+  'platform.console_challenge': PlatformConsoleChallenge;
+  'platform.console_login_state': PlatformConsoleLoginState;
+  'platform.console_session': PlatformConsoleSession;
   'platform.export_request': PlatformExportRequest;
   'platform.launch_check': PlatformLaunchCheck;
   'platform.legal_release': PlatformLegalRelease;
@@ -1088,6 +1163,7 @@ export interface Tables {
   'public.package_extension': PublicPackageExtension;
   'public.package_product': PublicPackageProduct;
   'public.partner': PublicPartner;
+  'public.pay_tap': PublicPayTap;
   'public.payment': PublicPayment;
   'public.payment_connection': PublicPaymentConnection;
   'public.payment_event': PublicPaymentEvent;
@@ -1096,6 +1172,8 @@ export interface Tables {
   'public.promo_redemption': PublicPromoRedemption;
   'public.rate_limit_hit': PublicRateLimitHit;
   'public.resource': PublicResource;
+  'public.rich_menu': PublicRichMenu;
+  'public.rich_menu_label': PublicRichMenuLabel;
   'public.user_consent': PublicUserConsent;
   'public.user_staff_note': PublicUserStaffNote;
   'public.wallet_account': PublicWalletAccount;

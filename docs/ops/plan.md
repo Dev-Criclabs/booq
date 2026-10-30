@@ -171,9 +171,10 @@ Repository settings to apply by the user (cannot be done from a file): protect `
 | 6 Nov | Accounts created (`accounts.md`), repo settings applied (protect `main`, secret scanning, `CI_STRICT`) | User |
 | 13 Nov | Supabase staging and preview projects, hosting project, preview deploy of the first Next.js skeleton | Accounts, the first code |
 | 20 Nov | Secrets store wired for per club LINE and Beam values. **Production** Supabase and hosting projects created (D16). Staging test provider and test OA, and Beam Playground keys, in staging | LINE and Beam accounts |
+| 27 Nov (target) | **S-1 real LIFF on a device** (section 11), once the hosted `apps/web` deploy and staging database exist. | You, DevOps |
 | 27 Nov | **Hunter's real LINE provider, Official Account, LIFF app and a paid plan** in place, with the Playground key set in its Testing configuration (D32: test messages go through the real OA and count toward the cap). Monitoring and alerts live on **production** and staging | The club, the user |
 | 30 Nov to 3 Dec | **Restore drill 1** on production into a scratch project. Production holds only seed and setup data by then, so this proves the procedure and the timing, not the final data | Production running |
-| 4 Dec | **Production ready and frozen** for the test: Hunter in Testing status, backups confirmed, on call named, runbooks read, web sign-in rate limit set (`WEB_SIGNIN_RATE_*` with `WEB_RATE_LIMIT_KEY`, and the worker's `WORKER_RATE_LIMIT_*`; `docs/ops/web.md`, `docs/ops/worker.md`). No deploys to production except fixes the user approves | |
+| 4 Dec | **Production ready and frozen** for the test: Hunter in Testing status, backups confirmed, on call named, runbooks read, web sign-in rate limit set (`WEB_SIGNIN_RATE_*` with `WEB_RATE_LIMIT_KEY`, and the worker's `WORKER_RATE_LIMIT_*`, `WORKER_PAY_TAP_PRUNE_CRON` and `WORKER_CONSOLE_*`; `docs/ops/web.md`, `docs/ops/worker.md`). No deploys to production except fixes the user approves | |
 | **7 Dec** | End to end test with mock bookings on production | |
 | 21 Dec | **Restore drill 2** after test data exists (nightly dump, and point-in-time if bought). Go live checklist, then the Go live order of steps (runbook 13): named backup, live key set entered, smoke test, Go live with purge | Beam production merchant for Hunter |
 | **29 Dec** | Public booking | |
@@ -201,3 +202,36 @@ Open:
 - Because the domain is the LIFF address, changing it later means editing every club's LIFF app. Decide it before Hunter's LINE side is set up.
 
 DevOps will not invent any product rule. Anything the monitoring surfaces that looks like a rule question goes to the Orchestrator.
+
+## 11. Smoke tests on real services
+
+### S-1: real LIFF on a device (C1 and C2 inside the LINE app)
+
+Why: the unit and browser tests use a fake LIFF. Only a phone with the LINE app proves the real `@line/liff` (2.31.2) works: silent login, the ID token, the friend prompt, and the return path. Do it once the first hosted test deploy of `apps/web` exists, and again before 7 Dec if the sign-in code or the LIFF app changes.
+
+**What happens:** on a phone, open `https://liff.line.me/2012300015-WIi1jtLB` in the LINE app (the BOOQ test provider's LIFF app; Login channel 2012300015; `accounts.md`). Expect C1 (welcome), silent sign in, then C2 (name, phone, consent), complete sign-up, land on the app, reload and still be signed in. Repeat on one iPhone and one Android phone, and once in an outside browser (the `liff.login` path). Note any prompt that exposes data. Result goes in the F02 design next to section 3.3.
+
+**What it needs. Nothing here has been done; this is the list. No account was changed.**
+
+| # | Need | Who | Status |
+|---|---|---|---|
+| 1 | **A hosted deploy of `apps/web`** at a stable HTTPS address: a hosting project with Root Directory `apps/web`, the repository's pnpm workspace installed, and the env below. The hosting provider's own address is enough; the BOOQ domain (D6) is not needed | You create the project (`accounts.md` row 4), DevOps wires it | Not started. The throwaway `booq-line-parity` project does not serve the app |
+| 2 | **A database the deploy can use**: the Supabase staging project (`accounts.md` row 3) with the roles and every migration applied, including the sign-in ones, so `GET /api/c/{slug}/public/config` and sign-in work | You create the Supabase org and project, DevOps and the Architect apply migrations | Not started. This is the long pole |
+| 3 | **A test club in that database**: a club with a slug, and its LINE connection set to Login channel `2012300015` and LIFF app `2012300015-WIi1jtLB` (the club's public config returns `liffId` from there). Set through the platform console or the Architect's approved seed. The club's status decides who may enter: Draft and Testing clubs answer 404 to everyone but invited testers, so the test person must be an invited tester | Architect or BE-P for the seed, a BOOQ person in the console | Not started |
+| 4 | **The LIFF endpoint URL changed** in LINE Developers from the parity receiver (`https://booq-line-parity.vercel.app/c/parity/{token}`) to `https://{address}/c/{club-slug}`. HTTPS, no fragment; `liff.init()` works only on URLs equal to or below the endpoint. Scope `openid profile` and Add friend **On (normal)** (D38) stay. A LIFF app has one endpoint, so after this the parity receiver no longer works (it is finished) | You, in the LINE console | Waiting for #1 and the club slug |
+| 5 | **Environment on the hosted web deploy** (`docs/ops/web.md` checklist): `DATABASE_URL` (role `booq_app`), `WEB_SESSION_SECONDS`, `WEB_MAX_BODY_BYTES`, `WEB_SIGNIN_RATE_LIMIT`, `WEB_SIGNIN_RATE_WINDOW_SECONDS`, `WEB_RATE_LIMIT_KEY`, `APP_BASE_URL`. And **`NEXT_PUBLIC_LIFF_FAKE` must not be set, or set to anything but `1`**. It is baked into the browser bundle at build time, so check the build log, not only the dashboard. The **deploy guard exists** (D162): `infra/checks/forbid-liff-fake.mjs` fails a hosted build (Vercel sets `VERCEL`, or `APP_ENV` is preview, staging or production) when the flag is anything but empty or `0`. Hosting build command: `node ../../infra/checks/forbid-liff-fake.mjs && next build`. It is tested in CI (`infra tests`). Still wanted from FE/BE: call it from the `apps/web` build script too, so a build run any other way is checked (that file is not mine to edit) | DevOps | Not started |
+| 6 | **The test person**: the real LINE account used in F02-T00, who has the test Official Account as a friend, plus a second person or phone for the other platform | You | The first person exists |
+| 7 | The LINE Login channel stays **published** (it is) and the Messaging API channel's webhook points at the app's real route (`/api/webhooks/line/{token}`) only if friend status is part of the test | You, later | Optional for S-1 |
+
+**Order that gets there soonest:** #2 and #1 can start at once and in parallel (both need your accounts), then #3 (needs #2), then #5, then #4, then run S-1.
+
+**Pass:** C1 appears inside LINE with no extra login tap, C2 completes, the new player exists (flagged as test data because the club is Testing), the session survives a reload, the outside-browser path signs in with one tap, and nothing in the page URL or the logs holds an ID token.
+
+## 12. Supabase spike items (once a Supabase project exists)
+
+Collected here so none is lost. Each result is written into the document named.
+1. Custom roles through the pooler, `btree_gist`, a direct or session connection for the worker, and that `graphile_worker` can be created by the queue role (`worker.md`).
+2. Backups and the restore drill (section 4).
+3. **Staff sign-in paths:** password grant and the second-factor challenge and verify in `apps/staff-invite/src/supabase-identity.ts` against a real project (`platform.md`, seven checks).
+4. Forged `x-real-ip` and `x-forwarded-for` on the hosted web deploy (`web.md`).
+5. Beam Playground checks G1 to G13 (`accounts.md`).

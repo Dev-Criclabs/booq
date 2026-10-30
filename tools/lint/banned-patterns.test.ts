@@ -8,6 +8,14 @@ describe('F01-T01 banned patterns (FA 4.5 static checks)', () => {
     expect(v.map((x) => x.rule)).toContain('no-service-role');
   });
 
+  it('allows service_role only under apps/staff-invite (SR-06, F01-T17b)', () => {
+    const code = 'const k = process.env.SUPABASE_SERVICE_ROLE_KEY;';
+    expect(findViolations('apps/staff-invite/src/env.ts', code)).toEqual([]);
+    for (const p of ['apps/platform/src/a.ts', 'apps/web/src/a.ts', 'packages/auth/src/a.ts', 'apps/staff-invite-extra/src/a.ts']) {
+      expect(findViolations(p, code).map((x) => x.rule), p).toContain('no-service-role');
+    }
+  });
+
   it('flags importing pg outside packages/db', () => {
     expect(findViolations('packages/auth/src/a.ts', "import pg from 'pg';").map((x) => x.rule)).toContain('no-raw-pg');
     expect(findViolations('apps/web/src/a.ts', 'const { Pool } = require("pg");').map((x) => x.rule)).toContain('no-raw-pg');

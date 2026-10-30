@@ -46,7 +46,7 @@ describe('C1 Welcome (F02-T19)', () => {
   });
 
   it('a new player goes on to C2 with the choice kept', async () => {
-    const { page, context } = await openPage(browser, { liff: { ...browserGuest, loggedIn: true }, session: { status: 200, body: { state: 'needs_profile' } } });
+    const { page, context } = await openPage(browser, { liff: { ...browserGuest, loggedIn: true }, session: { status: 200, body: { state: 'pending_profile' } } });
     await page.goto(signIn(app.base));
     await page.waitForURL((u) => u.pathname === '/c/hunter/profile-setup');
     assert.equal(new URL(page.url()).searchParams.get('next'), NEXT);

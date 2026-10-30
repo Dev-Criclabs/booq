@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { translator, type Lang, type T } from './i18n';
 import { langCookie, pickLang } from './lang';
-import type { LiffPort } from './liff';
+import { liffPort, type LiffPort } from './liff';
 
 // What every player page needs first (design 4.2 step 2): the club's public config from
 // GET /api/c/{slug}/public/config, the language to show, and the text function for it.
@@ -35,7 +35,20 @@ export function clubName(config: ClubConfig, lang: Lang): string {
   return lang === 'th' ? config.nameTh : config.nameEn;
 }
 
-export function useClub(slug: string, initialLang: Lang, liff: LiffPort | null) {
+/** The page's LIFF: undefined while it loads, null when it cannot be loaded. */
+export function useLiff(): LiffPort | null | undefined {
+  const [liff, setLiff] = useState<LiffPort | null | undefined>(undefined);
+  useEffect(() => {
+    let live = true;
+    void liffPort().then((l) => live && setLiff(l));
+    return () => {
+      live = false;
+    };
+  }, []);
+  return liff;
+}
+
+export function useClub(slug: string, initialLang: Lang, liff: LiffPort | null | undefined) {
   const [load, setLoad] = useState<ClubLoad>({ state: 'loading' });
   const [lang, setLangState] = useState<Lang>(initialLang);
   const [attempt, setAttempt] = useState(0);
@@ -43,24 +56,25 @@ export function useClub(slug: string, initialLang: Lang, liff: LiffPort | null) 
   useEffect(() => {
     let live = true;
     setLoad({ state: 'loading' });
-    void loadClub(slug, fetch).then((r) => {
-      if (!live) return;
-      setLoad(r);
-      if (r.state === 'ready') {
-        setLangState(
-          pickLang({
-            cookie: document.cookie,
-            lineLanguage: liff?.isInClient() ? liff.getLanguage() : null,
-            browserLanguages: navigator.languages ?? [navigator.language],
-            clubDefault: r.config.defaultLanguage,
-          }),
-        );
-      }
-    });
+    void loadClub(slug, fetch).then((r) => live && setLoad(r));
     return () => {
       live = false;
     };
-  }, [slug, liff, attempt]);
+  }, [slug, attempt]);
+
+  // The starting language needs the club default, and inside LINE the LINE app language.
+  const clubDefault = load.state === 'ready' ? load.config.defaultLanguage : null;
+  useEffect(() => {
+    if (clubDefault === null || liff === undefined) return;
+    setLangState(
+      pickLang({
+        cookie: document.cookie,
+        lineLanguage: liff?.isInClient() ? liff.getLanguage() : null,
+        browserLanguages: navigator.languages ?? [navigator.language],
+        clubDefault,
+      }),
+    );
+  }, [clubDefault, liff]);
 
   useEffect(() => {
     document.documentElement.lang = lang;

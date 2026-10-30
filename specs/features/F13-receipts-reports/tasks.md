@@ -12,6 +12,7 @@ Depends on: F01 `club.receipt_prefix`, `vat_enabled`, T13 route wrapper, T18 gra
   Tests first: update and delete fail for every role; `number`, `lines` and `total_satang` never change; a second `sale` receipt for one order is refused; another club's receipt is not reachable.
 - [ ] **F13-T02** Migration 0702: `app.issue_receipt(order, payment, kind)` with snapshot, real and test series, counter lock last, idempotent by unique keys. IDs: RCPT-01-AC1 to AC6, AC14, AC15, RCPT-02-AC11, D106, D64. Role: BE-C · Deps T01 · Size: M
   Tests first: first real receipt is 000001 of its Bangkok year and the test series leaves it untouched; a rollback leaves no gap; a repeated call returns the same id; a two hour order has one receipt; a zero money order has a receipt with no money line; a missing prefix raises `receipt:prefix_missing` for the real series only, and a Testing club with no prefix issues a `TEST` receipt without error.
+  Orchestrator note (F04-T12d-db, 0319): `app.complete_zero_money_order` keeps the receipt id it got from the issue_receipt port in `orders.zero_money_receipt_id`, because no receipt table existed yet. Once `receipt` exists, keep the issue_receipt port idempotent by (order, kind) and decide whether to drop that column in a later migration.
 - [ ] **F13-T03** Concurrency test CONC-21: twenty parallel confirmations in one club get consecutive numbers; two clubs have independent counters. IDs: RCPT-01-AC2, AC3. Role: QA · Deps T02 · Size: S
   Tests first: the test is the task.
 - [ ] **F13-T04** Migration 0703: register `issue_receipt` in `app.payment_ports`. F13 edits no other feature's code and no merged migration. Files it may touch: `packages/db/migrations/0703_payment_port.sql` and its test. IDs: RCPT-01-AC6, R4, D37, D74, D79, D112. Role: BE-C · Deps T02, F05-T05a (ports), F06-T09 (`credit_wallet` port) · Size: S
@@ -24,6 +25,7 @@ Depends on: F01 `club.receipt_prefix`, `vat_enabled`, T13 route wrapper, T18 gra
   Tests first: front desk, Accountant, coach and player refused; blank reason refused; a second void refuses; no other row changes.
 - [ ] **F13-T06** `renderReceipt(receipt, language, copy)` in `packages/receipts`: A4 PDF from the snapshot, all text by key, legal name, tax ID, branch and address from the club record, test mark, Copy mark. IDs: RCPT-01-AC11, AC12, RCPT-02, TEXT-01, TEXT-03. Role: BE-C · Deps T01, T19 (may start with the keys that exist and add the rest in `locales/pending/F13.json`) · Size: M
   Tests first: same snapshot gives the same content in Thai and English; reprint carries the original number and date and a Copy mark; no literal user facing string in the template (lint); dates use the international year; longest Thai line does not clip.
+  Orchestrator note (F06-T04, 0505): a `wallet_credit` line stores its text key in `description_key` and the key again in `name_th`/`name_en`; render the line text from `description_key` through the language files (key `L-new.wallet_credit_line`, pending in f06.json), never from the name columns.
 
 ## C. Daily close and reports
 

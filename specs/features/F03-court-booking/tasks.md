@@ -33,7 +33,7 @@ Depends on: F01 T03 to T07 (database, context, tenant suite), T08 (settings), T1
   Tests first: unset means no limit; N allowed and N plus 1 refused whole; unpaid held, bundle paid and solo hours count and group seats and played hours do not; two parallel requests at N minus 1 give exactly one success; staff over the limit need a reason and it is audited.
 - [x] **F03-T11** Second tap returns the same hold (lookup of the caller's live identical order) plus `Idempotency-Key` storage. IDs: BOOK-03-AC15, decision D47. Role: BE-B · Deps T08 · Size: M
   Tests first: a second tap, a tap on a second device, and the same key in parallel return one order and the same `hold_expires_at`; no second hold exists.
-- [ ] **F03-T12** Limit on repeated Pay taps: `pay_tap` table (0207), platform config keys, `too_many_attempts`, the `pay_tap_limit_set` launch check. IDs: decision D61. Role: BE-B · Deps T08, F01-T27b · Size: S
+- [x] **F03-T12** Limit on repeated Pay taps: `pay_tap` table (0207), platform config keys, `too_many_attempts`, the `pay_tap_limit_set` launch check. IDs: decision D61. Role: BE-B · Deps T08, F01-T27b · Size: S
   Tests first: attempts beyond the platform limit are refused; a repeat tap returning the same hold does not count; an unset limit fails the launch check; no value is built into code.
 - [x] **F03-T13** `app.confirm_booking` and the PAY-07 path (`confirm_now`): guarded status change, hold cleared, same transaction. IDs: BOOK-03-AC7, AC9, BOOK-04-AC8. Role: BE-B · Deps T08 · Size: M
   Tests first: a confirmed booking has no hold; confirm and expiry at the same instant give exactly one outcome (FA T10); a taken slot refuses a PAY-07 order and nothing is used up.

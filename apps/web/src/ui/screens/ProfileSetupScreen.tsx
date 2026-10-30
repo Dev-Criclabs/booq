@@ -1,15 +1,14 @@
 'use client';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Lang } from '../../client/i18n';
-import { liffPort } from '../../client/liff';
 import { clubHome, safeNext } from '../../client/paths';
 import { continueKey, missing, submitProfile, type FieldErrors } from '../../client/profile-setup';
-import { useClub } from '../../client/use-club';
+import { useClub, useLiff } from '../../client/use-club';
 import { ProfileSetup } from '../ProfileSetup';
 import { Loading, StateScreen } from '../StateScreen';
 
 // /c/{slug}/profile-setup?next=... (C2; design 4.3). Reached from sign in when the server answers
-// needs_profile. On success the player goes on to `next` with the choice kept (AUTH-02-AC6).
+// pending_profile. On success the player goes on to `next` with the choice kept (AUTH-02-AC6).
 
 function without(errors: FieldErrors, field: keyof FieldErrors): FieldErrors {
   const { [field]: _gone, ...rest } = errors;
@@ -17,7 +16,7 @@ function without(errors: FieldErrors, field: keyof FieldErrors): FieldErrors {
 }
 
 export function ProfileSetupScreen({ slug, next: rawNext, initialLang }: { slug: string; next: string | null; initialLang: Lang }) {
-  const liff = useMemo(() => liffPort(), []);
+  const liff = useLiff();
   const next = safeNext(slug, rawNext);
   const { load, lang, t, retry, reload: reloadConfig } = useClub(slug, initialLang, liff);
   const [lineName, setLineName] = useState<string | null>(null);
@@ -31,7 +30,7 @@ export function ProfileSetupScreen({ slug, next: rawNext, initialLang }: { slug:
     if (load.state !== 'ready' || !liff || !load.config.liffId) return;
     let live = true;
     liff
-      .init(load.config.liffId)
+      .init({ liffId: load.config.liffId })
       .then(() => live && setLineName(liff.getDisplayName()))
       .catch(() => undefined);
     return () => {

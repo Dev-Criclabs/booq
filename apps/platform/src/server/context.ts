@@ -1,5 +1,5 @@
-import { createMemoryAuthStore, createPlatformAuth, type IdentityProvider } from '../auth/sign-in';
-import { createDbAuditSink, createDbStaffDirectory, IdentityUnavailable } from '../auth/adapters';
+import { createPlatformAuth, type IdentityProvider } from '../auth/sign-in';
+import { createDbAuditSink, createDbAuthStore, createDbStaffDirectory, IdentityUnavailable } from '../auth/adapters';
 import { authRoutes } from '../auth/routes';
 import { createRateLimiter, type RateLimiter } from '@booq/auth';
 import type { PlatformDb } from '@booq/db';
@@ -18,6 +18,8 @@ import { createTesterService } from '../testers/testers';
 import { testerRoutes } from '../testers/routes';
 import { adminRoutes } from '../admin/routes';
 import { createAdminService } from '../admin/admin';
+import { staffRoutes } from '../staff/routes';
+import { createStaffInviteClient } from '../staff/staff-invite-client';
 import { supportRoutes } from '../support/routes';
 import { createSupportService } from '../support/support';
 import type { Connections } from '../connections/connections';
@@ -37,6 +39,8 @@ export interface PlatformConfig {
   appBaseUrl: string;
   /** The shared token of GET /health for the external monitor. Absent: the route is not mounted. */
   healthToken: string | null;
+  /** apps/staff-invite, which checks passwords and codes at the identity provider (D148). Absent: sign-in answers 503 identity_unavailable. */
+  staffInvite: { url: string; signingSecret: string } | null;
   /** Attempts per caller and window on the sign-in routes. Platform config; absent means no limit (set it before launch). */
   signInRateLimit: { limit: number; windowSeconds: number } | null;
 }
@@ -52,6 +56,11 @@ export function readPlatformConfig(env: Record<string, string | undefined>): Pla
   if (!/^https:\/\/[^\s/]+(\/.*)?$/.test(env['APP_BASE_URL']!)) throw new Error('APP_BASE_URL must be an https address');
   const health = env['HEALTH_TOKEN'];
   if (health !== undefined && health.length < 16) throw new Error('HEALTH_TOKEN must be at least 16 characters');
+  const inviteUrl = env['STAFF_INVITE_URL'];
+  const inviteSecret = env['STAFF_INVITE_SIGNING_SECRET'];
+  if ((inviteUrl && !inviteSecret) || (!inviteUrl && inviteSecret)) throw new Error('STAFF_INVITE_URL and STAFF_INVITE_SIGNING_SECRET are set together or not at all');
+  if (inviteUrl && !/^https?:\/\/[^\s/]+(\/.*)?$/.test(inviteUrl)) throw new Error('STAFF_INVITE_URL must be an http or https address');
+  if (inviteSecret && inviteSecret.length < 32) throw new Error('STAFF_INVITE_SIGNING_SECRET must be at least 32 characters');
   const limit = env['PLATFORM_SIGNIN_RATE_LIMIT'];
   const window = env['PLATFORM_SIGNIN_RATE_WINDOW_SECONDS'];
   if ((limit && !window) || (!limit && window)) throw new Error('PLATFORM_SIGNIN_RATE_LIMIT and PLATFORM_SIGNIN_RATE_WINDOW_SECONDS are set together or not at all');
@@ -62,12 +71,16 @@ export function readPlatformConfig(env: Record<string, string | undefined>): Pla
     maxBodyBytes: Number(env['PLATFORM_MAX_BODY_BYTES']),
     appBaseUrl: env['APP_BASE_URL']!.replace(/\/+$/, ''),
     healthToken: health ?? null,
+    staffInvite: inviteUrl ? { url: inviteUrl, signingSecret: inviteSecret! } : null,
     signInRateLimit: limit ? { limit: Number(limit), windowSeconds: Number(window) } : null,
   };
 }
 
 export const unavailableIdentity: IdentityProvider = {
   async verifyPassword() {
+    throw new IdentityUnavailable();
+  },
+  async verifyPasswordFor() {
     throw new IdentityUnavailable();
   },
   async verifyTotp() {
@@ -98,6 +111,8 @@ export interface PlatformParts {
   mailer?: InviteMailer;
   /** LINE and Beam probes and the secrets public key. Absent until the provider clients exist: the connection sections answer section_unavailable. */
   connections?: Connections;
+  /** For tests: the transport to apps/staff-invite. */
+  staffInviteFetch?: typeof fetch;
   /** Extra route groups, for tests and for the parts added next. */
   extraRoutes?: readonly PlatformRoute[];
 }
@@ -108,7 +123,7 @@ export function createPlatformTable(parts: PlatformParts): PlatformSource {
     identity,
     staff: createDbStaffDirectory(db),
     audit: createDbAuditSink(db),
-    store: createMemoryAuthStore(), // sessions live in this process: a durable shared store comes with the hosting choice
+    store: createDbAuthStore(db, { sealKey: config.signingKey }), // shared by every console process (migration 0051)
     clock,
     signingKey: config.signingKey,
   });
@@ -124,6 +139,11 @@ export function createPlatformTable(parts: PlatformParts): PlatformSource {
       }),
       ...ownerRoutes({ owner: createOwnerService({ db, mailer: parts.mailer ?? mailerNotConnected, baseUrl: config.appBaseUrl }) }),
       ...testerRoutes({ testers: createTesterService({ db, baseUrl: config.appBaseUrl }) }),
+      ...staffRoutes({
+        staff: config.staffInvite
+          ? createStaffInviteClient({ ...config.staffInvite, now: () => clock.now(), endSessionsFor: (staffId) => auth.endSessionsFor(staffId), ...(parts.staffInviteFetch ? { fetch: parts.staffInviteFetch } : {}) })
+          : null,
+      }),
       ...adminRoutes({ admin: createAdminService({ db }) }),
       ...supportRoutes({ support: createSupportService({ db, ...(parts.connections ? { connections: parts.connections } : {}) }) }),
       ...(config.healthToken ? healthRoutes({ health: createHealthService({ db, token: config.healthToken }) }) : []),

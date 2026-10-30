@@ -24,6 +24,9 @@ export const tables: Fragment = {
   'platform.template_item': { class: 'P' },
   'platform.launch_check': { class: 'P' },
   'platform.export_request': { class: 'P' },
+  'platform.console_session': { class: 'P' },     // 0051: console sign-in state, ids hashed, reached only through definer functions
+  'platform.console_challenge': { class: 'P' },
+  'platform.console_login_state': { class: 'P' },
   'platform.worker_heartbeat': { class: 'P' },   // migration 0007; counts only
   // People (F01-T12, migration 0003): club data, BOOQ staff never.
   'public.app_user': { class: 'D', audited: true },
@@ -33,7 +36,7 @@ export const tables: Fragment = {
   'public.club_invite': { class: 'D', audited: true },
   'public.club_tester': { class: 'D', audited: true },
   // Connections and secrets (F01-T09, migration 0012). Secrets are write-only.
-  'public.line_connection': { class: 'S', audited: true },
+  'public.line_connection': { class: 'S', audited: true, allowColumns: ['webhook_token_hash'] },
   'public.payment_connection': { class: 'S', audited: true, allowColumns: ['webhook_token_hash_test', 'webhook_token_hash_live'] },
   'public.club_secret': { class: 'S', audited: true },
   'public.club_secret_read': { class: 'D' },
