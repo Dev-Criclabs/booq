@@ -40,7 +40,7 @@ F10 uses the number block 0601 to 0699 (assumption A-1; the build plan names blo
 | `0604_line_usage.sql` | `platform.club_line_usage` and sync support (FA §5.6), `platform.config` rows for 70, 80 and 100 |
 | `0605_functions.sql` | `app.enqueue_message`, `app.void_messages`, `app.cap_state`, `app.mark_undeliverable` |
 | `0606_grants_policies.sql` | Policies and grants; the sender role and the platform reader |
-| `0607_settings_keys.sql` | Registry row `reminder_hours` in `app.setting_keys`, the entry in `packages/domain/src/club/settings-registry.ts` (a test keeps them equal), and a migration row putting `reminder_hours [24, 2]` in the Tennis template (clubs created before it do not get it, fine before launch); the cap thresholds are in `platform.config` from 0604 |
+| `0607_reminder_hours.sql` | Reminder hours are fixed product values, not a club setting (PRD change log "Scope": reminders fixed at 24 h and 2 h; D116 means the numbers are text variables and named constants): `app.message_kinds.hours_before` (24 and 2) with a CHECK, `REMINDER_HOURS` in `packages/domain/src/messages/reminders.ts` (a test keeps them equal), and `app.enqueue_booking_reminders(booking)`. No `app.setting_keys` row. |
 
 ### 4.1 Tables
 
@@ -86,7 +86,7 @@ The language is read at send time from the recipient row, not stored on the outb
 |---|---|---|---|---|---|---|---|
 | `booking_confirmed` | Player | F03 `confirm_booking`, F04 PAY-07, F05 late approval | now | `confirmed:{order_id}` | order confirmed | none | A |
 | `booking_released` | Player | F03 `release_hold` handler (Beam clubs too, D45), **not for the reason `payment_unavailable`** (a failed key check or unreachable Beam is a screen error in F05, not a release to tell the player about) | now | `released:{order_id}` (a second release of the same order after a reclaim is dropped by the unique key; accepted, rare and harmless) | still released | none | A |
-| `reminder_24h`, `reminder_2h` | Player | F03 confirm and move, hours from setting `reminder_hours` (D116) | start minus N h | `reminder:{booking_id}:{start_at}:{N}` | booking still confirmed at that start | reminders | R |
+| `reminder_24h`, `reminder_2h` | Player | F03 confirm and move, fixed hours 24 and 2 from `app.message_kinds.hours_before` (PRD Scope row, D116) | start minus N h | `reminder:{booking_id}:{start_at}:{N}` | booking still confirmed at that start | reminders | R |
 | `cancellation_result` | Player | F09 cancel | now | `cancel:{booking_id}:{version}` | none | none | A |
 | `club_closed_slot` | Player | F09 closure | now | `closure:{closure_id}:{booking_id}` | none | none | A |
 | `coach_changed` | Player | F07 substitution | now | `coach_changed:{booking_id}:{coach_id}` | none | none | A |

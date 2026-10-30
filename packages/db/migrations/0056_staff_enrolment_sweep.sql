@@ -1,6 +1,9 @@
--- Migration 0056: housekeeping for staff enrolment links (F01-T17c). Run by the worker inside console_session_sweep.
--- A link that expired, or was used, more than p_keep_seconds ago is removed. The audit log keeps the facts (issued,
--- enrolled); the row holds nothing else worth keeping. Reads and returns no club data.
+-- F01-T17c / migration 0056: housekeeping for staff enrolment links (0055).
+--   * app.sweep_staff_enrolments(keep_seconds): for the worker; removes links that expired, or were used, more than that long ago.
+-- A new file because 0055 was already on main when the sweep was added.
+
+-- Housekeeping for the worker: a link that expired, or was used, more than p_keep_seconds ago. The audit log keeps the facts
+-- (issued, enrolled); the row holds nothing else worth keeping. Reads and returns no club data.
 create function app.sweep_staff_enrolments(p_keep_seconds integer) returns integer
 language plpgsql security definer set search_path = pg_catalog, pg_temp
 as $$
