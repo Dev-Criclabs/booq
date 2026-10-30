@@ -21,6 +21,8 @@ export const REFUSAL_TEXT_KEYS = {
   too_many_attempts: 'P-new.too_many_attempts',
   order_not_found: 'P-new.order_not_found',
   forbidden: 'P-new.forbidden',
+  booking_not_found: 'P-new.booking_not_found',
+  not_movable: 'A-new.not_movable',
   idempotency_key_reused: 'P-new.idempotency_key_reused',
 } as const;
 

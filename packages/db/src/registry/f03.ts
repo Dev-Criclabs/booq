@@ -8,4 +8,5 @@ export const tables: Fragment = {
   'app.release_handlers': { class: 'infra' },        // F03-T06 (0210)
   'app.coach_rules_hook': { class: 'infra' },        // F03-T09 (0213)
   'public.idempotency_key': { class: 'D' },          // F03-T11 (0215)
+  'app.move_handlers': { class: 'infra' },           // F03-T15 (0219)
 };
