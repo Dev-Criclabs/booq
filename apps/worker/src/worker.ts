@@ -1,4 +1,4 @@
-import { run, type Runner, type TaskList } from 'graphile-worker';
+import { run, type JobHelpers, type Runner, type TaskList } from 'graphile-worker';
 import type { Db } from '@booq/db';
 import { recordQueueHealth, recordTaskRun } from './heartbeat';
 import { isPermanentFailure } from './policy';
@@ -9,11 +9,18 @@ import { clubTask, type ClubTaskHandler } from './task-wrapper';
 // recordTaskRun (heartbeat). Payloads hold ids only. The queue connection is the worker's own
 // and is not used for club data; club data goes through `db` (withClubTx).
 
+/** A task with no club of its own (cron, dispatch). It gets the heartbeat but no club context. */
+export type GlobalTask = (payload: unknown, helpers: JobHelpers) => Promise<void>;
+
 export interface WorkerOptions {
   /** A direct connection string, not the pooler. */
   connectionString: string;
   db: Db;
   tasks: Record<string, ClubTaskHandler<{ clubId: string }>>;
+  /** Tasks that add club jobs or report queue health; never touch club data directly. */
+  globalTasks?: Record<string, GlobalTask>;
+  /** Graphile crontab text, from buildCrontab(). */
+  crontab?: string;
   concurrency?: number;
 }
 export interface RunningWorker {
@@ -35,6 +42,9 @@ export async function startWorker(options: WorkerOptions): Promise<RunningWorker
       }
     };
   }
+  for (const [name, task] of Object.entries(options.globalTasks ?? {})) {
+    taskList[name] = (payload, helpers) => recordTaskRun(options.db, name, () => task(payload, helpers));
+  }
   // Not a club task: counts only. Lag is the age of the oldest due job; dead jobs have used all attempts.
   taskList[HOUSEKEEPING] = async (_payload, helpers) => {
     await recordTaskRun(options.db, HOUSEKEEPING, async () => {
@@ -55,6 +65,7 @@ export async function startWorker(options: WorkerOptions): Promise<RunningWorker
     concurrency: options.concurrency ?? 2,
     noHandleSignals: true,
     taskList,
+    ...(options.crontab === undefined ? {} : { crontab: options.crontab }),
   });
   return {
     async stop() {

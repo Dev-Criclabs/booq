@@ -5,6 +5,8 @@
 // the rival rejection and the F06 balance transfer handlers live in the database functions
 // app.claim_confirm and app.claim_reject (migration 0103), all in the caller's transaction.
 
+import { normalizePhone } from '../phone';
+
 export type ClaimErrorCode = 'forbidden' | 'not_found' | 'not_open';
 export class ClaimError extends Error {
   constructor(readonly code: ClaimErrorCode) {
@@ -52,6 +54,17 @@ export function createClaimService() {
   }
 
   return {
+    /**
+     * F02's profile transaction calls this after it creates the new player (F02-T09b). A phone that
+     * does not normalise, or that matches no single unclaimed import, creates nothing, and the answer
+     * is always void so the caller cannot tell whether a record was found (D105).
+     */
+    async requestFromProfile(tx: ClaimTx, input: { claimantUserId: string; fullName: string; phone: string }): Promise<void> {
+      const e164 = normalizePhone(input.phone);
+      if (e164 === null) return;
+      await tx.query('select app.request_claim($1, $2, $3, $4)', [input.claimantUserId, input.fullName, input.phone, e164.replace(/^\+/, '')]);
+    },
+
     async listOpen(tx: ClaimTx, actor: ClaimActor): Promise<OpenClaim[]> {
       if (!isStaff(actor)) throw new ClaimError('forbidden');
       const rows = (
