@@ -4,7 +4,7 @@ Reviewer, 30 Oct 2026. Read from `origin/main` (head 9d3e2a9): `specs/features/F
 
 ## Verdict
 
-**Not ready to approve.** Four blocking items (task size, migration order, an unassigned migration range, tasks with no requirement ID) and nine should-fix items. Nothing here needs a user decision except the question in G3-9.
+**Not ready to approve.** Four blocking items (task size, migration order, an unassigned migration range, tasks with no requirement ID) and five should-fix items (G3-5 to G3-9). The only question is G3-9, for the Orchestrator.
 
 ## Blocking
 
