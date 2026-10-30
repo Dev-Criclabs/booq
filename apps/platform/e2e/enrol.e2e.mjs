@@ -208,7 +208,7 @@ describe('the team page', () => {
       const { page, context } = await openPage(browser, staffApi(over));
       await page.goto(`${app.base}/staff`);
       await page.getByTestId(id).waitFor();
-      assert.equal(await page.getByTestId(id).innerText(), text);
+      assert.ok((await page.getByTestId(id).innerText()).startsWith(text), text); // the not-signed-in text is followed by the sign-in link
       await context.close();
     }
     for (const [over, text] of [
