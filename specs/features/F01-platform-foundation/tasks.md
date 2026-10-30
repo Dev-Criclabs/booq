@@ -139,7 +139,7 @@ Roles: **Arch** Architect/data, **BE-P** back end platform and LINE, **DevOps**,
 
 ## H. Worker, counts and checks
 
-- [ ] **F01-T34** `apps/worker` bootstrap (Graphile Worker, direct connection, club-context task wrapper), heartbeat and housekeeping task. IDs: FA §5 (supports PLAT-03-AC6, PLAT-06). Role: BE-P · Deps T04 · Size: M
+- [x] **F01-T34** `apps/worker` bootstrap (Graphile Worker, direct connection, club-context task wrapper), heartbeat and housekeeping task. IDs: FA §5 (supports PLAT-03-AC6, PLAT-06). Role: BE-P · Deps T04 · Size: M
   Tests first: a task runs in the right club context; a crashed task retries once; heartbeat is recorded.
 - [ ] **F01-T35** Aggregate counts for P1 and P3 from `club_usage_daily`, nothing finer. IDs: PLAT-02-AC10, AC11. Role: BE-P · Deps T16, T18 · Size: S
   Tests first: counts only; no list behind a count; test activity excluded.
