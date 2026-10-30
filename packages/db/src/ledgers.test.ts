@@ -49,13 +49,13 @@ const checkValues = async (name: string) =>
   [...((await tdb.query(`select pg_get_constraintdef(oid) as d from pg_constraint where conname = $1`, [name])).rows[0].d as string).matchAll(/'([a-z_]+)'::text/g)].map((m) => m[1]).sort();
 
 describe('reasons (PKG-01-AC2, AC3; D78)', () => {
-  it('the credit reasons are the hand-off list; the wallet reasons are the D78 list (import_transfer comes with F06-T08)', async () => {
-    expect(await checkValues('credit_ledger_reason_values')).toEqual(['adjust', 'expire', 'forfeit', 'import', 'reserve', 'return', 'use'].sort());
+  it('the credit reasons are the hand-off list; the wallet reasons are the D78 list, each with import_transfer (F06-T08, D154)', async () => {
+    expect(await checkValues('credit_ledger_reason_values')).toEqual(['adjust', 'expire', 'forfeit', 'import', 'import_transfer', 'reserve', 'return', 'use'].sort());
     expect(await checkValues('wallet_ledger_reason_values')).toEqual(
-      ['refund', 'late_payment', 'wrong_amount', 'duplicate_payment', 'referral_reward', 'spend', 'return', 'adjust', 'import', 'expire'].sort());
+      ['refund', 'late_payment', 'wrong_amount', 'duplicate_payment', 'referral_reward', 'spend', 'return', 'adjust', 'import', 'import_transfer', 'expire'].sort());
     await expect(credit('gift', 1)).rejects.toThrow(/reason_values/);
     await expect(wallet('withdraw', -100)).rejects.toThrow(/reason_values/);
-    await expect(wallet('import_transfer', 100)).rejects.toThrow(/reason_values/);
+    await expect(wallet('import_transfer', 100)).rejects.toThrow(/import_transfer_key/);   // only the claim transfer writes it
   });
   it('credit sign rules: reserve -1, return +1, use and forfeit 0, expire negative, adjust and import never zero (FA Q4)', async () => {
     await expect(credit('reserve', -2)).rejects.toThrow(/credit_ledger_sign/);

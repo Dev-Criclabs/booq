@@ -127,16 +127,27 @@ Engineers are BOOQ staff, so reading club data breaks the promise that BOOQ neve
 5. Provider access logs are kept and a named person reviews them monthly.
 6. Afterwards: remove the access, close the ticket, note whether anything was changed (it should not be).
 
-## 17. Create the first BOOQ admin (D163) — placeholder, the script has not landed
-Needed once per environment, before the 7 Dec readiness check, because no teammate can be invited until an admin exists. The script is BE-P's and was not on any branch when I checked (30 Oct). **Do not write the command here until it exists; fill in steps 2 to 4 from its own documentation.**
+## 17. Create the first BOOQ admin (D163)
+Once per environment that has a console (staging, production), **before the 7 Dec readiness check**, because nobody can invite the first admin. Source of truth for the command: `apps/staff-invite/README.md`, "First admin (D163)" (on `be-p/platform-transport` when I wrote this; reaching `main` next). If it and this runbook differ, the README wins.
 
-Known from the decision (D163): a one-off operator script that DevOps runs. It creates the first admin and prints **one enrolment link**. It **refuses once any admin exists**, and the link life is an **argument** (confirmed by the orchestrator: it covers that one bootstrap link, so `console_enrolment_ttl_hours` does not have to be set before the first run; the new admin sets it in the console before inviting anyone else).
+**What it does:** creates the provider user and the admin's record, writes one P6 entry (`staff.bootstrapped`, no link in it), and prints **one** enrolment link on standard output, once. It is never a web route. It refuses while any active admin exists, so a second run changes nothing. It does not write `console_enrolment_ttl_hours`.
 
-1. Decide who the first admin is (a named person, with the hardware key or authenticator they will enrol) and write it in the ops record. The user approves the name.
-2. *(to fill in)* Which credential the script runs with and where it runs. It must not use a personal laptop with other keys, and the credential is not left behind afterwards.
-3. *(to fill in)* Run it with the link life chosen by the user. Copy the printed link **once**, and send it to the named person by a different channel than the one used for the request. Never paste the link into chat or a ticket, because it is single use but grants admin enrolment.
-4. The person opens the link, sets a password and enrols their authenticator. Confirm they can sign in with the second factor.
-5. Confirm a second run **refuses**. Then set `console_enrolment_ttl_hours` in `platform.config` (`platform.md`) and have the first admin invite the others.
-6. Record in the ops record: date, who ran it, who was created, that the link was used. Remove any credential used for the run.
-7. Repeat for every environment that has a console (staging, production). Never reuse a link or an admin across them.
+**Credentials it needs, none with a default.** All four are **operator-only secrets, never an app environment variable** (`secrets.md`):
+`BOOTSTRAP_DATABASE_URL` (role `booq_owner`), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `PLATFORM_BASE_URL` (the console's public address, for the link; not secret).
 
+1. **Decide the person.** A named first admin, with the hardware key or authenticator they will enrol, written in the ops record. The user approves the name. Choose the link life (`--ttl-hours`) with the user: long enough to enrol, short enough to be safe.
+2. **Open a break-glass window** (runbook 16): a ticket, a second approver, at most 4 hours. This is the one planned use of the database owner credential and the Supabase admin key by a person, so it needs the same record. Run it from one of the two named holders' machines, **not** from the console's or the web app's host, and not from a machine whose shell history or screen is shared.
+3. **Set the four settings in the shell only for this run**, without writing them in shell history or a file (for example by typing them at a hidden prompt or from the password manager's command line tool), then:
+   ```sh
+   pnpm run bootstrap:admin -- --email <email> --name "<name>" --ttl-hours <hours>
+   ```
+   All three arguments are required. Do not run it in CI: CI logs would keep the link.
+4. **Copy the printed link once** and send it to the named person by a **different channel** from the one used to ask for it. Never paste it into chat or a ticket. It works once, expires, and is stored only as a hash.
+5. The person opens the link, sets a password and enrols their authenticator. Confirm they can sign in with the second factor.
+6. **Prove it refuses:** run the same command again; it must exit **3** and change nothing.
+7. **Close the window:** unset the variables, close the shell, and **always rotate the `booq_owner` password and the Supabase service-role key** (D165: the bootstrap is the single planned exception to SR-21 and D148, and rotation afterwards is part of the exception; `secrets.md`). Remove the ticket's access. Record the date, who ran it, who was created, that the link was used.
+8. The new admin sets `console_enrolment_ttl_hours` in the console (`PUT /config/console_enrolment_ttl_hours`) **before inviting anyone else** (`platform.md`).
+
+**Exit codes:** 0 done; 1 failed before finishing (nothing kept; a provider user made on the way is removed); 2 a missing or bad setting or argument; 3 an active admin already exists; 4 the email is already a teammate; 5 the identity provider failed. Safe to run again after 1, 2 or 5; nothing was kept.
+
+**If the first link expires before the admin enrols:** the record already counts as an active admin, so the command refuses (exit 3). Until BE-P's `--reissue` mode lands, recovery is: with the database owner credential, delete that admin's `platform.staff_enrolment` and `platform.platform_staff` rows and the provider user (in the provider's dashboard), then run the command again, under a new break-glass window. After `--reissue` exists, use it instead and update this runbook.

@@ -7,6 +7,12 @@ export interface AppAnonymiseHandlers {
   created_at: string;
 }
 
+export interface AppCancelHandlers {
+  name: string;
+  handler: unknown;
+  ord: number;
+}
+
 export interface AppClaimHandlers {
   handler_key: string;
   handler: unknown;
@@ -47,6 +53,7 @@ export interface AppMessageKinds {
   kind: string;
   cap_class: string;
   switch_key: string | null;
+  hours_before: number | null;
 }
 
 export interface AppMoveHandlers {
@@ -398,6 +405,8 @@ export interface PublicBooking {
   is_test: boolean;
   created_at: string;
   updated_at: string;
+  class_session_id: string | null;
+  waitlist_entry_id: string | null;
 }
 
 export interface PublicBookingCancel {
@@ -755,6 +764,17 @@ export interface PublicCustomerPackage {
   order_id: string | null;
   is_test: boolean;
   created_at: string;
+}
+
+export interface PublicDailyClose {
+  club_id: string;
+  id: string;
+  day: string;
+  run_by: string;
+  run_at: string;
+  totals: unknown;
+  receipt_count: number;
+  is_test: boolean;
 }
 
 export interface PublicDataExport {
@@ -1192,6 +1212,30 @@ export interface PublicUserStaffNote {
   is_test: boolean;
 }
 
+export interface PublicWaitlistEntry {
+  club_id: string;
+  id: string;
+  customer_id: string;
+  subject_kind: string;
+  class_session_id: string | null;
+  resource_id: string | null;
+  slot_start_at: string | null;
+  seq: string;
+  status: string;
+  offer_no: number;
+  offered_at: string | null;
+  offer_expires_at: string | null;
+  offer_booking_id: string | null;
+  ended_reason: string | null;
+  is_test: boolean;
+  created_at: string;
+}
+
+export interface PublicWaitlistSeq {
+  club_id: string;
+  last_value: string;
+}
+
 export interface PublicWalletAccount {
   club_id: string;
   id: string;
@@ -1220,6 +1264,7 @@ export interface PublicWalletLedger {
 
 export interface Tables {
   'app.anonymise_handlers': AppAnonymiseHandlers;
+  'app.cancel_handlers': AppCancelHandlers;
   'app.claim_handlers': AppClaimHandlers;
   'app.coach_rules_hook': AppCoachRulesHook;
   'app.coach_rules_move_hook': AppCoachRulesMoveHook;
@@ -1292,6 +1337,7 @@ export interface Tables {
   'public.court_price_rule': PublicCourtPriceRule;
   'public.credit_ledger': PublicCreditLedger;
   'public.customer_package': PublicCustomerPackage;
+  'public.daily_close': PublicDailyClose;
   'public.data_export': PublicDataExport;
   'public.data_request': PublicDataRequest;
   'public.idempotency_key': PublicIdempotencyKey;
@@ -1326,6 +1372,8 @@ export interface Tables {
   'public.rich_menu_label': PublicRichMenuLabel;
   'public.user_consent': PublicUserConsent;
   'public.user_staff_note': PublicUserStaffNote;
+  'public.waitlist_entry': PublicWaitlistEntry;
+  'public.waitlist_seq': PublicWaitlistSeq;
   'public.wallet_account': PublicWalletAccount;
   'public.wallet_ledger': PublicWalletLedger;
 }
