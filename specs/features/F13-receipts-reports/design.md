@@ -175,7 +175,7 @@ First real receipt after Go live is 000001 of its year and the test series never
 
 New keys in `locales/pending/F13.json`: Void, Copy of receipt, Test receipt, the wallet credit receipt wording, receipt lines for credit, wallet and each method, daily close labels and totals, void reason, report titles and labels, payout labels, export confirmation; writers own the wording (D51). Existing L keys first (for example L-0061).
 
-Boards: R-Receipt-TH, R-Receipt-EN, H-A14-Receipts, H-A13-Reports, G-A13b-Coach-payouts, H-C17-Profile-receipts and the T- twins; G-C17-Privacy for what stays on record. The R-Receipt boards are not in the repo (Q3 of the requirements).
+Boards: R-Receipt-TH, R-Receipt-EN, H-A14-Receipts, H-A13-Reports, G-A13b-Coach-payouts, H-C17-Profile-receipts and the T- twins; G-C17-Privacy for what stays on record. The R-Receipt boards are in the canvas backup (`docs/orchestrator/canvas-backup/12ae5a85-7762-44b9-9b19-9df906c1e373/project/R-Receipt-EN.dc.html and R-Receipt-TH.dc.html`); the spec wins over the canvas and the sample data is not copied (`docs/canvas-gaps.md` B5, B9).
 
 ## 13. Assumptions to confirm (recommended defaults, D147)
 
