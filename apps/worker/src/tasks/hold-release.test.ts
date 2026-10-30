@@ -169,3 +169,48 @@ describe('who may look across clubs', () => {
     await expect(app.withClubTx({ clubId: A, userId: P1, roles: ['player'] }, (tx) => tx.query(`select * from app.due_hold_orders(10)`))).rejects.toThrow(/permission denied|forbidden/i);
   });
 });
+
+describe('hold_release for an add-a-coach order (F07-T06c, COACH-03-AC3, CC-4)', () => {
+  const COACH = 'e0e0e0e0-0000-4000-8000-000000000009';
+
+  /** A confirmed court booking of P1 at 18:00 on 2 Dec, and an add order holding COACH on it. */
+  async function addedCoach() {
+    await tdb.seedCoach(A, COACH);
+    const order = await hold(A, COURT_A, P1, [18]);
+    await worker.withClubTx({ clubId: A, userId: null, roles: [], source: 'job' }, (tx) => tx.query(`select app.confirm_booking($1)`, [order]));
+    const add = (await tdb.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'online') returning id`, [A, P1])).rows[0].id as string;
+    const c = await tdb.pool.connect();
+    try {
+      await c.query('begin');
+      await c.query('set local session_replication_role = replica');
+      await c.query(`update public.orders set price_group_snapshot='{}', subtotal_satang=80000, discount_satang=0, total_satang=80000, credit_value_satang=0, wallet_satang=0, money_satang=80000, quote_hash=repeat('a',64), priced_at=now() where id=$1`, [add]);
+      await c.query('commit');
+    } finally {
+      c.release();
+    }
+    const booking = (await tdb.query(`select id from public.booking where order_id = $1`, [order])).rows[0].id as string;
+    await app.withClubTx({ clubId: A, userId: P1, roles: ['player'], source: 'player_app' }, (tx) => tx.query(`select app.add_coach_to_booking($1, $2, $3)`, [booking, COACH, add]));
+    return { add, booking };
+  }
+
+  it('frees the coach when the add order’s hold has ended, and leaves one that still runs', async () => {
+    const { add, booking } = await addedCoach();
+    expect(await runHoldRelease(worker)).toMatchObject({ due: 0, released: 0 });   // 15 minutes have not passed
+    expect((await tdb.query(`select type from public.booking where id = $1`, [booking])).rows[0].type).toBe('solo_class');
+    await tdb.setNow('2026-12-01T03:16:00Z');
+    expect(await runHoldRelease(worker)).toMatchObject({ due: 1, released: 1, failed: 0 });
+    expect((await tdb.query(`select type, coach_id, status from public.booking where id = $1`, [booking])).rows[0]).toEqual({ type: 'court', coach_id: null, status: 'confirmed' });
+    expect((await tdb.query(`select status from public.booking_coach_add where order_id = $1`, [add])).rows[0].status).toBe('released');
+    expect(await handlerCalls()).toEqual([add]);   // the registered handlers ran, once
+    expect(await runHoldRelease(worker)).toMatchObject({ due: 0 });
+  });
+
+  it('releases ordinary holds and add-a-coach holds in the same tick', async () => {
+    const { add } = await addedCoach();
+    const plain = await hold(A, COURT_A, P2, [20]);
+    await tdb.setNow('2026-12-01T03:16:00Z');
+    expect(await runHoldRelease(worker)).toMatchObject({ due: 2, released: 2, failed: 0 });
+    expect((await statuses(plain))[0]!.status).toBe('released');
+    expect((await tdb.query(`select status from public.booking_coach_add where order_id = $1`, [add])).rows[0].status).toBe('released');
+  });
+});
