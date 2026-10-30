@@ -1,5 +1,5 @@
 {
-  "_note": "Proposed by FE-P for F02 (D81). Numbers to be assigned by Content; wording drafted, writers own it. Reused existing keys: P-0001 to P-0009 (C1), P-0327 and P-0328 (offline).",
+  "_note": "Proposed by BE-P for F02 (D51). Numbers to be assigned by Content; wording drafted, writers own it. Offline uses the existing P-0327 and P-0328. Error codes from the server map to these keys in the client: invalid_token and offline-free failures -> signin_failed. FE-P adds the language toggle labels and the not-found line; the client maps sign-in refusals to signin_failed and signin_account_inactive.",
   "en": {
     "P-new.signin_failed": "We could not sign you in with LINE. Please try again.",
     "P-new.signin_account_inactive": "This account is not active. Please contact the club.",
@@ -21,7 +21,9 @@
     "P-new.lang_en": "EN",
     "P-new.sign_in_failed": "We could not sign you in with LINE. Nothing was booked or charged.",
     "P-new.account_inactive": "This account is no longer active at this club. Please contact the club.",
-    "P-new.page_not_found": "This page is not available."
+    "P-new.page_not_found": "This page is not available.",
+    "P-new.language_toggle_th": "ไทย",
+    "P-new.language_toggle_en": "EN"
   },
   "th": {
     "P-new.signin_failed": "เข้าสู่ระบบด้วย LINE ไม่สำเร็จ กรุณาลองอีกครั้ง",
@@ -44,6 +46,8 @@
     "P-new.lang_en": "EN",
     "P-new.sign_in_failed": "เข้าสู่ระบบด้วย LINE ไม่สำเร็จ ยังไม่มีการจองหรือเรียกเก็บเงิน",
     "P-new.account_inactive": "บัญชีนี้ไม่ได้ใช้งานที่สนามนี้แล้ว กรุณาติดต่อสนาม",
-    "P-new.page_not_found": "ไม่พบหน้านี้"
+    "P-new.page_not_found": "ไม่พบหน้านี้",
+    "P-new.language_toggle_th": "ไทย",
+    "P-new.language_toggle_en": "EN"
   }
 }

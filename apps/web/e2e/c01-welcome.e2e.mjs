@@ -1,5 +1,5 @@
 // F02-T19 C1 Welcome: AUTH-01-AC6, LINE-01-AC1, AC2, AC6, AUTH-01-AC12, CC-5.
-// Run: node --test 'apps/web/e2e/*.e2e.mjs'  (Chromium is pre-installed).
+// Run: node --test --test-concurrency=1 'apps/web/e2e/*.e2e.mjs'  (one next dev at a time; Chromium is pre-installed).
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import { join } from 'node:path';

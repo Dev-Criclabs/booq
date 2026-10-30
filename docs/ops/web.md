@@ -1,0 +1,39 @@
+# Web app: settings, client IP and rate limiting
+
+Proposal, 30 Oct 2026, from the Orchestrator's request about the sign-in work in `apps/web`. The settings below have **no defaults in code**. The values are proposals, not rules: where a number comes from Security's threat model (`docs/security/threat-model.md` section 6, decision D61, "Security sets the value"), Security and the owner approve it. Re-tune after the 7 Dec test with real numbers.
+
+## Settings for `apps/web`
+
+| Variable | Proposed value | Source and status |
+|---|---|---|
+| `DATABASE_URL` | connection for role `booq_app` | Set per deployment (`secrets.md`) |
+| `WEB_SESSION_SECONDS` | `43200` (12 hours) | F02 design assumption A-14, "absolute 12 hours", which is still open (F02 Q8). Needs the owner's answer |
+| `WEB_MAX_BODY_BYTES` | `65536` (64 KiB) | Security proposes 64 KiB for webhook bodies (`webhook_max_body_bytes`); I reuse it for JSON routes because nothing larger is expected. Imports have their own limits (`import_max_bytes`, 2 MiB proposed) and are not this setting. Security to confirm |
+| `WEB_SIGNIN_RATE_LIMIT` | `10` | Security's `rate.auth_session_per_ip_per_min` = 10: "sign-ins are rare" |
+| `WEB_SIGNIN_RATE_WINDOW_SECONDS` | `60` | Same row; the pair means 10 attempts per IP per minute |
+
+**The rate pair is required before launch.** The code treats it as optional, and with both unset there is no limit. That is acceptable on a developer machine and not acceptable in production. Proposed rule for the launch checklist: **both must be set on the staging and production web deployments before the 7 Dec test** (it is a P4 item, like the pay-tap limit, D61), and CI strict mode should fail a deployment config check that finds only one of the pair. DevOps sets them in the hosting environment once Security approves the numbers.
+
+## Which client IP is read
+
+The code reads `x-real-ip`, else the first `x-forwarded-for` entry. On Vercel:
+
+- Vercel's [request headers page](https://vercel.com/docs/headers/request-headers) lists `x-real-ip` and `x-forwarded-for` as the client's public IP, and says `x-forwarded-for` is overwritten rather than forwarded, to prevent spoofing. Vercel's own [honeypot guide](https://vercel.com/kb/guide/how-to-build-a-honeypot-with-vercel-web-application-firewall) says Vercel sets `X-Forwarded-For` from the TCP connection and discards any incoming value, so the **leftmost entry is the real client when Vercel is the outermost edge**.
+- **It stops being true if anything sits in front of Vercel** (another CDN, a proxy, a Cloudflare record in proxy mode). Vercel then sees the proxy's address, every player looks like one IP, and the limit would block everyone at once or no one. Rule: **Vercel stays the outermost layer** for the web app, or the code is changed together with the change.
+- The docs I found do not say outright whether `x-real-ip` is overwritten the same way as `x-forwarded-for`. **Not confirmed.** The check is easy once a staging deployment exists: send a request that carries forged `x-real-ip` and `x-forwarded-for` values and see what the route receives. I will do it in the staging spike and write the result here. Until then, `x-forwarded-for` (leftmost) is the one the documents support, and the code's preference for `x-real-ip` first should be checked by that test.
+- If the app is ever hosted somewhere else (the self-hosted fallback in `plan.md` R1), these headers are spoofable unless the front proxy overwrites them. The reading code should take the trusted header name from configuration then.
+
+## The counter is per process
+
+On Vercel the web app runs as serverless functions: many short-lived instances, each with its own memory. **A per-process counter does not limit anything there**; each instance counts only its own requests and starts again from zero on a cold start. A single instance is only true on one long-lived container, so "one instance is fine for Hunter" is not an option on the recommended host.
+
+Proposal, in two layers:
+1. **At the edge, for volume.** Use the host's own firewall rate limit rule on the sign-in and public read routes (Security's `rate.public_read_per_ip_per_min` = 120 and the sign-in numbers above). I have not checked which plan includes rate limiting rules on Vercel. **To confirm** when the paid team plan exists. This stops floods before they reach a function.
+2. **In the app, a shared counter in Postgres**, because Postgres is already there and sign-in is rare. A small table keyed by a window start and a **keyed hash of the IP** (an IP address is personal data under the PDPA, so store a hash, not the address), incremented with one upsert per attempt, **before** the call to LINE's verify endpoint (Security: "reject bad tokens before the LINE verify call"). Rows older than the window are removed by the housekeeping task. Cost: one cheap write per sign-in attempt; a flood still costs a write per request, which is why layer 1 matters. This is BE-P's change (a migration and a small module), and Security reviews it.
+3. Not proposed: Redis or a similar store. It is another account and another processor that would hold IP-derived data, for a load Hunter does not have. Reconsider if the app moves to many clubs.
+
+The same shared counter can serve the pay-tap limit (`pay_tap_limit_count`), which F03 already puts in the database.
+
+## Error handling
+
+A rejected attempt answers one fixed error code and writes no player record, and no limit event goes to the logs with the IP in clear text (log scrubbing, Security LINE-2). Alerts count rejections per window, not per request (one alert per window, as for bad webhook signatures).
