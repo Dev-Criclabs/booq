@@ -43,7 +43,8 @@ export interface QuoteView extends Quote {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CODE = /^[A-Z0-9][A-Z0-9_-]{0,63}$/;
-// Input sanity only, not a booking rule: F03's reserve_court applies the club's hour limits at Pay.
+// These two only guard the size of a request. They are not club rules or settings: the club's own hour
+// limits are applied by F03's reserve_court at Pay.
 const MAX_HOURS = 24;
 const MAX_ADD_ONS = 50;
 
@@ -120,6 +121,13 @@ export async function quoteFor(tx: Tx, customerId: string, req: QuoteRequest, so
   const terms = await sources.clubTerms(tx);
 
   let coach: PricingInput['selection']['coach'] = null;
+  if (req.coachId !== null && req.coachSource === 'checkout') {
+    // A coach picked on C10 needs the club's switch; a solo class through Classes does not (F01 feature keys).
+    const on = one(await tx.query<{ enabled: boolean }>(
+      `select enabled from public.club_feature where club_id = app.club_id() and feature_key = 'coach_add_at_checkout'`,
+    ));
+    if (!on?.enabled) throw new CheckoutError('coach_at_checkout_disabled');
+  }
   if (req.coachId !== null) {
     const found = await sources.coach(tx, req.coachId);
     if (!found) throw new CheckoutError('coach_price_not_set');

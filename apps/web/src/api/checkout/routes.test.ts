@@ -66,6 +66,7 @@ beforeEach(async () => {
     await c.query(`insert into public.add_on (club_id, id, name_th, name_en, price_satang) values ($1,$2,'น้ำ','Water',2000), ($1,$3,'ลูกเทนนิส (ชุด 3 ลูก)','Balls (Set of 3 balls)',null)`, [A, WATER, BALLS]);
     await c.query(`insert into public.price_group (club_id, id, name_th, name_en, rule) values ($1,$2,'ผู้ใหญ่','Adult','{"min_age":18}')`, [B, 'a0a0a0a0-0000-4000-8000-0000000000b1']);
     await c.query(`insert into public.add_on (club_id, id, name_th, name_en, price_satang) values ($1,$2,'น้ำ','Water',1)`, [B, B_ADDON]);
+    await c.query(`insert into public.club_feature (club_id, feature_key, enabled) values ($1,'coach_add_at_checkout',true)`, [A]);
     await c.query('commit');
   } finally {
     c.release();
@@ -106,6 +107,11 @@ describe('POST /checkout/quote', () => {
   it('a solo class: Adult 130000, Student 120000 (R2-AC1, AC2)', async () => {
     expect((await okBody(body({ coachId: COACH }))).totalSatang).toBe(130000);
     expect((await okBody(body({ coachId: COACH }), { ...me, userId: KID })).totalSatang).toBe(120000);
+  });
+
+  it('a coach at checkout needs the club switch coach_add_at_checkout', async () => {
+    await tdb.query(`update public.club_feature set enabled = false where club_id = $1`, [A]);
+    expect(await ask(body({ coachId: COACH }))).toEqual({ ok: false, status: 409, code: 'coach_at_checkout_disabled' });
   });
 
   it('an unset coach price cannot be picked, nor an unknown coach (R2-AC3)', async () => {

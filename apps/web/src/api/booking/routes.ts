@@ -1,4 +1,4 @@
-import { route, RouteError, type Route, type RouteContext } from '@booq/auth';
+import { route, RouteError, type Route, type RouteContext, type RouteParams } from '@booq/auth';
 import type { ClubContext, Db, Tx } from '@booq/db';
 import {
   BookingError,
@@ -38,7 +38,13 @@ const STATUS: Record<BookingErrorCode, number> = {
   forbidden: 403,
 };
 // A refusal raised by a booking function in the database (BK001, message = the code; design 4.2).
-const DB_STATUS: Record<string, number> = { booking_not_found: 404, forbidden: 403, sign_in_required: 401 };
+const DB_STATUS: Record<string, number> = { booking_not_found: 404, forbidden: 403, sign_in_required: 401, too_many_attempts: 429 };
+// The refusal's detail, as the plain value the client puts in its text ({hours}, {seconds}) or uses to pick it ({by}).
+const DB_PARAMS: Record<string, (detail: string) => RouteParams> = {
+  slot_unavailable: (d) => ({ by: d }),
+  limit_reached: (d) => ({ hours: Number(d) }),
+  too_many_attempts: (d) => ({ seconds: Number(d) }),
+};
 const KEY = /^[\x21-\x7e]{1,200}$/;
 const NO_STORE = { 'Cache-Control': 'no-store' } as const;
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -51,8 +57,11 @@ async function inTx<T>(db: Db, c: ClubContext, fn: (tx: Tx) => Promise<T>): Prom
     return await db.withClubTx(c, fn);
   } catch (e) {
     if (e instanceof BookingError) throw new RouteError(STATUS[e.code], e.code);
-    const err = e as { code?: string; message?: string };
-    if (err.code === 'BK001' && err.message) throw new RouteError(DB_STATUS[err.message] ?? 409, err.message);
+    const err = e as { code?: string; message?: string; detail?: string };
+    if (err.code === 'BK001' && err.message) {
+      const params = err.detail ? DB_PARAMS[err.message]?.(err.detail) : undefined;
+      throw new RouteError(DB_STATUS[err.message] ?? 409, err.message, params);
+    }
     throw e;
   }
 }
