@@ -130,7 +130,7 @@ Engineers are BOOQ staff, so reading club data breaks the promise that BOOQ neve
 ## 17. Create the first BOOQ admin (D163) — placeholder, the script has not landed
 Needed once per environment, before the 7 Dec readiness check, because no teammate can be invited until an admin exists. The script is BE-P's and was not on any branch when I checked (30 Oct). **Do not write the command here until it exists; fill in steps 2 to 4 from its own documentation.**
 
-Known from the decision (D163): a one-off operator script that DevOps runs. It creates the first admin and prints **one enrolment link**. It **refuses once any admin exists**, and the link life is an **argument** (so `console_enrolment_ttl_hours` does not have to be set first; confirm that).
+Known from the decision (D163): a one-off operator script that DevOps runs. It creates the first admin and prints **one enrolment link**. It **refuses once any admin exists**, and the link life is an **argument** (confirmed by the orchestrator: it covers that one bootstrap link, so `console_enrolment_ttl_hours` does not have to be set before the first run; the new admin sets it in the console before inviting anyone else).
 
 1. Decide who the first admin is (a named person, with the hardware key or authenticator they will enrol) and write it in the ops record. The user approves the name.
 2. *(to fill in)* Which credential the script runs with and where it runs. It must not use a personal laptop with other keys, and the credential is not left behind afterwards.
