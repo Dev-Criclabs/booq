@@ -10,4 +10,5 @@ export const tables: Fragment = {
   'public.idempotency_key': { class: 'D' },          // F03-T11 (0215)
   'app.move_handlers': { class: 'infra' },           // F03-T15 (0219)
   'app.coach_rules_move_hook': { class: 'infra' },   // F03-T31 (0227)
+  'public.pay_tap': { class: 'D' },                  // F03-T12 (0228); written only by reserve_court
 };
