@@ -93,6 +93,35 @@ describe('Supabase REST roles get nothing (decision R3, FA 4.1)', () => {
   });
 });
 
+describe('anon and authenticated hold no privilege on any object (review SR-06)', () => {
+  it('no table, view, sequence, schema or BOOQ function is reachable by either role', async () => {
+    const db = await track(createTestDatabase());
+    const rels = await db.query(
+      "select c.oid, c.relkind, n.nspname || '.' || c.relname as name from pg_class c join pg_namespace n on n.oid = c.relnamespace where c.relkind in ('r','v','m','p','S') and n.nspname not in ('pg_catalog','information_schema','pg_toast')",
+    );
+    const fns = await db.query(
+      "select p.oid, n.nspname || '.' || p.proname as name from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname in ('app','platform','audit')",
+    );
+    const schemas = await db.query("select nspname from pg_namespace where nspname not like 'pg\\_%' and nspname <> 'information_schema'");
+    const leaks: string[] = [];
+    for (const role of ['anon', 'authenticated']) {
+      for (const r of rels.rows) {
+        const sql = r.relkind === 'S'
+          ? "select has_sequence_privilege($1, $2::oid, 'usage') or has_sequence_privilege($1, $2::oid, 'select') as ok"
+          : "select has_table_privilege($1, $2::oid, 'select') or has_table_privilege($1, $2::oid, 'insert') or has_table_privilege($1, $2::oid, 'update') or has_table_privilege($1, $2::oid, 'delete') as ok";
+        if ((await db.query(sql, [role, r.oid])).rows[0].ok) leaks.push(`${role} ${r.name}`);
+      }
+      for (const f of fns.rows) {
+        if ((await db.query("select has_function_privilege($1, $2::oid, 'execute') as ok", [role, f.oid])).rows[0].ok) leaks.push(`${role} ${f.name}()`);
+      }
+      for (const n of schemas.rows) {
+        if ((await db.query("select has_schema_privilege($1, $2, 'usage') or has_schema_privilege($1, $2, 'create') as ok", [role, n.nspname])).rows[0].ok) leaks.push(`${role} schema ${n.nspname}`);
+      }
+    }
+    expect(leaks).toEqual([]);
+  });
+});
+
 describe('request context helpers (CC-1: fail closed)', () => {
   it('return null and an empty role set when no context is set', async () => {
     const db = await track(createTestDatabase());

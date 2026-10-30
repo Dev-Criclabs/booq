@@ -1,8 +1,8 @@
 # F01 Platform foundation · Requirements
 
-Status: **Approved 30 Oct 2026** (gate 1). Recorded in `docs/decisions.md`, rounds 4 and 7. Revision 4 (30 Oct 2026) applies D32 to D37 where they touch F01 (Beam key sets, test data excluded from reports, encryption, Accountant visibility). Changes after approval go PRD, then hand-off, then this file. No design or code follows until the design gate.
+Status: **Approved 30 Oct 2026** (gate 1). Recorded in `docs/decisions.md`, rounds 4 and 7. Revision 5 (30 Oct 2026) applies D32 to D37 (Beam key sets, test data excluded from reports, encryption, Accountant visibility) and D100 to D123 where they touch F01 (purge scope, audit history, Draft and Testing sign in, guest reads, anonymising, imported player claim, receipt year, pause actions, Go live checks, roles, owner invite, second factor reset), and the Reviewer's findings F01-8, F01-14, F01-16, F01-17, F01-18, F01-19, F01-21 (`docs/review/spec-consistency.md`). Changes after approval go PRD, then hand-off, then this file. No design or code follows until the design gate.
 
-Revision history: v1 draft, v2 applied D1 to D15, v3 applies D18 to D31, v4 applies D32 to D37. ROLE-01, ROLE-02 and PLAT-07 were proposed IDs in v2 and are now in the hand-off (Roles table and Roles, platform console and data protection). The ledger reason `import` is in the hand-off data model. Decisions are cited as D1 to D31.
+Revision history: v1 draft, v2 applied D1 to D15, v3 applies D18 to D31, v4 applies D32 to D37, v5 applies D100 to D123 and the Reviewer's findings. ROLE-01, ROLE-02 and PLAT-07 are in the hand-off (no longer proposed). ROLE-01, ROLE-02 and PLAT-07 were proposed IDs in v2 and are now in the hand-off (Roles table and Roles, platform console and data protection). The ledger reason `import` is in the hand-off data model. Decisions are cited as D1 to D31.
 
 Feature: F01 Platform foundation (clubs, locations, resources, roles, settings, audit). Depends on: nothing built yet. There is no earlier Booq code or database, so Hunter is the first real build and the core is created with it (decisions log, round 2b; hand-off Overview). Requirement IDs: PLAT-01 to PLAT-06, PDPA-01, plus ROLE-01, ROLE-02, PLAT-07 (in the hand-off since 30 Oct 2026). Wave 1.
 
@@ -83,6 +83,8 @@ Admin console pages by role, from PRD Coach portal and admin console (front desk
 - ROLE-01-AC4. Given an owner or staff member who also plays, when they book as a player, then they pay as a player (same price, same hold, same rules). Staff rights do not skip payment or the hold.
 - ROLE-01-AC5. Given a role added to or removed from a person, when it is saved, then it is audited (PLAT-04) with the old and new set. Roles are assigned by the owner only (A17).
 - ROLE-01-AC6. Given a BOOQ role, when a person holds one, then it lives on the BOOQ account (ROLE-02) and is never mixed into a club role set. A BOOQ staff member who also plays at a club has a separate club player record signed in with LINE.
+- ROLE-01-AC7. Given every club person (owner, staff, coach), when they have a record, then they also hold the Player role, so they can book and edit their own profile (D115, Reviewer F02-4).
+- ROLE-01-AC8. Given the Accountant, when they open settings, then they read business and tax settings only; they see no other settings (D115). Only the Owner marks a coach payout paid (D115).
 
 **Meets.** PDPA: roles decide which personal data a person sees; the union rule keeps it to the minimum. No double booking: the person's coach time and court time are separate resources for F03's uniqueness rule; whether one person may be booked in two places at once is not in the spec (Q-A). Club scope: the set belongs to one club. TEXT: A17 role names use A keys (Thai and English).
 
@@ -100,6 +102,8 @@ Admin console pages by role, from PRD Coach portal and admin console (front desk
 - ROLE-02-AC4. Given a BOOQ staff member removed or deactivated in P6, when they try to sign in, then it is refused and any open session ends.
 - ROLE-02-AC5. Given every BOOQ sign in, failed sign in, second factor reset and teammate invite, when it happens, then it is written to P6 (PLAT-04).
 - ROLE-02-AC6. Given a teammate invited in P6, when they accept, then they set up their own email sign in and second factor. The method (code app, SMS, other) is Q-C.
+- ROLE-02-AC7. Given a BOOQ staff member's second factor must be reset, when it is reset, then it is done only by another platform admin and logged in P6 (D123).
+- ROLE-02-AC8. Given the owner invite, when P2 step 1 saves the owner's LINE ID, then the invite is bound to that LINE ID and is single use (D122).
 
 **Meets.** PDPA: BOOQ staff are processor staff; the second factor limits access to the console. No double booking: not relevant. Club scope: BOOQ accounts have no club ID; access to one club is by assignment and role (PLAT-02). TEXT: P6 and the BOOQ sign in screen are X keys, English only (TEXT-05); the sign in screen needs new X keys (listed below).
 
@@ -133,8 +137,10 @@ Open: see Q-A to Q-C.
 - PLAT-01-AC1. Given a new club created in P2, when it is saved, then its status is Draft, and every later P2 save keeps it Draft.
 - PLAT-01-AC2. Given a Draft club, when steps 1 to 8 of the setup are not all done, then the server refuses the change to Testing and P3 shows what is missing and who owes it (PRD Platform flows: Flow J). Both a specialist (assigned club) and a platform admin may make this change (D15).
 - PLAT-01-AC3. Given a Testing club, when any P4 Go live check is not passed, then the server refuses the change to Live, whatever the screen shows. When every check is passed and BOOQ staff press Go live, then the status is Live and the change is written to the P6 log.
+- PLAT-01-AC12. Given the Go live checklist, when P4 lists it, then beyond the P4 checks it requires: the owner has signed in, one completed test booking, the per player pay tap limit is set, and the Beam key swap with its smoke test is done (D108, D32). Go live is refused until each is ticked.
 - PLAT-01-AC4. Given a club on a blank template, when it has no product, or any rule is unset, then Go live is refused (PRD P5). A product with a price counts; the exact rule list is Q7.
 - PLAT-01-AC5. Given a Draft or Testing club, when a player opens the player app, then the club is not visible to players (P4 "Players can't see the club yet"). In Testing, only the testers can sign in: the club owner and named BOOQ testers (D4, PLAT-07).
+- PLAT-01-AC11. Given a Draft or Testing club, when someone who is not signed in calls it, then the club serves only a minimal sign in config (name, language, status, LIFF id). The club admits the owner role and testers; the owner invite stays valid for return visits and testers get long lived invites (D102).
 - PLAT-01-AC6. Given a Testing club, when it goes Live, then all test data is purged (P4 "Test bookings will be cleared, deleted at Go live") and the club's real receipts start at 000001 (D4; PLAT-07).
 - PLAT-01-AC7. Given a club of any status, when any status change is made, then it records who, when, old status, new status and, for Paused, the reason (PLAT-04).
 - PLAT-01-AC8. Given an onboarding specialist, when they request a status change on a club that is not assigned to them, or try to pause or resume any club, then the server refuses. A platform admin may pause and resume any club (D15).
@@ -173,6 +179,7 @@ Note Gaps A2: H-P4-Launch lists "fake slip" tests, which belong to slip clubs. H
 - PLAT-02-AC10. Given BOOQ staff in P1 or P3, when they look at a club, then they may see aggregate counts (for example bookings in the last 30 days, as P1 shows) and the owner's contact details (name, phone, LINE and email, as entered in P2 step 1). They never see an individual booking, player, payment, slip, receipt, wallet or report (D2).
 - PLAT-02-AC12. Given the support view, when it lists pages, then it holds exactly: courts and hours, products and pricing (with add-ons), LINE, payment connections, settings. It does not hold staff, coaches, closures or promo codes (D27).
 - PLAT-02-AC13. Given BOOQ staff request a record of a club they have no access to, or a record outside the setup only view, when the server answers, then it returns 404 (not found), never a refusal that confirms the record exists (D27).
+- PLAT-02-AC14. Given a guest (not signed in), when any route answers them, then it reads only named public columns or routes; owner contact details and merchant ids are never readable by a guest (D103).
 - PLAT-02-AC11. Given an aggregate count, when it is produced, then it is computed on the server as a number only, with no list of rows behind it and no way to drill down (D2). Which counts exist is limited to those on P1 and P3 (Q-D).
 
 **Meets.**
@@ -205,6 +212,7 @@ Note Gaps A2: H-P4-Launch lists "fake slip" tests, which belong to slip clubs. H
 - PLAT-03-AC9. Given a payment already started before the pause, when it completes after the pause begins, then it is handled by the PAY-03 rules (F05), not refused. Stated here only so F05 and F01 agree; the spec does not say. See Q12.
 - PLAT-03-AC10. Given any pause or resume, then it is written to the P6 log and the club's audit log (PLAT-04).
 - PLAT-03-AC11. Given a Paused club, when a platform admin resumes it, then new booking and buying turn back on, the pause banner leaves the club admin, the owner gets a LINE message, and the pause length (start to resume) is used for the expiry shift in AC7 (D15).
+- PLAT-03-AC12. Given a Paused club, when the owner or staff manage existing bookings, then they may move, add a coach, cancel and mark no show (D107). A late payment is not used to confirm a booking in a Paused club and the whole value goes to the wallet (D107, D109).
 
 **Meets.**
 
@@ -231,6 +239,7 @@ Note Gaps A2: H-P4-Launch lists "fake slip" tests, which belong to slip clubs. H
 - PLAT-04-AC4. Given a change made by BOOQ staff, when it is saved, then the entry names the BOOQ staff member and appears in P6 and in the club's own audit log (PRD Support access).
 - PLAT-04-AC5. Given any platform action (create club, status change, support view visit, pause, test run, export, invite), when it happens, then a P6 entry is written with club, who and what.
 - PLAT-04-AC6. Given an audit entry, or a credit or wallet ledger row, when anyone tries to edit or delete it, then the server refuses and the database rejects it too (the app has no update or delete right). Both are append only (D28; H-P6-Team-audit "Nothing here can be edited or deleted"). A correction is a new row. The same holds for the club log. The one exception is the Go live purge of test flagged data (PLAT-07-AC3).
+- PLAT-04-AC12. Given a deleted player is anonymised, when it is done, then personal fields in audit rows are replaced by a placeholder and nothing else in an audit row can change (D104). This is the second named exception to append only, after the Go live purge.
 - PLAT-04-AC7. Given an owner, when they open the audit log, then they can search and filter it by staff, record and date (PRD A17; screen is F11).
 - PLAT-04-AC8. Given a front desk, accountant or coach, when they request the audit log, then the server refuses (A17 is owner only).
 - PLAT-04-AC9. Given the Staff and audit log, when it lists an entry about a player, then it shows what the club needs to run the business; BOOQ staff cannot read it (PLAT-02-AC1).
@@ -275,6 +284,7 @@ Templates
 - PLAT-05-AC12. Given a platform admin or specialist, when they pick a template in P2 or A0, then the chosen template is recorded on the club and the copy is written to the audit log.
 - PLAT-05-AC13. Given the Tennis template, when it is loaded, then its prices equal the final offer in PRD Pricing and packages (court ฿500, 10 hour bundle ฿4,500 for 3 months, 20 hour bundle ฿8,000 for 5 months, solo and group single prices and 8 packs for Adult and Student), stored as integer satang. Values are copied from the spec; none are added.
 - PLAT-05-AC15. Given the Tennis template, when it is loaded, then it carries the PRD default rules: payment hold 15 minutes (the owner may pick 10, 15 or 20), waitlist claim time 30 minutes, no waitlist offers within 2 hours of start, coach rest cap 6 hours in a row, group classes 4 to 6 players (D8). Booking length is fixed at 60 minutes for every club and is not a template value.
+- PLAT-05-AC16. Given the Tennis template, when it is loaded, then it also carries the other values the PRD and decisions state: booking window 30 days, cancel window 12 hours, package QR time 15 minutes (D74), package expiry reminders 14 and 3 days, VAT off (PRD Club facts, Payments). The Blank template leaves all of these empty and Go live needs them set (F01-8).
 - PLAT-05-AC14. Given the template actions on H-P5 ("New template", "Duplicate", "Edit") when F01 is built, then whether those actions exist is decided in Q5.
 
 **Meets.**
@@ -305,7 +315,7 @@ CSV import (owner, in A0 step 7)
 - PLAT-06-AC4. Given a packages file, when it is imported, then each row creates a customer package with credits total, purchase date and expiry date, and ledger rows with reason `import` for credits already used. Whether the file's expiry date is kept or recomputed from purchase date plus validity (PKG-02) is Q15.
 - PLAT-06-AC5. Given an import file, when a row has a club ID column or any other club's identifier, then it is ignored; the club ID is always the importing club (CC-1).
 - PLAT-06-AC6. Given an import, when it completes, then one audit entry records who, when, file name, counts of rows read, saved and rejected, and each created balance is audited (PLAT-04).
-- PLAT-06-AC7. Given an imported player, when that person first signs in with LINE, then they are matched to the imported record on phone number (D13) and then asked for consent as a new player (PDPA-01-AC2). A phone that matches two imported records, or none, is not matched automatically; what happens then is Q16. Duplicate phones at one club are flagged (D11).
+- PLAT-06-AC7. Given an imported player, when someone signs in with LINE and their typed phone matches an imported record, then they are linked only after the front desk confirms the claim in A6; a sign in that matches no record becomes a new player (D105, D13). Duplicate phones at one club are flagged (D11).
 - PLAT-06-AC8. Given a front desk, accountant, coach or BOOQ staff, when they try to import, then the server refuses. Import is for the owner only (D13), including in Draft and Testing support view.
 - PLAT-06-AC9. Given a CSV file, when it holds amounts, then amounts are read as THB and stored as integer satang, and dates are read as Asia/Bangkok and shown with the international year.
 - PLAT-06-AC10. Given an uploaded file, when the import is finished or cancelled, then the raw file is not kept longer than the import needs (PDPA data minimisation; retention is Q13).
@@ -341,7 +351,8 @@ Data export
 
 - PLAT-07-AC1. Given a club in Testing, when a booking, order, payment, receipt, ledger movement or player record is made, then it is flagged as test data at creation, on the server, and the flag cannot be removed.
 - PLAT-07-AC2. Given a test receipt, when it is issued, then it uses its own number series that is clearly not a legal receipt (marked as a test on screen and in the PDF) and never uses the club's real sequence (HTC‑2027‑000001 and on). The series name and format are for design.
-- PLAT-07-AC3. Given a club goes Live, when Go live is confirmed, then all test flagged data of that club is purged in one step, including test players, test ledgers and the test receipt series, and the real receipt sequence starts at 000001 (D4; RCPT-01 unbroken sequence stays true for real receipts).
+- PLAT-07-AC3. Given a club goes Live, when Go live is confirmed, then all test flagged data of that club is purged in one step, including test players, test ledgers and the test receipt series, and the real receipt sequence starts at 000001 of the club's series for that Bangkok year (D4, D106; receipt numbers run per club per Bangkok year and the prefix is set in P2 step 1 and required before Go live).
+- PLAT-07-AC12. Given the Go live purge, when it runs, then it removes only rows made by a tester kind; owner, staff and coach accounts are never test rows and survive Go live (D100). Audit entries are not flagged on their own: only audit entries about test data are purged, and a setting changed in Testing keeps its audit entry after Go live (D101).
 - PLAT-07-AC4. Given the purge, when it runs, then it deletes only rows with the test flag and only for that club ID. If any row cannot be purged, Go live does not complete and the status stays Testing.
 - PLAT-07-AC5. Given a club in Testing, when someone signs in to the player app, then only the club owner and named BOOQ testers can. The tester list is set in P4 or P3 by BOOQ staff and every change is written to P6 (D4). A BOOQ tester signs in to the player app with LINE as a test player, not with the BOOQ account (ROLE-02-AC2).
 - PLAT-07-AC6. Given BOOQ staff in P4, when they look at test results, then they see pass or fail per check only (D4). They never see the test bookings, test players, test payments or test receipts themselves. The owner sees them in the club admin.
@@ -423,13 +434,13 @@ No key is added by this draft.
 
 ## Open questions
 
-Answered questions are removed (D1 to D15 answered the old Q2, Q3, Q6, Q8, Q14, Q17, Q19, Q24, Q28 and parts of Q1, Q4, Q15, Q16, Q23, Q26; D27 answered Q9 and Q10). Numbers are kept so earlier references hold. New questions are Q-A to Q-E.
+Answered questions are removed (D100 to D123 answered the Reviewer's questions on purge scope, Go live checks, pause actions, roles, receipt year and imported player claims; D1 to D15 answered the old Q2, Q3, Q6, Q8, Q14, Q17, Q19, Q24, Q28 and parts of Q1, Q4, Q15, Q16, Q23, Q26; D27 answered Q9 and Q10). Numbers are kept so earlier references hold. New questions are Q-A to Q-E.
 
 **Blocking approval of F01**
 
 1. **Where the owner downloads the club export (PLAT-06).** Decided: the owner downloads it and BOOQ staff can only start it (D14). Where does the owner find it (A16 button, a link sent in LINE), how long does the link live, and may the owner also start it without BOOQ?
 5. **Feature switches and the template screen.** Which switches exist in v1? The spec says "feature switches per club" but names none. Candidates from the docs are payment option, slip checking and backup mode (F16), coach add at checkout. Should P5 have New template, Duplicate and Edit in v1, or only the Tennis and Blank templates?
-7. **Go live checks (PLAT-01, PLAT-05).** BOOK-05 says an empty max future court hours means no limit, but P5 says Go live is blocked until "every rule is set". With D8, TBD values stay empty settings: which rules must be set before Go live (the full list), and may Hunter go live with the TBD settings still empty? For a Beam club, P4 still lists fake slip tests (Gaps A2): what are the Beam tests?
+7. **Go live and empty settings (PLAT-01, PLAT-05).** D108 adds the Go live checks beyond P4. Still open: BOOK-05 says an empty max future court hours means no limit, but P5 says Go live is blocked until "every rule is set". Which settings must be set before Go live (the full list), and may Hunter go live with the TBD settings (add-on prices, referral reward, birthday discount, below minimum alert time, wallet expiry) still empty? For a Beam club, P4 still lists fake slip tests (Gaps A2): what are the Beam tests?
 
 **Needed before design**
 
@@ -453,7 +464,7 @@ Answered questions are removed (D1 to D15 answered the old Q2, Q3, Q6, Q8, Q14, 
 
 - **Q-A.** May one person be booked in two places at the same time (a coach who is also a player, D1)? The spec has no rule. If not, F03 needs one.
 - **Q-B.** Must a club always have at least one Owner? The spec is silent; a club with no owner has no one to approve changes. (Not yet written as a criterion.)
-- **Q-C.** BOOQ staff sign in (D3): which second factor (authenticator app, SMS, email code), how are lost factors reset, and is there a board for the sign in screen?
+- **Q-C.** BOOQ staff sign in (D3): which second factor (authenticator app, SMS, email code), and is there a board for the sign in screen? (Reset by another platform admin, logged in P6, is settled by D123.)
 - **Q-D.** Which aggregate counts may BOOQ staff see (D2)? P1 shows bookings in the last 30 days. Anything else?
 - **Q-E.** Test data in Testing (D4): what exactly marks a test receipt on the PDF, and is there a board for the tester list and the test receipt? (Exclusion from counts and reports is settled by D33.)
 

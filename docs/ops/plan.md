@@ -18,7 +18,7 @@ Dates: test with mock bookings **7 Dec 2026**, public booking **29 Dec 2026**, s
 | BOOQ staff never see players, bookings, payments, slips, receipts, wallets, reports | PRD, Roles | No ops dashboard or log may expose them. Section 5 |
 | All times Asia/Bangkok | PRD | Servers and CI stay UTC. App code converts. Jobs are scheduled with the zone stated |
 | Court grid and class schedule load under 2 s on 4G inside LINE | PRD Performance | Region choice, section 3 |
-| Test mode with mock bookings and fake slips for 7 Dec | PRD Quality | Staging holds only fake data. Section 2 |
+| Test mode with mock bookings for 7 Dec (Hunter has no slips; slip checking is F16, not for Hunter) | PRD Quality, D16 | The test runs on **production** with Hunter in Testing status (section 2). Staging is for development and QA only |
 | Each club has its own LINE OA, LIFF app, rich menu, and its own Beam merchant account | Hand-off | Credentials are per club. `secrets.md` |
 | The club pays its own LINE plan and Beam fees | PRD Platform foundation | Not a BOOQ cost line |
 
@@ -38,7 +38,7 @@ Rules:
 - Staging has its own LINE provider and test OA, LIFF app and Beam sandbox merchant (`accounts.md`). A test OA must never be the production OA.
 - Environment settings that differ (URLs, keys, LIFF IDs) are listed in `infra/env/.env.example`. The values live in the hosting provider and are never committed.
 - Club status (Draft, Testing, Live, Paused, PLAT-01) is a product feature and is separate from the environment. **Testing mode (D4):** test data is flagged, test bookings use their own non-legal receipt numbers, and the flagged data is purged at Go live so Hunter's real receipts start at 000001. See section 6a for what ops does around the purge.
-- **Settled (D16):** the 7 Dec test runs on production with Hunter in Testing status. So the production Supabase project, hosting, backups, monitoring, alerts and on call must be ready by **4 Dec**, not 21 Dec. Hunter's Beam sandbox keys and test LINE values sit in its Testing configuration and are swapped for live values at Go live (runbook 13). Staging stays for development and QA, with fake data only.
+- **Settled (D16):** the 7 Dec test runs on production with Hunter in Testing status. So the production Supabase project, hosting, backups, monitoring, alerts and on call must be ready by **4 Dec**, not 21 Dec. Hunter uses its **test Beam key set** (the Playground) while Testing and its **live set** after Go live; the live set is entered in the Go live window and checked by the smoke test (D32, D108, runbook 13). There is one LINE channel set per club and no test LINE configuration: test messages go through Hunter's real Official Account and count toward its monthly cap, so Hunter's real OA, LIFF app and a paid plan are needed **before 4 Dec** (D32). Staging stays for development and QA, with fake data only.
 - Database migrations are applied by CI/CD in this order: preview, staging, production. A migration reaches production only after it ran on staging. Migrations are forward only. A rollback is a new migration, or a restore (section 4).
 
 **Decision 1, hosting.** Supabase for Postgres is settled (D5). Still open for the Next.js host: **Vercel** (recommended, preview per branch is built in, paid team plan for a business product) or a container host in the same region. See `accounts.md`.
@@ -95,9 +95,9 @@ Principle: monitoring sees **system health and counts, never personal data**. Lo
 | **Server job failures** (hold expiry, reminders, package expiry, waitlist offers, birthday and referral jobs) | Each job writes a row to a `job_runs` heartbeat table and calls a heartbeat URL on success (dead man's switch). Job runner choice is the Architect's | A job fails, or has not reported within 2x its schedule. **Hold expiry** is the sharpest: a missed run leaves slots blocked | Page for hold expiry and reminders, warn for the rest |
 | Backlog of expired holds | Count of holds past their expiry time still marked held | More than 0 for 5 min | Page |
 | **LINE Messaging API token expiry or revocation** | Daily check per club: call LINE `GET /v2/bot/info` with the club's token. Also on every send: a 401 or 403 raises the alert | Any non-200 from the info call, or a 401 on a send. Also at 7 days before expiry if the token type has an expiry. Matches **LINE-06** (P1 alerts when the token fails) | Page (reminders and confirmations stop) |
-| LINE message quota | Daily call to LINE's message quota consumption endpoints per club | 80% and 95% of the plan. Free plan stops at 300, so staging and any club on Free must be watched | Warn then page. **Open:** behaviour at the cap is an undecided product question (`docs/canvas-gaps.md` section C), DevOps only alerts |
+| LINE message quota | Daily call to LINE's message quota consumption endpoints per club | **70%** of the plan (alert) and **80%** (reminders stop), as decided in LINE-07 and D17. Booking and payment messages are never blocked. Test messages count (D32). The free plan stops at 300 messages, so any club on Free must be watched | Warn at 70%, page at 80%. The thresholds are platform settings, not DevOps's; DevOps only wires the alert |
 | LINE send errors | Counter of non-2xx by status code, no content | Rate above 5% over 15 min | Warn |
-| **Beam callback failures** | Counters from the callback route: verified, bad signature, wrong amount, unknown order, late (PAY-03), processing error | Any processing error; bad signature above a small baseline (possible attack or key rotated); a payment created more than 20 min ago still without a callback (reconciliation job) | Page for errors, warn for the others |
+| **Beam callback failures** | Counters from the callback route, by key set: verified, bad signature, wrong amount, unknown charge, late (PAY-03), processing error, valid signature on the inactive key set | Any processing error. Every bad signature shows in P1 and the app raises one alert per time window (D75); the app, not ops, owns that rule. A payment created more than 20 minutes ago with no callback (the 20 minutes is an ops default, not a product rule) | Page for processing errors, warn for the rest |
 | Beam reconciliation | Nightly job compares paid orders with Beam's own report for the day, ties to the daily close (RCPT-03) | Mismatch | Page next morning |
 | Database | Supabase metrics: CPU, connections, disk, slow queries, replication lag if any | Disk over 80%, connections over 80% | Warn |
 | Backups | Job checks that yesterday's backup and the nightly dump exist and that the dump is not tiny | Missing | Page |
@@ -114,7 +114,12 @@ Status page: not for 7 Dec. Revisit after Hunter's soft launch.
 ## 6. Access and PDPA operations
 
 - Production database access is **not** given to BOOQ platform staff. Platform admins use the platform console, which exposes setup only (PLAT-02). **BOOQ staff sign in with email plus a second factor, separate from LINE (D3).** Setup is in section 6b. Per D2, the console may show aggregate counts (bookings in the last 30 days per club) and the owner's contact details, never individual bookings, players, payments, slips, receipts, wallets or reports. Monitoring follows the same limit. Engineers get production read access only through a break-glass procedure: a ticket, a reason, a time limit, and a log. The procedure and every use are written down.
-- The service role key never reaches a browser, a preview deployment, or an engineer laptop by default.
+- **No anon or service role key in any app environment.** The Supabase Data API, GraphQL and Realtime are switched off on the staging and production projects, and apps connect only through their own database role (`secrets.md`). A request with the anon key to the REST path must fail; the check is on the launch checklist (Security SR-06).
+- **Database owner access:** at most **two named people**, with hardware keys; the `booq_owner` password is not known to any person; migrations run through CI. **Hardware key or passkey** for the two or three people with production owner rights on GitHub, hosting and the database provider; a second factor for everyone else (Security OPS-4).
+- **Break-glass** to read club data in an incident: ticket, reason, second approver, 4 hour limit, record kept outside the database, the club owner told (runbook 16; Security SR-21). Provider access logs are reviewed monthly by a named person.
+- **Tamper evidence (by 21 Dec):** if the Architect builds the per-club hash chain on the audit table and ledgers (Security SR-21), a nightly job writes the latest hash per club to the backup bucket, and a restore verifies the chain.
+- **Backup bucket:** its access list has two names; the age private key that decrypts dumps is held by two named people outside the bucket.
+- **BOOQ people who are LINE admins of a club's Official Account, or have access to a club's Beam merchant, are listed per club** and removed after setup unless the club asks otherwise (Security R-13).
 - Row level security by club ID is the Architect's and Security's work. DevOps adds a CI step for **RLS tests** once the Security role supplies them (placeholder in `ci.yml` is the `test` script).
 - Data copy or delete on request (PDPA-01) is an application feature (F01 and the Security role). DevOps provides the runbook for the part that touches backups.
 - Logs: 30 days, no personal data. Audit entries (PLAT-04) live in the database, not in logs.
@@ -161,17 +166,17 @@ Repository settings to apply by the user (cannot be done from a file): protect `
 
 | By | Item | Needs |
 |---|---|---|
-| 6 Nov | Accounts created (`accounts.md`), repo settings applied | User |
+| 6 Nov | Accounts created (`accounts.md`), repo settings applied (protect `main`, secret scanning, `CI_STRICT`) | User |
 | 13 Nov | Supabase staging and preview projects, hosting project, preview deploy of the first Next.js skeleton | Accounts, the first code |
-| 20 Nov | Secrets store wired for per club LINE and Beam values. **Production** Supabase and hosting projects created (D16). LINE test OA, LIFF and Beam sandbox keys in staging | LINE and Beam accounts |
-| 27 Nov | Monitoring and alerts live on **production** and staging; restore drill 1 done on production into a scratch project | Production running |
-| 4 Dec | Freeze for the test: no deploys to production except fixes the user approves | |
-| **7 Dec** | End to end test with mock bookings | |
-| 4 Dec | Production ready for the test: Hunter in Testing status, backups confirmed, on call named, runbooks read | |
-| 21 Dec | Restore drill 2 (after the test data exists), PITR decision applied, go live checklist, named backup then test data purge (6a) | Beam production merchant for Hunter |
+| 20 Nov | Secrets store wired for per club LINE and Beam values. **Production** Supabase and hosting projects created (D16). Staging test provider and test OA, and Beam Playground keys, in staging | LINE and Beam accounts |
+| 27 Nov | **Hunter's real LINE provider, Official Account, LIFF app and a paid plan** in place, with the Playground key set in its Testing configuration (D32: test messages go through the real OA and count toward the cap). Monitoring and alerts live on **production** and staging | The club, the user |
+| 30 Nov to 3 Dec | **Restore drill 1** on production into a scratch project. Production holds only seed and setup data by then, so this proves the procedure and the timing, not the final data | Production running |
+| 4 Dec | **Production ready and frozen** for the test: Hunter in Testing status, backups confirmed, on call named, runbooks read. No deploys to production except fixes the user approves | |
+| **7 Dec** | End to end test with mock bookings on production | |
+| 21 Dec | **Restore drill 2** after test data exists (nightly dump, and point-in-time if bought). Go live checklist, then the Go live order of steps (runbook 13): named backup, live key set entered, smoke test, Go live with purge | Beam production merchant for Hunter |
 | **29 Dec** | Public booking | |
 
-The Beam production merchant and a paid LINE OA plan for Hunter are the long poles. They are the club's and the user's to arrange, so please start them first.
+Hunter's own LINE Official Account (with a paid plan) is needed before the test, because test messages count. Its Beam production merchant is needed by Go live. Both are the club's and the user's to arrange, so please start them first.
 
 ## 9. Decisions and open items for the user
 

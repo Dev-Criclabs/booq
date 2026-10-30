@@ -77,8 +77,10 @@ export interface DeliveryRecord {
   eventName: BeamEventName;
   chargeId: string;
   signingMode: SigningMode;
-  /** True when the payment was reported after the QR expiry, i.e. after the hold (D18, PAY-03). */
-  afterExpiry: boolean;
+  /** True when the payment was reported after the QR expiry. D80: the QR expires slightly BEFORE the hold ends, so this is not yet "late". */
+  afterQrExpiry: boolean;
+  /** True when the payment was reported after the hold ended. Only this is a late payment (PAY-02-AC2, D25, D126). Set when PayOptions.holdEndsAt is given. */
+  afterHoldEnd?: boolean;
   delivery: SignedDelivery;
   response?: DeliveryResponse;
   error?: string;

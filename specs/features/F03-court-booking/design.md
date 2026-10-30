@@ -87,7 +87,7 @@ FA §3 is the design. For F03 this means: every hour of a court booking (and the
 
 All checks run on the server inside the transaction. In order:
 
-1. **Context.** A signed in user (BOOK-03-AC2: a guest or signed out session is refused, F02 AUTH-01-AC3). The club's status: Live allows everyone; Testing allows testers only; Draft refuses; **Paused refuses everyone, staff included** (decision D60; the owner can still manage existing bookings: move, release and cancel); the refusal is `club_paused` or `club_not_available`.
+1. **Context.** A signed in user (BOOK-03-AC2: a guest or signed out session is refused, F02 AUTH-01-AC3). The club's status: Live allows everyone; Testing allows testers only; Draft refuses; **Paused refuses everyone, staff included** (decision D60); the owner and staff may still move, add a coach to, cancel and mark a no show on existing bookings (decision D107); the refusal is `club_paused` or `club_not_available`.
 1b. **Limit on repeated Pay taps (decision D61).** Before anything is locked, `reserve_court` counts the caller's recent hold-creating attempts (§4.8) and refuses with `too_many_attempts` when the platform limit is reached. A second tap that returns the existing hold (D47) is not an attempt.
 2. **Hold setting present.** An empty `hold_minutes` (Blank template) refuses payment holds with `hold_setting_unset` (BOOK-03-AC3); a booking that needs no payment (PAY-07) does not need it.
 3. **Selection shape (BOOK-01-AC1, AC2, AC11, BOOK-06).** One court, one or more hours, each on the hour in Bangkok, each exactly one hour, consecutive with no gap, all on the same Bangkok date. There is no separate maximum (D41); the selection is bounded by that day's opening hours.
@@ -103,10 +103,10 @@ Typed codes returned: `sign_in_required`, `club_paused`, `club_not_available`, `
 
 ### 4.3 The functions
 
-`app.reserve_court(order, customer, resource, start_hours[], coach, source, confirm_now, override_reason)` returns the order id, the booking ids and `hold_expires_at`.
+`app.reserve_court(order_id, resource_id, start_hours[], coach_id, override_reason)` returns the order id, the booking ids and `hold_expires_at`. **It is `SECURITY DEFINER` with a fixed search path (SR-07).** The player and coach roles have no direct `INSERT`, `UPDATE` or `DELETE` on `booking` or `occupancy`; these functions are the only write path, listed in `definer-functions.ts` and tested. Inside: the club comes from `app.club_id()` only; the customer is `app.user_id()` unless the caller holds owner or front desk, in which case the order's customer must belong to the club; `source` is derived from the caller's role; `override_reason` is accepted only from staff; **`confirm_now` is not a parameter**: the function reads the order and confirms only when the order's frozen amount due is zero (PAY-07) or a cash payment record exists; the status gate, the pay-tap check (§4.8) and the limit check run in the same function. `confirm_booking` and `release_hold` accept only an order of the caller's club; `reclaim_order` is callable only by the role the payment callback runs under, never by the player route.
 
-- `confirm_now = false` (a payment is due): bookings are `awaiting_payment`, `occupancy` rows are `held`, and `hold_expires_at = now() + hold_minutes` for every hour of the order (the same instant, so the whole order expires together). A **staff** booking that is awaiting payment holds the slot the same way for the same time (decision D43).
-- `confirm_now = true` (nothing left to pay, PAY-07, or staff cash): bookings are `confirmed` and `occupancy` rows `confirmed` in the same transaction; the slot is still checked and claimed (BOOK-03-AC9).
+- the frozen amount due is more than zero (a payment is due): bookings are `awaiting_payment`, `occupancy` rows are `held`, and `hold_expires_at = now() + hold_minutes` for every hour of the order (the same instant, so the whole order expires together). A **staff** booking that is awaiting payment holds the slot the same way for the same time (decision D43).
+- the frozen amount due is zero or a cash payment exists (nothing left to pay, PAY-07, or staff cash): bookings are `confirmed` and `occupancy` rows `confirmed` in the same transaction; the slot is still checked and claimed (BOOK-03-AC9).
 - **Second tap (decision D47, BOOK-03-AC15).** Before claiming, the function looks for the caller's own live `awaiting_payment` order with the identical selection (court, hours, coach). If found it returns that order and its original `hold_expires_at` and creates nothing, so a second tap, or a second device, gets the same hold and the same QR (F05 returns the stored QR for the payment). The `Idempotency-Key` header protects the exact same request in parallel; this lookup protects the same intent from a new request.
 - **Orders and receipts.** One `orders` row per call (D40). The receipt is one per order (F13).
 
@@ -300,7 +300,7 @@ Real Postgres, controllable clock (decision D30). The shared tests T1 to T15 of 
 | Id | Assumption |
 |---|---|
 | A-1 | Group class seats do not count toward the future court hours limit (D49 lists confirmed, bundle, solo and unpaid held hours) | Decided: D59.
-| A-2 | A Paused club refuses new holds from staff as well as players; the owner can still manage existing bookings. Decided: D60 |
+| A-2 | A Paused club refuses new holds from staff as well as players; the owner and staff may still move, add a coach to, cancel and mark a no show on existing bookings (decisions D60, D107) |
 | A-3 | There is no player route that holds a slot without Pay. A per-player limit on repeated Pay taps is a platform setting whose value Security sets (§4.8). Decided: D61 |
 | A-4 | The `orders` shell is created in F03 and extended by F04; F04's design must agree with its columns |
 | A-5 | Moving a booking sends a customer message through a new L key (the PRD front desk rules say the customer is messaged) |
@@ -314,3 +314,12 @@ Real Postgres, controllable clock (decision D30). The shared tests T1 to T15 of 
 ## 13. Not decided here
 
 F16's 60 minute backup hold (D52, F16 sets it); the court waitlist and its screens (F08, D44); pricing and the Pay route (F04); the late payment application (F05); closure creation and the player cancel sheet (F09). The wording of the new keys (writers, D51).
+
+
+## 14. Review amendments, 30 Oct 2026 (decisions D100 to D124)
+
+| Finding or decision | Change | Where |
+|---|---|---|
+| SR-07, D124 | Booking functions are `SECURITY DEFINER`; no direct writes by player or coach; customer from `app.user_id()`; `confirm_now` removed as a parameter; `reclaim_order` only from the payment path | §4.3 |
+| D107, D109 | Paused: owner and staff manage existing bookings; a late payment never confirms a booking in a Paused club | §4.2, FA §6.6 |
+| D110, D111 | Only staff override the future-hours limit with a logged reason; no running-hour or same-date rule is built | §4.4 |

@@ -41,6 +41,10 @@ export interface PayOptions {
   otherKeyBase64?: string;
   /** false = nothing was paid at Beam (an attacker just posts to the endpoint). Default true. */
   markPaid?: boolean;
+  /** false = the charge succeeds at Beam but no webhook is sent (D73: the callback never arrives). Default true. */
+  deliver?: boolean;
+  /** End of the hold, as the app set it. Beam does not know it; the fake records afterHoldEnd from it. */
+  holdEndsAt?: string;
 }
 
 /**
@@ -56,6 +60,8 @@ export class FakeBeam {
   private readonly idempotency = new Map<string, { chargeId: string; at: number }>();
   readonly deliveries: DeliveryRecord[] = [];
   readonly refundAttempts: Array<{ at: string; body?: unknown }> = [];
+  /** Every create-charge request body as received, for D76 (only the order reference may be sent). */
+  readonly createRequests: unknown[] = [];
 
   constructor(opts: FakeBeamOptions) {
     this.clock = opts.clock;
@@ -70,6 +76,7 @@ export class FakeBeam {
   createCharge(merchantId: string, req: CreateChargeRequest, idempotencyKey?: string): BeamCharge {
     if (!(merchantId in this.merchants)) throw new Error(`FakeBeam: unknown merchant ${merchantId}`);
     if (!Number.isInteger(req.amount) || req.amount <= 0) throw new Error(`FakeBeam: amount must be a positive integer of satang, got ${req.amount}`);
+    this.createRequests.push(structuredClone(req));
     const now = this.clock.now();
     if (idempotencyKey) {
       const prior = this.idempotency.get(`${merchantId}:${idempotencyKey}`);
@@ -104,6 +111,15 @@ export class FakeBeam {
     this.refundAttempts.push({ at: this.clock.now().toISOString(), body });
   }
 
+  /**
+   * D76: only the order reference goes to Beam. Returns create-charge fields outside the allowed set
+   * (amount, currency, paymentMethod, referenceId, returnUrl). Empty = pass. A name, phone or LINE ID would be listed.
+   */
+  unexpectedRequestFields(): string[] {
+    const allowed = new Set(['amount', 'currency', 'paymentMethod', 'referenceId', 'returnUrl']);
+    return this.createRequests.flatMap((r) => Object.keys(r as Record<string, unknown>).filter((k) => !allowed.has(k)));
+  }
+
   assertNoRefunds(): void {
     if (this.refundAttempts.length > 0) throw new FakeBeamRefundCalled();
   }
@@ -125,12 +141,15 @@ export class FakeBeam {
       c.transactionTime = now;
       c.updatedAt = now;
     }
+    if (opts.deliver === false) return { at: now, attempt: 0, eventName: 'charge.succeeded', chargeId, signingMode: 'correct', afterQrExpiry: false, delivery: { rawBody: '', headers: {} } };
     const body = this.webhookBody(chargeId, {
       status: 'SUCCEEDED',
       transactionTime: now,
       ...(opts.amount !== undefined ? { amount: opts.amount } : {}),
     });
-    return this.deliver('charge.succeeded', body, target, opts.signing ?? 'correct', opts.otherKeyBase64);
+    const rec = await this.deliver('charge.succeeded', body, target, opts.signing ?? 'correct', opts.otherKeyBase64);
+    if (opts.holdEndsAt) rec.afterHoldEnd = Date.parse(rec.at) > Date.parse(opts.holdEndsAt);
+    return rec;
   }
 
   /** charge.failed. failureCode values are not documented in the pages read; pass any string. */
@@ -246,7 +265,7 @@ export class FakeBeam {
         eventName,
         chargeId: body.chargeId,
         signingMode: signing,
-        afterExpiry: this.clock.now().getTime() > expiry,
+        afterQrExpiry: this.clock.now().getTime() > expiry,
         delivery,
       };
       this.deliveries.push(rec);

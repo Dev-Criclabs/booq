@@ -1,6 +1,6 @@
 # F02 LINE Login, LIFF and first sign in · Requirements
 
-Status: **Approved 30 Oct 2026** (gate 1; F02 requirements and the D38 revision are in the user's round 7 approval, `docs/decisions.md`), except the consent text for players under 18, which stays **pending legal** (D10, left open by the user). Revision 4 (30 Oct 2026) applies D38. Changes after approval go PRD, then hand-off, then this file. No design or code follows until the design gate.
+Status: **Approved 30 Oct 2026** (gate 1; F02 requirements and the D38 revision are in the user's round 7 approval, `docs/decisions.md`), except the consent text for players under 18, which stays **pending legal** (D10, left open by the user). Revision 5 (30 Oct 2026) applies D38 and D100 to D123 where they touch F02 (Draft and Testing sign in, guest reads, imported player claim, the Player role for every club person) and the Reviewer's findings F02-3 and F02-4 (`docs/review/spec-consistency.md`). Changes after approval go PRD, then hand-off, then this file. No design or code follows until the design gate.
 
 Revision history: v1 draft, v2 applied D1 to D15, v3 applies D18 to D31, v4 applies D38 (no checkbox on C1). D11 and D12 are now in HO AUTH-02, and LINE-07 (message cap) is in the hand-off (F10 owns it).
 
@@ -81,7 +81,8 @@ Key lookup by screen waits for `locales/copy-index.csv`, generated from the canv
 - AUTH-01-AC11. Given a club that is Paused, when a guest or player opens the app, then browsing and sign in still work and the paused pages are shown as paused (PLAT-03 in F01).
 - AUTH-01-AC13. Given the app address, when it is opened, then the club comes from the URL on the one shared BOOQ domain (for example the club's name or ID in the path), in LINE and in a browser (D6). The domain itself is a configuration value and is not hard coded, because the user will supply it later (D6). An unknown or not live club in the URL answers 404 (not found), never another club's data (D27 uses the same 404 rule for records outside a caller's reach).
 - AUTH-01-AC14. Given a deep link (rich menu tile, shared link, LINE message button), when it is opened, then it contains the club in the same way (D6), so the right club is chosen before any data is read or sign in starts. A link for club A never signs a player in to club B (CC-1).
-- AUTH-01-AC15. Given a club in Draft or Testing, when someone opens its URL, then only the testers can sign in: the club owner and named BOOQ testers (D4, F01 PLAT-07). Everyone else sees not found. A BOOQ tester signs in with LINE as a test player.
+- AUTH-01-AC15. Given a club in Draft or Testing, when someone opens its URL, then a caller who is not signed in gets only a minimal sign in config (name, language, status, LIFF id); the club admits the owner role and testers, the owner invite stays valid for return visits and testers get long lived invites (D102, F01 PLAT-01-AC11). A BOOQ tester signs in with LINE as a test player. Everyone else sees not found.
+- AUTH-01-AC16. Given a guest, when any route answers, then it reads only named public columns or routes; owner contact details and merchant ids are never readable by a guest (D103, F01 PLAT-02-AC14).
 - AUTH-01-AC12. Given a guest who cancels or fails LINE Login (they close the LINE consent screen, the network drops), when it ends, then they return to where they were with nothing created, and an offline error uses the existing key (P-0327 "Check your internet and try again. Nothing was booked or charged.", P-0328 "Try again"). Other failure text is a new key.
 
 **Meets.**
@@ -154,6 +155,7 @@ First sign in (C2)
 - AUTH-02-AC7. Given C2 shows a "Hi, {name}" greeting with the LINE name, when it loads, then the name comes from LINE. Whether the full name field is pre filled from LINE is Q3.
 - AUTH-02-AC8. Given the consent text, when it is shown, then it links to the terms and the privacy notice, which name the club as the controller and BOOQ as the processor (PDPA-01-AC12). The consent text is final before 7 Dec 2026.
 - AUTH-02-AC9. Given a player who may be under 18, when they give consent at C2, then the consent screen and text are **pending a legal check** (D10, left open by the user). F02 builds the screen as written in the canvas but the consent text cannot be final until the check, and no rule for guardian consent exists yet (Q1).
+- AUTH-02-AC32. Given the consent pending legal (D10), when the screen ships for the 7 Dec test, then it is tracked with an owner as an open item and no test treats it as final (Reviewer F02-3).
 
 Date of birth, only for a student price
 
@@ -166,6 +168,8 @@ Date of birth, only for a student price
 - AUTH-02-AC16. Given a date of birth entry, when it is a future date or makes the player older than a limit the spec does not define, then the server refuses it. The limits are Q7.
 - AUTH-02-AC17. Given a player who never picks a Student item, when they use the app, then they are never required to give a date of birth. Adults may add it voluntarily in Profile (D12), which also lets the birthday discount work (F14).
 - AUTH-02-AC29. Given an adult in Profile, when they add a date of birth voluntarily, then it is saved like any other (editable, never locked) and used for the birthday discount and the age check, with no effect on their Adult price (D12).
+- AUTH-02-AC30. Given a person signs in whose typed phone matches an imported record, when they finish first sign in, then no link is made automatically: the front desk confirms the claim in A6; a sign in matching no record becomes a new player (D105, F01 PLAT-06-AC7).
+- AUTH-02-AC31. Given every club person (owner, staff, coach), when they have a record, then they also hold the Player role, so editing their own profile and booking as a player are allowed for them (D115, ROLE-01-AC7).
 
 Profile editing (C17), date of birth never locked
 
