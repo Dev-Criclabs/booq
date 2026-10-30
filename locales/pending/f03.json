@@ -1,0 +1,43 @@
+{
+  "_note": "Proposed by BE-B for F03 (D51). Numbers to be assigned by Content; wording drafted, writers own it. Reused existing keys: P-0327, P-0328 (offline), P-0442 (paused).",
+  "en": {
+    "P-new.hold_setting_unset": "Booking with payment is not available yet. Please contact the club.",
+    "P-new.not_on_the_hour": "Bookings start on the hour. Please pick a full hour.",
+    "P-new.not_consecutive": "Pick hours that follow each other on one court.",
+    "P-new.outside_hours": "The club is not open at that time.",
+    "P-new.outside_window": "You can book up to {bookingWindowDays} days ahead.",
+    "P-new.in_the_past": "That hour has already passed.",
+    "P-new.hour_started": "That hour has already started. Pick the next full hour.",
+    "P-new.resource_inactive": "That court is not available.",
+    "P-new.limit_reached": "You can hold up to {hours} hours of future bookings.",
+    "P-new.slot_unavailable_court": "This slot is no longer available. Nothing was booked or charged.",
+    "P-new.slot_unavailable_coach": "This coach is no longer available at that time. Nothing was booked or charged.",
+    "P-new.too_many_attempts": "Too many attempts. Please try again in {seconds} seconds.",
+    "A-new.override_reason_prompt": "This booking goes over the {hours} hour limit. Write the reason.",
+    "L-new.booking_moved": "The club moved your booking to Court {court}, {date} at {time}.",
+    "P-new.club_not_available": "Booking is not open at this club yet.",
+    "P-new.coach_unavailable": "That coach is not available at that time.",
+    "P-new.rest_rule": "The coach needs a rest between sessions. Pick another time.",
+    "P-new.coach_rules_not_installed": "Booking with a coach is not available yet."
+  },
+  "th": {
+    "P-new.hold_setting_unset": "ยังจองแบบชำระเงินไม่ได้ในขณะนี้ กรุณาติดต่อสนามกีฬา",
+    "P-new.not_on_the_hour": "การจองเริ่มต้นตรงชั่วโมง กรุณาเลือกเป็นชั่วโมงเต็ม",
+    "P-new.not_consecutive": "กรุณาเลือกชั่วโมงที่ต่อเนื่องกันในคอร์ตเดียว",
+    "P-new.outside_hours": "สนามไม่ได้เปิดในช่วงเวลานี้",
+    "P-new.outside_window": "คุณสามารถจองล่วงหน้าได้สูงสุด {bookingWindowDays} วัน",
+    "P-new.in_the_past": "ชั่วโมงนี้ผ่านไปแล้ว",
+    "P-new.hour_started": "ชั่วโมงนี้เริ่มไปแล้ว กรุณาเลือกชั่วโมงถัดไป",
+    "P-new.resource_inactive": "คอร์ตนี้ไม่เปิดให้จอง",
+    "P-new.limit_reached": "คุณจองล่วงหน้าได้สูงสุด {hours} ชั่วโมง",
+    "P-new.slot_unavailable_court": "ช่วงเวลานี้ไม่ว่างแล้ว ยังไม่มีการจองหรือเรียกเก็บเงิน",
+    "P-new.slot_unavailable_coach": "โค้ชไม่ว่างในช่วงเวลานี้แล้ว ยังไม่มีการจองหรือเรียกเก็บเงิน",
+    "P-new.too_many_attempts": "พยายามหลายครั้งเกินไป กรุณาลองใหม่ในอีก {seconds} วินาที",
+    "A-new.override_reason_prompt": "การจองนี้เกินขีดจำกัด {hours} ชั่วโมง กรุณาระบุเหตุผล",
+    "L-new.booking_moved": "สนามย้ายการจองของคุณไปที่คอร์ต {court} วันที่ {date} เวลา {time}",
+    "P-new.club_not_available": "สนามนี้ยังไม่เปิดรับจอง",
+    "P-new.coach_unavailable": "โค้ชไม่ว่างในช่วงเวลานี้",
+    "P-new.rest_rule": "โค้ชต้องพักระหว่างคลาส กรุณาเลือกเวลาอื่น",
+    "P-new.coach_rules_not_installed": "ยังจองพร้อมโค้ชไม่ได้ในขณะนี้"
+  }
+}
