@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
-import { publicScheduleRoutes } from './routes';
+import { playerBookingRoutes, publicScheduleRoutes } from './routes';
 
 // F03-T20 public schedule routes (BOOK-01-AC6, AC14, BOOK-02-AC1, AC2, AC5; design 5.1): thin handlers
 // over the schedule service. The service's states are tested in packages/domain/src/booking/schedule.test.ts.
@@ -10,6 +10,7 @@ const B = '9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d';
 const LOC = 'aaaaaaaa-0000-4000-8000-000000000001';
 const COURT1 = 'c1c1c1c1-0000-4000-8000-000000000001';
 const P1 = '00000000-0000-4000-8000-000000000001';
+const P2 = '00000000-0000-4000-8000-000000000002';
 const deps = { hasFeature: async () => true };
 const SLUGS: Record<string, string> = { 'club-a': A, 'club-b': B };
 
@@ -81,5 +82,55 @@ describe('public schedule routes', () => {
     expect(await find('/schedule').handle({ session: null, input: { slug: 'club-a' } }, deps)).toEqual({ ok: false, status: 400, code: 'bad_input' });
     await tdb.query(`update public.club set status = 'draft' where id = $1`, [A]);
     expect(await find('/schedule').handle({ session: null, input: { slug: 'club-a', date: '2026-12-02' } }, deps)).toEqual({ ok: false, status: 404, code: 'not_found' });
+  });
+});
+
+describe('player booking routes (F03-T21)', () => {
+  let player: ReturnType<typeof playerBookingRoutes>;
+  const get = () => player.find((r) => r.def.path === '/bookings/:id')!;
+  const release = () => player.find((r) => r.def.path === '/bookings/:id/release')!;
+  const me = (userId = P1) => ({ clubId: A, userId, roles: ['player' as const] });
+  async function hold(confirm = false, hour = 18) {
+    const order = (await tdb.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'online') returning id`, [A, P1])).rows[0].id as string;
+    const r = await db.withClubTx({ clubId: A, userId: P1, roles: ['player'], requestId: 'r', source: 'player_app' }, (tx) =>
+      tx.query<{ r: { booking_ids: string[] } }>(`select app.reserve_court($1, $2, $3::timestamptz[]) as r`, [order, COURT1, [at('2026-12-02', hour)]]));
+    if (confirm) await db.withClubTx({ clubId: A, userId: P2, roles: ['owner', 'player'], requestId: 'r', source: 'admin' }, (tx) => tx.query(`select app.confirm_booking($1)`, [order]));
+    return { order, id: r.rows[0]!.r.booking_ids[0]! };
+  }
+  beforeEach(() => {
+    player = playerBookingRoutes({ db, clubBySlug: async (slug) => (SLUGS[slug] ? { clubId: SLUGS[slug]! } : null) });
+  });
+
+  it('declares GET /bookings/:id and POST /bookings/:id/release behind a session (club.read)', async () => {
+    expect(player.map((r) => `${r.def.method} ${r.def.path}`)).toEqual(['GET /bookings/:id', 'POST /bookings/:id/release']);
+    for (const r of player) expect(r.def.permission).toBe('club.read');
+    const { id } = await hold();
+    expect(await get().handle({ session: null, input: { id } }, deps)).toEqual({ ok: false, status: 401, code: 'unauthenticated' });
+    expect(await release().handle({ session: null, input: { id } }, deps)).toEqual({ ok: false, status: 401, code: 'unauthenticated' });
+  });
+
+  it("the player reads their own booking; another player's is 404 (ROLE-01-AC4)", async () => {
+    const { id } = await hold();
+    expect(await get().handle({ session: me(), input: { slug: 'club-a', id } }, deps)).toMatchObject({ ok: true, body: { id, status: 'awaiting_payment', holdEnded: false } });
+    expect(await get().handle({ session: me(P2), input: { id } }, deps)).toEqual({ ok: false, status: 404, code: 'not_found' });
+    expect(await get().handle({ session: me(), input: { slug: 'club-b', id } }, deps)).toEqual({ ok: false, status: 404, code: 'not_found' });
+    expect(await get().handle({ session: me(), input: { id: 'not-a-uuid' } }, deps)).toEqual({ ok: false, status: 404, code: 'not_found' });
+  });
+
+  it('releasing a confirmed booking is refused; releasing a hold works', async () => {
+    const confirmed = await hold(true);
+    expect(await release().handle({ session: me(), input: { id: confirmed.id } }, deps)).toEqual({ ok: false, status: 409, code: 'not_releasable' });
+    const { order, id } = await hold(false, 19);
+    expect(await release().handle({ session: me(P2), input: { id } }, deps)).toEqual({ ok: false, status: 404, code: 'not_found' });
+    expect(await release().handle({ session: me(), input: { id } }, deps)).toEqual({ ok: true, status: 200, body: { orderId: order, status: 'released' } });
+  });
+
+  it('the same Idempotency-Key gets the same answer; reused for another request it is refused', async () => {
+    const { order, id } = await hold();
+    const first = await release().handle({ session: me(), input: { id, idempotencyKey: 'k-1' } }, deps);
+    expect(first).toEqual({ ok: true, status: 200, body: { orderId: order, status: 'released' } });
+    expect(await release().handle({ session: me(), input: { id, idempotencyKey: 'k-1' } }, deps)).toEqual(first);
+    expect(await release().handle({ session: me(), input: { id: order, idempotencyKey: 'k-1' } }, deps)).toEqual({ ok: false, status: 409, code: 'idempotency_key_reused' });
+    expect(await release().handle({ session: me(), input: { id, idempotencyKey: 'bad key' } }, deps)).toEqual({ ok: false, status: 400, code: 'bad_input' });
   });
 });

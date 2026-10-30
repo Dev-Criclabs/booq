@@ -83,3 +83,8 @@ export function checkBookingHour(input: HourCheckInput): HourCheck {
   if (actor === 'player' && start.getTime() <= now.getTime()) return { ok: false, code: 'hour_started' };
   return { ok: true };
 }
+
+/** An instant as ISO 8601 in Bangkok, whole seconds (FA 9: timestamps carry +07:00). */
+export function toBangkokIso(at: Date): string {
+  return `${bangkokDate(at)}T${bangkokTime(at)}+07:00`;
+}
