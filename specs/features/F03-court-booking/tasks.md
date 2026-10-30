@@ -12,11 +12,11 @@ Depends on: F01 T03 to T07 (database, context, tenant suite), T08 (settings), T1
   Tests first: a 90 minute row and an 18:30 row are rejected by the database; two hours of one order are two rows; another club's order cannot be referenced.
 - [ ] **F03-T02** Migration 0203: `occupancy` exactly as FA §3.1 with the one-hour CHECK for non-closure kinds and both exclusion constraints. IDs: BOOK-04-AC1, AC2, AC3, AC6. Role: Arch · Deps T01 · Size: M
   Tests first (direct SQL, bypassing the app): an overlapping court row is rejected; an overlapping coach row on another court is rejected; back-to-back hours both succeed; a solo class row with only a court is rejected.
-- [ ] **F03-T03** Booking time rules in `packages/time` and `packages/domain/booking`: on the hour, window by Bangkok date (day 30 inclusive), hour started (player) versus hour ended (staff), last start 23:00. IDs: BOOK-01-AC1, AC3, AC4, AC5, AC12, decisions D39, D42. Role: BE-B · Deps F01-T02 · Size: M
+- [x] **F03-T03** Booking time rules in `packages/time` and `packages/domain/booking`: on the hour, window by Bangkok date (day 30 inclusive), hour started (player) versus hour ended (staff), last start 23:00. IDs: BOOK-01-AC1, AC3, AC4, AC5, AC12, decisions D39, D42. Role: BE-B · Deps F01-T02 · Size: M
   Tests first (controllable clock): day 30 accepted and day 31 refused at 23:59 and 00:01 Bangkok; at 18:10 a player cannot book 18:00 and staff can; 24:00 never a start.
 - [ ] **F03-T04** Opening hours and resource reader (weekday hours, `24:00` close, active flag). IDs: BOOK-01-AC3, AC9. Role: BE-B · Deps F01-T06 · Size: S
   Tests first: hours differ by weekday; an inactive court is not offered and requests for it are refused.
-- [ ] **F03-T05** `app.hold_minutes(club)` reading the setting (the one place F16 will override) and the `hold_setting_unset` rule. IDs: BOOK-03-AC3, decision D52. Role: BE-B · Deps F01-T08 · Size: S
+- [x] **F03-T05** `app.hold_minutes(club)` reading the setting (the one place F16 will override) and the `hold_setting_unset` rule. IDs: BOOK-03-AC3, decision D52. Role: BE-B · Deps F01-T08 · Size: S
   Tests first: only 10, 15 or 20 read back; an unset setting refuses a payment hold but not a PAY-07 booking.
 - [ ] **F03-T06** `app.release_hold`, the `app.release_handlers` registry, and the lazy release inside the claim. IDs: BOOK-03-AC5, AC6, BOOK-04-AC6, decisions D45, D48. Role: BE-B · Deps T02 · Size: M
   Tests first: an expired hold with the job not run does not block the next request, and the old booking ends `released`; a handler runs once; one released message per order.
