@@ -34,10 +34,10 @@ F13 uses the number block 0701 to 0799 (assumption A-1; the build plan names blo
 | `0703_payment_port.sql` | Registers the F13 port in `app.payment_ports` (§4.1) |
 | `0704_void_receipt.sql` | `app.void_receipt` (§4.3) |
 | `0705_daily_close.sql` | `daily_close` and `app.run_daily_close` |
-| `0706_coach_payout.sql` | `coach_payout`, `coach_payout_adjustment` and the payout functions |
-| `0707_report_views_a.sql` | Report views: cash by type, package sales, online against staff, no show rate, new against returning |
-| `0708_report_views_b.sql` | Report views: revenue earned, value owed, occupancy, partner report |
-| `0709_grants_policies.sql` | Policies and grants; the accountant column limits (D35). No new settings rows: `receipt_prefix` is `club.receipt_prefix` from P2 step 1 and `vat_enabled` is F01; a CHECK that Go live needs the prefix (D106) is F01's checklist item |
+| `0706_report_views_a.sql` | Report views: cash by type, package sales, online against staff, no show rate, new against returning |
+| `0707_report_views_b.sql` | Report views: revenue earned, value owed, occupancy, partner report |
+| `0709_coach_payout.sql` | `coach_payout`, `coach_payout_adjustment` and the payout functions (late number: waits on the F07 and F12 coach pay fields) |
+| `0710_grants_policies.sql` | Policies and grants; the accountant column limits (D35). No new settings rows: `receipt_prefix` is `club.receipt_prefix` from P2 step 1 and `vat_enabled` is F01; a CHECK that Go live needs the prefix (D106) is F01's checklist item |
 
 ### 3.1 `receipt` (class D)
 
