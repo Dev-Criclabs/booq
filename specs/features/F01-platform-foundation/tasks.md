@@ -1,6 +1,6 @@
 # F01 Platform foundation · Tasks
 
-Status: **DRAFT for a quick check (gate 3).** Drafted 30 Oct 2026 from the approved design (`design.md`, approved 30 Oct 2026). Rules for every task (CLAUDE.md): one task per run; write the tests from the acceptance criteria first, then the code; run tests and type checks before ticking; the commit message starts with the requirement IDs, for example `PLAT-04 audit trigger and append-only guards`. Each task is under a day. **FA** is `docs/architecture/foundation.md`, **D** is the design file. No task writes user-facing text in code; every new key goes in both locale files and is listed for the writers.
+Status: **Approved 30 Oct 2026** (gate 3; `docs/decisions.md`, round 8, approved as recommended). Drafted 30 Oct 2026 from the approved design (`design.md`, approved 30 Oct 2026). Rules for every task (CLAUDE.md): one task per run; write the tests from the acceptance criteria first, then the code; run tests and type checks before ticking; the commit message starts with the requirement IDs, for example `PLAT-04 audit trigger and append-only guards`. Each task is under a day. **FA** is `docs/architecture/foundation.md`, **D** is the design file. No task writes user-facing text in code; every new key goes in both locale files and is listed for the writers.
 
 Roles: **Arch** Architect/data, **BE-P** back end platform and LINE, **DevOps**, **QA**, **Content**. A task names the role that does it; the Reviewer checks every PR.
 

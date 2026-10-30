@@ -276,7 +276,7 @@ Whether the P5 actions New template, Duplicate and Edit exist in v1 is requireme
 
 ### 9.3 Go live checks
 
-The check keys are data rows per template (`launch_check.check_key`) so the list can change without code. The spec's P4 list is requirements Q7 (open). Until it is answered the design implements these assumed checks (A-19): LINE connection test passed, Beam **key swap** (decision D32: the club's live Beam key set is entered and active, the test key set is no longer used, and a smoke test passes; see A-23), at least one product with a price, every setting the template marks `required` is set (BOOK-05 and the other TBD settings are not `required`), owner signed in, at least one successful test booking on the Playground, no open launch failure. For a Beam club the fake-slip tests of H-P4-Launch are replaced by Beam tests (Gaps A2).
+The check keys are data rows per template (`launch_check.check_key`) so the list can change without code. The spec's P4 list is requirements Q7 (open). Until it is answered the design implements these assumed checks (A-19): LINE connection test passed, the **pay-tap limit is set** (decision D61, F03 §4.8), and Beam **key swap** (decision D32: the club's live Beam key set is entered and active, the test key set is no longer used, and a smoke test passes; see A-23), at least one product with a price, every setting the template marks `required` is set (BOOK-05 and the other TBD settings are not `required`), owner signed in, at least one successful test booking on the Playground, no open launch failure. For a Beam club the fake-slip tests of H-P4-Launch are replaced by Beam tests (Gaps A2).
 
 ## 10. Settings registry
 

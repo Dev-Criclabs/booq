@@ -1,6 +1,6 @@
 # F02 LINE Login, LIFF and first sign in · Tasks
 
-Status: **DRAFT for a quick check (gate 3).** Drafted 30 Oct 2026 from the approved design (`design.md`, approved 30 Oct 2026). Rules for every task (CLAUDE.md): one task per run; write the tests from the acceptance criteria first, then the code; run tests and type checks before ticking; the commit message starts with the requirement IDs, for example `LINE-01 verify ID token against the club's channel`. Each task is under a day. **FA** is `docs/architecture/foundation.md`, **D** is this feature's `design.md`, **F01** is the platform foundation. No task writes user-facing text in code; every new key goes in both locale files and is listed for the writers.
+Status: **Approved 30 Oct 2026** (gate 3; `docs/decisions.md`, round 8, approved as recommended). Drafted 30 Oct 2026 from the approved design (`design.md`, approved 30 Oct 2026). Rules for every task (CLAUDE.md): one task per run; write the tests from the acceptance criteria first, then the code; run tests and type checks before ticking; the commit message starts with the requirement IDs, for example `LINE-01 verify ID token against the club's channel`. Each task is under a day. **FA** is `docs/architecture/foundation.md`, **D** is this feature's `design.md`, **F01** is the platform foundation. No task writes user-facing text in code; every new key goes in both locale files and is listed for the writers.
 
 Roles: **BE-P** back end platform and LINE, **FE-P** front end player app, **Arch**, **QA**, **DevOps**, **Content**.
 

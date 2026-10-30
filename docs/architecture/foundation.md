@@ -1,8 +1,8 @@
 # BOOQ foundation architecture (proposal)
 
-Status: **DRAFT, revision 7, for approval by a person. Nothing here is approved.** Author role: Architect / data. Branch `architect/foundation`. 30 Oct 2026.
+Status: **DRAFT, revision 8, for approval by a person. Nothing here is approved.** Author role: Architect / data. Branch `architect/foundation`. 30 Oct 2026.
 
-Revision 2 applies the decisions in `docs/decisions.md` (decisions D1 to D15 and round 2b). Those numbers are the decisions log's. This document's own recommendations are numbered R1 to R16 to avoid a clash. Revision 7 applies D38 to D52 where they touch the foundation (one booking and one `occupancy` row per booked hour, D40; a per-customer lock for the future-hours check, D49; day 30 bookable, D42; the friend prompt, D38) and records the approval of the F01 and F02 designs. Revision 6 applies D37 (a late payment that goes to the wallet gets its own receipt, so a receipt can exist without a booking or package item: §2.4, §2.3, §6.6). Revision 5 applies decisions D32 to D36 (two Beam key sets per club, test data excluded everywhere, encryption layers, what the Accountant sees, the wrong-amount callback answer). Revision 4 applies decisions D18 to D31 (round 4), records what Beam's and LINE's public documentation say and do not say (§6.1, §6.2, §5.6), and fixes two assumptions the documentation disproved (a push to a non-friend is not rejected, §5.3; Beam sends no event id, §6.5). Revision 3 added the LINE message cap (LINE-07, decision D17) to sections 2.2, 4.4, 5.3 and 5.4 and the tests in 5.6, and notes decision D16 (the 7 Dec test runs on production) in section 2.6. Answered questions are listed in section 10.1 and removed from review; the open ones carry a recommendation in section 10.2 so they can be approved in bulk.
+Revision 2 applies the decisions in `docs/decisions.md` (decisions D1 to D15 and round 2b). Those numbers are the decisions log's. This document's own recommendations are numbered R1 to R16 to avoid a clash. Revision 8 applies D59 to D80 where they touch the foundation: the QR expires a configured margin before the hold ends (D80), a failed charge is replaced inside the same hold (D72), a callback for an unknown charge gets a success answer and a flag (D71), a lookup may confirm a payment whose callback never came (D73), the full wallet reason list (D78), a promo code row in the lock order (D66), and the per-player limit on repeated Pay taps (D61). Revision 7 applies D38 to D52 where they touch the foundation (one booking and one `occupancy` row per booked hour, D40; a per-customer lock for the future-hours check, D49; day 30 bookable, D42; the friend prompt, D38) and records the approval of the F01 and F02 designs. Revision 6 applies D37 (a late payment that goes to the wallet gets its own receipt, so a receipt can exist without a booking or package item: §2.4, §2.3, §6.6). Revision 5 applies decisions D32 to D36 (two Beam key sets per club, test data excluded everywhere, encryption layers, what the Accountant sees, the wrong-amount callback answer). Revision 4 applies decisions D18 to D31 (round 4), records what Beam's and LINE's public documentation say and do not say (§6.1, §6.2, §5.6), and fixes two assumptions the documentation disproved (a push to a non-friend is not rejected, §5.3; Beam sends no event id, §6.5). Revision 3 added the LINE message cap (LINE-07, decision D17) to sections 2.2, 4.4, 5.3 and 5.4 and the tests in 5.6, and notes decision D16 (the 7 Dec test runs on production) in section 2.6. Answered questions are listed in section 10.1 and removed from review; the open ones carry a recommendation in section 10.2 so they can be approved in bulk.
 
 This is the shared design every feature relies on. It is not a feature `design.md`. F01's `design.md` comes after F01's requirements are approved, and it will cite this file.
 
@@ -305,6 +305,7 @@ Isolation is READ COMMITTED. Correctness comes from constraints plus row locks t
 0. the customer's advisory lock `pg_advisory_xact_lock(hash(club_id, customer_id))`, taken by any request that checks the future-hours limit (BOOK-05, decision D49), so two parallel requests from one player are serialised
 1. coach row (`FOR UPDATE`)
 2. `wallet_account` and `customer_package` rows, ascending id
+2b. the `promo_code` row, when an order uses a code with a cap (counting a use at Pay, decision D66)
 3. `booking` and `class_session` rows, ascending id
 4. `receipt_counter` row, last
 
@@ -601,9 +602,10 @@ interface PaymentGateway {
 ### 6.4 Creating the charge
 
 1. Server prices the order and runs `claim_occupancy` with the hold. Transaction 1 commits: `booking` (awaiting payment), `occupancy` (held), `orders`, `order_line`, `payment` (pending, `amount_satang` frozen), credit and wallet reserve rows.
-2. Outside any transaction, call `createQr`: amount in satang, `currency` THB, `referenceId` = our `payment.id`, header `x-beam-idempotency-key` = `payment.id`, and `qrPromptPay.expiryTime` = **the hold's end** (decision D18: the QR expires exactly when the hold ends). For a package bought alone (PAY-04) the expiry is now plus the package QR minutes setting.
+2. Outside any transaction, call `createQr`: amount in satang, `currency` THB, `referenceId` = our `payment.id`, header `x-beam-idempotency-key` = `payment.id`, and `qrPromptPay.expiryTime` = **the hold's end minus a margin** (decisions D18 and D80: the QR expires slightly before the hold ends, so it never outlives the hold by a second even with a clock difference; the margin is a platform setting, `qr_expiry_margin_seconds`, whose value is set by a person, not by this design). For a package bought alone (PAY-04) the expiry is now plus the package QR minutes setting.
 3. Transaction 2 stores `gateway_charge_id` and the QR image.
 4. If Beam fails, run `release_hold()` and return an error code. If the process dies between steps, the hold expires by itself.
+5. **A failed charge inside the hold (decision D72).** If Beam reports the charge failed while the hold is still running, the player sees that the payment did not go through, and a second tap on Pay creates a **new charge in the same hold** (a failed charge cannot be retried): a new `payment` row, the same order, the same `hold_expires_at`, the QR expiry computed from the same hold end. Only one pending payment per order exists at a time.
 
 Nothing left to pay (PAY-07) skips Beam: one transaction confirms the booking.
 
@@ -613,10 +615,10 @@ Nothing left to pay (PAY-07) skips Beam: one transaction confirms the booking.
 
 1. Read the **raw body bytes**. Do not parse first.
 2. Load the club's HMAC key(s) (current and previous, for rotation), base64-decode, compute HMAC-SHA256 over the raw bytes, base64-encode, and compare with `X-Beam-Signature` in constant time. **Bad signature: respond 401, change nothing, log a security event with no body content and raise an alert** (decision D24).
-3. Parse. Find `payment` by `gateway_charge_id` **and** the club from the token.
+3. Parse. Find `payment` by `gateway_charge_id` **and** the club from the token. **A validly signed callback for a charge we do not know is answered with success and flagged (decision D71)**: the event is recorded with outcome `unknown_charge`, a P1 alert is raised, nothing else changes. A bad signature is still rejected with 401.
 4. **De-duplicate.** There is no event id, so the key is `chargeId` plus the `x-beam-event` type: insert into `payment_event` with unique `(club_id, gateway, gateway_charge_id, event_type)` and `ON CONFLICT DO NOTHING`. A duplicate is **ignored with success**: respond 200 (decision D24).
 5. **Confirm with Beam.** Because the signature carries no timestamp, a captured callback could be replayed; and the webhook amount unit is unconfirmed. So after the signature check, call `getCharge` and apply the result of **that** lookup, not the body. If Beam cannot be reached, respond 500 so Beam retries (up to 10 times). Cost: one API call per callback.
-6. **Compare** the looked-up `amount` and currency with `payment.amount_satang` and THB. **Mismatch (validly signed, wrong amount): do not confirm the booking, record the event with outcome `mismatch`, flag it for the owner (club health alert and an admin task), respond 200 (a success status, so Beam stops retrying: decision D36, refining D24).** Staff then credit the wallet with a written reason from A6 (decision D24).
+6. **Compare** the looked-up `amount` and currency with `payment.amount_satang` and THB. **Mismatch (validly signed, wrong amount): do not confirm the booking, record the event with outcome `mismatch`, flag it for the owner (an owner banner in the club admin, decision D75), respond 200; the player sees that the payment was received and the club is checking (D77) (a success status, so Beam stops retrying: decision D36, refining D24).** Staff then credit the **full amount received, including any overpayment**, to the wallet with a written reason (reason `wrong_amount`, decisions D24 and D77), and that credit gets its own receipt (D79).
 7. If the looked-up status is not `SUCCEEDED`, record and stop.
 8. Run `applyPayment()` in the same transaction as the event insert; respond 200 after commit.
 
@@ -635,14 +637,14 @@ Lock order per §3.4. Every state change is guarded by `UPDATE ... WHERE status 
 | Late, slot not open (solo class: court or coach not free) | Stays `released` | The whole amount goes to the wallet (reason `late_payment`); the player gets a LINE message; its own receipt is issued for the money received (decision D37, §2.4) |
 | Late, slot open, but credits, wallet or promo cannot be re-applied | Stays `released` | Wallet, as above (adopted as recommended) |
 | A second success for an order already paid | unchanged | The second amount to the wallet (`duplicate_payment`) |
-| Success for a cancelled order | unchanged | Wallet |
-| Package-only order, success after its QR expired | Order stays cancelled (nothing is held) | Wallet (adopted as recommended) |
+| Success for a cancelled order | unchanged | Wallet, with its own receipt (reason `late_payment` for a booking order; D74 for a package order) |
+| Package-only order, success after the order was cancelled | Order stays cancelled (nothing is held) | Wallet with its own receipt (decision D74) |
 
 The "re-attempt the claim" step is the same function and constraints as a fresh booking, so a late payment can never double book. The hold-release job and the callback both lock the booking row first, so whichever commits first wins and the other sees the new status (test T10).
 
 ### 6.7 Safety net, sandbox, tests
 
-- `beam_reconcile` (§5.4) covers a callback that never arrives, using `getCharge`.
+- `beam_reconcile` (§5.4) covers a callback that never arrives (decision D73): for a pending payment the server may look up the charge with `getCharge` and **confirm only when the status is succeeded and the amount and the order reference match**; the confirmation is recorded in the audit log as made by lookup. A mismatch is flagged, not confirmed. Alerts follow D75: a wrong amount is an owner banner in the admin; a bad signature, a failed key check and an unreachable Beam show in P1; a failed key check also reaches the owner. Only the order reference is sent to Beam (decision D76).
 - Test payments use Beam's Playground only; there is no in-app "simulate payment" (decision D26). Each club holds two Beam key sets (decision D32). A Testing club uses the test set; a Live club uses the live one. Swapping to the live set is a required item on the P4 go-live checklist with a smoke test (F01 §9.3). A callback that arrives on the URL of the set that is not active for the club's status (for example a test callback after Go live) is recorded, flagged and answered 200, and changes nothing. In the Playground a tester completes a payment with the Force Charge page.
 - QA's fake Beam signs bodies exactly as §6.1 describes (base64 HMAC-SHA256 with a base64 key) and covers: valid, bad signature, wrong amount, late, duplicate, replayed old callback, out of order, unknown charge, lookup failing, and Beam down at create time.
 
@@ -672,7 +674,7 @@ Code rules:
 - One package, `packages/time`, wraps a zone library (Luxon, or the Temporal polyfill) with `bangkokNow()`, `atBangkok(date, time)`, `bangkokDateOf(instant)`, `addMonths()`. The rest of the code uses only these.
 - Lint bans `new Date()` formatting, `getHours/getDay/...`, `toLocaleString` without an explicit zone, and `Date.now()` arithmetic outside `packages/time`.
 - **Thai date formatting forces the Gregorian year.** `Intl.DateTimeFormat('th-TH')` defaults to the Buddhist calendar and prints 2569. The formatter in `packages/i18n` always passes `calendar: 'gregory'` (`th-TH-u-ca-gregory`), so dates read "29 ธันวาคม 2026" (CLAUDE.md). A unit test asserts 2026 in Thai output.
-- Servers and CI run with `TZ=Asia/Bangkok`, and a test also runs with `TZ=UTC` to catch accidental dependence on the server zone. The time-sensitive edge cases: 23:00-24:00 slots, the booking made at 00:30 Bangkok (still the previous UTC day), the week boundary for the schedule.
+- The server zone does not matter, by rule. DevOps keeps servers and CI in UTC (`docs/ops/plan.md`) and the app converts through `packages/time`; the test suite runs once with `TZ=UTC` and once with `TZ=Asia/Bangkok` and must give the same results, which catches any accidental dependence on the server zone. The time-sensitive edge cases: 23:00-24:00 slots, the booking made at 00:30 Bangkok (still the previous UTC day), the week boundary for the schedule.
 
 ## 8. Audit entries (PLAT-04) and the P6 platform log
 
@@ -774,7 +776,7 @@ Decisions round 4 is headed "approved as recommended" in `docs/decisions.md` and
 | Q1, Q2 | There is no existing Booq core; tables are named `club` and `location` from the start | Round 2b | §1 |
 | Q3 | Roles are a set | D1 | §2.2, §4.2, §4.3 |
 | Q4 | `reserve` -1, `return` +1, `expire` the negative remainder, `adjust` and `import` signed; `use` and `forfeit` carry change 0 | Adopted | §2.3 |
-| Q5 | Wallet reasons: `refund` (money back from a cancellation), `late_payment`, `duplicate_payment`, `referral_reward`, `spend`, `return` (wallet use returned), `adjust`, `import`, `expire` only if the wallet expiry setting is set | Adopted, D21, D25 | §2.3, §6.6 |
+| Q5 | Wallet reasons: `refund`, `late_payment`, `wrong_amount`, `duplicate_payment`, `referral_reward`, `spend`, `return`, `adjust`, `import`, and `expire` only if the wallet expiry setting is set | D78 | §2.3, §6.6 |
 | Q6 | Wallet value applied at Pay is reserved by a ledger row and reversed if the hold ends. Order of use at checkout: package credit, then wallet, then money | Adopted, D22 | §2.3 |
 | Q7 | Money rounding is half up to the satang; a code applies to items in its scope, add-ons excluded unless the code says so | D23 | §2.1 |
 | Q8 | Receipts are numbered per club; a receipt is issued for money received, including a late payment that goes to the wallet, which gets its own receipt (D25, D37). One series per club per Bangkok year, adopted | Round 2b, D25, D37, adopted | §2.4 |

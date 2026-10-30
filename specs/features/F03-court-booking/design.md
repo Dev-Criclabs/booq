@@ -1,6 +1,6 @@
 # F03 Court booking, schedule and payment hold · Design
 
-Status: **DRAFT for approval (gate 2).** Drafted 30 Oct 2026 by the Architect role from the approved F03 requirements (`requirements.md`, approved 30 Oct 2026, `docs/decisions.md` round 7) with decisions D18, D19 and D39 to D52 applied. Nothing here is approved until a person says so. No tasks and no code follow until then.
+Status: **Approved 30 Oct 2026** (gate 2; `docs/decisions.md`, round 8, approved as recommended, with assumptions A-1 to A-3 approved as decisions D59, D60 and D61). Drafted 30 Oct 2026 by the Architect role from the approved F03 requirements with decisions D18, D19 and D39 to D52 applied; revised for D59 to D61. Tasks are in `tasks.md` (gate 3). A change to anything below goes through the PRD, then the hand-off, then this file.
 
 Feature: F03 Court booking, schedule and payment hold. Requirement IDs: BOOK-01 to BOOK-06, with WAIT-01 shared with F08. Depends on F01 and F02. Wave 2.
 
@@ -39,6 +39,7 @@ F03 uses numbers 0201 to 0206, after F01 (0001 to 0009) and F02 (0101 to 0103). 
 | `0204_functions.sql` | `app.reserve_court`, `app.release_hold`, `app.reclaim_order`, `app.confirm_booking`, `app.move_booking`, `app.future_hours`, `app.hold_minutes`, `app.release_handlers` registry |
 | `0205_public_views.sql` | `public_slot_state`, `public_day_state` |
 | `0206_grants_policies.sql` | Policies and grants for the tables and views above |
+| `0207_pay_tap.sql` | `pay_tap` log for the limit on repeated Pay taps (decision D61) |
 
 Each file is registered in `packages/db/table-classes.ts` (class D), `app.test_tables` (F01 §7.6) and the audit registry (FA §8.1). CI checks from F01 §3.1 apply.
 
@@ -86,7 +87,8 @@ FA §3 is the design. For F03 this means: every hour of a court booking (and the
 
 All checks run on the server inside the transaction. In order:
 
-1. **Context.** A signed in user (BOOK-03-AC2: a guest or signed out session is refused, F02 AUTH-01-AC3). The club's status: Live allows everyone; Testing allows testers only; Draft refuses; **Paused refuses everyone, staff included** (assumption A-2); the refusal is `club_paused` or `club_not_available`.
+1. **Context.** A signed in user (BOOK-03-AC2: a guest or signed out session is refused, F02 AUTH-01-AC3). The club's status: Live allows everyone; Testing allows testers only; Draft refuses; **Paused refuses everyone, staff included** (decision D60; the owner can still manage existing bookings: move, release and cancel); the refusal is `club_paused` or `club_not_available`.
+1b. **Limit on repeated Pay taps (decision D61).** Before anything is locked, `reserve_court` counts the caller's recent hold-creating attempts (§4.8) and refuses with `too_many_attempts` when the platform limit is reached. A second tap that returns the existing hold (D47) is not an attempt.
 2. **Hold setting present.** An empty `hold_minutes` (Blank template) refuses payment holds with `hold_setting_unset` (BOOK-03-AC3); a booking that needs no payment (PAY-07) does not need it.
 3. **Selection shape (BOOK-01-AC1, AC2, AC11, BOOK-06).** One court, one or more hours, each on the hour in Bangkok, each exactly one hour, consecutive with no gap, all on the same Bangkok date. There is no separate maximum (D41); the selection is bounded by that day's opening hours.
 4. **Opening hours (AC3).** Each hour lies inside the opening hours of its own weekday; 23:00 is the last start and 24:00 is never a start (D39).
@@ -97,7 +99,7 @@ All checks run on the server inside the transaction. In order:
 9. **Coach, if one is given.** The coach row is locked, then F07's check runs (availability, leave, the rest rule under D19: back-to-back hours only, a free hour resets, unpaid held hours count, a group class counts until cancelled). Until F07 ships, a request with a coach is refused with `coach_rules_not_installed`, so a coach can never be held without the rules (assumption A-8).
 10. **Release overlapping expired holds** (FA §3.2, `release_hold`), then **insert** the booking rows and the `occupancy` rows, one pair per hour, in one transaction. An exclusion violation (`23P01`) rolls everything back and returns `slot_unavailable` with `by` set to `resource` or `coach`. The message never says who holds the slot (BOOK-04 Meets).
 
-Typed codes returned: `sign_in_required`, `club_paused`, `club_not_available`, `hold_setting_unset`, `not_on_the_hour`, `not_consecutive`, `outside_hours`, `outside_window`, `in_the_past`, `hour_started`, `resource_inactive`, `limit_reached` (with `hours`), `slot_unavailable` (with `by`), `coach_unavailable`, `rest_rule`, `coach_rules_not_installed`. Every code maps to a locale key (§11); no text is built in code.
+Typed codes returned: `sign_in_required`, `club_paused`, `club_not_available`, `hold_setting_unset`, `not_on_the_hour`, `not_consecutive`, `outside_hours`, `outside_window`, `in_the_past`, `hour_started`, `resource_inactive`, `limit_reached` (with `hours`), `slot_unavailable` (with `by`), `coach_unavailable`, `rest_rule`, `coach_rules_not_installed`, `too_many_attempts`. Every code maps to a locale key (§11); no text is built in code.
 
 ### 4.3 The functions
 
@@ -161,6 +163,10 @@ The schedule computes seven states per court and hour, each with a text label an
 | `reclaim_order` | F05 late payment |
 | `release_hold(reason)` | F09 closures and cancellations |
 | `app.count_live_occupancy(club, resource, window)` | The F01 routes that change opening hours or deactivate a court: they are refused while live occupancy falls outside the new hours or on the court (decision D50); the owner uses a closure instead |
+
+### 4.8 Limit on repeated Pay taps (decision D61)
+
+A per-player limit exists as a **platform setting** and **Security sets the value**: `platform.config` keys `pay_tap_limit_count` and `pay_tap_limit_window_seconds`. The design invents no value and ships none. An attempt is a call to `reserve_court` that creates a new hold; each is written to `pay_tap (club_id, user_id, at, is_test)` in the same transaction (migration `0207_pay_tap.sql`), pruned by the housekeeping task. A staff booking made for a customer counts against the staff member, not the customer. If the keys are unset the limit is off, so a launch check `pay_tap_limit_set` is added to the Go live list (F01 §9.3) so the club cannot go Live with an unset value (assumption A-11, to confirm). The refusal is the typed code `too_many_attempts` with the seconds to wait; the client shows a locale key.
 
 ## 5. API routes (prefix `/api/c/{slug}`)
 
@@ -244,7 +250,7 @@ Real Postgres, controllable clock (decision D30). The shared tests T1 to T15 of 
 | 23:00 accepted; 24:00 never a start; a start before opening refused | BOOK-01-AC3, D39 |
 | Day 30 accepted, day 31 refused, at 23:59 and 00:01 Bangkok (controllable clock) | BOOK-01-AC4, AC12, D42 |
 | At 18:10: a player cannot book 18:00; staff can; at 19:00 nobody can book 18:00 | BOOK-01-AC5, D39 |
-| An inactive court, a Draft club for a non tester, a Paused club: refused (staff too when Paused) | BOOK-01-AC9, AC10 |
+| An inactive court, a Draft club for a non tester, a Paused club: refused (staff too when Paused; the owner can still move and release existing bookings) | BOOK-01-AC9, AC10, D60 |
 | A guest and a signed out session: hold refused; Continue creates nothing | BOOK-03-AC2 |
 | Hold ends at now plus the setting; changing the setting afterward leaves an existing hold's end time | BOOK-03-AC1, D46 |
 | Hold setting unset: payment hold refused; PAY-07 booking still works | BOOK-03-AC3, AC9 |
@@ -262,6 +268,7 @@ Real Postgres, controllable clock (decision D30). The shared tests T1 to T15 of 
 | Guest schedule response contains no booking id, customer or coach; a snapshot test fails if a field is added | BOOK-01-AC6, CC-3 |
 | A club's bookings are invisible to another club and cannot collide with them | BOOK-04-AC11, CC-1 |
 | Grid under 2 seconds on a throttled 4G profile with a full month of seeded bookings; loading and offline states render | BOOK-01-AC13 |
+| Repeated Pay taps beyond the platform limit: `too_many_attempts`; a repeat tap that returns the same hold does not count; unset limit fails the launch check | D61 |
 | Static: no hard coded text, the number of minutes and days are variables | CC-5 |
 
 ## 10. How the cross-cutting rules are met
@@ -292,9 +299,9 @@ Real Postgres, controllable clock (decision D30). The shared tests T1 to T15 of 
 
 | Id | Assumption |
 |---|---|
-| A-1 | Group class seats do not count toward the future court hours limit (D49 lists confirmed, bundle, solo and unpaid held hours) |
-| A-2 | A Paused club refuses new holds from staff as well as players (PLAT-03 says "new booking and buying off") |
-| A-3 | There is no player route that holds a slot without Pay. A bad actor can still hold slots by repeating Pay while `max_future_court_hours` is empty. A per-player rate limit is proposed as a platform config value, **no value invented here**; Security to decide whether the limit is needed before launch |
+| A-1 | Group class seats do not count toward the future court hours limit (D49 lists confirmed, bundle, solo and unpaid held hours) | Decided: D59.
+| A-2 | A Paused club refuses new holds from staff as well as players; the owner can still manage existing bookings. Decided: D60 |
+| A-3 | There is no player route that holds a slot without Pay. A per-player limit on repeated Pay taps is a platform setting whose value Security sets (§4.8). Decided: D61 |
 | A-4 | The `orders` shell is created in F03 and extended by F04; F04's design must agree with its columns |
 | A-5 | Moving a booking sends a customer message through a new L key (the PRD front desk rules say the customer is messaged) |
 | A-6 | A player cancelling a hold from C11 releases it at once with reason `player` |
@@ -302,6 +309,7 @@ Real Postgres, controllable clock (decision D30). The shared tests T1 to T15 of 
 | A-8 | Until F07 ships, a request with a coach is refused (`coach_rules_not_installed`) |
 | A-9 | The hold release job batches by order so one order's hours release together |
 | A-10 | "Future" for the limit means the hour has not ended (`end_at > now()`) |
+| A-11 | The Go live checklist includes `pay_tap_limit_set`, so a club cannot go Live while the limit is unset |
 
 ## 13. Not decided here
 
