@@ -1,6 +1,6 @@
 # F07 Solo classes, coach picker and rest rule · Design
 
-Status: **DRAFT for approval (gate 2).** Drafted 30 Oct 2026 from the approved F07 requirements (`requirements.md`, approved 30 Oct 2026, D111, D115, D120 applied) and the code on `main` (F03 migration 0213 already holds the coach hooks). The Architect reviews it. A change to anything below goes through the PRD, then the hand-off, then this file. Tasks (gate 3) follow approval.
+Status: **Approved 30 Oct 2026 (gate 2, D155).** The answers D156 are folded in. Drafted 30 Oct 2026 from the approved F07 requirements (`requirements.md`, approved 30 Oct 2026, D111, D115, D120 applied) and the code on `main` (F03 migration 0213 already holds the coach hooks). The Architect reviews it. A change to anything below goes through the PRD, then the hand-off, then this file. Tasks (gate 3) follow approval.
 
 Feature: F07 Solo classes, coach picker and rest rule. Requirement IDs: COACH-01 to COACH-04 and the local rules R1 to R6 of the requirements (the requirements file has no R7). Depends on F03, F06. Wave 4.
 
@@ -53,7 +53,7 @@ F07 uses the number block 0801 to 0899 (assumption A-1; `docs/proposals/migratio
 
 **`coach_availability_rule`** (D): `club_id`, `id`, `coach_id`, `kind` in (`weekly`, `open`, `closed`), `weekday smallint` (0 to 6, Bangkok week, only for `weekly`), `on_date date` (only for `open` and `closed`), `start_time time`, `end_time time` (whole hours; CHECK `end_time > start_time` and minutes zero, because bookings are 60 minutes on the hour), `created_at`. CHECK: `weekly` needs `weekday` and no date; `open` and `closed` need a date and no weekday. A coach works an hour when a `weekly` rule or an `open` rule covers it **and no `closed` rule covers it** (a closed time wins). With no rule at all the coach is never offered (COACH-01-AC2).
 
-**`coach_leave`** (D): `club_id`, `id`, `coach_id`, `start_date`, `end_date`, `from_hour smallint null`, `to_hour smallint null` (whole Bangkok hours; both null means full days; both set means a part day on a single date; assumption A-5, Q-1), `type text`, `note text`, `status` in (`pending`, `approved`, `declined`), `decided_by uuid null`, `decided_at null`, `created_at`. Only `approved` rows block (COACH-01-AC9, D120). Leave type and note are visible to the coach and the owner only (R2 Meets).
+**`coach_leave`** (D): `club_id`, `id`, `coach_id`, `start_date`, `end_date`, `from_hour smallint null`, `to_hour smallint null` (whole Bangkok hours; both null means full days; both set means a part day on a single date; assumption A-5, D156), `type text null` (free text, no list of types is built, D156), `note text`, `status` in (`pending`, `approved`, `declined`), `decided_by uuid null`, `decided_at null`, `created_at`. Only `approved` rows block (COACH-01-AC9, D120). Leave type and note are visible to the coach and the owner only (R2 Meets).
 
 **`coach_price_override`** (S, owner): `club_id`, `coach_id`, `price_group_id`, `price_satang integer check (price_satang >= 0)`. Unique `(club_id, coach_id, price_group_id)`. A row replaces the tier price for that group (COACH-02-AC3); no row means the tier price; no price is typed into code. Audited (PLAT-04). F04's pricing reads it (F04 §4.2 step 1: "or the coach's override from F07").
 
@@ -216,7 +216,7 @@ Boards: H-C05-Solo-classes, H-C06-Coach-profile, G-C10-Add-coach-checkout, G-C10
 | # | Assumption | Basis |
 |---|---|---|
 | A-1 | Migration block 0801 to 0899 for F07, one file per task | `docs/proposals/migration-blocks.md` |
-| A-2 | If `rest_cap_hours` is empty the PRD default 6 applies in the rule, although F01 forbids an empty value at Go live | Requirements R3-AC6, PRD |
+| A-2 | If `rest_cap_hours` is empty the PRD default 6 applies in the rule (D156), although F01 forbids an empty value at Go live | Requirements R3-AC6, PRD |
 | A-3 | `app.move_booking` calls a second handler that carries the moved booking's id so the rule ignores its own row; F03 gets a small follow up task | F03 §4.3, 0213 hook signature |
 | A-4 | "Lowest numbered open court" is ordered by the court's position field in F01; the same court is kept for the hours of one selection and for Add a coach | R1-AC4, D120 |
 | A-5 | A half day leave is stored as from and to whole hours chosen by the coach, so no morning or afternoon cut off is invented | R2-AC2; no cut off in the PRD (Q-1) |
@@ -229,8 +229,8 @@ Boards: H-C05-Solo-classes, H-C06-Coach-profile, G-C10-Add-coach-checkout, G-C10
 
 ## 15. Open items
 
-1. **Q-1 Half day leave and leave types.** The PRD says "full or half day" and a leave type but gives neither the hours of a half day nor a list of types. Recommended default: the coach picks the hours (A-5) and `type` is free text until the writers supply a list.
-2. **Q-2 Coach pay fields in F12.** F12 names coach earnings (CPORT-06) and says pay numbers are empty settings; it lists no field beyond the PRD pay model. `coach_pay` holds exactly that model (monthly base; per session solo and group, fixed or percent of the coaching portion). Confirm no field is missing.
-3. **Q-3 Group class coach change.** R4 covers solo classes. A group class whose coach is on leave is F08's session; the flag view lists it and F08's design decides how it is substituted.
-4. **Q-4 Coach consent record.** D120 says the club keeps a consent on record. Whether it also needs PDPA consent text and a copy to the coach is a legal question (parked with the privacy notice, D152).
-5. **Q-5 Override shape.** The PRD says "override the price for one coach". A-9 stores it per price group; if one price for both groups is meant the table has a single column. Recommended default: per group.
+1. **Q-1 Half day leave and leave types. Answered, D156:** leave is a time range on whole hours; no leave types and no half day length are invented. Draft text kept for reference: The PRD says "full or half day" and a leave type but gives neither the hours of a half day nor a list of types. Recommended default: the coach picks the hours (A-5) and `type` is free text until the writers supply a list.
+2. **Q-2 Coach pay fields in F12. Answered, D156:** F12 uses only the PRD pay model. Draft text: F12 names coach earnings (CPORT-06) and says pay numbers are empty settings; it lists no field beyond the PRD pay model. `coach_pay` holds exactly that model (monthly base; per session solo and group, fixed or percent of the coaching portion). Confirm no field is missing.
+3. **Q-3 Group class coach change. Answered, D156:** the owner substitutes for solo and group classes alike (F08 calls the same substitution). Draft text: R4 covers solo classes. A group class whose coach is on leave is F08's session; the flag view lists it and F08's design decides how it is substituted.
+4. **Q-4 Coach consent record. Answered, D156:** any coach consent text is part of the D152 notice work. Draft text: D120 says the club keeps a consent on record. Whether it also needs PDPA consent text and a copy to the coach is a legal question (parked with the privacy notice, D152).
+5. **Q-5 Override shape. Answered, D156:** one nullable price per price group. Draft text: The PRD says "override the price for one coach". A-9 stores it per price group; if one price for both groups is meant the table has a single column. Recommended default: per group.
