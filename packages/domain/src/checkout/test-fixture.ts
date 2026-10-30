@@ -55,6 +55,8 @@ export async function fakeReceiptAndMessagePorts(tdb: TestDatabase): Promise<voi
     insert into public.__f04_port_log (port, args) values ('issue_receipt', jsonb_build_array(o, p, k)); select gen_random_uuid() $$`);
   await tdb.query(`create or replace function public.__f04_enqueue_message(k text, u uuid, p jsonb, d text, s timestamptz) returns uuid language sql as $$
     insert into public.__f04_port_log (port, args) values ('enqueue_message', jsonb_build_array(k, u, d)); select gen_random_uuid() $$`);
+  // A feature may already have registered its real port (F10 registers enqueue_message in 0605); the fake replaces it.
+  await tdb.query(`delete from app.payment_ports where port in ('issue_receipt', 'enqueue_message')`);
   await tdb.query(`select app.register_payment_port('issue_receipt', 'public.__f04_issue_receipt(uuid, uuid, text)'::regprocedure)`);
   await tdb.query(`select app.register_payment_port('enqueue_message', 'public.__f04_enqueue_message(text, uuid, jsonb, text, timestamptz)'::regprocedure)`);
 }
