@@ -34,6 +34,9 @@ export interface QuoteSources {
   eligibleCredits(tx: Tx, customerId: string): Promise<EligibleCredit[]>;
   /** F06: the wallet balance in satang, from the ledger. */
   walletBalance(tx: Tx, customerId: string): Promise<number>;
+  /** F06 port reserve_credit_and_wallet (F06-T09): reserve every credit and wallet part of the order's lines, all
+   *  or nothing. False means something is no longer there (used up, expired, wallet short) and nothing was written. */
+  reserveCreditAndWallet(tx: Tx, orderId: string): Promise<boolean>;
 }
 
 export interface QuoteView extends Quote {
@@ -162,11 +165,20 @@ export async function quoteFor(tx: Tx, customerId: string, req: QuoteRequest, so
 }
 
 /** The ports until F06, F07 and F14 exist: no credits, an empty wallet, no coach, no referral codes. */
-export const pendingFeatureSources: Pick<QuoteSources, 'referralCode' | 'coach' | 'eligibleCredits' | 'walletBalance'> = {
+export const pendingFeatureSources: Pick<QuoteSources, 'referralCode' | 'coach' | 'eligibleCredits' | 'walletBalance' | 'reserveCreditAndWallet'> = {
   referralCode: async () => null,
   coach: async () => null,
   eligibleCredits: async () => [],
   walletBalance: async () => 0,
+  // Nothing to reserve when no line uses credit or wallet; otherwise F06's port (0511), which must exist.
+  reserveCreditAndWallet: async (tx, orderId) => {
+    const used = (await tx.query<{ n: string }>(
+      `select count(*) as n from public.order_line where club_id = app.club_id() and order_id = $1 and (credit_units > 0 or wallet_satang > 0)`,
+      [orderId],
+    )).rows[0];
+    if (Number(used?.n ?? 0) === 0) return true;
+    return (await tx.query<{ ok: boolean }>('select app.port_reserve_credit_and_wallet($1) as ok', [orderId])).rows[0]?.ok === true;
+  },
 };
 
 interface PromoRow {
