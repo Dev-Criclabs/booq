@@ -206,8 +206,8 @@ describe('lazy release inside the claim (BOOK-03-AC6, BOOK-04-AC6, FA T8)', () =
     expect(await lazy(COURT, null, [0])).toBe(1);
     // The constraint now lets the next claim in.
     await tdb.query(
-      `insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id) values ($1,'closure',$2,$3,$4,'confirmed',gen_random_uuid())`,
-      [A, COURT, ...hour(0)],
+      `insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id) values ($1,'closure',$2,$3,$4,'confirmed',$5)`,
+      [A, COURT, ...hour(0), await tdb.seedClosure(A)],
     );
     expect((await status(old.order))[0]).toMatchObject({ status: 'released', release_reason: 'expired' });
     expect((await tdb.query('select count(*)::int as n from public.t_handler_calls')).rows[0].n).toBe(1);

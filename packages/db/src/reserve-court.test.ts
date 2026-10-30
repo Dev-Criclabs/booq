@@ -98,12 +98,12 @@ describe('the claim (BOOK-04-AC1, BOOK-06)', () => {
   });
 
   it('a clash on a closure refuses the same way', async () => {
-    await tdb.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id) values ($1,'closure',$2,$3,$4,'confirmed',gen_random_uuid())`, [A, COURT, H(17), H(20)]);
+    await tdb.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id) values ($1,'closure',$2,$3,$4,'confirmed',$5)`, [A, COURT, H(17), H(20), await tdb.seedClosure(A)]);
     expect(await reserve(uid(1), await newOrder(uid(1)), [H(18)])).toEqual({ ok: false, code: 'slot_unavailable', detail: 'resource' });
   });
 
   it('a three hour selection where hour two is taken books nothing (BOOK-04-AC5, FA T3)', async () => {
-    await tdb.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id) values ($1,'closure',$2,$3,$4,'confirmed',gen_random_uuid())`, [A, COURT, H(19), H(20)]);
+    await tdb.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id) values ($1,'closure',$2,$3,$4,'confirmed',$5)`, [A, COURT, H(19), H(20), await tdb.seedClosure(A)]);
     const o = await newOrder(uid(1));
     expect(await reserve(uid(1), o, [H(18), H(19), H(20)])).toEqual({ ok: false, code: 'slot_unavailable', detail: 'resource' });
     expect(await count('booking')).toBe(0);
@@ -180,9 +180,10 @@ describe('parallel requests for one slot (BOOK-04-AC1, AC12; FA T1)', () => {
 
 describe('the only write path (SR-07)', () => {
   it('a player cannot insert into occupancy or booking directly', async () => {
+    const closureId = await tdb.seedClosure(A);
     await expect(
       db.withClubTx({ clubId: A, userId: uid(1), roles: ['player'], source: 'player_app' }, (tx) =>
-        tx.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id) values ($1,'closure',$2,$3,$4,'confirmed',gen_random_uuid())`, [A, COURT, H(18), H(19)]),
+        tx.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id) values ($1,'closure',$2,$3,$4,'confirmed',$5)`, [A, COURT, H(18), H(19), closureId]),
       ),
     ).rejects.toThrow(/permission denied/i);
   });

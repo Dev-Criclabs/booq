@@ -432,6 +432,28 @@ export interface PublicClaimRequest {
   handled_at: string | null;
 }
 
+export interface PublicClosure {
+  club_id: string;
+  id: string;
+  reason: string;
+  range_start: string;
+  range_end: string;
+  repeat_rule: unknown | null;
+  status: string;
+  created_by: string;
+  created_at: string;
+  ended_by: string | null;
+  ended_at: string | null;
+  is_test: boolean;
+}
+
+export interface PublicClosureResource {
+  club_id: string;
+  closure_id: string;
+  resource_id: string;
+  is_test: boolean;
+}
+
 export interface PublicClub {
   id: string;
   slug: string;
@@ -612,6 +634,18 @@ export interface PublicCoachPriceOverride {
   price_group_id: string;
   price_satang: number;
   is_test: boolean;
+}
+
+export interface PublicCoachSubstitution {
+  club_id: string;
+  id: string;
+  booking_id: string;
+  from_coach_id: string;
+  to_coach_id: string;
+  by_staff_id: string;
+  reason: string;
+  is_test: boolean;
+  created_at: string;
 }
 
 export interface PublicCoachTier {
@@ -1139,6 +1173,8 @@ export interface Tables {
   'public.booking_cancel': PublicBookingCancel;
   'public.booking_coach_add': PublicBookingCoachAdd;
   'public.claim_request': PublicClaimRequest;
+  'public.closure': PublicClosure;
+  'public.closure_resource': PublicClosureResource;
   'public.club': PublicClub;
   'public.club_feature': PublicClubFeature;
   'public.club_invite': PublicClubInvite;
@@ -1154,6 +1190,7 @@ export interface Tables {
   'public.coach_leave': PublicCoachLeave;
   'public.coach_pay': PublicCoachPay;
   'public.coach_price_override': PublicCoachPriceOverride;
+  'public.coach_substitution': PublicCoachSubstitution;
   'public.coach_tier': PublicCoachTier;
   'public.coach_tier_price': PublicCoachTierPrice;
   'public.court_price_rule': PublicCourtPriceRule;

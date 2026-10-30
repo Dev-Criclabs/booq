@@ -39,6 +39,8 @@ export interface TestDatabase {
   seedNotice(): Promise<void>;
   /** Makes `id` a coach of `club` (F07, migration 0801): the person with the coach and player roles, the coach row and a weekly rule for every hour of every day. Safe to repeat. */
   seedCoach(club: string, id: string): Promise<void>;
+  /** A closure row to hang occupancy closure slots on (F09, migration 1002); returns its id. */
+  seedClosure(club: string): Promise<string>;
   close(): Promise<void>;
 }
 
@@ -135,6 +137,14 @@ function wrap(name: string): TestDatabase {
       } finally {
         c.release();
       }
+    },
+    async seedClosure(club) {
+      const r = await pool.query(
+        `insert into public.closure (club_id, reason, range_start, range_end, created_by)
+         values ($1, 'test closure', '2000-01-01T00:00:00Z', '2000-01-02T00:00:00Z', '00000000-0000-4000-8000-00000000c105') returning id`,
+        [club],
+      );
+      return r.rows[0].id as string;
     },
     async seedNotice() {
       if ((await pool.query('select 1 from platform.legal_release')).rowCount) return;

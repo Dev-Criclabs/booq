@@ -34,7 +34,7 @@ describe('the slot is not open (outcome wallet_late)', () => {
     expect((await apply(await payment(o1))).outcome).toBe('wallet_late');
 
     await tdb.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id)
-                     values ('3f2b8f0e-7c1d-4a55-9d0a-1c2e3f4a5b6c', 'closure', '00000000-0000-4000-8000-0000000000c1', date_trunc('hour', now()) + interval '92 hours', date_trunc('hour', now()) + interval '93 hours', 'confirmed', gen_random_uuid())`);
+                     values ('3f2b8f0e-7c1d-4a55-9d0a-1c2e3f4a5b6c', 'closure', '00000000-0000-4000-8000-0000000000c1', date_trunc('hour', now()) + interval '92 hours', date_trunc('hour', now()) + interval '93 hours', 'confirmed', $1)`, [await tdb.seedClosure('3f2b8f0e-7c1d-4a55-9d0a-1c2e3f4a5b6c')]);
     const o2 = await order('released', { hour: 92 });
     expect((await apply(await payment(o2))).outcome).toBe('wallet_late');
   });
