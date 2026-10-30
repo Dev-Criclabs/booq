@@ -44,7 +44,9 @@ export const tables: Fragment = {
   'public.owner_notice': { class: 'D', audited: true },
   // audit (F01-T10)
   'audit.registry': { class: 'infra' },
-  'app.test_tables': { class: 'infra' },   // F01-T26
+  'app.test_tables': { class: 'infra' },
+  'app.anonymise_handlers': { class: 'infra' },          // F01-T33 (0019)
+  'app.deletion_impact_handlers': { class: 'infra' },   // F01-T33 (0019)
   'public.audit_entry': { class: 'D' },
   'public.audit_erasure': { class: 'D' },
   // pause and resume (F01-T22): work to run when a club resumes; written only by migrations
