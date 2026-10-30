@@ -45,9 +45,18 @@ async function completeStep(step: string, club = CLUB) {
       await tdb.query(`insert into public.payment_connection (club_id, tested_at) values ($1, app.now())`, [club]);
       break;
     }
+    case 'legal_notice': {
+      // platform-wide, not per club: one published release is enough (D152)
+      if ((await tdb.query(`select 1 from platform.legal_release`)).rowCount === 0) {
+        const st = (await tdb.query(`select id from platform.platform_staff limit 1`)).rows[0].id;
+        await tdb.query(`insert into platform.legal_release (seq, published_by) values (1, $1)`, [st]);
+        for (const kind of ['privacy', 'terms']) for (const lang of ['th', 'en']) await tdb.query(`insert into platform.legal_text (seq, kind, language, title, body) values (1, $1, $2, 't', 'b')`, [kind, lang]);
+      }
+      break;
+    }
   }
 }
-const ALL_STEPS = ['basics', 'plan', 'courts_hours', 'line', 'payments'];
+const ALL_STEPS = ['basics', 'plan', 'courts_hours', 'line', 'payments', 'legal_notice'];
 
 beforeEach(async () => {
   tdb = await createTestDatabase();
@@ -162,6 +171,7 @@ describe('platform.club_progress (P3: what is missing and who owes it)', () => {
       { item: 'courts_hours', done: false, owed_by: 'booq' },
       { item: 'line', done: false, owed_by: 'booq' },
       { item: 'payments', done: false, owed_by: 'booq' },
+      { item: 'legal_notice', done: false, owed_by: 'booq' },
     ]);
     expect(p.launch).toHaveLength(10);
     expect(p.launch[0]).toEqual({ item: 'line_test', result: 'pending', owed_by: 'booq' });
@@ -174,7 +184,7 @@ describe('platform.club_progress (P3: what is missing and who owes it)', () => {
     expect(launch.find((x) => x.item === 'line_test')).toMatchObject({ result: 'pending' });   // derived: a typed row does not count
     expect(await progress(loner)).toBeNull();
     expect(await progress(spec, OTHER)).toBeNull();
-    expect((await progress(admin, OTHER)).setup).toHaveLength(5);
+    expect((await progress(admin, OTHER)).setup).toHaveLength(6);
     expect(await progress(admin, 'aaaaaaaa-0000-4000-8000-0000000000ff')).toBeNull(); // an admin sees every club, but not one that does not exist
   });
 });

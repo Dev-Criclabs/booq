@@ -138,6 +138,21 @@ export interface PlatformLaunchCheck {
   checked_by: string | null;
 }
 
+export interface PlatformLegalRelease {
+  seq: number;
+  version: string | null;
+  published_at: string;
+  published_by: string;
+}
+
+export interface PlatformLegalText {
+  seq: number;
+  kind: string;
+  language: string;
+  title: string;
+  body: string;
+}
+
 export interface PlatformOwnerContactChange {
   id: string;
   club_id: string;
@@ -784,6 +799,13 @@ export interface PublicPromoRedemption {
   is_test: boolean;
 }
 
+export interface PublicRateLimitHit {
+  club_id: string;
+  key_hash: string;
+  window_start: string;
+  hits: number;
+}
+
 export interface PublicResource {
   club_id: string;
   id: string;
@@ -845,6 +867,8 @@ export interface Tables {
   'platform.config': PlatformConfig;
   'platform.export_request': PlatformExportRequest;
   'platform.launch_check': PlatformLaunchCheck;
+  'platform.legal_release': PlatformLegalRelease;
+  'platform.legal_text': PlatformLegalText;
   'platform.owner_contact_change': PlatformOwnerContactChange;
   'platform.platform_staff': PlatformPlatformStaff;
   'platform.staff_assignment': PlatformStaffAssignment;
@@ -897,6 +921,7 @@ export interface Tables {
   'public.price_group': PublicPriceGroup;
   'public.promo_code': PublicPromoCode;
   'public.promo_redemption': PublicPromoRedemption;
+  'public.rate_limit_hit': PublicRateLimitHit;
   'public.resource': PublicResource;
   'public.user_consent': PublicUserConsent;
   'public.user_staff_note': PublicUserStaffNote;

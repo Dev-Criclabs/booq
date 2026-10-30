@@ -191,7 +191,7 @@ describe('blindness and classification', () => {
       (await tdb.query(`select has_table_privilege($1, $2, 'select,insert,update,delete') as ok`, [role, table])).rows[0].ok;
     expect(await priv('booq_platform', 'public.club_status_change')).toBe(false); // D table: never (the full sweep is platform-grants.test.ts)
     const tables = (await tdb.query(`select table_name from information_schema.tables where table_schema = 'platform'`)).rows.map((r) => r.table_name);
-    expect(tables.sort()).toEqual(['audit_log', 'club_usage_daily', 'config', 'export_request', 'launch_check', 'owner_contact_change', 'platform_staff', 'staff_assignment', 'support_session', 'template', 'template_item', 'worker_heartbeat']);
+    expect(tables.sort()).toEqual(['audit_log', 'club_usage_daily', 'config', 'export_request', 'launch_check', 'legal_release', 'legal_text', 'owner_contact_change', 'platform_staff', 'staff_assignment', 'support_session', 'template', 'template_item', 'worker_heartbeat']);
     // worker_heartbeat (migration 0007) is the one platform table the worker writes and BOOQ staff read: counts only.
     for (const t of tables.filter((x) => x !== 'worker_heartbeat')) for (const role of ['anon', 'authenticated', 'booq_app', 'booq_worker']) {
       expect(await priv(role, `platform.${t}`), `${role} ${t}`).toBe(false);

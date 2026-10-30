@@ -110,7 +110,7 @@ describe('progress (P3, PLAT-01-AC2, AC9)', () => {
     const p = await svc.getProgress(spec, r.id);
     if (!p.ok) throw new Error(p.code);
     expect(p.progress.setup.map((s) => [s.item, s.done, s.owed_by])).toEqual([
-      ['basics', false, 'booq'], ['plan', false, 'booq'], ['courts_hours', false, 'booq'], ['line', false, 'booq'], ['payments', false, 'booq'],
+      ['basics', false, 'booq'], ['plan', false, 'booq'], ['courts_hours', false, 'booq'], ['line', false, 'booq'], ['payments', false, 'booq'], ['legal_notice', false, 'booq'],
     ]);
     expect(p.progress.launch).toHaveLength(10);
     expect(p.progress.launch.every((l) => l.result === (l.item === 'no_open_launch_failure' ? 'pass' : 'pending'))).toBe(true);
