@@ -27,8 +27,8 @@ export function parsePayRequest(body: unknown): PayRequest {
 }
 
 /** Gate and reprice, inside the Pay transaction. Writes nothing. */
-export async function preparePay(tx: Tx, customerId: string, req: PayRequest, sources: QuoteSources): Promise<PreparedPay> {
-  const quote = await quoteFor(tx, customerId, req.choice, sources);
+export async function preparePay(tx: Tx, customerId: string, req: PayRequest, sources: QuoteSources, opts: { forCustomer?: boolean } = {}): Promise<PreparedPay> {
+  const quote = await quoteFor(tx, customerId, req.choice, sources, opts);
   return quote.quoteHash === req.quoteHash ? { kind: 'ready', quote } : { kind: 'price_changed', quote };
 }
 
@@ -86,7 +86,7 @@ export async function placeOrder(tx: Tx, customerId: string, choice: QuoteReques
   const starts = [...new Set(quote.lines.map((l) => l.startsAt))].sort();
   // A second tap (D47) returns the caller's live hold before anything is counted, so the order's own code use
   // or birthday entitlement never refuses it. reserve_court repeats this lookup under the customer lock.
-  const live = await liveHold(tx, choice.courtId, choice.coachId, starts);
+  const live = await liveHold(tx, customerId, choice.courtId, choice.coachId, starts);
   if (live) return live;
   const names = await lineNames(tx, choice, quote.lines, sources);
   const group = (await tx.query<Names & { id: string }>(`select id, name_th, name_en from public.price_group where club_id = app.club_id() and id = $1`, [quote.priceGroupId])).rows[0];
@@ -156,23 +156,24 @@ export async function placeOrder(tx: Tx, customerId: string, choice: QuoteReques
 
 const isoOrNull = (v: string | Date | null): string | null => (v === null ? null : new Date(v).toISOString());
 
-/** The caller's live hold for exactly this selection, if any (D47). The Pay route asks it before repricing. */
-export async function findLiveHold(tx: Tx, choice: QuoteRequest): Promise<PlacedOrder | null> {
+/** The live hold the caller made for this customer and exactly this selection, if any (D47); the same lookup as
+ *  reserve_court's. The Pay route asks it before repricing. */
+export async function findLiveHold(tx: Tx, choice: QuoteRequest, customerId: string): Promise<PlacedOrder | null> {
   const starts = choice.hours.map((h) => new Date(h)).filter((d) => !Number.isNaN(d.getTime())).map((d) => d.toISOString()).sort();
-  return liveHold(tx, choice.courtId, choice.coachId, [...new Set(starts)]);
+  return liveHold(tx, customerId, choice.courtId, choice.coachId, [...new Set(starts)]);
 }
 
-async function liveHold(tx: Tx, courtId: string, coachId: string | null, starts: string[]): Promise<PlacedOrder | null> {
+async function liveHold(tx: Tx, customerId: string, courtId: string, coachId: string | null, starts: string[]): Promise<PlacedOrder | null> {
   const r = (await tx.query<{ order_id: string; booking_ids: string[]; hold_expires_at: string }>(
     `select b.order_id, array_agg(b.id order by b.start_at) as booking_ids, min(b.hold_expires_at) as hold_expires_at
        from public.booking b
-      where b.club_id = app.club_id() and b.customer_id = app.user_id() and b.created_by = app.user_id()
+      where b.club_id = app.club_id() and b.customer_id = $4 and b.created_by = app.user_id()
         and b.status = 'awaiting_payment' and b.hold_expires_at > app.now()
         and b.resource_id = $1 and b.coach_id is not distinct from $2::uuid
       group by b.order_id
      having array_agg(b.start_at order by b.start_at) = $3::timestamptz[]
       limit 1`,
-    [courtId, coachId, starts],
+    [courtId, coachId, starts, customerId],
   )).rows[0];
   return r ? { orderId: r.order_id, bookingIds: r.booking_ids, holdExpiresAt: new Date(r.hold_expires_at).toISOString(), reused: true, confirmed: false, receiptId: null } : null;
 }

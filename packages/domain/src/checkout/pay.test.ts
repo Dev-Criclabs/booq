@@ -253,7 +253,7 @@ describe('placeOrder: entitlements and the ledger', () => {
     // A repeat of the same intent is not repriced (design 4.5 step 6): the live hold is found first.
     const src = fixtureSources();
     const choice = parsePayRequest({ courtId: COURT, hours: [HOUR_A], code: 'MINE', quoteHash: '0'.repeat(64) }).choice;
-    expect(await inTx((tx) => findLiveHold(tx, choice))).toMatchObject({ orderId: first.orderId, reused: true });
+    expect(await inTx((tx) => findLiveHold(tx, choice, ME))).toMatchObject({ orderId: first.orderId, reused: true });
     const again = await inTx(async (tx) => placeOrder(tx, ME, choice, await quoteFor(tx, ME, { ...choice, code: null }, src), src));
     expect(again).toMatchObject({ orderId: first.orderId, reused: true });
     expect((await tdb.query(`select count(*)::int as n from public.promo_redemption where code_id = $1`, [id])).rows[0].n).toBe(1);

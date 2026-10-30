@@ -7,6 +7,12 @@ export interface AppAnonymiseHandlers {
   created_at: string;
 }
 
+export interface AppCancelHandlers {
+  name: string;
+  handler: unknown;
+  ord: number;
+}
+
 export interface AppClaimHandlers {
   handler_key: string;
   handler: unknown;
@@ -399,6 +405,8 @@ export interface PublicBooking {
   is_test: boolean;
   created_at: string;
   updated_at: string;
+  class_session_id: string | null;
+  waitlist_entry_id: string | null;
 }
 
 export interface PublicBookingCancel {
@@ -440,6 +448,31 @@ export interface PublicClaimRequest {
   requested_at: string;
   handled_by: string | null;
   handled_at: string | null;
+}
+
+export interface PublicClassSession {
+  club_id: string;
+  id: string;
+  template_id: string;
+  start_at: string;
+  end_at: string;
+  name_th: string;
+  name_en: string;
+  audience: string;
+  level: string | null;
+  coach_id: string;
+  resource_id: string;
+  min_players: number;
+  max_players: number;
+  drop_in_price_satang: number | null;
+  status: string;
+  attention_reason: string | null;
+  cancel_reason: string | null;
+  edited: boolean;
+  cancelled_by: string | null;
+  cancelled_at: string | null;
+  is_test: boolean;
+  created_at: string;
 }
 
 export interface PublicClassTemplate {
@@ -1196,6 +1229,7 @@ export interface PublicWalletLedger {
 
 export interface Tables {
   'app.anonymise_handlers': AppAnonymiseHandlers;
+  'app.cancel_handlers': AppCancelHandlers;
   'app.claim_handlers': AppClaimHandlers;
   'app.coach_rules_hook': AppCoachRulesHook;
   'app.coach_rules_move_hook': AppCoachRulesMoveHook;
@@ -1243,6 +1277,7 @@ export interface Tables {
   'public.booking_cancel': PublicBookingCancel;
   'public.booking_coach_add': PublicBookingCoachAdd;
   'public.claim_request': PublicClaimRequest;
+  'public.class_session': PublicClassSession;
   'public.class_template': PublicClassTemplate;
   'public.closure': PublicClosure;
   'public.closure_resource': PublicClosureResource;
