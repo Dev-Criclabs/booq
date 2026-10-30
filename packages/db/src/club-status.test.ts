@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from './tx';
 import { createPlatformDb, type PlatformDb } from './platform-tx';
 import { createTestDatabase, type TestDatabase } from './testing/harness';
+import { completeSetup, recordLaunchChecks } from './setup-fixture';
 
 // F01-T20 / migration 0032: app.set_club_status and the transition table
 // (PLAT-01-AC1 to AC4, AC7, AC10; review SR-02: Go live, pause and resume clear the window).
@@ -40,8 +41,8 @@ async function apply(staffId: string | null, to: string, reason: string | null, 
 const statusOf = async (club = CLUB) => (await tdb.query(`select status from public.club where id = $1`, [club])).rows[0].status as string;
 const changes = async (club = CLUB) =>
   (await tdb.query(`select from_status, to_status, reason, actor_staff_id from public.club_status_change where club_id = $1 order by occurred_at, id`, [club])).rows;
-const addChecks = (result: string[]) =>
-  Promise.all(result.map((r, i) => tdb.query(`insert into platform.launch_check (club_id, check_key, result) values ($1, $2, $3)`, [CLUB, `check_${i}`, r])));
+/** Records results for the first required checks and a pass for the rest of the configured list. */
+const addChecks = (first: string[]) => recordLaunchChecks(tdb, CLUB, first);
 const openWindow = () => tdb.query(`update public.club set allow_booq_changes_set_at = app.now(), allow_booq_changes_until = app.now() + interval '24 hours' where id = $1`, [CLUB]);
 const windowCleared = async () => {
   const w = (await tdb.query(`select allow_booq_changes_until as u, allow_booq_changes_set_at as s from public.club where id = $1`, [CLUB])).rows[0];
@@ -55,6 +56,8 @@ beforeEach(async () => {
   spec = await staff('spec@booq.example', 'onboarding_specialist', '99999999-0000-4000-8000-000000000002', 'Sam Specialist');
   loner = await staff('loner@booq.example', 'onboarding_specialist', '99999999-0000-4000-8000-000000000003', 'Lee Loner');
   await tdb.query(`insert into platform.staff_assignment (staff_id, club_id) values ($1, $2)`, [spec, CLUB]);
+  await completeSetup(tdb, CLUB);
+  await completeSetup(tdb, OTHER);
   db = createDb({ connectionString: tdb.url, max: 1 });
   pdb = createPlatformDb({ connectionString: tdb.url, max: 1 });
 });
@@ -92,7 +95,7 @@ describe('the transition table (PLAT-01-AC1 to AC4)', () => {
     expect(await setStatus(admin, 'testing', 'setup_done')).toBe('testing');
     expect(await statusOf()).toBe('testing');
     expect(await changes()).toEqual([{ from_status: 'draft', to_status: 'testing', reason: 'setup_done', actor_staff_id: admin }]);
-    const a = await tdb.query(`select actor_type, actor_platform_staff_id as staff, old_value, new_value from public.audit_entry where club_id = $1 and record_type = 'club' and action = 'update'`, [CLUB]);
+    const a = await tdb.query(`select actor_type, actor_platform_staff_id as staff, old_value, new_value from public.audit_entry where club_id = $1 and record_type = 'club' and action = 'update' and actor_type = 'platform_staff'`, [CLUB]);
     expect(a.rows).toHaveLength(1);
     expect(a.rows[0]).toMatchObject({ actor_type: 'platform_staff', staff: admin });
     expect(JSON.stringify(a.rows[0].new_value)).toContain('testing');
@@ -113,10 +116,10 @@ describe('the transition table (PLAT-01-AC1 to AC4)', () => {
   it('Testing to Live is refused until every launch check passes, and says which are missing', async () => {
     await setStatus(admin, 'testing');
     await expect(setStatus(admin, 'live')).rejects.toThrow(/blocked/);
-    await addChecks(['pass', 'fail', 'pending']);
+    const keys = await addChecks(['pass', 'fail', 'pending']);
     const err = await setStatus(admin, 'live').catch((e) => e as Error & { detail?: string });
     expect((err as Error).message).toMatch(/blocked/);
-    expect(JSON.parse((err as { detail: string }).detail)).toEqual([{ item: 'check_1', result: 'fail' }, { item: 'check_2', result: 'pending' }]);
+    expect(JSON.parse((err as { detail: string }).detail)).toEqual([{ item: keys[1], owed_by: 'booq', result: 'fail' }, { item: keys[2], owed_by: 'booq', result: 'pending' }]);
     expect(await statusOf()).toBe('testing');
     expect(await changes()).toHaveLength(1);
     await tdb.query(`update platform.launch_check set result = 'pass' where club_id = $1`, [CLUB]);
