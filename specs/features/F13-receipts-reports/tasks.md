@@ -66,4 +66,4 @@ Depends on: F01 `club.receipt_prefix`, `vat_enabled`, T13 route wrapper, T18 gra
 - [ ] **F13-T21** Sweep: every RCPT-01 to RCPT-03 acceptance criterion has a named test; walk the F13 boards; file gaps with the ID. IDs: RCPT-01 to RCPT-03. Role: QA · Deps all · Size: S
   Tests first: a table of criteria to tests with none empty.
 
-Order: T01, T02, T03, T04, T05, T06, then T07 to T11, the routes, the screens, then F. About 21 tasks, each under a day. The R-Receipt boards are not in the repo (requirements Q3); T06 and T16 wait for them or for the writers' layout.
+Order: T01, T02, T03, T04, T05, T06, then T07 to T11, the routes, the screens, then F. About 21 tasks, each under a day. The R-Receipt boards are in the canvas backup (`docs/orchestrator/canvas-backup/12ae5a85-7762-44b9-9b19-9df906c1e373/project/R-Receipt-EN.dc.html` and `R-Receipt-TH.dc.html`); T06 and T16 build from them. The spec wins over the canvas, and the receipt sample data is wrong in places (`docs/canvas-gaps.md` B5 out of date order numbers and a wrong bundle expiry, B9 address placeholder note), so none of it is copied into code or tests.
