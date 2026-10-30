@@ -9,6 +9,9 @@ import {
   FakeLine,
   badSignature,
   duplicateCallbackParallel,
+  callbackNeverArrives,
+  duplicatePayment,
+  failedChargeThenSecondTap,
   lateCallbackAfterHold,
   paidAfterQrExpiryInsideHold,
   richMenuProblems,
@@ -157,5 +160,36 @@ describe('fake LINE', () => {
     const menu = { richMenuId: 'r', size: { width: 2500, height: 1686 }, name: 'm', chatBarText: 'c', areas: [0, 1, 2, 3, 4, 5].map(area) };
     expect(richMenuProblems(menu, { liffId: 'liffA', bookCourtLinkContains: 'p0' })).toEqual([]);
     expect(richMenuProblems({ ...menu, areas: menu.areas.slice(0, 5) }, { liffId: 'liffA', bookCourtLinkContains: 'p0' })).not.toEqual([]);
+  });
+});
+
+describe('fake Beam: D71 to D79 helpers', () => {
+  test('D73: a payment without a webhook leaves the charge SUCCEEDED for a status check', async () => {
+    const { beam, clock, target, seen, charge, holdEndsAt } = setup();
+    const c = charge();
+    await callbackNeverArrives({ beam, clock, target, charge: c, holdEndsAt });
+    expect(seen.confirmed).toBe(0);
+    expect(beam.getCharge(c.chargeId).status).toBe('SUCCEEDED');
+  });
+
+  test('D72: a failed charge sends charge.failed and the second tap makes a new charge', async () => {
+    const { beam, clock, target, charge, holdEndsAt } = setup();
+    const { failed, second } = await failedChargeThenSecondTap({ beam, clock, target, charge: charge(), holdEndsAt }, async () => charge());
+    expect(failed.eventName).toBe('charge.failed');
+    expect(second.status).toBe('PENDING');
+  });
+
+  test('D78: two charges paid for one order are two payments', async () => {
+    const { beam, clock, target, charge, holdEndsAt } = setup();
+    const { first, second } = await duplicatePayment({ beam, clock, target, charge: charge(), holdEndsAt }, charge());
+    expect(first.chargeId).not.toBe(second.chargeId);
+  });
+
+  test('D76: personal fields in a create-charge request are reported', () => {
+    const { beam, charge } = setup();
+    charge();
+    expect(beam.unexpectedRequestFields()).toEqual([]);
+    beam.createCharge('mA', { amount: 100, currency: 'THB', referenceId: 'x', phone: '0812345678', paymentMethod: { paymentMethodType: 'QR_PROMPT_PAY', qrPromptPay: { expiryTime: '2026-12-07T10:00:00Z' } } } as never);
+    expect(beam.unexpectedRequestFields()).toEqual(['phone']);
   });
 });

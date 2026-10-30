@@ -20,7 +20,7 @@ Why fakes and not mocks: PAY-02, PAY-03, LINE-03 and LINE-04 are about what cros
 | `line/flex.ts` | Flex inspector: texts, actions, limits, confirmed card check, text-from-locale check |
 | `line/rich-menu.ts` | Six tile deep link check |
 | `line/liff-stub.ts` | `window.liff` stand in for Playwright |
-| `fakes.spec.ts` | 23 self tests of the fakes (run by `pnpm vitest run tests`) |
+| `fakes.spec.ts` | 27 self tests of the fakes (run by `pnpm vitest run tests`) |
 | `../acceptance/` | `spec-ids.ts`, `generate.ts` (regenerates the skeletons and `docs/qa/acceptance-coverage.md`), `coverage.spec.ts` (every criterion ID appears, D126), and the generated `F*.spec.ts` skeletons |
 | `../support/parallel.ts` | `raceAll`, `repeat`, `tally` for concurrency tests |
 
@@ -87,6 +87,11 @@ The catalogue is `BEAM_SCENARIOS` in `scenarios.ts`. Expected outcomes come from
 | 5a | **Paid after the QR expiry, inside the hold** | `paidAfterQrExpiryInsideHold` | The QR expires slightly before the hold ends, by a platform margin (D80). Only a payment after the **hold end** is late (PAY-02-AC2, D25, D126), so this one **confirms normally**. QA picks no margin value: the fake reads the QR expiry from the charge the app created and the hold end from the app (`ScenarioContext.holdEndsAt`), and fails the scenario if the QR does not expire before the hold end |
 | 5b | **Late callback after the hold end** | `lateCallbackAfterHold(variant, {beforePay})` | `slot-still-open`: **approved**. `slot-taken-confirmed`, `slot-held-by-other`, `solo-coach-lost` (court and coach both must be free), `closure-created`, `club-paused` and `account-deleted` (D107, D109): not confirmed, the **whole amount goes to the wallet**, the player gets a LINE message, and the wallet credit gets its own receipt (D25, D37) |
 | 6 | **Unknown charge** | `unknownCharge` | A validly signed callback for a charge the app has no order for: answered with success and flagged; nothing confirmed or credited (D71) |
+| 7 | **Failed charge, second tap** | `failedChargeThenSecondTap` | `charge.failed` inside the hold, then a second tap makes a **new charge in the same hold** (D72) |
+| 8 | **Callback never arrives** | `callbackNeverArrives` | The charge is SUCCEEDED at Beam with no webhook. The server may check the charge status and confirm **only when amount and reference match**, with an audit entry (D73) |
+| 9 | **Duplicate payment** | `duplicatePayment` | Two charges for one order both paid: the first confirms, the second goes to the wallet (reason `duplicate_payment`) with its own receipt (D78, D112) |
+| 10 | **Package paid after its order was cancelled** | `lateCallbackAfterHold(ctx, 'package-order-cancelled')` | Whole value to the wallet with its own receipt (D74) |
+| 11 | **Only the order reference is sent** | `unexpectedRequestFields()` | Create-charge requests hold no personal field (D76) |
 
 Wrong amount (scenario 3) also expects: the player is told in the app and by LINE when it can be sent (D77, D112); staff later credit the full amount received and that credit has its own receipt (D77, D79); a duplicate payment credit gets its own receipt (D112). Those later steps are staff actions, tested outside the fake.
 

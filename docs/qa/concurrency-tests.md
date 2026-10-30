@@ -55,7 +55,7 @@ The oracle runs after **every** scenario in the suite, not only the one that is 
 | CONC-04 | Adjacent hours are not a conflict | Court 1 empty | P1 books 18:00 to 19:00; P2 books 19:00 to 20:00 | Both succeed. Guards against an off by one in the range check |
 | CONC-05 | Different courts | Court 1 and 2 empty | P1 books Court 1, P2 books Court 2, same hour | Both succeed. Guards against a rule that locks the whole hour |
 | CONC-06 | Different clubs | Club A and club B both have a Court 1 | A player at each club books 18:00 on their Court 1 | Both succeed. The uniqueness rule must include the club or resource, never time alone |
-| CONC-07 | Same player double tap | Court 1 empty | P1 sends the same Pay request twice at once (same idempotency key if one exists, else different) | Exactly 1 hold. Second request either returns the same hold (idempotent) or a clean conflict, never two holds and never a 500. Expected behaviour needs Q-01 |
+| CONC-07 | Same player double tap | Court 1 empty | P1 sends the same Pay request twice at once | Exactly 1 hold and 1 charge. Both requests return the **same hold and the same QR** (D47). Never two holds, never a 500, never a second charge |
 | CONC-08 | Staff vs player | Court 1 empty | Front desk creates a walk in (A2) while a player taps Pay | Exactly 1 succeeds, same rules |
 
 ## 4. Races involving holds (BOOK-03 with BOOK-04)
@@ -66,7 +66,7 @@ The oracle runs after **every** scenario in the suite, not only the one that is 
 | CONC-10 | Expiry boundary | P1 holds at T, expires at T+15:00 | P2 tries at T+14:59.999 and another P3 at T+15:00.001 (fake clock moved between) | First refused as held; second succeeds. At exactly T+15:00 the answer must match the design (hold valid until or after `expires_at`); the test pins whichever the design says, and a boundary row in design.md is required |
 | CONC-11 | Expiry job vs new player | P1's hold is expired but the job has not yet run | P2 taps Pay at the same moment `runDueJobs()` runs | P2 succeeds exactly once. P1's release message sent exactly once. No state where both P1 and P2 are active. This is why the testability request says an expired hold must count as released even before the job runs |
 | CONC-12 | Late Beam payment vs new player (PAY-03) | P1's hold expired; slot open; P1 has paid at Beam | The late callback for P1 arrives at the same moment P2 taps Pay on the same slot | Exactly one of: P1 approved (and P2 refused), or P2 holds and P1's value goes to the wallet. Never both on the court. Never P1's money lost: either a confirmed booking or a wallet ledger row of the paid amount. Exactly one LINE outcome message for P1. "Still open" is defined by D25: no other hold, booking or closure |
-| CONC-13 | Closure vs hold | P1 holds Court 1 18:00 | Staff create a closure covering 18:00 while P1's callback arrives | Closure wins deterministically or P1 wins and the closure preview lists P1's booking; never a confirmed booking inside a closed slot with no credit back. What happens to a hold under a new closure: Q-16 |
+| CONC-13 | Closure vs hold | P1 holds Court 1 18:00 | Staff create a closure covering 18:00 while P1's callback arrives | The closure wins: the hold is cancelled and P1 is told (D48). A callback that arrives afterwards follows PAY-03: not confirmed, whole value to the wallet (closure, D25). Never a confirmed booking inside a closed slot |
 
 ## 5. Solo class: court and coach all or nothing
 
