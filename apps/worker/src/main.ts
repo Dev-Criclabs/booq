@@ -2,6 +2,7 @@ import { createDb } from '@booq/db';
 import { listClubIds } from './club-list';
 import { buildCrontab, readWorkerConfig } from './config';
 import { IMPORT_STAGING_DISPATCH, IMPORT_STAGING_SWEEP, importStagingDispatch, sweepImportStaging } from './tasks/import-staging';
+import { CONSOLE_SESSION_SWEEP, consoleSessionSweep } from './tasks/console-session-sweep';
 import { RATE_LIMIT_SWEEP, rateLimitSweep } from './tasks/rate-limit-sweep';
 import { runHoldRelease } from './tasks/hold-release';
 import { startTicker } from './ticker';
@@ -13,6 +14,7 @@ import { startWorker } from './worker';
 const config = readWorkerConfig(process.env);
 const db = createDb({ connectionString: config.databaseUrl, role: 'booq_worker' });
 
+const sweepConsoleSessions = consoleSessionSweep({ db, absoluteSeconds: config.consoleSessionAbsoluteSeconds });
 const sweepRateLimit = rateLimitSweep({ db, keepSeconds: config.rateLimitKeepSeconds });
 
 const worker = await startWorker({
@@ -23,6 +25,9 @@ const worker = await startWorker({
     [IMPORT_STAGING_DISPATCH]: importStagingDispatch({ listClubIds: () => listClubIds(db) }),
     [RATE_LIMIT_SWEEP]: async () => {
       await sweepRateLimit();
+    },
+    [CONSOLE_SESSION_SWEEP]: async () => {
+      await sweepConsoleSessions();
     },
   },
   crontab: buildCrontab(config),
