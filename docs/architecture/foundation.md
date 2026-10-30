@@ -1,8 +1,8 @@
 # BOOQ foundation architecture (proposal)
 
-Status: **DRAFT, revision 3, for approval by a person. Nothing here is approved.** Author role: Architect / data. Branch `architect/foundation`. 30 Oct 2026.
+Status: **DRAFT, revision 4, for approval by a person. Nothing here is approved.** Author role: Architect / data. Branch `architect/foundation`. 30 Oct 2026.
 
-Revision 2 applies the decisions in `docs/decisions.md` (decisions D1 to D15 and round 2b). Those numbers are the decisions log's. This document's own recommendations are numbered R1 to R16 to avoid a clash. Revision 3 adds the LINE message cap (LINE-07, decision D17) to sections 2.2, 4.4, 5.3 and 5.4 and the tests in 5.6, and notes decision D16 (the 7 Dec test runs on production) in section 2.6. Answered questions are listed in section 10.1 and removed from review; the open ones carry a recommendation in section 10.2 so they can be approved in bulk.
+Revision 2 applies the decisions in `docs/decisions.md` (decisions D1 to D15 and round 2b). Those numbers are the decisions log's. This document's own recommendations are numbered R1 to R16 to avoid a clash. Revision 4 applies decisions D18 to D31 (round 4), records what Beam's and LINE's public documentation say and do not say (§6.1, §6.2, §5.6), and fixes two assumptions the documentation disproved (a push to a non-friend is not rejected, §5.3; Beam sends no event id, §6.5). Revision 3 added the LINE message cap (LINE-07, decision D17) to sections 2.2, 4.4, 5.3 and 5.4 and the tests in 5.6, and notes decision D16 (the 7 Dec test runs on production) in section 2.6. Answered questions are listed in section 10.1 and removed from review; the open ones carry a recommendation in section 10.2 so they can be approved in bulk.
 
 This is the shared design every feature relies on. It is not a feature `design.md`. F01's `design.md` comes after F01's requirements are approved, and it will cite this file.
 
@@ -25,7 +25,7 @@ The stack is the one adopted on 30 Oct: Next.js with the LIFF SDK, Postgres (Sup
 | R7 | Ledgers | Append-only by grants and triggers; balances are derived by SUM; no stored editable number | Reads sum rows (tiny volume at club scale) |
 | R8 | BOOQ staff blindness | Separate DB role with grants only on setup tables (default deny), separate Next.js app with only that role's credentials, aggregate-only usage counters (§4) | Two deployables; worth it because the platform app holds no credential that can read player data |
 | R9 | Jobs | Graphile Worker on Postgres. Time rules live in query predicates (`hold_expires_at <= now()`); jobs only do side effects (§5) | One more process to run; avoids loss of correctness if a job is late |
-| R10 | Beam | Gateway interface; raw-body HMAC check; event table for idempotency; late payment re-attempts the claim, else wallet (§6) | Exact Beam details unknown until docs are read (Q24) |
+| R10 | Beam | Gateway interface; raw-body HMAC check; event table for idempotency; late payment re-attempts the claim, else wallet (§6, with what the docs do not say in §6.2) | Beam sends no event id and no timestamp, so every webhook is confirmed by a charge lookup (§6.5) |
 | R11 | Time | `timestamptz` for instants, `date`/`time` for wall-clock rules, one `time` package, Thai dates forced to the Gregorian year (§7) | Banned APIs need a lint |
 | R12 | Audit | DB triggers write the diff via a SECURITY DEFINER writer; actor and reason come from transaction-local settings (§8) | Every audited table needs a trigger; CI checks the list |
 | R13 | Repo | pnpm monorepo: `apps/web`, `apps/platform`, `apps/worker`, `packages/*` (§9) | More folders than one app; clean role ownership |
@@ -62,9 +62,9 @@ The spec uses the word twice. `club.tax_branch` is the **tax branch** printed on
 - Primary keys: `uuid default gen_random_uuid()`. Order by `created_at`, not by id. (UUIDv7 can come later; volumes are small.)
 - Every secondary index on a club table starts with `club_id`. Exclusion and uniqueness on globally unique ids are the exception.
 - Enumerations are `text` with a CHECK constraint, not Postgres enums, so changing a set is one migration without enum surgery. The types are generated into TypeScript.
-- Money: `bigint` satang, columns end in `_satang`, one currency (THB), no floats anywhere. Prices and amounts `check (>= 0)`; ledger deltas are signed. Percentages are integer basis points. Rounding is a question (Q7).
+- Money: `bigint` satang, columns end in `_satang`, one currency (THB), no floats anywhere. Prices and amounts `check (>= 0)`; ledger deltas are signed. Percentages are integer basis points. Rounding is half up to the satang (decision D23).
 - Instants are `timestamptz`. Wall-clock rules are `date` and `time` (§7).
-- No hard delete of business records. Status columns and ledger compensation. PDPA deletion is anonymisation (Q27).
+- No hard delete of business records. Status columns and ledger compensation. PDPA deletion is anonymisation (adopted, section 10.1).
 - Defaults live in templates (P5), as data written to the club at creation. The Tennis template carries the PRD defaults (decision D8): hold 15 minutes with choices 10/15/20, waitlist claim 30 minutes, no offers within 2 hours, rest cap 6, group classes 4 to 6 players. The Blank template starts empty. There are no default values in code. A setting that is absent is unset (TBD), and the code treats unset as "no limit" or "feature off" only where the spec says so (BOOK-05).
 - `created_at` and `updated_at` on every table; `updated_at` set by trigger.
 - Test data (decision D4): every table that Testing can write has `is_test boolean not null`, set by a trigger from the club's status at insert time, so code cannot forget it. See §2.6.
@@ -82,7 +82,7 @@ Every table is classified **S** (setup: BOOQ staff may see it in the support vie
 | `resource` | S | unique `(club_id, id)`; fk location | sport, type, lights, max players, active |
 | `opening_hours` | S | pk `(club_id, weekday)`; open `time`, close `time` (close may be `24:00`) | Spec keys hours by club; a second location would need `location_id` (C7) |
 | `price_group`, `court_price_rule`, `coach_tier`, `coach_tier_price`, `package_product`, `add_on` | S | unique `(club_id, id)` | Price snapshots go into order lines, so later edits never change history |
-| `line_connection`, `payment_connection` | S | pk `club_id` | Channel and LIFF ids, OA id, `line_plan_kind` (`free` or `paid`, set in P2 step 4; Q31); Beam merchant id and mode (sandbox/live). No secrets here |
+| `line_connection`, `payment_connection` | S | pk `club_id` | Channel and LIFF ids, OA id, `line_plan_kind` (`free` or `paid`) and `plan_message_limit` (nullable), both set in P2 step 4 because LINE's API does not return the plan, and `secret_last4` for masked display (D27); Beam merchant id and mode (sandbox/live). No secrets here |
 | `club_secret` | S, write-only | pk `(club_id, kind)` | LINE tokens, Beam keys and webhook secrets, encrypted; platform role can INSERT/UPDATE but never SELECT (§4.4) |
 | `app_user` | D | unique `(club_id, line_user_id)`; unique `(club_id, id)` | Player, coach, staff in one table. A person at two clubs has two rows. Phone is typed, never verified by code in v1 (decision D11), stored normalised; index `(club_id, phone_normalized)` is not unique, and clubs with duplicate phones are flagged for referral abuse by a query, not a stored flag. Date of birth may be null: no date of birth means Adult prices (D12) |
 | `app_user_role` | D | pk `(club_id, user_id, role)`; role in player/coach/front_desk/accountant/owner | Roles are a set (decision D1): a coach can also play, an owner can also coach. Permissions are the union of the roles. At least one role per active user |
@@ -141,7 +141,7 @@ create table wallet_ledger (
   club_id      uuid not null,
   customer_id  uuid not null,
   change_satang bigint not null check (change_satang <> 0),
-  reason       text not null,       -- the set is a question (Q5)
+  reason       text not null,       -- set listed in section 10.1 (Q5)
   booking_id   uuid,
   order_id     uuid,
   referral_id  uuid,
@@ -172,9 +172,9 @@ Corrections are compensating rows (`adjust`, `return`). An undo of a no-show mar
 
 **No overspend under concurrency.** Spending takes a row lock first. `wallet_account (club_id, customer_id)` is a row that exists only as a lock anchor (no balance on it). The spend path is: `SELECT ... FOR UPDATE` on the anchor, read the SUM, check `SUM + delta >= 0`, insert the ledger row. Credits do the same on `customer_package`. A deferred constraint trigger checks `balance >= 0` as a backstop. Test: two parallel spends of the same last ฿100, exactly one succeeds.
 
-**Reserve then reverse.** Credits are reserved when the player taps Pay (spec: "reserved at booking") and returned if the hold releases. I propose the wallet follows the same pattern (Q6): value applied at Pay time is written as a ledger row tied to the order and reversed by a compensating row if the hold expires. Otherwise two checkouts in two tabs could spend the same wallet balance.
+**Reserve then reverse.** Credits are reserved when the player taps Pay (spec: "reserved at booking") and returned if the hold releases. The wallet follows the same pattern (adopted, section 10.1): value applied at Pay time is written as a ledger row tied to the order and reversed by a compensating row if the hold expires. Otherwise two checkouts in two tabs could spend the same wallet balance.
 
-Open points on the spec text: what `use` and `forfeit` do to the sum (Q4), and the wallet reason list (Q5).
+The sign rules for `use` and `forfeit` and the wallet reason list are settled in section 10.1 (Q4, Q5).
 
 ### 2.4 Receipts (RCPT-01)
 
@@ -183,7 +183,7 @@ Native sequences leave gaps when a transaction rolls back. RCPT-01 says "unbroke
 ```sql
 create table receipt_counter (
   club_id uuid not null,
-  series  text not null,            -- e.g. '2027' (Bangkok year of issue); see Q8
+  series  text not null,            -- e.g. '2027' (Bangkok year of issue); see section 10.1 (Q8)
   last_no integer not null,
   primary key (club_id, series)
 );
@@ -191,7 +191,7 @@ create table receipt_counter (
 -- insert ... on conflict (club_id, series) do update set last_no = receipt_counter.last_no + 1 returning last_no;
 ```
 
-The increment and the receipt insert share a transaction, so a rollback undoes both and no number is skipped. The row lock serialises issuance per club. This lock is taken **last** in any transaction (lock order, §3.4). Void changes `receipt.status` and adds a reason; the row and number stay. Format `{prefix}-{year}-{000001}` comes from `club.receipt_prefix` (HTC for Hunter). Numbers are per club (decisions round 2b). Testing-mode receipts use a separate non-legal series, are flagged `is_test` and are purged at Go live, so Hunter's first real receipt is 000001 (decision D4, §2.6). A test receipt's PDF must be visibly marked as a test, which needs a new locale key for the writers. Whether the real counter restarts each Bangkok year, and which payments get a receipt, stays Q8.
+The increment and the receipt insert share a transaction, so a rollback undoes both and no number is skipped. The row lock serialises issuance per club. This lock is taken **last** in any transaction (lock order, §3.4). Void changes `receipt.status` and adds a reason; the row and number stay. Format `{prefix}-{year}-{000001}` comes from `club.receipt_prefix` (HTC for Hunter). Numbers are per club (decisions round 2b). Testing-mode receipts use a separate non-legal series, are flagged `is_test` and are purged at Go live, so Hunter's first real receipt is 000001 (decision D4, §2.6). A test receipt's PDF must be visibly marked as a test, which needs a new locale key for the writers. One real series per club per Bangkok year, and a receipt for money received (decision D25), are settled in section 10.1 (Q8).
 
 ### 2.5 Orders and payments
 
@@ -287,7 +287,7 @@ One function, `claim_occupancy(...)`, is the only writer of `occupancy` (tables 
 1. Validate: club exists and is not paused (PLAT-03); resource and coach belong to the club; range is on the hour in whole hours; inside opening hours (Bangkok); not in the past; not beyond the booking window (BOOK-01).
 2. If a coach is involved, `SELECT ... FROM coach WHERE id = $1 AND club_id = $2 FOR UPDATE`. This serialises every decision about that coach, which the rest rule needs.
 3. Release overlapping expired holds (§3.2).
-4. Coach rules (COACH-01): working that hour (availability rule or open one-off), no approved leave, and the **rest rule**: merge the new range with the coach's adjacent busy hours (confirmed and live holds, all kinds, no override), and refuse if the run exceeds the cap (setting, default 6 from the template). A constraint cannot express a rolling run length, hence the lock in step 2. What counts as "in a row" is Q14.
+4. Coach rules (COACH-01): working that hour (availability rule or open one-off), no approved leave, and the **rest rule**: merge the new range with the coach's adjacent busy hours (confirmed and live holds, all kinds, no override), and refuse if the run exceeds the cap (setting, default 6 from the template). A constraint cannot express a rolling run length, hence the lock in step 2. "In a row" is decided (D19): back-to-back hours only, a free hour in between resets the count, unpaid held hours count, and a group class counts until it is cancelled.
 5. `INSERT` the row. On `23P01` (exclusion violation) raise a typed error `slot_unavailable` carrying which constraint fired (`resource` or `coach`), so the UI can say "court taken" or "coach no longer available" using locale keys.
 
 Typed errors the API returns are codes with parameters, for example `slot_unavailable`, `coach_unavailable`, `rest_rule`, `outside_hours`, `outside_window`, `club_paused`. The client maps codes to locale keys; no error text is written in code (TEXT-01).
@@ -353,7 +353,7 @@ Per R3 and the hand-off ("the core API owns every rule; the surfaces only show a
 
 Migrations run as `booq_owner`; tables are owned by it and have `FORCE ROW LEVEL SECURITY`, so even the owner is subject to policies. Supabase pooler note: use `set_config(..., true)` inside each transaction (transaction-local), never session-level settings, because pooled connections are shared. Whether custom roles work through the pooler on the chosen plan is a DevOps spike item (§11).
 
-**Hosting risk (decision D5).** The decision is Supabase in Singapore (the nearest region) with a data-processing agreement. **The user must have a Thai lawyer confirm the cross-border transfer under PDPA.** If it is refused, the alternative is Postgres self-hosted in Thailand. The design keeps that swap bounded by relying on plain Postgres (version 15 or later with `btree_gist`, custom roles, RLS) plus only three Supabase services: Auth for BOOQ staff (swap for an auth library with TOTP), Storage for slips, receipts and exports (swap for an S3-compatible store behind a small `storage` interface), and the pooler (self-hosted PgBouncer follows the same transaction-local rules). It uses no PostgREST, Edge Functions or Realtime, which R3 already avoids. Daily backups (PDPA-01) become DevOps's job in a self-hosted case.
+**Hosting risk (decision D5).** The decision is Supabase in Singapore (the nearest region) with a data-processing agreement. The legal check of the cross-border transfer is deferred by the user (D5 update). If the transfer is ever refused, the alternative is Postgres self-hosted in Thailand. The design keeps that swap bounded by relying on plain Postgres (version 15 or later with `btree_gist`, custom roles, RLS) plus only three Supabase services: Auth for BOOQ staff (swap for an auth library with TOTP), Storage for slips, receipts and exports (swap for an S3-compatible store behind a small `storage` interface), and the pooler (self-hosted PgBouncer follows the same transaction-local rules). It uses no PostgREST, Edge Functions or Realtime, which R3 already avoids. Daily backups (PDPA-01) become DevOps's job in a self-hosted case.
 
 ### 4.2 Request context
 
@@ -419,7 +419,7 @@ Two layers, on purpose:
 What RLS cannot do, stated plainly:
 
 - It does not stop arbitrary SQL. A session setting can be changed by anyone who can run SQL as `booq_app`. So queries are parameterised (the query layer builds all SQL, no string concatenation, a lint checks), and `booq_app` cannot run DDL.
-- "Front desk cannot see revenue or coach pay": front desk must read individual payments and orders to take cash, so a row policy cannot hide totals. We enforce it on the server (no aggregate endpoints for that role, report routes require owner or accountant) and mark it for Security review (Q19). Coach pay tables have no policy for front desk at all.
+- "Front desk cannot see revenue or coach pay": front desk must read individual payments and orders to take cash, so a row policy cannot hide totals. We enforce it on the server (no aggregate endpoints for that role, report routes require owner or accountant) and mark it for Security review (adopted, section 10.1). Coach pay tables have no policy for front desk at all.
 
 Per-role table access summary (RLS shape; the server adds action checks on top). A person with several roles gets the union of the columns they hold:
 
@@ -442,9 +442,9 @@ The spec: BOOQ staff never see "players, bookings, payments, slips, receipts, wa
 1. **Separate identity.** BOOQ staff are not rows in `app_user`. They live in `platform.platform_staff` and sign in with email plus a second factor, separate from LINE (decision D3); the recommended implementation is Supabase Auth with TOTP. They have no `club_id`.
 2. **Separate database role with default-deny grants.** `booq_platform` is granted SELECT/INSERT/UPDATE only on the **S** tables in §2.2 (and the `platform` schema). On every **D** table it has no privilege at all, so a query fails with `permission denied`, even if a policy were wrong. New tables are D by default.
 3. **Separate application and credentials.** `apps/platform` is its own Next.js deployment. Its environment has only the `booq_platform` connection string. It does not hold `booq_app` or `booq_worker` credentials and cannot be made to read player data by a coding mistake in a route.
-4. **RLS on the S tables for the platform role**, from the support session: a staff member may touch club X only if they are a platform admin, or an onboarding specialist assigned to X. A specialist can take an assigned club through Draft, Testing and Live; **only a platform admin can pause or resume** a club (decision D15), which the pause function checks by role, not by policy alone. Writes are allowed only when `club.status in ('draft','testing')` or `club.allow_booq_changes_until > now()` (PLAT-02). Look-only otherwise.
+4. **RLS on the S tables for the platform role**, from the support session: a staff member may touch club X only if they are a platform admin, or an onboarding specialist assigned to X. A specialist can take an assigned club through Draft, Testing and Live; **only a platform admin can pause or resume** a club (decision D15), which the pause function checks by role, not by policy alone. Writes are allowed only when `club.status in ('draft','testing')` or `club.allow_booq_changes_until > now()` (PLAT-02). Look-only otherwise, and a Paused club is look-only unless the owner allows changes (D27). The support view shows courts and hours, products and pricing with add-ons, LINE, payment connections and settings; it does not show staff, coaches, closures or promo codes. A request for a club or record the caller may not reach returns 404, not 403.
 5. **No "log in as".** The support view is a fixed set of routes with fixed projections over S tables. There is no code path that mints a club-user session for BOOQ staff.
-6. **Secrets are write-only.** LINE tokens, Beam keys and webhook secrets sit in `club_secret`. `booq_platform` can `INSERT/UPDATE` them but not `SELECT`. "Test connection" runs server-side and returns pass/fail only.
+6. **Secrets are write-only.** LINE tokens, Beam keys and webhook secrets sit in `club_secret`. `booq_platform` can `INSERT/UPDATE` them but not `SELECT`. When a secret is written, the last four characters are copied to a non-secret `secret_last4` column on `line_connection` or `payment_connection`, and that is all the support view shows (D27). "Test connection" runs server-side and returns pass or fail only.
 7. **Aggregates, not rows, for P1.** P1 shows "bookings in the last 30 days" and "LINE messages used this month". These come from `platform.club_usage_daily` (counts only), incremented by the single `platform.bump_usage()` SECURITY DEFINER function with a fixed search path. The platform role cannot count rows in `booking`. Decision D2 allows aggregate counts (bookings in the last 30 days per club) and the owner's contact details, and nothing finer: no per-player or per-booking breakdown, and no count cut by something that identifies a person. P1's LINE usage field (§5.6) is the same kind of figure: used, limit, percent and state per club.
 8. **Tests prove it** (§4.5).
 
@@ -463,7 +463,7 @@ Platform audit of this access is in §8.
 
 ### 4.6 CSV import and club data export (decisions D13, D14)
 
-- **Import** (PLAT-06): owner only. The file is parsed into a staging table; every row is validated first and the import is **all or nothing**, with an error report. It imports players, packages and balances, never bookings. Imported players match on phone at their first LINE sign-in. Balances and credits enter through the ledgers with reason `import` (added to the credit ledger reasons in §2.3 and to the wallet list in Q5). How an imported package maps onto `credits_total` is for the F06 design.
+- **Import** (PLAT-06): owner only. The file is parsed into a staging table; every row is validated first and the import is **all or nothing**, with an error report. It imports players, packages and balances, never bookings. Imported players match on phone at their first LINE sign-in. Balances and credits enter through the ledgers with reason `import` (added to the credit ledger reasons in §2.3 and to the wallet list in section 10.1). How an imported package maps onto `credits_total` is for the F06 design.
 - **Export**: the owner downloads it. BOOQ staff can only start one: they insert a row in `platform.export_request` (club and requester only) and see its status. A worker task runs under that club's context, writes the file to the private storage bucket under `club_id/`, and only the owner receives a short-lived signed link. BOOQ staff never receive the file or its link. Because every query is already club-scoped, export reuses the normal repositories.
 - There is no delete-club feature in v1.
 
@@ -492,7 +492,7 @@ All LINE pushes go through `message_outbox` (transactional outbox). The business
 - The sender resolves the player's language at send time, builds the text from `locales/*` (text and Flex cards both), and calls LINE with an `X-Line-Retry-Key` (a stable UUID per outbox row) so a retry after a timeout cannot double-send.
 - Preconditions are evaluated at send time: a cancelled or moved booking voids pending reminders; a package with no credits left skips the expiry reminder.
 - A sent message increments `platform.club_usage_daily` (LINE-06). A token failure writes `platform.club_health`. The behaviour at a club's monthly cap is decided (LINE-07, decision D17) and described in §5.6; the sender asks the cap state before every send.
-- **Not a friend** (decision D9): a player who has not added the club's LINE account must never block checkout. A push to such a user is rejected by LINE (exact response to confirm in the F10 design). The sender marks the outbox row `undeliverable`, does not retry it, does not count it as used, and the app shows the confirmation on screen with a prompt to add the account. Friend status is kept current from the follow and unfollow events of each club's LINE webhook, which uses the same raw-body HMAC pattern as §6 with the channel secret.
+- **Not a friend** (decision D9). A player who has not added the club's LINE account must never block checkout. LINE's documentation says a push to a user who is not a friend, has blocked the account, or has deleted their LINE account returns **HTTP 200 and the user simply does not receive it**, with no error to detect, and such messages are not counted against the quota. So friend status cannot be learned from a failed push. It is kept in `app_user.line_friend` (nullable) from three sources: the `follow` and `unfollow` events of each club's LINE webhook (`POST /api/webhooks/line/{token}`, verified with `x-line-signature`, HMAC-SHA256 of the raw body with the channel secret, same raw-body pattern as §6), `liff.getFriendship()` when the app opens (needs the `profile` scope), and the result of the add-friend prompt at sign in. If `line_friend` is false, the sender does not push, marks the row `undeliverable`, and the confirmation is shown in the app with a prompt to add the account. If it is null (unknown), the sender pushes; a silent drop is acceptable because the app always shows the confirmation too. Whether a `follow` event marks an unblock (`isUnblocked`) is not confirmed from the docs.
 - Messages for events the spec lists but has no message for (for example "your late payment went to your wallet", §6.5) need new locale keys; they are flagged to the writers, not written in code.
 
 ### 5.4 Jobs
@@ -509,17 +509,18 @@ All LINE pushes go through `message_outbox` (transactional outbox). The business
 | `session_end` | Sweep | Confirmed bookings whose `end_at <= now()` | Mark played (derived status); evaluate referral reward after the friend's first paid booking is played (PROMO-02) | unique `referral` reward key | every minute |
 | `beam_reconcile` | Sweep | `payment.status = 'pending'` older than the hold, newer than 24 h | Ask Beam for charge status; feed the same processing function as the callback (§6) | Same as callback | every 5 min |
 | `class_below_minimum` | Per session at `start - alert_time` | Session count `< min` | Outbox to front desk | `(session_id, 'below_min')` | Inert while the alert time setting is unset |
-| `birthday_discount_message` | Monthly | `date_of_birth` month = Bangkok current month | Outbox "birthday discount" | `(user_id, year)` | 1st of month (time of day: Q22) |
+| `birthday_discount_message` | Monthly | `date_of_birth` month = Bangkok current month | Outbox "birthday discount" | `(user_id, year)` | 1st of month (09:00 Bangkok, section 10.1) |
 | `line_usage_sync` | Sweep, per club | LINE's quota and consumption figures (§5.6) | Update `platform.club_line_usage`; recompute state; on a rise to 70% raise the P1 alert and the club admin banner; at 100% on a paid plan tell the owner once for the month | `(club_id, month)` row; owner message `dedupe_key` per month | every 10 min |
 | `housekeeping` | Daily | Old `idempotency_key`, dead outbox rows | Purge | n/a | daily |
 
 Not a job: pause (PLAT-03) is one transaction that shifts every package `expires_at` by the pause length through `extend_package()` (with a `package_extension` row each), and rewrites pending expiry-reminder outbox rows.
 
-Rules for reminders created late: a booking made less than 24 h before start gets no 24 h reminder, and less than 2 h gets no 2 h reminder. The spec is silent; this is the least surprising, and it is Q21.
+Rules for reminders created late: a booking made less than 24 h before start gets no 24 h reminder, and less than 2 h gets no 2 h reminder. The spec is silent; this is the least surprising,.
 
-### 5.5 Monitoring and test time
+### 5.5 Monitoring, test time and test tools
 
 - A heartbeat row per task type; P1 health alerts when hold-release lag passes a threshold or a task has dead jobs. Payload is counts, not data.
+- Test tools (decision D30): Vitest for unit and integration tests, Playwright for end-to-end, a real Postgres in tests (the Supabase local stack), and a controllable clock.
 - Time is injectable: application code reads `clock.now()` and SQL reads `app.now()` (which is `now()` in production). In test databases only, `app.now()` honours a setting so tests can say "it is now 11:59 on the hold". This is how the timing acceptance tests (BOOK-03, CANCEL-01, PKG-03) run without sleeping. The override is impossible in production because the setting that enables it is absent from production roles.
 
 ### 5.6 LINE message cap (LINE-07, decision D17)
@@ -529,15 +530,15 @@ Rules for reminders created late: a booking made less than 24 h before start get
 **Usage store.** `platform.club_line_usage (club_id, month, used, limit, plan_kind, state, source, synced_at)`.
 - `state` is derived: `normal`, `alert` (70% and over), `reminders_stopped` (80% and over), `over_limit` (100% and over). It is computed from `used / limit` and the thresholds in `platform.config`, never stored as an editable fact elsewhere.
 - `source` is `line` or `own_count`.
-- **Where the numbers come from.** The recommendation is to read LINE's own figures, the monthly quota (limit, or none) and the month's consumption endpoints of the Messaging API, using each club's token. I believe both exist but have not confirmed their exact paths, what they count, how fresh they are, or which time zone the month boundary uses; the F10 design must confirm (Q31). `line_usage_sync` runs about every 10 minutes per club.
+- **Where the numbers come from** (LINE's public documentation, read 30 Oct 2026). `GET https://api.line.me/v2/bot/message/quota` returns `type` (`none` means no target limit is set, `limited` means one is set) and `value` (the free plus additional messages for the current month, when limited). `GET https://api.line.me/v2/bot/message/quota/consumption` returns `totalUsage`, which LINE calls **approximate** and which includes messages sent from LINE Official Account Manager. Both use the club's channel access token. Messages are counted per recipient (push, multicast, broadcast and narrowcast count; reply does not; a message to a blocked or non-existent user is not counted). The docs do **not** say whether the figures are real-time, which time zone the month uses, when it resets, whether a free plan returns `none` or `limited`, or give any plan name for Thailand. `line_usage_sync` runs about every 10 minutes per club.
 - **Between syncs and as fallback.** `used_estimate = consumption at last sync + messages our outbox has sent since`. If LINE's endpoints fail or do not exist as assumed, the store falls back to our own count (`source = 'own_count'`, a Bangkok calendar month), and a `club_health` alert says so. The sender still counts every send into `platform.club_usage_daily` (LINE-06).
-- The plan limit and free-versus-paid come from LINE's quota response where it gives them, else from `line_connection.line_plan_kind`.
+- **Plan kind and limit.** The API does not tell us the plan, so `line_connection.line_plan_kind` and `plan_message_limit` are entered in P2 step 4. When the quota response is `limited`, its `value` is the limit; when it is `none` or the call fails, `plan_message_limit` is used; when neither exists the state stays `normal` and a `club_health` alert says the cap cannot be computed. **Month boundary:** because LINE's boundary is not documented, the store keys on the Bangkok calendar month, and a drop in LINE's `totalUsage` between two syncs is treated as LINE's own rollover, which resets the estimate at once. The own-count fallback counts one per recipient and excludes known non-friends, as LINE does.
 
 **How the sender obeys it.**
 1. **At queue time.** When a booking confirms or moves, reminder outbox rows are created only if the state is below `reminders_stopped`. At 80% the confirmation is sent and no reminder is queued (LINE-07's acceptance check).
 2. **At send time.** A due reminder is re-checked: if the state is `reminders_stopped` or worse, the row is voided with reason `cap`. It is not revived when the state later drops or the month rolls over. Pending reminders never wait for later.
 3. **Other messages** always go, except on a free plan at `over_limit`.
-4. **Free plan at 100%.** The sender marks the row `undeliverable` with reason `cap` (the same path as a player who is not a friend, §5.3), the app shows the confirmation on screen, and `waitlist_advance` skips the entry: it releases the offer hold, marks the entry `passed_unsendable` and offers the slot to the next person. A send that LINE rejects for quota reasons takes the same path, whatever the stored state says.
+4. **Free plan at 100%.** The sender marks the row `undeliverable` with reason `cap` (the same path as a player who is not a friend, §5.3), the app shows the confirmation on screen, and `waitlist_advance` skips the entry: it releases the offer hold, marks the entry `passed_unsendable` and offers the slot to the next person. A send that LINE answers with 429 ("You have reached your monthly limit.") takes the same path, whatever the stored state says.
 5. **Paid plan at 100%.** Everything keeps sending. One owner message per month (outbox `dedupe_key` `cap_paid_over:{month}`), plus the banner. This message and the banner texts need new locale keys for the writers; none are written here.
 6. Bookings, payments and Beam callbacks do not read the cap state at all.
 
@@ -545,71 +546,102 @@ Rules for reminders created late: a booking made less than 24 h before start get
 
 **Tests (from LINE-07).** Use the fake LINE with a settable quota and consumption: (a) at 69% nothing changes; (b) at 70% the P1 alert and banner appear; (c) at 80% a booking confirms, the confirmation is sent and no reminder row exists; (d) a reminder queued at 79% and due at 80% is voided and never sent after a month rollover; (e) at 80% a waitlist offer, a cancellation result and a package-expiring message still go; (f) at 100% on a paid plan everything sends and the owner is told once; (g) at 100% on the free plan the confirmation shows in the app, the push is not attempted, and an unsendable waitlist offer passes to the next entry; (h) bookings and Beam callbacks succeed in every state; (i) LINE's endpoints failing falls back to the own count and raises a health alert.
 
-## 6. Beam callback handling (PAY-02, PAY-03, PAY-07)
+## 6. Beam callback handling (PAY-02, PAY-03, PAY-07; decisions D18, D24, D25, D26)
 
-Exact Beam details are unknown to me and are not guessed here: signature scheme and header names, event ids, amount unit, whether the QR expiry can be set, whether charges can be retrieved, retry policy, sandbox behaviour, per-merchant webhook secrets (Q24). The design is written against a `PaymentGateway` interface in `packages/payments` so these facts fill in adapter code, not the flow:
+### 6.1 What Beam's public documentation says
+
+Read on 30 Oct 2026 from `docs.beamcheckout.com` (page paths in brackets). Nothing below comes from memory or from other gateways.
+
+| Topic | What the docs say |
+|---|---|
+| Authentication | HTTP Basic, `Authorization: Basic base64(merchantId:apiKey)` [get-started/authentication]. Playground and Production have different keys, hosts (`playground.api.beamcheckout.com`, `api.beamcheckout.com`) and webhooks, and "do not cross between them" [switching-to-production] |
+| Create a QR charge | `POST /api/v1/charges`. Body: `amount` (integer, "smallest currency unit", so satang), `currency` `THB`, `paymentMethod { paymentMethodType: "QR_PROMPT_PAY", qrPromptPay: { expiryTime } }`, `referenceId` (our own reference, searchable later), `returnUrl`. Response: `chargeId`, `actionRequired: "ENCODED_IMAGE"`, `encodedImage { expiry, imageBase64Encoded, rawData }`. The create response "does not tell you whether the payment succeeded". A failed payment still returns HTTP 2xx [charges/charges-api] |
+| Statuses | `PENDING`, `SUCCEEDED`, `FAILED`. A charge "can stay `PENDING` indefinitely" and "a very late `charge.succeeded` webhook is still possible" [charges/charges] |
+| Expiry | `qrPromptPay.expiryTime`, an RFC 3339 timestamp by example; the response echoes `encodedImage.expiry` [charges/charges-api] |
+| Idempotency | Header `x-beam-idempotency-key` on POST and PATCH, up to 255 characters, kept 12 hours; the same key with a different payload gives 412 `IDEMPOTENCY_KEY_ERROR` [get-started/idempotency-request, error] |
+| Webhook events | `charge.succeeded`, `charge.failed` (and others we do not use). The event type is in header `x-beam-event`. The body is "the original object as you would expect from calling our GET endpoint": `chargeId`, `merchantId`, `referenceId`, `status`, `currency`, `amount`, `transactionTime`, `failureCode`, ... [webhook-event-types] |
+| Webhook signature | Header `X-Beam-Signature`: HMAC-SHA256 over the exact raw body, key = the base64-decoded HMAC key shown in the Beam dashboard (Lighthouse), result base64 encoded [webhook-authentication] |
+| Webhook delivery | Registered in Lighthouse (Developers, Webhook Settings). Any 2xx stops retries; otherwise "10 times with exponential backoff" [webhook-overview, playground] |
+| Retrieve a charge | `GET /api/v1/charges/{chargeId}`; list by `referenceId` [charges/charges-api] |
+| Refunds | `POST /api/v1/refunds` exists. We never call it (CANCEL-02, PAY-05) |
+| Sandbox | Playground accepts the same calls and "doesn't move real money". A QR charge there leads to a "Force Charge" page with a Mark as Succeeded button [test-data] |
+| Errors and limits | Error codes such as `INVALID_CREDENTIALS_ERROR`, `API_VALIDATION_ERROR`, `IDEMPOTENCY_KEY_ERROR`; 429 `TOO_MANY_REQUESTS_ERROR` with a backoff-with-jitter recommendation; no numeric limits [get-started/error] |
+
+### 6.2 What the documentation does not say
+
+To be checked in the Playground by DevOps before the F05 design is approved (Q24 residual):
+
+- Any replay protection: **no timestamp** in the signature and **no event id** in the payload (the go-live checklist only advises de-duplicating "by event id (or by resource id + event type)").
+- The unit of `amount` in webhook payloads (create-side docs say satang; webhook examples are bare integers).
+- The default, minimum and maximum QR expiry, and what Beam does to the charge when the QR expires, or whether it accepts a payment after expiry.
+- Retry intervals, response timeout, and an IP allow-list for webhooks.
+- The full create-charge schema (the API reference page did not render for the reader), the result of repeating a request with the same key and the same payload, and how a QR payment failure is simulated.
+- Registering a webhook through the API (the docs show only the dashboard), and a webhook resend tool in the sandbox.
+
+### 6.3 Gateway interface
+
+The flow is written against a `PaymentGateway` interface in `packages/payments`; the facts above and the unknowns in §6.2 are adapter code, not flow:
 
 ```ts
 interface PaymentGateway {
-  createQr(input: { clubId; paymentId; amountSatang; expiresAt; reference }): Promise<{ chargeId; qrPayload; expiresAt }>;
+  createQr(input: { clubId; paymentId; amountSatang; expiresAt; reference }): Promise<{ chargeId; qrImage; expiresAt }>;
   verifyWebhook(input: { rawBody: Buffer; headers: Headers; secrets: Secret[] }): VerifiedEvent | Rejected;
-  getCharge(input: { clubId; chargeId }): Promise<ChargeStatus>;    // for reconciliation
+  getCharge(input: { clubId; chargeId }): Promise<{ status; amountSatang; currency; referenceId }>;
   // No refund method exists. Value never goes back as cash (CANCEL-02, PAY-05); a lint fails if one is added.
 }
 ```
 
-### 6.1 Creating the charge
+### 6.4 Creating the charge
 
-1. Server prices the order and runs `claim_occupancy` with the hold. Transaction 1 commits: `booking` (awaiting payment), `occupancy` (held), `orders`, `order_line`, `payment` (pending, `amount_satang` frozen), credit/wallet reserve rows.
-2. Outside any transaction, call `createQr` for the exact frozen amount with `paymentId` as the merchant reference and an expiry no later than the hold end.
-3. Transaction 2 stores `gateway_charge_id` and the QR payload.
+1. Server prices the order and runs `claim_occupancy` with the hold. Transaction 1 commits: `booking` (awaiting payment), `occupancy` (held), `orders`, `order_line`, `payment` (pending, `amount_satang` frozen), credit and wallet reserve rows.
+2. Outside any transaction, call `createQr`: amount in satang, `currency` THB, `referenceId` = our `payment.id`, header `x-beam-idempotency-key` = `payment.id`, and `qrPromptPay.expiryTime` = **the hold's end** (decision D18: the QR expires exactly when the hold ends). For a package bought alone (PAY-04) the expiry is now plus the package QR minutes setting.
+3. Transaction 2 stores `gateway_charge_id` and the QR image.
 4. If Beam fails, run `release_hold()` and return an error code. If the process dies between steps, the hold expires by itself.
 
-Nothing left to pay (PAY-07) skips Beam: one transaction confirms the booking immediately. A package bought alone (PAY-04) creates no hold; the order itself expires with the QR (15 minutes, setting).
+Nothing left to pay (PAY-07) skips Beam: one transaction confirms the booking.
 
-### 6.2 Receiving the callback
+### 6.5 Receiving the callback
 
-`POST /api/webhooks/beam/{webhookToken}`. The token is a long random value per club, so we know which club's secret to use before verifying anything. The token only selects the club; it authenticates nothing.
+`POST /api/webhooks/beam/{webhookToken}`. The token is a long random value per club, so we know which club's secret to use before verifying anything. The token only selects the club; it authenticates nothing. In Beam's dashboard the platform registers this URL for the club's own merchant account and pastes the club's HMAC key, which is stored as a write-only secret (§4.4).
 
 1. Read the **raw body bytes**. Do not parse first.
-2. Load that club's webhook secret(s) (current and previous, to allow rotation). Verify the signature over the raw bytes with a constant-time comparison. Check the timestamp window if Beam provides one. **Bad signature: respond 401 and change nothing.** Log a security event with no body content.
-3. Parse. Find `payment` by `gateway_charge_id` **and** `club_id` from the token (a valid event for club A can never touch club B).
-4. Insert into `payment_event (club_id, gateway, gateway_event_id, ...)` with `ON CONFLICT DO NOTHING`. If it already exists: respond 200 and stop (duplicate delivery).
-5. Compare event amount and currency to `payment.amount_satang` and THB. **Mismatch: record the event with outcome `mismatch`, change no booking, order or ledger, raise a club health alert, respond 200** (a retry would not help). Money that really arrived is then handled by staff through the wallet with a written reason (Q26).
-6. If the event is not a success status, record and stop.
-7. Run `applyPayment()` in the same transaction as the event insert. A crash rolls back both and Beam's retry reprocesses. Respond 200 after commit.
+2. Load the club's HMAC key(s) (current and previous, for rotation), base64-decode, compute HMAC-SHA256 over the raw bytes, base64-encode, and compare with `X-Beam-Signature` in constant time. **Bad signature: respond 401, change nothing, log a security event with no body content and raise an alert** (decision D24).
+3. Parse. Find `payment` by `gateway_charge_id` **and** the club from the token.
+4. **De-duplicate.** There is no event id, so the key is `chargeId` plus the `x-beam-event` type: insert into `payment_event` with unique `(club_id, gateway, gateway_charge_id, event_type)` and `ON CONFLICT DO NOTHING`. A duplicate is **ignored with success**: respond 200 (decision D24).
+5. **Confirm with Beam.** Because the signature carries no timestamp, a captured callback could be replayed; and the webhook amount unit is unconfirmed. So after the signature check, call `getCharge` and apply the result of **that** lookup, not the body. If Beam cannot be reached, respond 500 so Beam retries (up to 10 times). Cost: one API call per callback.
+6. **Compare** the looked-up `amount` and currency with `payment.amount_satang` and THB. **Mismatch (validly signed, wrong amount): do not confirm the booking, record the event with outcome `mismatch`, flag it for the owner (club health alert and an admin task), respond 200.** Staff then credit the wallet with a written reason from A6 (decision D24).
+7. If the looked-up status is not `SUCCEEDED`, record and stop.
+8. Run `applyPayment()` in the same transaction as the event insert; respond 200 after commit.
 
-"Changes nothing" in PAY-02's acceptance check is read as: no booking, order, payment status or ledger change. The immutable event row is written because it is the evidence. Say if you want it otherwise (Q26).
+PAY-02 says a bad signature or wrong amount "changes nothing". It is read as: no booking, order, payment status or ledger change. The immutable `payment_event` row is written because it is the evidence.
 
-Optional hardening, decided after reading Beam's docs: after signature verification, re-fetch the charge with `getCharge` and trust that instead of the body.
+### 6.6 `applyPayment()` (decision D25)
 
-### 6.3 `applyPayment()`
+Lock order per §3.4. Every state change is guarded by `UPDATE ... WHERE status = 'pending'` with a row-count check.
 
-Lock order per §3.4: coach, then booking. Guard every state change with `UPDATE ... WHERE status = 'pending'` and check the row count, so two events for one charge can never apply twice.
+"Late payment" means Beam reports the payment after the hold ended (D18). "Slot still open" means no other hold, booking or closure on the court, and for a solo class on the coach too (D25).
 
 | Case | Booking | Money |
 |---|---|---|
-| Paid while the hold is live | `confirmed`; `occupancy.state = confirmed`, hold cleared; payment `succeeded`; receipt issued; outbox "booking confirmed" | none |
-| Paid after the hold ended, slot still open (PAY-03) | Re-attempt the original claim (court and coach together, §3.3) plus re-reserving the credits and wallet the order used. All succeed: `confirmed` as above | none |
-| Paid after the hold ended, slot gone (PAY-03) | Stays `released` | `amount_satang` goes to the wallet (reason `late_payment`), outbox message, payment outcome `wallet_late` |
-| Paid after the hold ended, slot open but credits/wallet/promo cannot be re-applied | Stays `released` | Wallet, same as above |
-| A second success for an order already paid (customer paid the QR twice) | unchanged | Second amount to wallet (`wallet_duplicate`) |
+| Paid while the hold is live | `confirmed`; occupancy `confirmed`, hold cleared; payment `succeeded`; receipt issued; outbox "booking confirmed" | none |
+| Late, slot still open | Re-attempt the original claim (court and coach together, §3.3) and re-reserve the credits and wallet the order used. All succeed: `confirmed` as above | none |
+| Late, slot not open (solo class: court or coach not free) | Stays `released` | The whole amount goes to the wallet (reason `late_payment`); the player gets a LINE message; a receipt is issued for the money received (accountant to confirm) |
+| Late, slot open, but credits, wallet or promo cannot be re-applied | Stays `released` | Wallet, as above (adopted as recommended) |
+| A second success for an order already paid | unchanged | The second amount to the wallet (`duplicate_payment`) |
 | Success for a cancelled order | unchanged | Wallet |
-| Package-only order, success after the QR expired | Not specified | Q25 |
+| Package-only order, success after its QR expired | Order stays cancelled (nothing is held) | Wallet (adopted as recommended) |
 
-The "re-attempt the claim" step is the same function and the same constraints as a fresh booking, so a late payment can never double book. The hold-release job and the callback both lock the booking row first, so whichever commits first wins and the other sees the new status (test T10).
+The "re-attempt the claim" step is the same function and constraints as a fresh booking, so a late payment can never double book. The hold-release job and the callback both lock the booking row first, so whichever commits first wins and the other sees the new status (test T10).
 
-A wallet credit is never a cash refund; it is the rule the spec already gives for a payment that cannot be honoured (PAY-03, CANCEL-02).
+### 6.7 Safety net, sandbox, tests
 
-### 6.4 Safety net and sandbox
+- `beam_reconcile` (§5.4) covers a callback that never arrives, using `getCharge`.
+- Test payments use Beam's Playground only; there is no in-app "simulate payment" (decision D26). `payment_connection.mode` is `sandbox` or `live`; a Testing club uses sandbox; P4's go-live check requires live mode. In the Playground a tester completes a payment with the Force Charge page.
+- QA's fake Beam signs bodies exactly as §6.1 describes (base64 HMAC-SHA256 with a base64 key) and covers: valid, bad signature, wrong amount, late, duplicate, replayed old callback, out of order, unknown charge, lookup failing, and Beam down at create time.
 
-- `beam_reconcile` (§5.4) covers a callback that never arrives.
-- `payment_connection.mode` is `sandbox` or `live`. A Testing club uses sandbox; P4's go-live check requires live mode.
-- Fake Beam for QA: valid, bad signature, wrong amount, late, duplicate, out of order, unknown charge, and Beam down at create time.
+### 6.8 Needs messages
 
-### 6.5 Needs a message
-
-The wallet fallback is a player-visible event that no LINE-05 message covers. It needs a new locale key pair in both files, listed for the writers (CLAUDE.md, TEXT-04). I have not added one.
+The wallet fallback ("your late payment went to your wallet") and the owner flag for a wrong-amount payment are events no LINE-05 message or admin text covers. They need new locale keys in both files, listed for the writers (CLAUDE.md, TEXT-04). None are added here.
 
 ## 7. Time (Asia/Bangkok)
 
@@ -624,7 +656,7 @@ Thailand uses UTC+7 all year, no daylight saving, so wall time and instants map 
 | Cancel window | `start_at - now() >= interval '12 hours'` (setting). Instants, no zone issue |
 | Booking window "N days ahead" | Last bookable Bangkok date = today + N. Whether day N itself is allowed is Q11 |
 | Age and student price | Computed from `date_of_birth` and the Bangkok date; the price switches on the 18th birthday. No date of birth on file means Adult prices (D12). A Student package already bought stays valid when the holder becomes an Adult (round 1) |
-| Package validity | Purchase date plus calendar months (31 Jan + 1 month = end of Feb, the Postgres rule). A purchase on 5 Jan with 3 months expires 5 Apr, which is the canvas B5 point. Whether the expiry date is usable through the end of that day is Q10 |
+| Package validity | Calendar months from the purchase date, ending at 23:59 Asia/Bangkok on that day; if that day does not exist, the last day of the month (31 Jan + 1 month = end of Feb). Pause extensions use the same rule (decision D20). Stored as `expires_on date`; the package is usable while `now()` is before the start of the next Bangkok day. A purchase on 5 Jan with 3 months expires 5 Apr, which resolves canvas gap B5 |
 | Daily close, reports, coach month | Bangkok calendar day / month |
 | Receipt year | Bangkok year of `issued_at` |
 
@@ -726,62 +758,63 @@ Recommendations and trade-offs:
 
 ## 10. Questions and decisions
 
-### 10.1 Answered, no longer for review
+### 10.1 Answered or adopted, no longer for review
+
+Decisions round 4 is headed "approved as recommended" in `docs/decisions.md` and itemises D18 to D31. Where a row below cites a D number, the log states it. Rows marked "adopted" were open recommendations in the previous revision and are applied as recommended; they are **not individually itemised in the log**, so the log should list them.
 
 | Q | Answer | Source | Applied in |
 |---|---|---|---|
-| Q1, Q2 | There is no existing Booq core; tables are named `club` and `location` from the start | Decisions round 2b | §1 |
+| Q1, Q2 | There is no existing Booq core; tables are named `club` and `location` from the start | Round 2b | §1 |
 | Q3 | Roles are a set | D1 | §2.2, §4.2, §4.3 |
-| Q8 (part) | Receipt numbers are per club. The yearly restart and which payments get a receipt stay open as Q8 | Round 2b | §2.4 |
-| Q9 | Test data flagged, separate non-legal receipt series, purged at Go live; testers are the owner and named BOOQ testers; BOOQ sees pass or fail | D4 | §2.6 |
+| Q4 | `reserve` -1, `return` +1, `expire` the negative remainder, `adjust` and `import` signed; `use` and `forfeit` carry change 0 | Adopted | §2.3 |
+| Q5 | Wallet reasons: `refund` (money back from a cancellation), `late_payment`, `duplicate_payment`, `referral_reward`, `spend`, `return` (wallet use returned), `adjust`, `import`, `expire` only if the wallet expiry setting is set | Adopted, D21, D25 | §2.3, §6.6 |
+| Q6 | Wallet value applied at Pay is reserved by a ledger row and reversed if the hold ends. Order of use at checkout: package credit, then wallet, then money | Adopted, D22 | §2.3 |
+| Q7 | Money rounding is half up to the satang; a code applies to items in its scope, add-ons excluded unless the code says so | D23 | §2.1 |
+| Q8 | Receipts are numbered per club; a receipt is issued for money received, including a late payment that goes to the wallet (accountant to confirm). One series per club per Bangkok year, adopted | Round 2b, D25, adopted | §2.4 |
+| Q9 | Test data flagged, separate non-legal series, purged at Go live; testers are the owner and named BOOQ testers; BOOQ sees pass or fail | D4, D16 | §2.6 |
+| Q10 | Expiry is calendar months, ending 23:59 Bangkok; last day of the month if the day does not exist; same for pause extensions | D20 | §7 |
+| Q14 | "In a row" is back-to-back hours; a free hour resets; unpaid held hours count; a group class counts until cancelled | D19 | §3.3 |
 | Q15, Q20 | BOOQ staff may see aggregate counts and the owner's contact details, nothing finer | D2 | §2.2, §4.4 |
 | Q16 | BOOQ staff sign in with email plus a second factor, separate from LINE | D3 | §4.4 |
 | Q17 | One LINE provider per club | D7 | §4.2 |
-| Q18 | One shared domain with the club in the URL; domain supplied later and kept as configuration | D6 | §4.2 |
-| Q23 (hosting part) | Supabase in Singapore with a DPA; a Thai lawyer must confirm the PDPA transfer; alternative is self-hosted Postgres in Thailand. Recorded as a risk. The technical spike stays in §11 | D5 | §4.1 |
+| Q18 | One shared domain with the club in the URL; domain supplied later, kept as configuration | D6 | §4.2 |
+| Q19 | "Front desk cannot see revenue" is enforced on the server; Security reviews it as part of design approval | Adopted | §4.3 |
+| Q21 | Skip any reminder whose time has already passed when the booking is made | Adopted | §5.4 |
+| Q22 | Birthday message at 09:00 Bangkok on the 1st | Adopted | §5.4 |
+| Q23 (hosting) | Supabase in Singapore with a DPA; the legal check is deferred by the user; alternative is self-hosted Postgres in Thailand | D5 and its update | §4.1 |
+| Q25 | A late payment is approved only if the slot is open (no other hold, booking or closure; a solo class needs court and coach); otherwise all of it goes to the wallet. Re-applying credits, wallet and promo, and a package-only order paid after its QR expired, follow the recommendation | D25, adopted | §6.6 |
+| Q26 | A validly signed wrong-amount callback does not confirm, is flagged for the owner, staff credit the wallet with a reason; a duplicate is ignored with success | D24 | §6.5 |
+| Q27 | Anonymise personal fields on the user and redact them in audit JSON; keep ledgers, receipts and audit under pseudonymous ids; retention periods are set when legal input is available | Adopted | F01 design |
+| Q28 | The audit log is read by the owner only; BOOQ sign-ins and failures go to P6 | Adopted, ROLE-02-AC5 | §8 |
+| Q30 | Package-expiring messages keep sending at 80% of the LINE cap | D29 | §5.6 |
+| Q24, Q31 | Researched from the public documentation; what the docs say is in §6.1 and §5.6, and what they do not say is in §6.2 and in 10.2 | This revision | §6, §5.6 |
 
-Other decisions this revision applies: D8 template defaults (§2.1), D9 a player who is not a LINE friend never blocks checkout (§5.3), D11 phone not verified (§2.2), D12 no date of birth means Adult prices and changes are audited (§2.2, §7, §8), D13 import and D14 export (§4.6), D15 specialist and pause rights (§4.4), and the round 1 rule that a bought Student package stays valid, which closes canvas gap C1.
+Other decisions this revision applies: D26 (Playground only for test payments), D27 (setup-only support view, 404 for what a caller may not reach, secrets write-only with the last four characters shown), D28 (audit and ledgers append-only, already in the design), D30 (test tools), D31 (the i18n role generates `copy-index.csv`; read only for us).
 
-### 10.2 Open, with a recommendation (approve in bulk or change)
-
-"Blocks" = A (this document), or the feature design that needs it.
+### 10.2 Still open, with a recommendation
 
 | Q | Question | Recommendation | Decides | Blocks |
 |---|---|---|---|---|
-| Q4 | Credit ledger sign rules | `reserve` -1, `return` +1, `expire` the negative remainder, `adjust` and `import` signed; `use` and `forfeit` carry change 0 and mark the final fate of a reserve. Credits left = `credits_total` + sum of changes | Product | F06 |
-| Q5 | Wallet ledger reasons | `refund` (cancellation value), `late_payment`, `duplicate_payment`, `referral_reward`, `spend`, `return`, `adjust`, `import`, and `expire` only if the wallet expiry setting is set | Product | F06 |
-| Q6 | Wallet value applied at Pay | Reserve with a ledger row at Pay and reverse it if the hold ends, the same as credits | Product | F04, F06 |
-| Q7 | Rounding to the satang | Percentage discounts computed in basis points and rounded half up per order line, once; VAT, if switched on, computed on the total and rounded half up. Accountant to confirm | Product, accountant | F04 |
-| Q8 | Receipt numbering and which payments get a receipt | One series per club per Bangkok year (HTC-2027-000001 implies it). A receipt for every confirmed order, whatever it was paid with (money, credit, wallet). None for a late payment that went to the wallet, because no sale happened. Accountant to confirm | Product, accountant | F13 |
-| Q10 | Package expiry day | Usable through the whole expiry date in Bangkok (expiry instant is the start of the next day) | Product | F06 |
 | Q11 | Booking window edge | By Bangkok date: today through today + N, both inclusive | Product | F03 |
 | Q12 | Coach on a multi-hour court selection | The coach picker shows only when exactly one hour is selected, matching "coaches available for that exact hour" | Product | F03, F07 |
 | Q13 | Class session versus an existing booking or closure | The booking or closure wins; the session is flagged "needs attention" for the owner | Product | F08 |
-| Q14 | "6 hours in a row" | Back-to-back hours; any gap of a full hour resets the run | Product | F07 |
-| Q19 | Front desk cannot see revenue or coach pay | Enforced on the server (no aggregate routes for that role); RLS cannot hide totals from someone who must read payments. Security to review | Security | A |
-| Q21 | Reminder for a booking made inside the window | Skip any reminder whose time has already passed | Product | F10 |
-| Q22 | Birthday message time | 09:00 Bangkok on the 1st (a proposal; the spec gives no time) | Product | F14 |
-| Q24 | Beam facts: signature scheme and headers, event id, amount unit, QR expiry control, charge retrieval, retry policy, sandbox, per-club webhook secret, API shape | No recommendation possible. Needs Beam's developer docs and sandbox access from the club's merchant onboarding; DevOps fills the adapter checklist in §6 | DevOps, user | F05 |
-| Q25 | Late payment beyond the slot (PAY-03) | Approve only if the whole order can be re-established (slot, coach, credits, wallet, promo); otherwise wallet. A package-only order paid after its QR expired also goes to the wallet | Product | F05 |
-| Q26 | Wrong-amount payment that really arrived | Nothing changes except the immutable event row and a health alert; staff credit the wallet from A6 with a written reason | Product | F05 |
-| Q27 | PDPA deletion versus receipts and audit | Anonymise personal fields (name, phone, date of birth, LINE id, notes) on the user and redact them in audit JSON; keep ledgers, receipts and audit with pseudonymous ids. Retention periods come from the Thai lawyer (the same one as D5) | Security, legal | F01 |
-| Q28 | Who reads the audit log; BOOQ sign-in logging | Owner only (A17). Log BOOQ staff sign-ins and failures in P6 | Product | F01 |
-| Q29 | New (from D4): which accounts the Go live purge removes | Tester player accounts and their data are purged; owner, staff and coach accounts, which come from invitations and setup, are kept | Product | F15 |
-
-| Q30 | Package-expiring message at 80% (decision D17 asks to confirm) | Keep it, as decided: it is rare and carries money value. It is the first to drop if the cap needs more headroom | Product | F10 |
-| Q31 | LINE quota and consumption endpoints: exact behaviour, what they count, freshness, the month boundary's time zone, and how to tell free from paid | Read LINE's figures and fall back to our own count (§5.6); DevOps checks against a real club account. Set `line_plan_kind` in P2 step 4 until confirmed | DevOps | F10 |
+| Q29 | Which accounts the Go live purge removes | Tester player accounts and their data are purged; owner, staff and coach accounts, which come from invitations and setup, are kept | Product | F15 |
+| Q24 (residual) | The Beam facts the docs do not state (§6.2) | Check each in the Playground with the club's sandbox keys and record the answers in the F05 design; the interface already isolates them | DevOps | F05 |
+| Q31 (residual) | LINE: month boundary and time zone, whether a free plan returns `none` or `limited`, freshness of the figures, Thai plan names | Check against a real club account; until then plan kind and limit are entered by hand (§5.6) | DevOps | F10 |
+| Q32 | The C1 checkbox "Add {club} as a LINE friend" (LINE-01-AC6) assumes a per-login choice. LINE's LIFF setting "Add friend option" (On normal, On aggressive, Off) is per LIFF app, not per login | Spec and platform differ, so this stops for a person. Recommendation: set the LIFF app to On (normal), where the add-friend choice sits on LINE's own consent screen, and turn the C1 checkbox into a note without a control. Needs a spec change | Product | F02 |
+| Q33 | The docs do not say that the LINE user ID from Login is the same as the Messaging API user ID under one provider. LINE-01-AC5 relies on it | Test with a real club account (one Login channel, one Official Account, one provider) before F02 is built. If they differ, the push target must be learned from the webhook | DevOps | F02 |
 
 ### 10.3 Open and not decidable here
 
-- Consent for players under 18 (decision D10, skipped): undecided; needs a Thai legal check before the consent text is final.
-- The LINE message cap is decided (LINE-07, D17) and designed in §5.6; gap C3 in `docs/canvas-gaps.md` is now closed and that file should say so.
-- From `docs/canvas-gaps.md`: C2 (are wallets in "owed to customers"), C4 and C5 (rich menu labels, address toggle), C7 (branches per club).
-- The domain name (D6) and Hunter's Beam merchant account and LINE plan (set up by the club).
+- Consent for players under 18 (decision D10, skipped): undecided; needs legal input before the consent text is final.
+- From `docs/canvas-gaps.md`: C2 (are wallets in "owed to customers"), C4 and C5 (rich menu labels, address toggle), C7 (branches per club); C3 (message cap) is decided (LINE-07, D17).
+- The domain name (D6), Hunter's Beam merchant account, and the club's LINE plan.
+- Questions inside the F01 and F02 requirements that the designs assume an answer for are listed in each design's section "Assumptions".
 
 ## 11. What happens next
 
-1. A person reviews this file. Approving section 10.2 as written, or changing rows, settles all open questions that block this document. Only Q19 blocks approval; the rest block a named feature design.
-2. After the F01 requirements are approved, `specs/features/F01-platform-foundation/design.md` is drafted from this document: migrations for the setup tables, roles and RLS, audit, role set, test-data flags and purge, export and import, the table registries.
+1. A person reviews this file. Q11, Q12, Q13, Q29, Q32 and Q33 are the only open rows; Q32 needs a spec decision before the F02 design can be approved.
+2. `specs/features/F01-platform-foundation/design.md` and `specs/features/F02-line-login-liff/design.md` are drafted from this document (gate 2, for approval).
 3. The claim function, ledgers and receipts counter get their own design sections in the F03, F06 and F13 designs, each citing the section here and adding a test list.
-4. DevOps spike (small): custom roles through the Supabase pooler, `btree_gist`, a direct connection for the worker, backups. The lawyer's answer on D5 decides between Supabase Singapore and self-hosted Thailand.
+4. DevOps spike (small): custom roles through the Supabase pooler, `btree_gist`, a direct connection for the worker, backups, the Beam Playground checks (§6.2) and the LINE checks (Q31, Q33).
 5. No code is written until the relevant requirements and design are approved (CLAUDE.md, rule 5).
