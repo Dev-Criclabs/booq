@@ -16,8 +16,9 @@ Depends on: F01 T09 (connections and secrets), T18, T34 (worker); F03 T13, T14 (
 - [x] **F05-T02** Policies and grants for the three tables, written with them in 0401 and 0402; registry, tenant and blind suites extended. IDs: CC-1, PLAT-02-AC1, PDPA-01-AC1. Role: Arch · Deps T01, F01-T09 · Size: S
   Tests first: club A cannot read club B's payments; `booq_platform` has no privilege on any payment table; the accountant reads payments (no contact details exist in them).
   - Built (Architect), written with the tables: policies and grants of 0401 and 0402. A player reads the payment of their own order only; owner, front desk and accountant read the club's payments and the event log; flags are the owner's; the worker reads in the club's context; BOOQ staff have no privilege on any of the three tables (tested). The Beam secrets remain readable only through `app.read_secret` (F01-T09).
-- [ ] **F05-T03b** Migration 0409: platform config rows with no value so they show as missing: `qr_expiry_margin_seconds`, the reconcile settings (`beam_reconcile_interval_seconds`, `beam_reconcile_age_seconds`). IDs: PAY-02-AC2, decisions D73, D80. Role: Arch · Deps F01-T16 · Size: S
+- [x] **F05-T03b** Migration 0409: platform config rows with no value so they show as missing: `qr_expiry_margin_seconds`, the reconcile settings (`beam_reconcile_interval_seconds`, `beam_reconcile_age_seconds`). IDs: PAY-02-AC2, decisions D73, D80. Role: Arch · Deps F01-T16 · Size: S
   Tests first: the keys exist with a null value; a null value is reported as "not configured" by `platform.club_progress`; no number is in code.
+  - Built (Architect): `0409_payment_config.sql`, `payment-config.test.ts`. Three keys with JSON null. Deviation from the test list: `platform.club_progress` reports setup steps and launch checks only, not config keys (the import keys of 0016 are the same), so the "not configured" report is the consuming route's refusal (F05 answers `payment_unavailable`), not P3. If P3 should list missing config keys, that is a new F01 task.
 
 ## B. Adapter and money movements
 

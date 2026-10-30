@@ -10,14 +10,15 @@ describe('the registry', () => {
       'hold_minutes', 'booking_window_days', 'cancel_window_hours', 'max_future_court_hours', 'waitlist_claim_minutes',
       'waitlist_no_offer_hours', 'rest_cap_hours', 'group_min_players', 'group_max_players', 'below_min_alert_minutes',
       'package_expiry_reminder_days', 'wallet_expiry_months', 'package_qr_minutes', 'vat_enabled', 'auto_slip_check', 'resource_label',
+      'birthday_discount',
     ]);
     expect(new Set(SETTINGS.map((s) => s.key)).size).toBe(SETTINGS.length);
     expect(SETTINGS.filter((s) => /length|duration|slot|booking_minutes/.test(s.key))).toEqual([]);
     expect(settingByKey('booking_minutes')).toBeUndefined();
   });
 
-  it('only the PRD TBD settings may be unset: max future hours, below minimum alert time, wallet expiry (design 10)', () => {
-    expect(SETTINGS.filter((s) => s.unsetAllowed).map((s) => s.key)).toEqual(['max_future_court_hours', 'below_min_alert_minutes', 'wallet_expiry_months']);
+  it('only the PRD TBD settings and the birthday discount (empty until F14 sets it) may be unset', () => {
+    expect(SETTINGS.filter((s) => s.unsetAllowed).map((s) => s.key)).toEqual(['max_future_court_hours', 'below_min_alert_minutes', 'wallet_expiry_months', 'birthday_discount']);
   });
 
   it('carries no default value', () => {
@@ -61,5 +62,13 @@ describe('validation', () => {
     expect(ok('booking_minutes', 60)).toEqual({ ok: false, code: 'unknown_setting' });
     expect(ok('__proto__', 1)).toEqual({ ok: false, code: 'unknown_setting' });
     expect(ok('toString', 1)).toEqual({ ok: false, code: 'unknown_setting' });
+  });
+
+  it('the birthday discount is {kind, value}: percent in basis points up to 10000, or fixed satang; it may stay unset (R5-AC1)', () => {
+    expect(ok('birthday_discount', { kind: 'percent', value: 1000 })).toEqual({ ok: true, value: { kind: 'percent', value: 1000 } });
+    expect(ok('birthday_discount', { kind: 'fixed', value: 5000 })).toEqual({ ok: true, value: { kind: 'fixed', value: 5000 } });
+    for (const v of [{ kind: 'percent', value: 10001 }, { kind: 'percent', value: -1 }, { kind: 'free', value: 1 }, { kind: 'fixed', value: 1.5 }, { kind: 'fixed' }, { value: 5 }, { kind: 'fixed', value: 5, extra: 1 }, 10, null, 'x'])
+      expect(ok('birthday_discount', v), JSON.stringify(v)).toEqual({ ok: false, code: 'invalid_value' });
+    expect(settingByKey('birthday_discount')?.unsetAllowed).toBe(true);
   });
 });
