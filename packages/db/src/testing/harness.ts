@@ -24,7 +24,7 @@ create table if not exists app.test_clock (
 insert into app.test_clock (id) values (true) on conflict do nothing;
 create or replace function app.now() returns timestamptz
 language sql stable as $$ select coalesce((select now_override from app.test_clock), now()) $$;
-grant select on app.test_clock to booq_app, booq_worker, booq_platform;
+grant select on app.test_clock to booq_owner, booq_app, booq_worker, booq_platform;
 `;
 
 export interface TestDatabase {
