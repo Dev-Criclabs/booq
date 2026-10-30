@@ -21,11 +21,12 @@ begin
   if v_club is null then
     raise exception 'set_support_window: no club context' using errcode = 'P0001';
   end if;
+  if p_on is null then
+    raise exception 'set_support_window: the argument must be true or false' using errcode = 'P0001';
+  end if;
   if not app.has_any_role('owner') then
     raise exception 'set_support_window: only the owner may change it' using errcode = '42501';
   end if;
-  -- Set before the update: the audit trigger on club reads it. The owner's admin screen is the source; withClubTx will set app.source itself (F01-T11).
-  perform set_config('app.source', coalesce(nullif(current_setting('app.source', true), ''), 'admin'), true);
   v_until := case when p_on then v_now + interval '24 hours' else null end;
   update public.club
      set allow_booq_changes_until = v_until,
