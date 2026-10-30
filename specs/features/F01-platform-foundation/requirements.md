@@ -1,8 +1,8 @@
 # F01 Platform foundation · Requirements
 
-Status: **Approved 30 Oct 2026** (gate 1). Recorded in `docs/decisions.md`, round 4: "F01 and F02 requirements were approved by the user on 30 Oct 2026". Revision 3 (30 Oct 2026) applies decisions D18 to D31 and the PRD and hand-off updates that followed. Changes after approval go PRD, then hand-off, then this file. No design or code follows until the design gate.
+Status: **Approved 30 Oct 2026** (gate 1). Recorded in `docs/decisions.md`, rounds 4 and 7. Revision 4 (30 Oct 2026) applies D32 to D37 where they touch F01 (Beam key sets, test data excluded from reports, encryption, Accountant visibility). Changes after approval go PRD, then hand-off, then this file. No design or code follows until the design gate.
 
-Revision history: v1 draft, v2 applied D1 to D15, v3 applies D18 to D31. ROLE-01, ROLE-02 and PLAT-07 were proposed IDs in v2 and are now in the hand-off (Roles table and Roles, platform console and data protection). The ledger reason `import` is in the hand-off data model. Decisions are cited as D1 to D31.
+Revision history: v1 draft, v2 applied D1 to D15, v3 applies D18 to D31, v4 applies D32 to D37. ROLE-01, ROLE-02 and PLAT-07 were proposed IDs in v2 and are now in the hand-off (Roles table and Roles, platform console and data protection). The ledger reason `import` is in the hand-off data model. Decisions are cited as D1 to D31.
 
 Feature: F01 Platform foundation (clubs, locations, resources, roles, settings, audit). Depends on: nothing built yet. There is no earlier Booq code or database, so Hunter is the first real build and the core is created with it (decisions log, round 2b; hand-off Overview). Requirement IDs: PLAT-01 to PLAT-06, PDPA-01, plus ROLE-01, ROLE-02, PLAT-07 (in the hand-off since 30 Oct 2026). Wave 1.
 
@@ -314,7 +314,7 @@ Data export
 
 - PLAT-06-AC11. Given a club, when "Export club data" is run, then the export holds only that club's records (CC-1).
 - PLAT-06-AC12. Given BOOQ staff in P3, when they press Export club data, then the export starts, but BOOQ staff cannot open, download or read its content. The owner downloads the file (D14). Where the owner finds and downloads it (A16 or a link in LINE) is Q1.
-- PLAT-06-AC13. Given an owner or front desk in A5, when they press Export CSV, then they receive the customer list CSV for their club (PRD A5 shows CSV export for front desk and owner).
+- PLAT-06-AC13. Given an owner or front desk in A5 (the Accountant sees names on receipts and reports, never phone numbers or dates of birth, D35), when they press Export CSV, then they receive the customer list CSV for their club (PRD A5 shows CSV export for front desk and owner).
 - PLAT-06-AC14. Given an accountant or owner in A13 and A14, when they export a report or receipts, then they receive CSV or PDF for their club (PRD Reports, Receipts). Built in F13 and F11. F01 owns only the rule that exports are club scoped and audited.
 - PLAT-06-AC15. Given any export of customers or club data, when it is made, then an audit entry records who, when, which export and how many rows (PLAT-04), because exports carry personal data.
 - PLAT-06-AC17. Given any club, when F01 ships, then there is no delete club action in the platform console or anywhere else in v1 (D14). A club leaves by export and pause only.
@@ -345,8 +345,10 @@ Data export
 - PLAT-07-AC4. Given the purge, when it runs, then it deletes only rows with the test flag and only for that club ID. If any row cannot be purged, Go live does not complete and the status stays Testing.
 - PLAT-07-AC5. Given a club in Testing, when someone signs in to the player app, then only the club owner and named BOOQ testers can. The tester list is set in P4 or P3 by BOOQ staff and every change is written to P6 (D4). A BOOQ tester signs in to the player app with LINE as a test player, not with the BOOQ account (ROLE-02-AC2).
 - PLAT-07-AC6. Given BOOQ staff in P4, when they look at test results, then they see pass or fail per check only (D4). They never see the test bookings, test players, test payments or test receipts themselves. The owner sees them in the club admin.
-- PLAT-07-AC7. Given test data, when it is counted for aggregates in P1 (bookings in the last 30 days), then it is not counted (derived: a Testing club has no real bookings; the spec is silent, Q-E).
+- PLAT-07-AC7. Given test data, when it is counted for aggregates in P1 (bookings in the last 30 days), then it is not counted (D33).
 - PLAT-07-AC8. Given a test run, when it starts, finishes or is purged, then it is written to P6 (PLAT-04).
+- PLAT-07-AC10. Given each club, when Beam is set up, then the club holds two sets of Beam keys, test and live. Testing uses the test set. Swapping to the live set at Go live is a required item on the P4 checklist, with a smoke test, and Go live is refused until it is ticked (D32). Test LINE messages go through the club's real Official Account and count toward the monthly cap (D32).
+- PLAT-07-AC11. Given test flagged records, when any report, daily close, receipts list or platform count is produced, then they are excluded everywhere and appear only in test mode views (D33).
 - PLAT-07-AC9. Given a test payment in Testing, when it is made, then it uses Beam's sandbox only. There is no in app "simulate payment" action in any club status (D26), so no route can confirm a booking without a valid signed Beam callback (F05 owns the integration). The 7 Dec test runs on production with Hunter in Testing status (PRD Decisions 30 Oct (3)).
 
 **Meets.**
@@ -376,8 +378,8 @@ Data export
 - PDPA-01-AC6. Given slips and staff notes, when anyone other than staff of that club asks for them, then the server refuses. A player never sees staff notes; a coach never sees slips; BOOQ staff never see either.
 - PDPA-01-AC7. Given a PDPA request, when it is made, handled or refused, then it is in the club's audit log (PLAT-04-AC10).
 - PDPA-01-AC8. Given all club data, when the nightly backup runs, then every club's data is backed up daily. How long backups are kept, and how a deleted player is removed from backups, are Q13.
-- PDPA-01-AC9. Given personal data in transit and at rest, when it is stored or sent, then it is encrypted (security basics; not stated in the spec, see Q23 before we promise a standard).
-- PDPA-01-AC10. Given hosting, when data is stored, then it is stored in Supabase in the nearest region, Singapore, under a data processing agreement with the club as controller (D5). The cross border transfer needs a Thai lawyer's confirmation under PDPA before Go live; if refused, the fallback is to self host Postgres in Thailand (D5). This is an action for a person, see Actions for a person. Plan section 3 ("Thai-region hosting") is superseded by D5.
+- PDPA-01-AC9. Given personal data in transit and at rest, when it is stored or sent, then it is encrypted in transit (TLS) and at rest (the host's standard disk encryption), and stored secrets such as Beam and LINE keys get an extra layer of encryption in the app (D34).
+- PDPA-01-AC10. Given hosting, when data is stored, then it is stored in Supabase in the nearest region, Singapore, under a data processing agreement with the club as controller (D5). Plan section 3 ("Thai-region hosting") is superseded by D5.
 - PDPA-01-AC11. Given a player, when they open Privacy and my data, then they see the privacy notice, Request a copy and Request deletion, in the language they use (P-0413, P-0414, P-0419, P-0422).
 - PDPA-01-AC12. Given the privacy notice, when a player reads it, then it names the club as the controller and BOOQ as the processor. The notice's final text is due before 7 Dec 2026 (HO "Privacy consent, receipt and payment text must be final before testing").
 
@@ -416,7 +418,6 @@ No key is added by this draft.
 
 ## Actions for a person (not questions; the user must do these)
 
-- **D5 hosting.** A Thai lawyer must confirm the cross border transfer to Singapore under PDPA, with a data processing agreement between each club and BOOQ and between BOOQ and Supabase. If refused, the fallback is self hosted Postgres in Thailand. Needed before Go live, and before real players' data is stored.
 - **D10 consent for players under 18.** Skipped by the user and still open. Not decided here (see F02).
 - **Club LINE message cap.** Decided 30 Oct 2026 as LINE-07 (F10, F15). Nothing more for F01.
 
@@ -442,8 +443,8 @@ Answered questions are removed (D1 to D15 answered the old Q2, Q3, Q6, Q8, Q14, 
 18. Full club export: which records (slips, staff notes, ledgers, receipts, audit log)?
 20. Consent record: the User record has no consent fields. May we add consent time, notice version and language to the data model (PRD and hand-off change first)? Needed to show consent under PDPA.
 21. Data copy: are staff notes included in the player's copy (PDPA-01 says staff only)? The G-C17 text does not list notes.
-22. Deletion: what is the legal basis and time limit to respond, what happens to a player with a future booking, a wallet balance or unused credits, and are receipts anonymised or kept as is (the canvas says receipts stay on record)? Legal advice may be needed (with D5 and D10).
-23. Security baseline: may we state encryption in transit and at rest, and who owns a breach procedure? (The data processing agreement itself is covered by D5.)
+22. Deletion: what is the legal basis and time limit to respond, what happens to a player with a future booking, a wallet balance or unused credits, and are receipts anonymised or kept as is (the canvas says receipts stay on record)? Legal advice may be needed (with D10).
+23. Breach procedure: who owns it, and who is told? (Encryption is settled by D34 and the data processing agreement by D5.)
 25. PDPA requests: no admin board shows where the front desk handles copy and delete requests (A5 and A6 have none). Which page, and which role (front desk or owner only)?
 26. Club locations: PRD Foundation says a club has one or more locations, but the platform open questions ask if one club can have more than one. Does F01 build the add location UI, or only the data model with one location (Hunter)? (The web address per club is answered by D6, see F02.)
 27. Club text fields: everything the club types has a Thai and an English field. Are both required to save, or may one be empty?
@@ -454,7 +455,7 @@ Answered questions are removed (D1 to D15 answered the old Q2, Q3, Q6, Q8, Q14, 
 - **Q-B.** Must a club always have at least one Owner? The spec is silent; a club with no owner has no one to approve changes. (Not yet written as a criterion.)
 - **Q-C.** BOOQ staff sign in (D3): which second factor (authenticator app, SMS, email code), how are lost factors reset, and is there a board for the sign in screen?
 - **Q-D.** Which aggregate counts may BOOQ staff see (D2)? P1 shows bookings in the last 30 days. Anything else?
-- **Q-E.** Test data in Testing (D4): is it excluded from the P1 counts, what exactly marks a test receipt on the PDF, and is there a board for the tester list and the test receipt?
+- **Q-E.** Test data in Testing (D4): what exactly marks a test receipt on the PDF, and is there a board for the tester list and the test receipt? (Exclusion from counts and reports is settled by D33.)
 
 ## Proposed acceptance checks for the hand-off (QA gap list)
 

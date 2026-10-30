@@ -1,8 +1,8 @@
 # F02 LINE Login, LIFF and first sign in · Requirements
 
-Status: **Approved 30 Oct 2026** (gate 1), except the consent text for players under 18, which stays **pending legal** (D10, left open by the user). Recorded in `docs/decisions.md`, round 4: "F01 and F02 requirements were approved by the user on 30 Oct 2026". Revision 3 (30 Oct 2026) applies decisions D18 to D31 and the PRD and hand-off updates that followed. Changes after approval go PRD, then hand-off, then this file. No design or code follows until the design gate.
+Status: **Approved 30 Oct 2026** (gate 1; F02 requirements and the D38 revision are in the user's round 7 approval, `docs/decisions.md`), except the consent text for players under 18, which stays **pending legal** (D10, left open by the user). Revision 4 (30 Oct 2026) applies D38. Changes after approval go PRD, then hand-off, then this file. No design or code follows until the design gate.
 
-Revision history: v1 draft, v2 applied D1 to D15, v3 applies D18 to D31. D11 and D12 are now in HO AUTH-02, and LINE-07 (message cap) is in the hand-off (F10 owns it).
+Revision history: v1 draft, v2 applied D1 to D15, v3 applies D18 to D31, v4 applies D38 (no checkbox on C1). D11 and D12 are now in HO AUTH-02, and LINE-07 (message cap) is in the hand-off (F10 owns it).
 
 Feature: F02 LINE Login, LIFF and first sign in. Depends on: F01. Requirement IDs: AUTH-01, AUTH-02, LINE-01. Wave 1.
 
@@ -110,8 +110,8 @@ Key lookup by screen waits for `locales/copy-index.csv`, generated from the canv
 - LINE-01-AC3. Given a signed in player, when they come back later in the same LINE or browser session, then they are not asked to log in again while the LINE session stays valid. The session length is Q8.
 - LINE-01-AC4. Given each club has its own LINE provider, with its own LIFF app, LINE Login channel and Official Account under it (D7, HO LINE integration), when a player signs in, then the server verifies the LINE token with LINE and accepts it only if it was issued for that club's Login channel. A token for club A is refused at club B (CC-2).
 - LINE-01-AC5. Given the LINE user ID the server receives, when the player record is read or created, then the key is club ID plus LINE user ID and the ID is the same one the club's Official Account uses for push messages (same provider), so messages reach the person.
-- LINE-01-AC6. Given C1 shows the checkbox "Add {club} as a LINE friend for booking updates" (ticked by default in the canvas), when the player taps Log in with LINE with it ticked, then LINE asks them to add the Official Account as part of sign in. When it is unticked, sign in goes on without the prompt.
-- LINE-01-AC7. Given the player declines or ignores the friend prompt, when sign in finishes, then they can still book and pay. Missing the friend status must not block a booking.
+- LINE-01-AC6. Given C1, when the player taps Log in with LINE, then the LIFF add friend option is set to On (normal): LINE's own consent screen offers the choice to add the Official Account, and C1 shows only a plain note about booking updates, with no checkbox (D38, HO LINE-01). H-C01-Welcome and F1-03-C01-Welcome still show a checkbox; that is now a canvas bug.
+- LINE-01-AC7. Given the player declines or ignores the friend choice on LINE's screen, when sign in finishes, then they can still book and pay. Missing the friend status must not block a booking.
 - LINE-01-AC8. Given a player who is not a friend of the club's Official Account (or has blocked it), when they pay or a booking is confirmed, then checkout is not blocked. The confirmation shows in the app, and the app asks them to add the Official Account (D9). The LINE push message may not reach them; that is expected.
 - LINE-01-AC9. Given a signed in player who is not a friend, when the app shows the confirmation (AC8), then it shows the add as friend ask there. Whether it asks again at later sign ins, and how often, is Q5.
 - LINE-01-AC10. Given a staff, coach or owner, when they sign in with LINE, then the same LIFF login is used and the role (F01) decides the surface. A person with no role at the club lands in the player app (PRD "Everyone signs in with LINE, and the role decides which surfaces and data they see"). Invite links are Q13.
@@ -248,7 +248,7 @@ QA found LINE-01 has no acceptance check and AUTH-02's check is thin (`docs/qa/t
 
 | ID | Proposed acceptance check | Full criteria |
 |---|---|---|
-| LINE-01 | Given the app opened inside LINE, when sign in starts, then it finishes with no tap; given a browser, then Log in with LINE shows once and sign in returns the player to where they were; given the friend box ticked, then LINE asks to add the Official Account and a refusal does not block booking | LINE-01-AC1, AC2, AC6, AC7 |
+| LINE-01 | Given the app opened inside LINE, when sign in starts, then it finishes with no tap; given a browser, then Log in with LINE shows once and sign in returns the player to where they were; given sign in, then LINE's own screen offers adding the Official Account (no checkbox on C1) and a refusal does not block booking | LINE-01-AC1, AC2, AC6, AC7 |
 | AUTH-02 (adds) | Given a player picks a Student item with no date of birth on file, then the date of birth field shows and a date making them 18 or older refuses the item; given a signed in player in Profile, then the date of birth can be edited any number of times and each change is audited and visible to the owner | AUTH-02-AC11, AC12, AC19, AC21 |
 | AUTH-02 (adds) | Given a player with no date of birth on file, when a price depends on age, then Adult prices apply; given a phone already used at the club, then the duplicate is flagged and nothing is blocked | AUTH-02-AC14, AC28 |
 | AUTH-01 (adds) | Given a guest on any browse page, then it loads without a session and write routes answer 401; given a guest request to hold a slot, then it is refused | AUTH-01-AC1, AC3 |
