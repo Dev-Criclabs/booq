@@ -31,6 +31,9 @@ const STATUS: Record<CheckoutErrorCode, number> = {
   code_first_booking_only: 422,
   code_used_up: 422,
   code_not_for_solo_class: 422,
+  one_code_per_order: 422,
+  birthday_not_available: 409,
+  credit_unavailable: 409,
 };
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const NO_STORE = { 'Cache-Control': 'no-store' } as const;
