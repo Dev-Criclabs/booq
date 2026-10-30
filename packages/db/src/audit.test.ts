@@ -237,7 +237,10 @@ describe('audit.note (events that are not a row change)', () => {
 describe('audit registry (FA 8.1)', () => {
   it('lists every audited table with its trigger, and the table classes are consistent', async () => {
     const reg = (await tdb.query(`select table_schema || '.' || table_name as t from audit.registry order by 1`)).rows.map((r) => r.t);
-    expect(reg).toEqual(['public.club', 'public.club_feature', 'public.club_pause', 'public.club_setting', 'public.club_status_change', 'public.location', 'public.opening_hours', 'public.resource']);
+    // Every feature adds its own tables; this test pins the F01 ones and that the lists agree.
+    for (const t of ['public.club', 'public.club_feature', 'public.club_pause', 'public.club_setting', 'public.club_status_change', 'public.location', 'public.opening_hours', 'public.resource']) {
+      expect(reg).toContain(t);
+    }
     const trig = (await tdb.query(`select c.relname from pg_trigger t join pg_class c on c.oid = t.tgrelid where t.tgname = 'audit_row' and not t.tgisinternal order by 1`)).rows.map((r) => r.relname);
     expect(trig).toEqual(reg.map((t) => t.replace('public.', '')));
     const result = await checkTableClasses(tdb.pool, await collectRegistry());
