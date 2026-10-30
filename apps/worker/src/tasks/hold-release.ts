@@ -2,8 +2,10 @@ import type { Db } from '@booq/db';
 import { recordQueueHealth, recordTaskRun } from '../heartbeat';
 
 // hold_release (F03-T19; BOOK-03-AC5, AC6; F03 design 6). Run every 15 to 30 seconds. One tick:
-//  1. lists, across clubs, the orders whose hold has ended (app.due_hold_orders, worker only);
-//  2. releases each order whole in its own club-context transaction (app.release_hold), so one
+//  1. lists, across clubs, the orders whose hold has ended (app.due_hold_orders, worker only), and the orders
+//     that add a coach to a booking whose hold has ended (app.due_coach_add_orders, F07-T06c);
+//  2. releases each order whole in its own club-context transaction (app.release_hold, or
+//     app.release_coach_add for an add-a-coach order), so one
 //     order's failure rolls back only that order and the next tick retries it;
 //  3. records how long the oldest due hold waited, for the P1 health tile.
 // Correctness never depends on this job: a late tick blocks nobody, because the claim releases
@@ -27,15 +29,19 @@ export interface HoldReleaseResult {
 /** `db` must connect as booq_worker. Throws after the batch if any order failed, so the queue records it. */
 export async function runHoldRelease(db: Db, options: { batch?: number } = {}): Promise<HoldReleaseResult> {
   return recordTaskRun(db, HOLD_RELEASE, async () => {
-    const found = await db.withClubTx(SYSTEM_CONTEXT, (tx) =>
-      tx.query<{ club_id: string; order_id: string; lag_seconds: number }>('select club_id, order_id, lag_seconds from app.due_hold_orders($1)', [options.batch ?? DEFAULT_BATCH]),
-    );
-    const result: HoldReleaseResult = { due: found.rows.length, released: 0, failed: 0, lagSeconds: found.rows[0]?.lag_seconds ?? 0 };
-    for (const row of found.rows) {
+    type Due = { club_id: string; order_id: string; lag_seconds: number };
+    const batch = options.batch ?? DEFAULT_BATCH;
+    const found = await db.withClubTx(SYSTEM_CONTEXT, async (tx) => ({
+      holds: (await tx.query<Due>('select club_id, order_id, lag_seconds from app.due_hold_orders($1)', [batch])).rows,
+      adds: (await tx.query<Due>('select club_id, order_id, lag_seconds from app.due_coach_add_orders($1)', [batch])).rows,
+    }));
+    const rows = [...found.holds.map((r) => ({ ...r, fn: 'release_hold' })), ...found.adds.map((r) => ({ ...r, fn: 'release_coach_add' }))];
+    const result: HoldReleaseResult = { due: rows.length, released: 0, failed: 0, lagSeconds: Math.max(0, ...rows.map((r) => r.lag_seconds)) };
+    for (const row of rows) {
       try {
         const released = await db.withClubTx(
           { clubId: row.club_id, userId: null, roles: [], source: 'job', actorLabel: HOLD_RELEASE },
-          async (tx) => (await tx.query<{ released: boolean }>(`select app.release_hold($1, 'expired') as released`, [row.order_id])).rows[0]?.released === true,
+          async (tx) => (await tx.query<{ released: boolean }>(`select app.${row.fn}($1, 'expired') as released`, [row.order_id])).rows[0]?.released === true,
         );
         if (released) result.released += 1;
       } catch {

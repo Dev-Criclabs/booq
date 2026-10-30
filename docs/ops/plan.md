@@ -227,3 +227,11 @@ Why: the unit and browser tests use a fake LIFF. Only a phone with the LINE app 
 
 **Pass:** C1 appears inside LINE with no extra login tap, C2 completes, the new player exists (flagged as test data because the club is Testing), the session survives a reload, the outside-browser path signs in with one tap, and nothing in the page URL or the logs holds an ID token.
 
+## 12. Supabase spike items (once a Supabase project exists)
+
+Collected here so none is lost. Each result is written into the document named.
+1. Custom roles through the pooler, `btree_gist`, a direct or session connection for the worker, and that `graphile_worker` can be created by the queue role (`worker.md`).
+2. Backups and the restore drill (section 4).
+3. **Staff sign-in paths:** password grant and the second-factor challenge and verify in `apps/staff-invite/src/supabase-identity.ts` against a real project (`platform.md`, seven checks).
+4. Forged `x-real-ip` and `x-forwarded-for` on the hosted web deploy (`web.md`).
+5. Beam Playground checks G1 to G13 (`accounts.md`).

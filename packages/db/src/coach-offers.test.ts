@@ -35,7 +35,7 @@ async function occupy(resource: string, h: number, o: { state?: 'confirmed' | 'h
   const held = o.state === 'held';
   const hold = held ? (o.expired ? `app.now() - interval '5 minutes'` : `app.now() + interval '10 minutes'`) : 'null';
   if (o.closure) {
-    const cl = (await tdb.query(`select gen_random_uuid() as id`)).rows[0].id;
+    const cl = await tdb.seedClosure(A);
     await tdb.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id) values ($1,'closure',$2,$3,$4,'confirmed',$5)`, [A, resource, H(h), H(h + 1), cl]);
     return null;
   }

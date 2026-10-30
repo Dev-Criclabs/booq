@@ -64,7 +64,7 @@ async function claim(o: { club?: string; resource: string; from: string; to: str
   await tdb.query(
     `insert into public.occupancy (club_id, kind, resource_id, coach_id, start_at, end_at, state, hold_expires_at, booking_id, closure_id)
      values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-    [club, kind, o.resource, o.coach ?? null, o.from, o.to, o.state ?? 'confirmed', o.state === 'held' ? o.hold : null, booking, o.closure ? '00000000-0000-4000-8000-0000000000e' + (Math.floor(Math.random() * 9) + 1) : null],
+    [club, kind, o.resource, o.coach ?? null, o.from, o.to, o.state ?? 'confirmed', o.state === 'held' ? o.hold : null, booking, o.closure ? await tdb.seedClosure(club) : null],
   );
 }
 type Ctx = { clubId: string; userId: string | null; roles: string[]; source: 'player_app' | 'admin' };
