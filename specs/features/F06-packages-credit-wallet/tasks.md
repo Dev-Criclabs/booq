@@ -12,7 +12,7 @@ Depends on: F01 T09 (setup tables), T12 (people), T13 (route wrapper), T18 (gran
   Tests first: a package line must name a product of the same club; `credits_total` cannot be updated; a second grant row for the same order and product is refused; every table has its class and club columns; another club's package is not reachable.
 - [x] **F06-T02** Migration 0502: `credit_ledger` and `wallet_ledger` as FA §2.3 (reasons, sign rules, `payment_id`, dedupe keys, staff note checks), append-only by revoke, trigger and FORCE RLS, deferred `balance >= 0` triggers. IDs: PKG-01-AC1 to AC3, AC5, AC7, D83. Role: BE-C · Deps T01 · Size: M
   Tests first: `UPDATE` and `DELETE` fail as every role including the owner; a staff row without a note is refused; an `adjust` below zero is refused; the reason set equals the D78 list (and `import_transfer` only after T08).
-- [ ] **F06-T03** Migration 0503: views `wallet_balance`, `package_balance`, `package_status` (derived, never stored). IDs: PKG-01-AC1, PKG-03-AC3. Role: BE-C · Deps T02 · Size: S
+- [x] **F06-T03** Migration 0503: views `wallet_balance`, `package_balance`, `package_status` (derived, never stored). IDs: PKG-01-AC1, PKG-03-AC3. Role: BE-C · Deps T02 · Size: S
   Tests first: after random movements the view equals the ledger sum; an expired package shows `expired` from `app.now()`.
 
 ## B. Functions (one migration file per task)
