@@ -87,8 +87,8 @@ const playersHandler: ImportHandler = {
     // person keeps the Player role (a database rule, D115). Staff confirm a claim later.
     const res = await tx.query(
       `with made as (
-         insert into public.app_user (club_id, full_name, phone, phone_normalized, date_of_birth)
-         select app.club_id(), n, p, regexp_replace(p, '^\\+', ''), d
+         insert into public.app_user (club_id, full_name, phone, phone_normalized, date_of_birth, claim_state)
+         select app.club_id(), n, p, regexp_replace(p, '^\\+', ''), d, 'unclaimed'
            from unnest($1::text[], $2::text[], $3::date[]) as t(n, p, d)
          returning club_id, id)
        insert into public.app_user_role (club_id, user_id, role) select club_id, id, 'player' from made`,
