@@ -4,7 +4,7 @@ import type { AuthStore } from '../auth/sign-in';
 
 // First-factor enrolment for BOOQ staff (F01-T17c; ROLE-02-AC1, AC4; D123, D148). A teammate who was invited, or whose
 // second factor an admin reset, opens a single-use link, sets a password and enrols an authenticator. The link is
-// checked here against the database (migration 0052; only its hash is stored). The password and the authenticator are
+// checked here against the database (migration 0055; only its hash is stored). The password and the authenticator are
 // handled by apps/staff-invite, which this app asks with signed calls. The provider's first-step token never reaches
 // the browser: it is kept sealed on the server under an opaque enrolment id (the shared console challenge table) and
 // the browser holds only that id. The secret of the authenticator goes to the browser once, to be shown as a QR code.

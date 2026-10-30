@@ -29,7 +29,7 @@ export function createSupabaseAdmin(options: SupabaseAdminOptions): SupabaseAdmi
   const id = (authUserId: string) => encodeURIComponent(authUserId);
   return {
     // The user is created confirmed and with no email sent: the link that lets them in is our own single-use enrolment
-    // link (migration 0052), handed over by the admin, so its life and its use are ours to set and to log.
+    // link (migration 0055), handed over by the admin, so its life and its use are ours to set and to log.
     async inviteUser(email) {
       const u = (await call('POST', '/admin/users', { email, email_confirm: true })) as { id?: unknown } | null;
       if (!u || typeof u.id !== 'string') throw new Error('identity provider gave no user id');

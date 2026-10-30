@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createPlatformDb, type PlatformDb } from './platform-tx';
 import { createTestDatabase, type TestDatabase } from './testing/harness';
 
-// Migration 0052: single-use first-factor links for BOOQ staff (ROLE-02-AC1, AC4, D123, D148).
+// Migration 0055: single-use first-factor links for BOOQ staff (ROLE-02-AC1, AC4, D123, D148).
 const H1 = 'a'.repeat(64);
 const H2 = 'b'.repeat(64);
 let tdb: TestDatabase;

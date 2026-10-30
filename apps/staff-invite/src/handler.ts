@@ -15,7 +15,7 @@ import type { PlatformDb } from '@booq/db';
 //   POST /identity/totp          { authUserId, state, code }      -> { ok: true }
 //   POST /identity/enrol-start   { authUserId, password }         -> { state, secret, uri }   (first factor, F01-T17c)
 // First factor (F01-T17c): an invite or a reset also issues a single-use enrolment token (its hash is stored, migration
-// 0052). The token is returned once, to the admin who asked, to hand to the teammate; whoever holds it sets a password and
+// 0055). The token is returned once, to the admin who asked, to hand to the teammate; whoever holds it sets a password and
 // enrols an authenticator with enrol-start and then totp. apps/platform checks the token and binds authUserId to it.
 // The identity routes are for sign-in, which happens before any staff member is known: they carry no actor, only the
 // signature of apps/platform. `state` is the provider's first-step token, opaque to everyone but this app; apps/platform

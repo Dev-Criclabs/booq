@@ -1,4 +1,4 @@
--- Migration 0052: first-factor enrolment for BOOQ staff (F01-T17c; ROLE-02-AC1, AC4; SR-06; D123, D148).
+-- Migration 0055: first-factor enrolment for BOOQ staff (F01-T17c; ROLE-02-AC1, AC4; SR-06; D123, D148).
 -- A newly invited teammate, or one whose second factor an admin reset, has no authenticator and cannot sign in. The
 -- admin gets a single-use link; whoever holds it sets a password and enrols an authenticator at apps/staff-invite.
 -- Only the sha-256 of the link token is stored. The life of a link is platform config `console_enrolment_ttl_hours`,
