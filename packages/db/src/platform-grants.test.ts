@@ -34,7 +34,7 @@ beforeEach(async () => {
   spec = await newStaff('spec@booq.example', 'onboarding_specialist', '99999999-0000-4000-8000-000000000002');
   loner = await newStaff('loner@booq.example', 'onboarding_specialist', '99999999-0000-4000-8000-000000000003');
   for (const c of [LIVE, TEST, DRAFT, PAUSED]) await tdb.query(`insert into platform.staff_assignment (staff_id, club_id) values ($1, $2)`, [spec, c]);
-  await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1, 'k', '1'), ($2, 'k', '2')`, [LIVE, TEST]);
+  await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1, 'package_qr_minutes', '1'), ($2, 'package_qr_minutes', '2')`, [LIVE, TEST]);
   pdb = createPlatformDb({ connectionString: tdb.url, max: 1 });
 });
 afterEach(async () => {
@@ -95,7 +95,7 @@ describe('edit rules by status (PLAT-02-AC2 to AC7, D27)', () => {
   const setValue = (staffId: string, club: string) =>
     pdb.withPlatformTx(as(staffId), (tx) => tx.query(`update public.club_setting set value = '9' where club_id = $1`, [club]));
   const addSetting = (staffId: string, club: string) =>
-    pdb.withPlatformTx(as(staffId), (tx) => tx.query(`insert into public.club_setting (club_id, key, value) values ($1, 'new', '1')`, [club]));
+    pdb.withPlatformTx(as(staffId), (tx) => tx.query(`insert into public.club_setting (club_id, key, value) values ($1, 'rest_cap_hours', '1')`, [club]));
 
   it('Draft and Testing: edit works; Live: look only; Paused: look only', async () => {
     expect((await setValue(spec, TEST)).rowCount).toBe(1);
@@ -228,7 +228,7 @@ describe('platform schema (P6, team, usage, templates)', () => {
 describe('the staff transaction (review R1, PLAT-04-AC4)', () => {
   it('names the staff member in the club audit log: a platform edit of a setting gives an entry with that label', async () => {
     await pdb.withPlatformTx({ staffId: spec, staffLabel: 'Sam Specialist', clubId: TEST, requestId: 'r9' }, (tx) =>
-      tx.query(`insert into public.club_setting (club_id, key, value) values ($1, 'edited', '1')`, [TEST]),
+      tx.query(`insert into public.club_setting (club_id, key, value) values ($1, 'rest_cap_hours', '1')`, [TEST]),
     );
     const r = await tdb.query(`select actor_type, actor_label, actor_platform_staff_id as staff, source from public.audit_entry where club_id = $1 and record_type = 'club_setting' order by occurred_at desc limit 1`, [TEST]);
     expect(r.rows[0]).toEqual({ actor_type: 'platform_staff', actor_label: 'Sam Specialist', staff: spec, source: 'platform' });

@@ -260,7 +260,7 @@ describe('Go live runs the purge in the same transaction (review T20 R1; PLAT-01
     await person(OWNER_USER, 'L1', ['owner', 'player']);
     await person(TESTER_USER, 'L2', ['player'], true);
     await tdb.query(`insert into public.t_ledger (club_id, amount) values ($1, 5), ($1, 7)`, [CLUB]);
-    await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1, 'hold', '15')`, [CLUB]);
+    await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1, 'cancel_window_hours', '15')`, [CLUB]);
     await addChecks(['pass']);
     expect((await tdb.query(`select count(*)::int as n from public.t_ledger where is_test`)).rows[0].n).toBe(2);
 

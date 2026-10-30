@@ -55,15 +55,15 @@ const entries = async (where = 'true') =>
 describe('one entry per audited change, same transaction (PLAT-04-AC1, AC2)', () => {
   it('insert, update and delete each write one entry with the changed columns only', async () => {
     await as('booq_app', owner, async (c) => {
-      await c.query(`insert into public.club_setting (club_id, key, value) values ($1, 'hold', '{"minutes":15}')`, [A]);
-      await c.query(`update public.club_setting set value = '{"minutes":20}' where key = 'hold'`);
-      await c.query(`delete from public.club_setting where key = 'hold'`);
+      await c.query(`insert into public.club_setting (club_id, key, value) values ($1, 'cancel_window_hours', '{"minutes":15}')`, [A]);
+      await c.query(`update public.club_setting set value = '{"minutes":20}' where key = 'cancel_window_hours'`);
+      await c.query(`delete from public.club_setting where key = 'cancel_window_hours'`);
     });
     const rows = await entries("record_type = 'club_setting'");
     expect(rows.map((r) => r.action)).toEqual(['insert', 'update', 'delete']);
     const [ins, upd, del] = rows;
-    expect(ins).toMatchObject({ club_id: A, record_key: 'hold', old_value: null, actor_type: 'club_user', actor_user_id: USER, actor_label: 'Nok', source: 'admin' });
-    expect(ins.new_value).toMatchObject({ key: 'hold', value: { minutes: 15 } });
+    expect(ins).toMatchObject({ club_id: A, record_key: 'cancel_window_hours', old_value: null, actor_type: 'club_user', actor_user_id: USER, actor_label: 'Nok', source: 'admin' });
+    expect(ins.new_value).toMatchObject({ key: 'cancel_window_hours', value: { minutes: 15 } });
     expect(upd.old_value).toEqual({ value: { minutes: 15 } });
     expect(upd.new_value).toEqual({ value: { minutes: 20 } });
     expect(del.new_value).toBeNull();
@@ -72,17 +72,17 @@ describe('one entry per audited change, same transaction (PLAT-04-AC1, AC2)', ()
   });
 
   it('an update that changes nothing writes nothing', async () => {
-    await as('booq_app', owner, (c) => c.query(`insert into public.club_setting (club_id, key, value) values ($1, 'k', '1')`, [A]));
+    await as('booq_app', owner, (c) => c.query(`insert into public.club_setting (club_id, key, value) values ($1, 'package_qr_minutes', '1')`, [A]));
     await tdb.query('select 1');
     const before = (await entries()).length;
-    await as('booq_app', owner, (c) => c.query(`update public.club_setting set value = '1' where key = 'k'`));
+    await as('booq_app', owner, (c) => c.query(`update public.club_setting set value = '1' where key = 'package_qr_minutes'`));
     expect((await entries()).length).toBe(before);
   });
 
   it('a rolled back change leaves no entry', async () => {
     await expect(
       as('booq_app', owner, async (c) => {
-        await c.query(`insert into public.club_setting (club_id, key, value) values ($1, 'k', '1')`, [A]);
+        await c.query(`insert into public.club_setting (club_id, key, value) values ($1, 'package_qr_minutes', '1')`, [A]);
         throw new Error('stop');
       }),
     ).rejects.toThrow('stop');
@@ -92,7 +92,7 @@ describe('one entry per audited change, same transaction (PLAT-04-AC1, AC2)', ()
   it('a change whose audit entry cannot be written is rolled back', async () => {
     // A club user with no source cannot be recorded, so the change is refused.
     await expect(
-      as('booq_app', { ...owner, 'app.source': '' }, (c) => c.query(`insert into public.club_setting (club_id, key, value) values ($1, 'k', '1')`, [A])),
+      as('booq_app', { ...owner, 'app.source': '' }, (c) => c.query(`insert into public.club_setting (club_id, key, value) values ($1, 'package_qr_minutes', '1')`, [A])),
     ).rejects.toThrow(/audit/i);
     expect((await tdb.query('select count(*)::int as n from public.club_setting')).rows[0].n).toBe(0);
   });
@@ -111,13 +111,13 @@ describe('one entry per audited change, same transaction (PLAT-04-AC1, AC2)', ()
 
 describe('who and when (PLAT-04-AC11)', () => {
   it('a job with no user is a system actor', async () => {
-    await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1, 'k', '1')`, [A]);
+    await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1, 'package_qr_minutes', '1')`, [A]);
     expect((await entries("record_type = 'club_setting'"))[0]).toMatchObject({ actor_type: 'system', source: 'job', actor_label: 'system', actor_user_id: null });
   });
 
   it('a platform edit names the BOOQ staff member and the support session', async () => {
     await as(null, { 'app.club_id': A, 'app.actor_platform_staff_id': STAFF, 'app.actor_label': 'BOOQ staff: Mali', 'app.support_session_id': SESSION, 'app.reason': 'fix typo' }, (c) =>
-      c.query(`insert into public.club_setting (club_id, key, value) values ($1, 'k', '1')`, [A]),
+      c.query(`insert into public.club_setting (club_id, key, value) values ($1, 'package_qr_minutes', '1')`, [A]),
     );
     expect((await entries("record_type = 'club_setting'"))[0]).toMatchObject({
       actor_type: 'platform_staff', actor_platform_staff_id: STAFF, actor_user_id: null, actor_label: 'BOOQ staff: Mali', support_session_id: SESSION, source: 'platform', reason: 'fix typo',
@@ -126,7 +126,7 @@ describe('who and when (PLAT-04-AC11)', () => {
 
   it('the time comes from the clock (10:00 in Bangkok for 03:00 UTC)', async () => {
     await tdb.setNow('2026-12-29T03:00:00Z');
-    await as('booq_app', owner, (c) => c.query(`insert into public.club_setting (club_id, key, value) values ($1, 'k', '1')`, [A]));
+    await as('booq_app', owner, (c) => c.query(`insert into public.club_setting (club_id, key, value) values ($1, 'package_qr_minutes', '1')`, [A]));
     // The roles carry TimeZone=Asia/Bangkok (roles.test); the stored instant is what matters here.
     const r = await tdb.query(
       `select to_char(occurred_at at time zone 'Asia/Bangkok', 'YYYY-MM-DD HH24:MI') as bangkok from public.audit_entry where record_type = 'club_setting'`,
@@ -137,7 +137,7 @@ describe('who and when (PLAT-04-AC11)', () => {
 
 describe('append-only (PLAT-04-AC6)', () => {
   beforeEach(async () => {
-    await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1, 'k', '1')`, [A]);
+    await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1, 'package_qr_minutes', '1')`, [A]);
   });
   for (const role of [null, 'booq_owner', 'booq_app', 'booq_worker', 'booq_platform', 'booq_anonymiser']) {
     it(`update, delete and truncate of audit_entry fail for ${role ?? 'the superuser'}`, async () => {
@@ -165,7 +165,7 @@ describe('append-only (PLAT-04-AC6)', () => {
 
 describe('reading (PLAT-04, owner only; BOOQ staff never)', () => {
   beforeEach(async () => {
-    await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1, 'k', '1'), ($2, 'k', '2')`, [A, B]);
+    await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1, 'package_qr_minutes', '1'), ($2, 'package_qr_minutes', '2')`, [A, B]);
   });
   it('the owner reads own club entries only; other roles read none; the platform role has no privilege', async () => {
     const read = (roles: string, club = A) => as('booq_app', { ...owner, 'app.club_id': club, 'app.roles': roles }, (c) => c.query('select club_id from public.audit_entry'));
