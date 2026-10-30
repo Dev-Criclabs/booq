@@ -22,7 +22,7 @@ after(async () => {
 
 describe('C2 Profile setup (F02-T20)', () => {
   it('AUTH-02-AC6: a new player goes from sign in to C2 and on to payment with the slot kept', async () => {
-    const { page, context, calls } = await openPage(browser, { liff, lang: 'en', session: { status: 200, body: { state: 'needs_profile' } } });
+    const { page, context, calls } = await openPage(browser, { liff, lang: 'en', session: { status: 200, body: { state: 'pending_profile' } } });
     await page.goto(`${app.base}/c/hunter/sign-in?next=${encodeURIComponent(NEXT)}`);
     await page.getByTestId('continue').waitFor();
     assert.equal(await page.locator('h1').innerText(), 'Hi, ploy.s');
