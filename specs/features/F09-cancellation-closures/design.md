@@ -31,10 +31,12 @@ F09 uses the number block 1001 to 1099 (assumption A-1: the build plan names blo
 | `1003_cancel_handlers.sql` | The registry `app.cancel_handlers (ord, handler)` for features that react to a cancel (§4.3) |
 | `1004_cancel_outcome.sql` | `app.cancel_outcome` (in time, late or full value; reads F07's `coach_was_changed` and F08's edited session flag for the free cancel) |
 | `1005_return_value.sql` | `app.return_booking_value(booking, kind)`: the credit, wallet and money returns (§4.2 step 3), also called by F08's `cancel_session` |
-| `1006_cancel_booking.sql` | `app.cancel_booking` and its helpers |
-| `1007_staff_marks.sql` | `app.mark_no_show`, `app.mark_late_cancel`, `app.reverse_mark` |
-| `1008_closure_functions.sql` | `app.closure_preview`, `app.create_closure`, `app.end_closure`, `app.roll_closures` |
-| `1009_grants_policies.sql` | Policies, grants, executable-by lists, the table class registry entries |
+| `1006_cancel_order_effects.sql` | `app.cancel_order_effects`: `restore_line`, promo and partner counts, order status |
+| `1007_cancel_booking.sql` | `app.cancel_booking` and its helpers |
+| `1008_staff_marks.sql` | `app.mark_no_show`, `app.mark_late_cancel`, `app.reverse_mark` |
+| `1009_closure_create.sql` | `app.closure_preview`, `app.create_closure` |
+| `1010_closure_end_roll.sql` | `app.end_closure`, `app.roll_closures` |
+| `1011_grants_policies.sql` | Policies, grants, executable-by lists, the table class registry entries |
 
 No settings rows: `cancel_window_hours` already exists (F01 §10, unset not allowed, Hunter 12). The no show timing setting is not added (Q1).
 
