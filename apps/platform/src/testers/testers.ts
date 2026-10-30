@@ -6,7 +6,7 @@ import type { PlatformDb } from '@booq/db';
 // once, at creation, to hand to the tester; only its hash is stored and nothing can read it back.
 // The tester signs in with LINE as an ordinary player: no BOOQ credential is involved (ROLE-02-AC2).
 
-export type CreateTesterInviteResult = { ok: true; link: string } | { ok: false; code: 'not_found' | 'not_available' };
+export type CreateTesterInviteResult = { ok: true; link: string } | { ok: false; code: 'not_found' | 'not_available' | 'look_only' | 'not_configured' };
 export type ListTestersResult =
   | { ok: true; testers: Array<{ id: string; added_at: string; removed_at: string | null; display_name: string | null }>; pendingInvites: number }
   | { ok: false; code: 'not_found' };
@@ -32,12 +32,14 @@ export function createTesterService(deps: { db: PlatformDb; baseUrl: string }) {
 
   const ctx = (s: Staff, clubId: string) => ({ staffId: s.id, staffLabel: s.display_name, clubId });
 
-  function mapError(e: unknown): 'not_found' | 'not_available' | null {
+  function mapError(e: unknown): 'not_found' | 'not_available' | 'look_only' | 'not_configured' | null {
     const err = e as { code?: string; message?: string };
     const m = /^tester:(\w+)/.exec(err.message ?? '');
     if (err.code !== 'P0001' || !m) return null;
     if (m[1] === 'not_found') return 'not_found';
     if (m[1] === 'not_a_start') return 'not_available';
+    if (m[1] === 'look_only') return 'look_only';
+    if (m[1] === 'ttl_not_configured') return 'not_configured';
     return null;
   }
 
@@ -67,7 +69,7 @@ export function createTesterService(deps: { db: PlatformDb; baseUrl: string }) {
     return r ? { ok: true, testers: r.testers, pendingInvites: r.pending_invites } : { ok: false, code: 'not_found' };
   }
 
-  async function removeTester(staffId: string, clubId: string, testerId: string): Promise<{ ok: true } | { ok: false; code: 'not_found' }> {
+  async function removeTester(staffId: string, clubId: string, testerId: string): Promise<{ ok: true } | { ok: false; code: 'not_found' | 'look_only' }> {
     const staff = await loadStaff(staffId);
     if (!staff || !UUID.test(clubId) || !UUID.test(testerId)) return { ok: false, code: 'not_found' };
     try {
@@ -75,7 +77,7 @@ export function createTesterService(deps: { db: PlatformDb; baseUrl: string }) {
       return { ok: true };
     } catch (e) {
       const code = mapError(e);
-      if (code !== 'not_found') throw e;
+      if (code !== 'not_found' && code !== 'look_only') throw e;
       return { ok: false, code };
     }
   }

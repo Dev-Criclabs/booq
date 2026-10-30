@@ -187,9 +187,9 @@ describe('items whose handler arrives later (review gap 1)', () => {
     await registerProduct();
     expect(await copied(CLUB)).toBe(0);
     const r = await pendingNow(spec);
-    expect(r).toMatchObject({ copied: { product: 10 }, pending: ['price'] });
+    expect(r).toMatchObject({ copied: { product: 10 }, pending: [] });
     expect(await copied(CLUB)).toBe(10);
-    expect(await pendingNow(spec)).toMatchObject({ copied: {}, pending: ['price'] });      // nothing is copied twice
+    expect(await pendingNow(spec)).toMatchObject({ copied: {}, pending: [] });      // nothing is copied twice
     expect(await copied(CLUB)).toBe(10);
   });
 
@@ -214,12 +214,12 @@ describe('items whose handler arrives later (review gap 1)', () => {
 
   it('a kind with no handler stays pending and is reported; the catch-up is for the club\'s staff or owner only', async () => {
     await apply(spec, 'tennis');
-    expect(await pendingNow(spec)).toMatchObject({ copied: {}, pending: ['price', 'product'] });
+    expect(await pendingNow(spec)).toMatchObject({ copied: {}, pending: ['product'] });
     await expect(pendingNow(loner)).rejects.toThrow(/template:not_found/);
     await expect(applyAsOwner('tennis', ['player'])).rejects.toThrow(/template:already_applied|template:not_allowed/);
     const asOwner = (roles: string[]) => db.withClubTx({ clubId: CLUB, userId: USER, roles, source: 'admin' }, async (tx) => (await tx.query(`select app.apply_pending_template_items() as r`)).rows[0]?.r);
     await expect(asOwner(['front_desk', 'player'])).rejects.toThrow(/template:not_allowed/);
-    expect(await asOwner(['owner', 'player'])).toMatchObject({ pending: ['price', 'product'] });
+    expect(await asOwner(['owner', 'player'])).toMatchObject({ pending: ['product'] });
   });
 
   it('the catch-up functions: the club one is not callable by the app roles, and the maintenance one only by the owner role', async () => {
@@ -236,7 +236,7 @@ describe('the P6 entry on the staff path (review gap 2)', () => {
     await apply(spec, 'tennis');
     const p6 = (await tdb.query(`select action, staff_name_at_time as n, club_id, detail from platform.audit_log where action = 'club.template_applied'`)).rows;
     expect(p6).toHaveLength(1);
-    expect(p6[0]).toMatchObject({ n: 'Sam Specialist', club_id: CLUB, detail: { template: 'tennis', copied: { setting: 11, opening_hours: 7, label: 1 }, pending: ['price', 'product'] } });
+    expect(p6[0]).toMatchObject({ n: 'Sam Specialist', club_id: CLUB, detail: { template: 'tennis', copied: { setting: 11, opening_hours: 7, label: 1 }, pending: ['product'] } });
     await applyAsOwner('blank', ['owner', 'player'], OTHER);
     expect((await tdb.query(`select count(*)::int as n from platform.audit_log where action = 'club.template_applied'`)).rows[0].n).toBe(1);
   });

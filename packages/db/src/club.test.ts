@@ -113,6 +113,7 @@ describe('features and settings (PLAT-05, CC-1)', () => {
     for (const table of ['club_feature', 'club_setting']) {
       const r = await db.withClubTx(ctx(A), (tx) => tx.query(`select club_id from public.${table}`));
       expect(r.rows, table).toEqual([{ club_id: A }]);
+      if (table === 'club_feature') continue;   // the owner cannot write switches at all (review 0038)
       const d = await db.withClubTx(ctx(A), (tx) => tx.query(`delete from public.${table} where club_id = $1`, [B]));
       expect(d.rowCount, table).toBe(0);
     }

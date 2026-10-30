@@ -69,6 +69,7 @@ beforeEach(async () => {
   spec = await staff('spec@booq.example', 'onboarding_specialist', '99999999-0000-4000-8000-000000000002', 'Sam Specialist');
   loner = await staff('loner@booq.example', 'onboarding_specialist', '99999999-0000-4000-8000-000000000003', 'Lee Loner');
   await tdb.query(`insert into platform.staff_assignment (staff_id, club_id) values ($1, $2)`, [spec, CLUB]);
+  await tdb.query(`insert into platform.config (key, value) values ('tester_invite_ttl_hours', '720')`);   // set by a person in these tests; nothing is seeded
   db = createDb({ connectionString: tdb.url, max: 1 });
   pdb = createPlatformDb({ connectionString: tdb.url, max: 1 });
 });
@@ -88,6 +89,18 @@ describe('tester invites (PLAT-07-AC5, SR-01, D102)', () => {
     expect(ttl).toBeGreaterThan(Number((await tdb.query(`select value from platform.config where key = 'invite_ttl_hours'`)).rows[0].value)); // longer than an owner invite
     expect(new Date(r.expires_at).getTime()).toBe(new Date('2026-12-01T03:00:00Z').getTime() + ttl * 3600_000);
     await createInvite(admin, H2);
+  });
+
+  it('seeds no link life: an admin sets tester_invite_ttl_hours, and without it no tester link can be made (CLAUDE.md: no invented setting)', async () => {
+    const fresh = await createTestDatabase();
+    try {
+      expect((await fresh.query(`select count(*)::int as n from platform.config where key = 'tester_invite_ttl_hours'`)).rows[0].n).toBe(0);
+    } finally {
+      await fresh.close();
+    }
+    await tdb.query(`delete from platform.config where key = 'tester_invite_ttl_hours'`);
+    await expect(createInvite(spec)).rejects.toThrow(/tester:ttl_not_configured/);
+    expect((await tdb.query(`select count(*)::int as n from public.club_invite`)).rows[0].n).toBe(0);
   });
 
   it('refuses an unassigned specialist (not found), a bad token hash, and a Live club', async () => {
@@ -139,6 +152,17 @@ describe('the testers the platform sees (PLAT-07-AC6)', () => {
     await expect(remove(loner, id)).rejects.toThrow(/tester:not_found/);
   });
 
+  it('a removal needs the club to be editable: not on a Live club without the owner window (review 0040)', async () => {
+    await createInvite(spec);
+    await join(H1);
+    const id = (await list(spec)).testers[0].id;
+    await tdb.query(`update public.club set status = 'live' where id = $1`, [CLUB]);
+    await expect(remove(spec, id)).rejects.toThrow(/tester:look_only/);
+    await tdb.query(`update public.club set allow_booq_changes_set_at = app.now(), allow_booq_changes_until = app.now() + interval '1 hour' where id = $1`, [CLUB]);
+    await remove(spec, id);
+    expect((await list(spec)).testers[0].removed_at).not.toBeNull();
+  });
+
   it('every change is in P6: the invite, the join and the removal', async () => {
     await createInvite(spec);
     await join(H1);
@@ -151,6 +175,24 @@ describe('the testers the platform sees (PLAT-07-AC6)', () => {
 });
 
 describe('the sign-in gate (PLAT-01-AC5, AC11; D102)', () => {
+  it('the status is checked before the account: an inactive person in a Testing club is "not a tester" (shown as not found), in a Live club "account inactive" (review 0040)', async () => {
+    await tdb.query(`insert into public.app_user (club_id, id, line_user_id, active) values ($1, $2, $3, false)`, [CLUB, PLAYER_USER, PLAYER_LINE]);
+    await tdb.query(`insert into public.app_user_role (club_id, user_id, role) values ($1, $2, 'player')`, [CLUB, PLAYER_USER]);
+    expect(await gate(PLAYER_LINE)).toBe('not_a_tester');
+    await tdb.query(`update public.club set status = 'live' where id = $1`, [CLUB]);
+    expect(await gate(PLAYER_LINE)).toBe('account_inactive');
+  });
+
+  it('an anonymised tester in a Testing club is not found, never "inactive"', async () => {
+    const OWNER_USER = 'aaaaaaaa-0000-4000-8000-0000000000a1';
+    await tdb.query(`with u as (insert into public.app_user (club_id, id, line_user_id, active) values ($1, $2, 'Uowner', true) returning club_id, id)
+                     insert into public.app_user_role (club_id, user_id, role) select club_id, id, r from u, unnest(array['player', 'owner']) r`, [CLUB, OWNER_USER]);
+    await createInvite(spec);
+    await join(H1);
+    await tdb.query(`update public.app_user set active = false where id = $1`, [TESTER_USER]);
+    expect(await gate(TESTER_LINE)).toBe('not_a_tester');
+  });
+
   it('Live and Paused admit everyone; an inactive account is refused anywhere', async () => {
     expect(await gate(PLAYER_LINE, null, LIVE)).toBe('open');
     await tdb.query(`update public.club set status = 'paused' where id = $1`, [LIVE]);
