@@ -7,6 +7,7 @@
   "dependencies": {
     "@booq/time": "workspace:*",
     "@booq/db": "workspace:*",
-    "@booq/auth": "workspace:*"
+    "@booq/auth": "workspace:*",
+    "@booq/secrets": "workspace:*"
   }
 }

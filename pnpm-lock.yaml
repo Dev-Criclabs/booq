@@ -29,6 +29,9 @@ importers:
       '@booq/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@booq/secrets':
+        specifier: workspace:*
+        version: link:../../packages/secrets
       '@booq/time':
         specifier: workspace:*
         version: link:../../packages/time
