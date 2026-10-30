@@ -1,0 +1,26 @@
+{
+  "_note": "Proposed by BE-P for F01-T17c (D51, D81). The platform console is English only (X keys). Numbers to be assigned by Content; wording drafted, writers own it. Error keys match the codes the console routes answer with (no text comes from the server). Sample values are named variables.",
+  "en": {
+    "X-new.enrol_title": "Set up your sign-in",
+    "X-new.enrol_greeting": "Welcome, {name}. Set a password, then add an authenticator app.",
+    "X-new.enrol_password_label": "New password",
+    "X-new.enrol_password_submit": "Continue",
+    "X-new.enrol_scan_hint": "Scan this code with an authenticator app, or type this key into the app: {secret}",
+    "X-new.enrol_code_label": "Code from the app",
+    "X-new.enrol_code_submit": "Finish",
+    "X-new.enrol_done": "Your sign-in is ready. You can sign in now.",
+    "X-new.enrol_invalid_link": "This link is not valid any more. Ask a BOOQ admin for a new one.",
+    "X-new.enrol_weak_password": "This password is not accepted. Choose a longer or less common one.",
+    "X-new.enrol_bad_code": "That code is not right. Check the app and try again.",
+    "X-new.enrol_too_many_attempts": "Too many wrong codes. Enter your password again to start over.",
+    "X-new.enrol_invalid_enrolment": "This step has expired. Open the link again and start over.",
+    "X-new.enrol_unavailable": "Sign-in set-up is not available right now. Try again in a few minutes.",
+    "X-new.staff_link_title": "Enrolment link",
+    "X-new.staff_link_once": "Copy this link now and send it to {name}. It is shown only once and works only once.",
+    "X-new.staff_enrolment_not_configured": "The life of enrolment links is not set. A BOOQ admin must set it in settings first.",
+    "X-new.staff_email_taken": "A teammate with this email already exists.",
+    "X-new.staff_last_admin": "You cannot deactivate the last active admin.",
+    "X-new.staff_same_person": "You cannot do this to your own account. Ask another admin.",
+    "X-new.step_up_password_label": "Password"
+  }
+}

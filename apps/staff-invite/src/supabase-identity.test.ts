@@ -65,3 +65,26 @@ describe('code check', () => {
     await expect(provider([{ status: 502 }]).identity.verifyCode('u-1', st, '123456')).rejects.toThrow();
   });
 });
+
+describe('enrolment of the first authenticator', () => {
+  it('signs in with the password, starts a TOTP factor with the first-step token as bearer, and gives the secret and a state', async () => {
+    const { calls, identity } = provider([{ status: 200, json: { access_token: 'tok-9', user: { id: 'u-9' } } }, { status: 200, json: { id: 'f-9', totp: { secret: 'BASE32SECRET', uri: 'otpauth://totp/BOOQ:x' } } }]);
+    const r = await identity.startEnrolment('a@b.co', 'pw');
+    expect(r).toMatchObject({ authUserId: 'u-9', secret: 'BASE32SECRET', uri: 'otpauth://totp/BOOQ:x' });
+    expect(r?.state).toBeTruthy();
+    expect(calls[1]).toMatchObject({ method: 'POST', url: 'https://p.supabase.example/auth/v1/factors', body: { factor_type: 'totp', friendly_name: 'BOOQ console', issuer: 'BOOQ' } });
+    expect(calls[1]!.headers).toMatchObject({ apikey: ANON, authorization: 'Bearer tok-9' });
+  });
+  it('the state it gives confirms the factor with a code, and a wrong password is null', async () => {
+    const start = provider([{ status: 200, json: { access_token: 'tok-9', user: { id: 'u-9' } } }, { status: 200, json: { id: 'f-9', totp: { secret: 'S', uri: 'U' } } }]);
+    const state = (await start.identity.startEnrolment('a@b.co', 'pw'))!.state;
+    const { calls, identity } = provider([{ status: 200, json: { id: 'ch' } }, { status: 200, json: { access_token: 'tok-10' } }, { status: 204 }]);
+    expect(await identity.verifyCode('u-9', state, '123456')).toBe(true);
+    expect(calls[0]!.url).toContain('/factors/f-9/challenge');
+    expect(await provider([{ status: 400 }]).identity.startEnrolment('a@b.co', 'no')).toBeNull();
+  });
+  it('a provider that refuses the factor throws without the token', async () => {
+    const err = await provider([{ status: 200, json: { access_token: 'tok-SECRET', user: { id: 'u' } } }, { status: 500 }]).identity.startEnrolment('a@b.co', 'pw').catch((e: Error) => e);
+    expect((err as Error).message).not.toContain('tok-SECRET');
+  });
+});
