@@ -766,6 +766,17 @@ export interface PublicCustomerPackage {
   created_at: string;
 }
 
+export interface PublicDailyClose {
+  club_id: string;
+  id: string;
+  day: string;
+  run_by: string;
+  run_at: string;
+  totals: unknown;
+  receipt_count: number;
+  is_test: boolean;
+}
+
 export interface PublicDataExport {
   club_id: string;
   id: string;
@@ -1201,6 +1212,30 @@ export interface PublicUserStaffNote {
   is_test: boolean;
 }
 
+export interface PublicWaitlistEntry {
+  club_id: string;
+  id: string;
+  customer_id: string;
+  subject_kind: string;
+  class_session_id: string | null;
+  resource_id: string | null;
+  slot_start_at: string | null;
+  seq: string;
+  status: string;
+  offer_no: number;
+  offered_at: string | null;
+  offer_expires_at: string | null;
+  offer_booking_id: string | null;
+  ended_reason: string | null;
+  is_test: boolean;
+  created_at: string;
+}
+
+export interface PublicWaitlistSeq {
+  club_id: string;
+  last_value: string;
+}
+
 export interface PublicWalletAccount {
   club_id: string;
   id: string;
@@ -1302,6 +1337,7 @@ export interface Tables {
   'public.court_price_rule': PublicCourtPriceRule;
   'public.credit_ledger': PublicCreditLedger;
   'public.customer_package': PublicCustomerPackage;
+  'public.daily_close': PublicDailyClose;
   'public.data_export': PublicDataExport;
   'public.data_request': PublicDataRequest;
   'public.idempotency_key': PublicIdempotencyKey;
@@ -1336,6 +1372,8 @@ export interface Tables {
   'public.rich_menu_label': PublicRichMenuLabel;
   'public.user_consent': PublicUserConsent;
   'public.user_staff_note': PublicUserStaffNote;
+  'public.waitlist_entry': PublicWaitlistEntry;
+  'public.waitlist_seq': PublicWaitlistSeq;
   'public.wallet_account': PublicWalletAccount;
   'public.wallet_ledger': PublicWalletLedger;
 }
