@@ -16,6 +16,8 @@ const KEY = /^[a-z][a-z0-9_]{0,63}$/;
 export function adminRoutes(deps: AdminRouteDeps): PlatformRoute[] {
   const { admin } = deps;
   return [
+    // P4: the checks of one club, with their results and which ones are recorded by hand.
+    platformRoute({ method: 'GET', path: '/clubs/:id/launch', access: 'staff' }, async (ctx) => answer(await admin.launchOverview(ctx.staff!.id, clubIdOf(ctx)))),
     // P4: record the result of a recorded launch check (Testing clubs only). Nothing here runs a check.
     platformRoute({ method: 'PUT', path: '/clubs/:id/launch/:checkKey', access: 'admin' }, async (ctx) =>
       answer(await admin.recordLaunchCheck(actorOf(ctx), clubIdOf(ctx), ctx.input['checkKey'], ctx.body)),

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { checkLink, finishEnrolment, groupSecret, startEnrolment, tokenFromHash } from './enrol';
 import { fill, hasKey, t } from './i18n';
 import { BASICS_FIELDS, changeStatus, errorKey as clubErrorKey, issueWebhookToken, itemKey, LAUNCH_KEY, loadClub, pauseClub, RESULT_KEY, saveBasics, sendOwnerInvite, SETUP_KEY } from './club';
+import { loadLaunch, MARK_KEY, openChecks, recordResult } from './launch';
 import { counts, FILTER_KEY, loadClubs, STATUS_KEY, visible, type ClubRow } from './clubs';
 import { safeNext, signInWithCode, signInWithPassword, stepUp } from './auth';
 import { deactivate, errorKey, invite, loadTeam, resetFactor } from './staff';
@@ -211,5 +212,29 @@ describe('club page', () => {
     expect(c.seen[0]).toEqual({ url: '/api/clubs/c1/support/setup/basics', method: 'PUT', body: { name_en: 'Hunter Club', owner_name: null } });
     expect(await saveBasics(router({ 'PUT /clubs/c1/support/setup/basics': { status: 200, json: { changed: ['owner_phone'], pendingOwnerContact: 'req-1' } } }), 'c1', { ...same, owner_phone: '082' }, was)).toEqual({ kind: 'saved', pendingOwnerContact: true });
     expect(await saveBasics(router({ 'PUT /clubs/c1/support/setup/basics': { status: 409, json: { code: 'look_only' } } }), 'c1', { ...same, name_en: 'X' }, was)).toEqual({ kind: 'error', key: 'X-new.club_look_only' });
+  });
+});
+
+describe('launch page', () => {
+  const launch = { clubName: 'Hunter', clubStatus: 'testing', items: [{ item: 'product_priced', result: 'pending', owed_by: 'owner', recorded: true }, { item: 'line_test', result: 'pass', owed_by: 'booq', recorded: false }] };
+  it('loads the checks, counts the open ones, and says why when it cannot', async () => {
+    expect(await loadLaunch(reply(200, launch), 'c1')).toEqual({ kind: 'ok', launch });
+    expect(openChecks(launch.items as never)).toBe(1);
+    expect(openChecks([])).toBe(0);
+    expect(await loadLaunch(reply(404, { code: 'not_found' }), 'c1')).toMatchObject({ kind: 'error', key: 'X-new.club_not_found', notFound: true });
+    expect(await loadLaunch(reply(401, {}), 'c1')).toMatchObject({ kind: 'error', signIn: true });
+    expect(await loadLaunch(reply(200, { items: 'no' }), 'c1')).toMatchObject({ kind: 'error' });
+    expect(await loadLaunch((async () => { throw new Error('offline'); }) as unknown as typeof fetch, 'c1')).toEqual({ kind: 'error', key: 'X-new.club_unavailable' });
+    for (const k of Object.values(MARK_KEY)) expect(hasKey(k), k).toBe(true);
+  });
+  it('records a result with the check named in the path, and each refusal has its text', async () => {
+    const c = calls();
+    await recordResult(c.f, 'c1', 'product_priced', 'pass');
+    expect(c.seen[0]).toEqual({ url: '/api/clubs/c1/launch/product_priced', method: 'PUT', body: { result: 'pass' } });
+    expect(await recordResult(reply(200, {}), 'c1', 'x', 'fail')).toEqual({ kind: 'done' });
+    expect(await recordResult(reply(409, { code: 'not_testing' }), 'c1', 'x', 'pass')).toEqual({ kind: 'error', key: 'X-new.launch_not_testing' });
+    expect(await recordResult(reply(400, { code: 'not_recorded' }), 'c1', 'x', 'pass')).toEqual({ kind: 'error', key: 'X-new.launch_not_recorded' });
+    expect(await recordResult(reply(403, { code: 'step_up_required' }), 'c1', 'x', 'pass')).toMatchObject({ kind: 'error', stepUp: true });
+    expect(await recordResult(reply(403, { code: 'forbidden' }), 'c1', 'x', 'pass')).toEqual({ kind: 'error', key: 'X-new.staff_forbidden' });
   });
 });
