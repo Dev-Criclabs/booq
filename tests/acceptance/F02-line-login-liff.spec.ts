@@ -31,8 +31,10 @@ describe("F02 AUTH-01", () => {
   test.todo("F02/AUTH-01-AC13 Given the app address, when it is opened, then the club comes from the URL on the one shared BOOQ domain ...");
   // Given a deep link (rich menu tile, shared link, LINE message button), when it is opened, then it contains the club in the same way (D6), so the right club is chosen before any data is read or sign in starts. A link for club A never signs a player in to club B (CC-1).
   test.todo("F02/AUTH-01-AC14 Given a deep link (rich menu tile, shared link, LINE message button), when it is opened, then it contains ...");
-  // Given a club in Draft or Testing, when someone opens its URL, then only the testers can sign in: the club owner and named BOOQ testers (D4, F01 PLAT-07). Everyone else sees not found. A BOOQ tester signs in with LINE as a test player.
-  test.todo("F02/AUTH-01-AC15 Given a club in Draft or Testing, when someone opens its URL, then only the testers can sign in: the club ...");
+  // Given a club in Draft or Testing, when someone opens its URL, then a caller who is not signed in gets only a minimal sign in config (name, language, status, LIFF id); the club admits the owner role and testers, the owner invite stays valid for return visits and testers get long lived invites (D102, F01 PLAT-01-AC11). A BOOQ tester signs in with LINE as a test player. Everyone else sees not found.
+  test.todo("F02/AUTH-01-AC15 Given a club in Draft or Testing, when someone opens its URL, then a caller who is not signed in gets only ...");
+  // Given a guest, when any route answers, then it reads only named public columns or routes; owner contact details and merchant ids are never readable by a guest (D103, F01 PLAT-02-AC14).
+  test.todo("F02/AUTH-01-AC16 Given a guest, when any route answers, then it reads only named public columns or routes; owner contact ...");
   // Given a guest who cancels or fails LINE Login (they close the LINE consent screen, the network drops), when it ends, then they return to where they were with nothing created, and an offline error uses the existing key (P-0327 "Check your internet and try again. Nothing was booked or charged.", P-0328 "Try again"). Other failure text is a new key.
   test.todo("F02/AUTH-01-AC12 Given a guest who cancels or fails LINE Login (they close the LINE consent screen, the network drops), ...");
 });
@@ -89,6 +91,8 @@ describe("F02 AUTH-02", () => {
   test.todo("F02/AUTH-02-AC8 Given the consent text, when it is shown, then it links to the terms and the privacy notice, which name ...");
   // Given a player who may be under 18, when they give consent at C2, then the consent screen and text are **pending a legal check** (D10, left open by the user). F02 builds the screen as written in the canvas but the consent text cannot be final until the check, and no rule for guardian consent exists yet (Q1).
   test.todo("F02/AUTH-02-AC9 Given a player who may be under 18, when they give consent at C2, then the consent screen and text are ...");
+  // Given the consent pending legal (D10), when the screen ships for the 7 Dec test, then it is tracked with an owner as an open item and no test treats it as final (Reviewer F02-3).
+  test.todo("F02/AUTH-02-AC32 Given the consent pending legal (D10), when the screen ships for the 7 Dec test, then it is tracked with ...");
   // Given a new player picks an Adult item (any item for the Adult audience, or the court at a price that does not depend on age), when they continue, then no date of birth field shows (hand-off check).
   test.todo("F02/AUTH-02-AC10 Given a new player picks an Adult item (any item for the Adult audience, or the court at a price that does ...");
   // Given a player picks a Student item (a package, class, coach price or other item sold only at a Student price), when they continue and no date of birth is on file, then the date of birth field shows and is required for that item.
@@ -107,6 +111,10 @@ describe("F02 AUTH-02", () => {
   test.todo("F02/AUTH-02-AC17 Given a player who never picks a Student item, when they use the app, then they are never required to give ...");
   // Given an adult in Profile, when they add a date of birth voluntarily, then it is saved like any other (editable, never locked) and used for the birthday discount and the age check, with no effect on their Adult price (D12).
   test.todo("F02/AUTH-02-AC29 Given an adult in Profile, when they add a date of birth voluntarily, then it is saved like any other ...");
+  // Given a person signs in whose typed phone matches an imported record, when they finish first sign in, then no link is made automatically: the front desk confirms the claim in A6; a sign in matching no record becomes a new player (D105, F01 PLAT-06-AC7).
+  test.todo("F02/AUTH-02-AC30 Given a person signs in whose typed phone matches an imported record, when they finish first sign in, then ...");
+  // Given every club person (owner, staff, coach), when they have a record, then they also hold the Player role, so editing their own profile and booking as a player are allowed for them (D115, ROLE-01-AC7).
+  test.todo("F02/AUTH-02-AC31 Given every club person (owner, staff, coach), when they have a record, then they also hold the Player ...");
   // Given a signed in player in Profile, Personal details, when they open it, then the date of birth is shown as an editable field. It is never shown as locked and never says "ask the front desk" (Gaps A9: that canvas text is a canvas bug).
   test.todo("F02/AUTH-02-AC18 Given a signed in player in Profile, Personal details, when they open it, then the date of birth is shown ...");
   // Given a player edits the date of birth in Profile, when they save it, then the server accepts it at any time, with no limit on the number of changes, and the new value applies to every price decision from that moment ("Student pricing follows the date of birth on file", Gaps section C).
