@@ -11,22 +11,26 @@ export interface WorkerConfig {
   queueUrl: string;
   housekeepingCron: string;
   importSweepCron: string;
+  /** Seconds between hold_release ticks (an in-process timer; cron cannot go below a minute). */
+  holdReleaseTickSeconds: number;
 }
 
 const CRON = /^\S+ \S+ \S+ \S+ \S+$/;
 
 export function readWorkerConfig(env: Record<string, string | undefined>): WorkerConfig {
-  const names = ['DATABASE_URL', 'WORKER_QUEUE_URL', 'WORKER_HOUSEKEEPING_CRON', 'WORKER_IMPORT_SWEEP_CRON'] as const;
+  const names = ['DATABASE_URL', 'WORKER_QUEUE_URL', 'WORKER_HOUSEKEEPING_CRON', 'WORKER_IMPORT_SWEEP_CRON', 'WORKER_HOLD_RELEASE_TICK_SECONDS'] as const;
   const missing = names.filter((n) => !env[n]);
   if (missing.length) throw new Error(`worker settings missing: ${missing.join(', ')}`);
   for (const n of ['WORKER_HOUSEKEEPING_CRON', 'WORKER_IMPORT_SWEEP_CRON'] as const) {
     if (!CRON.test(env[n]!)) throw new Error(`${n} must be five cron fields`);
   }
+  if (!/^[1-9][0-9]*$/.test(env['WORKER_HOLD_RELEASE_TICK_SECONDS']!)) throw new Error('WORKER_HOLD_RELEASE_TICK_SECONDS must be a whole number of seconds above zero');
   return {
     databaseUrl: env['DATABASE_URL']!,
     queueUrl: env['WORKER_QUEUE_URL']!,
     housekeepingCron: env['WORKER_HOUSEKEEPING_CRON']!,
     importSweepCron: env['WORKER_IMPORT_SWEEP_CRON']!,
+    holdReleaseTickSeconds: Number(env['WORKER_HOLD_RELEASE_TICK_SECONDS']),
   };
 }
 

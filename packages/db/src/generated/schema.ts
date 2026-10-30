@@ -413,6 +413,13 @@ export interface PublicClubStatusChange {
   occurred_at: string;
 }
 
+export interface PublicClubTemplateCopy {
+  club_id: string;
+  kind: string;
+  key: string;
+  copied_at: string;
+}
+
 export interface PublicClubTester {
   club_id: string;
   id: string;
@@ -792,6 +799,7 @@ export interface Tables {
   'public.club_secret_read': PublicClubSecretRead;
   'public.club_setting': PublicClubSetting;
   'public.club_status_change': PublicClubStatusChange;
+  'public.club_template_copy': PublicClubTemplateCopy;
   'public.club_tester': PublicClubTester;
   'public.coach_tier': PublicCoachTier;
   'public.coach_tier_price': PublicCoachTierPrice;

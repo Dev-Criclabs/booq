@@ -8,7 +8,7 @@ Depends on F01 tasks: T03 to T07 (database, context, tenant suite), T10 and T11 
 
 ## Setup task (not code, before the build)
 
-- [ ] **F02-T00** User ID parity and LIFF setup with a real LINE account. Create a test provider with one Login channel, one Messaging API channel linked to it, and one LIFF app with endpoint `https://{domain}/c/{slug}` and **Add friend option = On (normal)** (decision D38). Sign in through LIFF, then confirm the Login `sub` equals the Messaging API `source.userId` from a webhook event for the same user, and that a push to it arrives. Record the result in the design. IDs: LINE-01-AC4, AC5, AC6; design Q33. Role: DevOps with the user · Size: S
+- [x] **F02-T00** User ID parity and LIFF setup with a real LINE account. Create a test provider with one Login channel, one Messaging API channel linked to it, and one LIFF app with endpoint `https://{domain}/c/{slug}` and **Add friend option = On (normal)** (decision D38). Sign in through LIFF, then confirm the Login `sub` equals the Messaging API `source.userId` from a webhook event for the same user, and that a push to it arrives. Record the result in the design. IDs: LINE-01-AC4, AC5, AC6; design Q33. Role: DevOps with the user · Size: S
   Done when: a short note in `design.md` section 3.3 says the ids match (or the design is reopened, because the player record would change).
 
 ## A. Data and session

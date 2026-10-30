@@ -1,3 +1,4 @@
+import { notTest } from '../test-data';
 import { toCsv, type CsvCell } from './csv';
 import type { ExportStorage } from './storage';
 import { createZip } from './zip';
@@ -43,7 +44,7 @@ export const f01Datasets: readonly ExportDataset[] = [
     // Test accounts are not club data (D33). `claimed` is false for an imported record nobody has taken over.
     sql: `select id, full_name, phone, date_of_birth::text as date_of_birth, language, level, (line_user_id is not null) as claimed,
                  to_char(created_at at time zone 'Asia/Bangkok', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at
-            from public.app_user where not is_test order by created_at, id`,
+            from public.app_user where ${notTest()} order by created_at, id`,
   },
   {
     name: 'resources',
