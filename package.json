@@ -9,7 +9,8 @@
   "scripts": {
     "lint": "node tools/lint/banned-patterns.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:zones": "TZ=UTC vitest run && TZ=Asia/Bangkok vitest run"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
