@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from './tx';
 import { createTestDatabase, type TestDatabase } from './testing/harness';
 
-// F04-T11 request from BE-C / migration 0315: app.quote_promo_code and app.birthday_discount (R5, PROMO-01).
+// F04-T11 request from BE-C / migrations 0315 and 0316: app.quote_promo_code and the rules on public_booking_config (R5, PROMO-01).
 // Read only, no lock; the quote engine decides scope, audience, minimum spend and value from what these return.
 const A = '3f2b8f0e-7c1d-4a55-9d0a-1c2e3f4a5b6c';
 const B = '9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d';
@@ -111,23 +111,25 @@ describe('app.quote_promo_code', () => {
   });
 });
 
-describe('app.birthday_discount', () => {
-  const read = (c = ctx(PLAYER, ['player'])) => web.withClubTx(c, async (tx) => (await tx.query(`select app.birthday_discount() as d`)).rows[0]?.d);
+describe('public.public_booking_config: the rules the checkout shows (migration 0316)', () => {
+  const read = (c = ctx(PLAYER, ['player']), club = A) =>
+    web.withClubTx({ ...c, clubId: club }, async (tx) => (await tx.query(`select booking_window_days, cancel_window_hours, birthday_discount from public.public_booking_config`)).rows[0]);
 
-  it('is null until the club sets it', async () => {
-    expect(await read()).toBeNull();
+  it('null until the club sets them', async () => {
+    expect(await read()).toEqual({ booking_window_days: null, cancel_window_hours: null, birthday_discount: null });
   });
 
-  it('returns {kind, value} once set, to a player and a guest, for the club in context only', async () => {
-    await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1, 'birthday_discount', '{"kind": "percent", "value": 1000}')`, [A]);
-    expect(await read()).toEqual({ kind: 'percent', value: 1000 });
-    expect(await read(ctx(null, ['guest']))).toEqual({ kind: 'percent', value: 1000 });
-    expect(await read(ctx(PLAYER, ['player'], B))).toBeNull();
+  it('returns the cancel window and the birthday discount {kind, value} once set, to a player and a guest', async () => {
+    await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1, 'cancel_window_hours', '12'), ($1, 'birthday_discount', '{"kind": "percent", "value": 1000}'), ($1, 'booking_window_days', '30')`, [A]);
+    const want = { booking_window_days: 30, cancel_window_hours: 12, birthday_discount: { kind: 'percent', value: 1000 } };
+    expect(await read()).toEqual(want);
+    expect(await read(ctx(null, ['guest']))).toEqual(want);
   });
 
-  it('only booq_app may call it', async () => {
-    for (const role of ['booq_worker', 'booq_platform']) {
-      expect((await tdb.query(`select has_function_privilege($1, 'app.birthday_discount()', 'execute') as ok`, [role])).rows[0].ok, role).toBe(false);
-    }
+  it('reads the club in context only, and a Draft club shows nothing', async () => {
+    await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1, 'cancel_window_hours', '12')`, [A]);
+    expect(await read(ctx(PLAYER, ['player']), B)).toEqual({ booking_window_days: null, cancel_window_hours: null, birthday_discount: null });
+    await tdb.query(`insert into public.club (id, slug, name_th, name_en) values ('9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6e', 'c', 'ค', 'C')`);
+    expect(await read(ctx(null, ['guest']), '9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6e')).toBeUndefined();
   });
 });

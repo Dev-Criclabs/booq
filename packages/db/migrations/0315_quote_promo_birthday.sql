@@ -1,4 +1,5 @@
--- F04-T11 request from BE-C / migration 0315: the reads the quote engine needs, without a lock.
+-- F04-T11 request from BE-C / migration 0315: the promo read the quote engine needs, without a lock.
+-- (The birthday discount and the cancel window are columns of public.public_booking_config, migration 0316.)
 -- app.quote_promo_code(code, customer): the terms of a code and the counts, for the club in the context. The match is
 -- upper(btrim(code)) in this club only, so an unknown code and another club's code look the same (null). An inactive
 -- code is returned with active false. The customer is the caller (app.user_id()); a staff member (owner, front desk)
@@ -6,7 +7,6 @@
 -- customer_has_paid_booking is the first booking rule's input: a confirmed, no show or late cancelled booking.
 -- Scope, audience, minimum spend and value are the engine's decisions; the lock and the final check stay in
 -- count_promo_use at Pay (PROMO-01-AC7).
--- app.birthday_discount(): the club's birthday discount {kind, value}, or null when the club has not set it (R5-AC1).
 create function app.quote_promo_code(p_code text, p_customer uuid default null) returns jsonb
 language plpgsql stable security definer set search_path = pg_catalog, pg_temp
 as $$
@@ -38,14 +38,10 @@ begin
       exists (select 1 from public.booking b where b.club_id = v_club and b.customer_id = v_customer and b.status in ('confirmed', 'no_show', 'late_cancelled')) end);
 end $$;
 
-create function app.birthday_discount() returns jsonb
-language sql stable security definer set search_path = pg_catalog, pg_temp
-as $$ select s.value from public.club_setting s where s.club_id = app.club_id() and s.key = 'birthday_discount' $$;
-
 do $$
 declare f text;
 begin
-  foreach f in array array['app.quote_promo_code(text, uuid)', 'app.birthday_discount()'] loop
+  foreach f in array array['app.quote_promo_code(text, uuid)'] loop
     execute format('alter function %s owner to booq_owner', f);
     execute format('revoke all on function %s from public', f);
     execute format('grant execute on function %s to booq_app', f);
