@@ -1,0 +1,287 @@
+# BOOQ Hunter · Developer Hand-off v1.2
+
+Oct 30, 2026 · @Criclabs
+
+## Overview
+
+Build Hunter Tennis Club's booking app as the first club on the existing Booq core, running as a LINE LIFF app, live for public booking on 29 Dec 2026. Hunter testing starts 7 Dec 2026.
+
+| Item         | Value                                                                                                                    |
+|--------------|--------------------------------------------------------------------------------------------------------------------------|
+| Club         | Hunter Tennis Club, legal name บริษัท ทีที รีครีเอชั่น จำกัด, tax ID 0135569018041, head office                                   |
+| Courts       | 2 tennis courts, one location                                                                                            |
+| Surfaces     | Player app (LIFF, 375 px), club admin console (desktop, 1280 px), coach portal (mobile), BOOQ platform console (desktop) |
+| Payments     | Beam payment gateway for Hunter. Slip checking stays as the second option for other clubs                                |
+| Booking unit | 60 minutes on the hour, every club                                                                                       |
+| Languages    | Thai and English, switchable everywhere                                                                                  |
+
+**Sources of truth.** [Product Requirements v1.2](https://claude.ai/artifact/9UxUdHBqyqaSGPNKbWYHsg) for rules and decisions. [Design canvas](https://claude.ai/artifact/3Jo8snhzdEXEhVhrRqi3ea) for every screen, state and clickable flow. Where they disagree, the spec wins and the gap is a bug in the canvas.
+
+**How to read the canvas.** Pages run Step 0 (sitemap and flows), Step 1 wireframes, Step 2 visual direction, Step 3 hi-fi, Step 4 states and Thai, Step 5 LINE and receipts, Step 6 clickable flows. Build from hi-fi boards (prefixed H-, G-, S-, T- for Thai). Wireframes explain intent only.
+
+## How we build: Spec-Driven Development with Claude Code
+
+We build with Spec-Driven Development (SDD). Every feature gets a written spec in the repo before any code, and Claude Code implements from that spec one task at a time. The requirement IDs in this doc (such as BOOK-03) are the IDs the specs, tasks, tests and commits use.
+
+**Repo layout**
+
+CLAUDE.md project rules Claude Code reads every session  
+locales/  
+en.json English text by key (P-0004 ...)  
+th.json Thai text by the same keys  
+copy-index.csv every key with its screens and canvas boards  
+specs/  
+product/prd-v1.2.md export of Product Requirements v1.2  
+product/handoff-v1.2.md export of this doc  
+features/F03-court-booking/  
+requirements.md user stories + acceptance criteria with IDs  
+design.md data, API, states, screens by canvas ID  
+tasks.md ordered checklist, each task names its IDs
+
+**The loop for each feature**
+
+1.  **Requirements.** Claude Code drafts requirements.md from the PRD and this doc. Each requirement keeps its ID and gets acceptance criteria in Given, When, Then form. A person approves it.
+
+2.  **Design.** Claude Code drafts design.md: tables and migrations, API routes, state machine, permission checks, and the canvas boards it builds from. A person approves it.
+
+3.  **Tasks.** Claude Code breaks the design into small tasks in tasks.md, each under a day of work and each naming the requirement IDs it covers.
+
+4.  **Build.** One task per run. Tests are written first from the acceptance criteria, then the code. The task is ticked and the commit message names the IDs, for example BOOK-03 hold slot for payment window.
+
+5.  **Change.** A rule change starts in the PRD, then this doc, then the feature's requirements, design and tasks. Code never gets ahead of the spec.
+
+**What goes in CLAUDE.md**
+
+- The spec in specs/ is the source of truth. If code and spec disagree, stop and ask, never guess a rule.
+
+- Never invent prices, amounts or settings. Values marked TBD in the PRD are club settings with no default.
+
+- Every query is scoped by club ID. Permissions are checked on the server.
+
+- All times in Asia/Bangkok. Money as integer satang.
+
+- Never write user facing text in the code. Every text comes from locales/en.json and locales/th.json by key (see Text and language files).
+
+- Run the tests and type checks before ticking a task.
+
+**Feature backlog, in build order**
+
+| \#  | Feature spec                                                             | Requirement IDs | Depends on |
+|-----|--------------------------------------------------------------------------|-----------------|------------|
+| F01 | Platform foundation: clubs, locations, resources, roles, settings, audit | PLAT            | Booq core  |
+| F02 | LINE Login, LIFF and first sign in                                       | AUTH            | F01        |
+| F03 | Court booking, schedule and payment hold                                 | BOOK            | F01, F02   |
+| F04 | Checkout, pricing, add-ons and promo codes                               | PAY, PROMO      | F03        |
+| F05 | Beam payments (Hunter launch)                                            | PAY             | F04        |
+| F06 | Packages, credit and wallet ledgers                                      | PKG             | F04        |
+| F07 | Solo classes, coach picker and rest rule                                 | COACH           | F03, F06   |
+| F08 | Group classes and waitlist                                               | CLASS           | F06        |
+| F09 | Cancellation and closures                                                | CANCEL          | F06        |
+| F10 | LINE messages and rich menu                                              | LINE            | F03        |
+| F11 | Club admin console A0 to A17                                             | ADMIN           | F03 to F09 |
+| F12 | Coach portal K1 to K6                                                    | COACH           | F07        |
+| F13 | Receipts, reports and daily close                                        | RCPT            | F05        |
+| F14 | Referrals and birthday discount                                          | PROMO           | F06        |
+| F15 | Platform console P1 to P6                                                | PLAT            | F01        |
+| F16 | Slip checking option and backup mode (not needed for Hunter launch)      | PAY             | F04        |
+
+Thailand's PDPA, Thai and English, and the no double booking rule apply to every feature, so each design.md says how it meets them.
+
+## Text and language files
+
+Development starts now with the draft copy, and the writers' refined copy replaces it later with no code changes. This works only because no text is ever written into the code.
+
+| ID      | Requirement                                                                                                                                                 | Acceptance check                                          |
+|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------|
+| TEXT-01 | Every user facing text (screens, LINE messages, receipts, errors) comes from locales/en.json and locales/th.json by key                                     | A search of the code finds no hard coded user facing text |
+| TEXT-02 | Keys match the writers' spreadsheets: P player app, A club admin, K coach portal, L LINE and receipt, X platform console. One key can serve several screens | copy-index.csv lists every key in use                     |
+| TEXT-03 | Sample values in a text (names, dates, prices, counts) become named variables such as {amount} in both files, keeping the same key                          |                                                           |
+| TEXT-04 | Developers never change the wording of an existing key. New text gets a new key in both files and goes to the writers                                       |                                                           |
+| TEXT-05 | The platform console is English only. Everything else ships in Thai and English                                                                             |                                                           |
+| TEXT-06 | Layouts survive the longest string in either language. Buttons never wrap; content areas scroll                                                             |                                                           |
+
+**How refined copy comes back**
+
+1.  Writers fill in the yellow column of their spreadsheet (English writer and Thai writer workbooks) and send them back.
+
+2.  Claude turns the edited rows into new en.json and th.json and updates the matching canvas screens. Developers replace the two files.
+
+3.  Any row the English writer rewrote is flagged so the Thai writer checks its Thai again.
+
+4.  Rows that describe a rule (cancellation, packages, payments) are flagged for a product check, so a wording change never changes a rule by accident.
+
+5.  Privacy consent, receipt and payment text must be final before testing starts on 7 Dec 2026.
+
+## Architecture
+
+Hunter is the first club on the existing Booq core (Notion Booq Product Reference). Nothing is written only for Hunter: tennis, two courts, ฿500 an hour and Beam are all club settings.
+
+<img src="media/handoff/media/image1.png" style="width:6in;height:4.13393in" alt="system architecture · one codebase, per club accounts" />
+
+system architecture · one codebase, per club accounts
+
+One web app serves four surfaces from one codebase, inside LINE as a LIFF app or in a browser. The core API owns every rule; the surfaces only show and collect. Beam and the slip check API sit behind the core, so switching a club's payment option changes no screen code.
+
+**Suggested stack** (not a requirement): Next.js with the LIFF SDK, Postgres such as Supabase with row level security by club ID, server jobs for holds, reminders and expiries. Booq core naming differs: Notion says Store and Branch, this design says Club and Location. Keep the core's table names and map the labels in the UI.
+
+## Data model
+
+Every record carries a club ID, and nothing is shared between clubs. Credits and wallet are ledgers of movements, never one editable number.
+
+| Record                        | Key fields                                                                                                                          | Notes                                                           |
+|-------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------|
+| Club                          | Name TH/EN, legal name, tax ID, branch, registered address, status (draft, testing, live, paused), payment option, feature switches | One LINE OA, LIFF app and rich menu per club                    |
+| Location                      | Club, name, branch label                                                                                                            | Hunter has one, Main location · Head office                     |
+| Resource (court)              | Location, name, sport, type, lights, max players, active                                                                            | Sport drives labels (court, table, lane)                        |
+| Opening hours                 | Club, weekday, open, close                                                                                                          | Hunter 06:00 to 24:00 daily                                     |
+| User                          | Club, LINE user ID, full name, phone, date of birth, language, level, role, tags, staff notes                                       | LINE user ID is the key. A player at two clubs has two accounts |
+| Price group                   | Club, name, rule                                                                                                                    | Hunter: Adult (18+), Student (under 18, by date of birth)       |
+| Court price rule              | Club, price group, weekday or weekend, off peak or peak, price                                                                      | Hunter uses one price, ฿500 everywhere                          |
+| Coach                         | User, bio TH/EN, certifications, specialties, tier, price override, pay model                                                       |                                                                 |
+| Coach tier                    | Club, name, price per price group                                                                                                   | Head Coach, Coach                                               |
+| Availability rule and leave   | Coach, weekday or date, start, end, open or closed; leave dates, type, status, approver                                             | Rest rule caps 6 teaching hours in a row                        |
+| Booking                       | Club, type (court, solo class, class seat), resource, start, end, customer, coach, status, source                                   | A solo class always holds both coach and court                  |
+| Class template and session    | Name TH/EN, audience, level, coach, court, weekday, time, min and max players; session date and status                              | Always 60 minutes                                               |
+| Waitlist entry                | Customer, session or slot, position, offer sent, offer expires                                                                      |                                                                 |
+| Package product               | Club, name TH/EN, credit type, credits, validity, price group, tier, price, active                                                  | Generic hour bundles and class packs                            |
+| Customer package              | Customer, product, credits total, purchased at, expires at, extension reason                                                        |                                                                 |
+| Credit ledger                 | Package, change, reason (reserve, return, use, forfeit, expire, adjust), booking, staff                                             |                                                                 |
+| Wallet ledger                 | Customer, change in THB, reason, booking or referral, staff                                                                         | Never withdrawn as cash                                         |
+| Add-on                        | Club, name TH/EN, price, active                                                                                                     | Hunter: racket, Balls (Set of 3 balls), towel, water            |
+| Order and payment             | Items, add-ons, discounts, amount due, method (Beam, slip, cash, credit), gateway or slip reference, status                         |                                                                 |
+| Promo code, partner, referral | Code, discount, scope, audience, dates, caps, stackable, partner; referrer, referred, reward status                                 | One code per order                                              |
+| Closure                       | Resources, start, end, repeat, reason, staff                                                                                        |                                                                 |
+| Receipt                       | Sequential number per club, order, issued at, VAT flag, void reason                                                                 | Numbers never reused                                            |
+| Audit entry                   | Actor (club staff or BOOQ staff), time, record, old value, new value, reason                                                        | Platform actions also go to the P6 log                          |
+
+**Integrity rules.** Court and coach are reserved in one transaction with a uniqueness rule, including during the payment hold. A solo class reserves both or neither. All times are Asia/Bangkok. Permissions are enforced on the server.
+
+## Screen inventory
+
+Build from the hi-fi boards. Each English board has a Thai twin with the same name and a T- prefix (Steps 4.2 to 4.5). Extra states sit on the G- (gaps) and S- (states) boards.
+
+| Surface              | Screens                                                                                                                                                                                                                                                                                                                       | Canvas boards                                                                             | Feature       |
+|----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|---------------|
+| Player app, booking  | C1 sign in at checkout, C2 quick profile, C3 Home (signed in, guest, paused), C4 Book a court, C10 Checkout (with coach picker), C11 Pay (Beam for Hunter, slip for others), C12 Confirmed                                                                                                                                    | H-C01 to H-C12, G-C10-Coach-picked, S-C03-Guest, S-C03-Paused, S-C04 states, S-C11 states | F02 to F05    |
+| Player app, classes  | C5 Solo classes, C6 Coach profile, C7 Group classes, C8 Class detail, C10b solo checkout, C16 Waitlist offer                                                                                                                                                                                                                  | H-C05 to H-C08, H-C10b, H-C16                                                             | F07, F08      |
+| Player app, packages | C9 Packages (3 tabs), C10P package checkout, C10c bundle prompt, C11P pay for a package, C12P purchase confirmed                                                                                                                                                                                                              | H-C09 to H-C12P, G-C11P-Beam-package                                                      | F06           |
+| Player app, account  | C13 My bookings, C13b Cancel sheet, C14 Credits and wallet, C15 Refer a friend, C17 Profile and receipts                                                                                                                                                                                                                      | H-C13 to H-C17, G-C13, G-C17                                                              | F06, F09, F14 |
+| LINE                 | Rich menu (6 tiles, each a deep link), Booking confirmed card, Reminder, Waitlist offer                                                                                                                                                                                                                                       | L-Rich-menu, L-Msg-\*                                                                     | F10           |
+| Receipts             | PDF receipt, Thai and English, A4                                                                                                                                                                                                                                                                                             | R-Receipt-TH, R-Receipt-EN                                                                | F13           |
+| Club admin           | A0 Setup checklist, A1 Calendar, A2 Booking create and detail, A4 Backup slip check (slip clubs only), A5 Customers, A6 Customer profile, A7 Coaches, A8 Group classes, A9 Products and pricing, A9b Price groups and add-ons, A10 Promotions, A12 Closures, A13 Reports, A14 Receipts, A16 Settings, A17 Staff and audit log | H-A0 to H-A17, G-A02b, G-A02c, G-A13b, S-A01-Paused                                       | F11           |
+| Coach portal         | K1 Today, K2 Schedule, K3 Availability, K4 Leave, K5 Session detail, K6 Earnings                                                                                                                                                                                                                                              | H-K1 to H-K6                                                                              | F12           |
+| Platform console     | P1 Clubs, P2 New club (5 steps, Beam or slip), P3 Club detail, P3b setup only support view, P3c Pause, P4 Launch, P5 Templates, P6 Team and audit                                                                                                                                                                             | H-P1 to H-P6                                                                              | F15           |
+
+**Removed, do not build.** A3 Check-in and any check in QR, A11 Gift vouchers, A15 Messages editor, the everyday slip review queue.
+
+**Clickable flows (Step 6).** F1 Hunter player books and pays with Beam, F1b player at a slip checking club, F2 buy a package then book with it, F3 front desk walk in, F4 BOOQ onboards a club, F5a fix a LINE alert, F5b pause a club. All links were click tested on 30 Oct 2026.
+
+## Business rules as requirements
+
+These are the starting requirements for the feature specs. Each acceptance check becomes at least one test. Values in brackets are club settings, shown with Hunter's value.
+
+| ID        | Requirement                                                                                                                                                | Acceptance check                                                                                                                            |
+|-----------|------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| AUTH-01   | Players browse without signing in. LINE Login runs only at checkout or purchase                                                                            | Given a guest on C4, when they tap Continue, then LINE Login starts and they return to C10 with the slot kept                               |
+| AUTH-02   | First sign in asks only full name, phone and PDPA consent. Date of birth only for a student price                                                          | Given a new player, when they pick an Adult item, then no date of birth field shows                                                         |
+| BOOK-01   | Bookings are 60 minutes on the hour, inside opening hours, up to \[30\] days ahead                                                                         | A request for 18:30 or 61 days ahead is refused by the server                                                                               |
+| BOOK-02   | The rich menu Book a court tile opens C4 directly                                                                                                          | Tapping the tile lands on C4, not C3                                                                                                        |
+| BOOK-03   | Tapping Pay holds the slot (and the coach, if picked) for \[15\] minutes, choice 10, 15 or 20                                                              | Given a held slot, then other players see it as held and cannot select it; after the hold it is released and the player gets a LINE message |
+| BOOK-04   | No double booking of a court or a coach, including during holds                                                                                            | Two parallel requests for the same slot: exactly one succeeds                                                                               |
+| BOOK-05   | A player holds at most \[TBD\] future court hours                                                                                                          | Setting left empty means no limit until the owner sets it                                                                                   |
+| COACH-01  | C10 shows only coaches who work that hour, are not on leave, not booked and under 6 hours in a row                                                         | A coach on leave never appears; a 7th hour in a row never appears                                                                           |
+| COACH-02  | Picking a coach makes it a solo class: court ฿500 plus that coach's price for the player's price group                                                     | Adult with a Coach tier coach pays ฿1,300                                                                                                   |
+| COACH-03  | Solo pack credits do not apply to a coach added at court checkout. They apply only when booking through Classes, Solo classes                              | Given a player with solo credits, when they add a coach on C10, then the full coaching price is charged                                     |
+| COACH-04  | With a solo pack credit, the ฿500 court is still paid by a bundle hour, wallet or payment                                                                  | Solo booking with a credit shows the court line due                                                                                         |
+| PKG-01    | Credits and wallet are ledgers. Every movement has a reason and, for staff, a written note                                                                 | Balance always equals the sum of its ledger rows                                                                                            |
+| PKG-02    | Bundles: 10 hours ฿4,500 for 3 months, 20 hours ฿8,000 for 5 months. Class packs are 8 sessions for 3 months                                               | Expiry date = purchase date plus validity                                                                                                   |
+| PKG-03    | Expiry reminders 14 and 3 days before. Expired credits are lost unless the owner extends with a reason                                                     |                                                                                                                                             |
+| CANCEL-01 | Cancel 12 hours or more before start returns full value: credit to its package, money to the wallet. Later, or no show, forfeits                           | The cancel sheet states the outcome before confirming                                                                                       |
+| CANCEL-02 | Value never returns as cash. The wallet can't be withdrawn                                                                                                 | No cash refund action exists anywhere                                                                                                       |
+| CANCEL-03 | A club closure cancels affected bookings with full credit back and a LINE message                                                                          |                                                                                                                                             |
+| CANCEL-04 | There is no check in. A confirmed booking counts as played when its slot ends. Staff mark a no show or late cancel in A2 with a reason, and can reverse it |                                                                                                                                             |
+| CLASS-01  | Group classes are 60 minutes, 4 to 6 players by default. Students see Student classes only, adults Adult only                                              |                                                                                                                                             |
+| CLASS-02  | Waitlist: first in line gets a LINE offer with \[30\] minutes to claim. No offers within \[2\] hours of start                                              |                                                                                                                                             |
+| PROMO-01  | One promo code per order. The owner decides per code whether it stacks with the birthday discount                                                          |                                                                                                                                             |
+| PROMO-02  | Referral reward lands in the referrer's wallet after the friend's first paid booking is played. Self referral blocked by LINE ID and phone                 |                                                                                                                                             |
+
+The rest of the rules (coach pay, substitutions, reports, daily close) are in the PRD sections Coach portal and admin console and Solo classes and coach rules.
+
+## Payments and receipts
+
+Hunter launches on Beam: each booking or order gets its own PromptPay QR from Beam, and Beam's callback confirms it, so there is no slip. Money goes straight to the club's own Beam merchant account, never through BOOQ.
+
+| ID      | Requirement                                                                                                                                                                                | Acceptance check                                                |
+|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------|
+| PAY-01  | Each club picks one payment option in P2 step 5: Beam, or PromptPay with slip checking                                                                                                     | Hunter's club record says Beam; C11 shows the Beam screen       |
+| PAY-02  | Beam: create a QR for the exact amount when the player taps Pay; confirm the booking only on Beam's verified callback                                                                      | A callback with a bad signature or wrong amount changes nothing |
+| PAY-03  | Beam payment after the hold ends: approve if the slot is still open, else put the value in the wallet (assumed from the late slip rule, to confirm)                                        |                                                                 |
+| PAY-04  | Package bought alone: nothing is held, the QR is valid \[15\] minutes, then the order is cancelled and nothing is charged                                                                  |                                                                 |
+| PAY-05  | Refunds never go back as cash. Wallet or credit only (CANCEL-02)                                                                                                                           |                                                                 |
+| PAY-06  | Front desk can take cash in A2 with a reason code                                                                                                                                          |                                                                 |
+| PAY-07  | Nothing left to pay (credits or wallet cover it) confirms at once with no QR                                                                                                               |                                                                 |
+| PAY-08  | Slip checking option (F16, other clubs): slip upload, automatic check, popup with Chat with us on LINE, backup mode with 60 minute holds and A4                                            | Not needed for Hunter's launch                                  |
+| RCPT-01 | Every payment gets a receipt numbered per club in an unbroken sequence (HTC‑2027‑000001). Void needs the owner and a reason; numbers are never reused                                      |                                                                 |
+| RCPT-02 | Receipt shows บริษัท ทีที รีครีเอชั่น จำกัด, tax ID 0135569018041, head office, the registered address, customer, items, discounts, method and total. Non VAT by default, with a VAT invoice switch | Both PDF receipts match R-Receipt-TH and R-Receipt-EN           |
+| RCPT-03 | A daily close totals each payment method for matching against the bank                                                                                                                     |                                                                 |
+
+**Open for setup, not for code.** Hunter's Beam merchant account and Beam's confirmed fees. The slip checking provider is chosen only when a club picks that option.
+
+## LINE integration
+
+Each club has its own LINE Official Account, LINE Login channel, LIFF app and rich menu under one provider. The LINE user ID is the player's permanent key within that club.
+
+| ID      | Requirement                                                                                                                                                                                                                                                                       | Acceptance check                  |
+|---------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------|
+| LINE-01 | Inside LINE, LIFF login is silent. In a browser the player taps Log in with LINE once. Sign in prompts adding the OA as a friend                                                                                                                                                  |                                   |
+| LINE-02 | Rich menu has 6 tiles, each a deep link to its own page: Book a court (C4), Solo classes, Group classes, Packages, My bookings, Refer a friend                                                                                                                                    | Each tile opens its page directly |
+| LINE-03 | Messages are push messages from the club's OA in the player's language, with fixed Thai and English wording in code. Templates fill in the club's name, logo and rules                                                                                                            | No message editor in the admin    |
+| LINE-04 | Booking confirmed is a Flex Message rich card sent the moment a booking confirms: court or class, date, time, coach, amount paid, receipt number, View booking and Add to calendar                                                                                                | Matches L-Msg-Confirmed           |
+| LINE-05 | Other messages: reminders 24 h and 2 h before, booking released, cancellation result, club closed this slot, coach changed, waitlist offer, package expiring 14 and 3 days before, birthday discount, referral reward, coach session changes, leave decision, class below minimum |                                   |
+| LINE-06 | P1 shows LINE messages used this month per club against its plan, and alerts when the Messaging API token fails                                                                                                                                                                   |                                   |
+
+About 3 to 4 push messages go out per booking, so Hunter needs a paid LINE OA plan. The club pays for it directly.
+
+## Roles, platform console and data protection
+
+Permissions are enforced on the server and every record is scoped to one club. BOOQ staff never see a club's customer or payment data.
+
+| Role                      | Surface                | Can                                                                                  | Cannot                                                               |
+|---------------------------|------------------------|--------------------------------------------------------------------------------------|----------------------------------------------------------------------|
+| Player (adult or student) | Player app             | Book, buy, pay, cancel, see own credits, receipts and referrals                      | See other players                                                    |
+| Coach                     | Coach portal           | Own schedule, availability, leave, attendance, notes, own earnings                   | See other coaches, payments or revenue                               |
+| Front desk                | Club admin             | Bookings, walk ins and cash, customers                                               | See revenue or coach pay, change prices, rules or staff              |
+| Accountant                | Club admin, finance    | Read and export reports and receipts                                                 | Change bookings, prices or balances                                  |
+| Owner                     | Club admin, everything | All of the above plus prices, packages, promotions, rules, staff, coach pay          |                                                                      |
+| Platform admin            | Platform console       | Create and set up clubs, change status, pause with a reason, setup only support view | See players, bookings, payments, slips, receipts, wallets or reports |
+| Onboarding specialist     | Platform console       | Same as platform admin for assigned clubs                                            | Pause or delete clubs                                                |
+
+| ID      | Requirement                                                                                                                                                                                                                        |
+|---------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| PLAT-01 | Club status runs Draft, Testing, Live, Paused. Go live needs every check in P4 passed                                                                                                                                              |
+| PLAT-02 | Support view shows setup only: courts, products and pricing, LINE, payment connections, settings. Draft and Testing clubs are editable; Live clubs are look only unless the owner turns on Allow BOOQ to make changes for 24 hours |
+| PLAT-03 | Pausing turns off new booking and buying, keeps existing bookings and reminders, moves package and wallet expiry forward by the pause length, and shows a banner in the club admin                                                 |
+| PLAT-04 | Every change to a booking, balance, price or setting writes an audit entry; every platform action also writes to P6                                                                                                                |
+| PLAT-05 | Feature switches per club, one codebase. Templates Tennis (Hunter), Padel, Pickleball, Blank                                                                                                                                       |
+| PLAT-06 | CSV import of players, packages and balances in A0; Export club data in P3                                                                                                                                                         |
+| PDPA-01 | The club is the data controller, BOOQ the processor. Consent at first sign in, copy or delete on request, slips and staff notes staff only, daily backups                                                                          |
+
+## Language, design system and open items
+
+**Thai and English.** Every screen, message and receipt ships in both. The starting language follows the LINE app, with a toggle in Profile. Thai copy comes from the T- boards (Steps 4.2 to 4.5). Terms: คอร์ต, คลาสเดี่ยว, คลาสกลุ่ม, รายชื่อรอ, วอลเล็ต, เครดิต. Dates use the international year in both languages (29 ธันวาคม 2026, never 2569). Thai lines run taller, so content areas scroll and buttons never wrap.
+
+**Design system.** Palette D "Sage garden" tokens, DM Sans with Noto Sans Thai, Cormorant Garamond for the HUNTER wordmark only. Player app and coach portal at 375 px, admin and platform consoles at 1280 px. WCAG AA contrast, 44 px tap targets, states never shown by colour alone. The app never shows the club's address.
+
+**Performance.** The court grid and class schedule load in under 2 seconds on 4G inside LINE.
+
+**Open items that block nothing in code** (build them as empty club settings)
+
+- [ ] Add-on prices, the Head Coach price, referral reward and friend discount, birthday discount
+
+- [ ] Max future court hours per player, class below minimum alert time, wallet balance expiry
+
+- [ ] Coach pay numbers per coach
+
+- [ ] Hunter's Beam merchant account and LINE OA plan, set up by the club
+
+- [ ] PAY-03 late Beam payment rule, to confirm

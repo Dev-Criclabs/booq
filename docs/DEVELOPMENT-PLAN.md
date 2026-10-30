@@ -1,150 +1,121 @@
 # BOOQ development plan
 
-Source material: the BOOQ design canvas (customer app C, club admin A, coach portal K,
-platform console P, LINE messages L, edge states S, receipts R, flow maps).
-Everything below is derived from it. Where the design contradicts itself or leaves a
-blank, it is listed in section 4 and must be settled before the related build starts.
+How we run the build. It follows `CLAUDE.md` and the Developer Hand-off v1.2. It adds the one thing they
+leave open: how several Claude Code sessions (sub-chats) work in parallel without stepping on each other.
 
-## 1. What we are building
+Sources of truth, in order
+1. `specs/product/prd-v1.2.md` : every rule and decision.
+2. `specs/product/handoff-v1.2.md` : requirement IDs (BOOK-03, PAY-02 ...), architecture, data model, feature backlog F01 to F16.
+3. The design canvas (hi-fi H-, G-, S-; Thai T-) : every screen. https://claude.ai/artifact/3Jo8snhzdEXEhVhrRqi3ea
+4. `locales/en.json`, `locales/th.json` : all user-facing text.
+5. `docs/canvas-gaps.md` : places where the canvas disagrees with the spec. The spec wins.
 
-A multi-tenant booking platform for racquet clubs in Thailand (first club: Hunter Tennis Club).
+Dates: today 30 Oct 2026. End-to-end testing with mock bookings starts **7 Dec 2026**, public booking opens **29 Dec 2026**, soft launch 9 Jan 2027.
+Privacy consent, receipt and payment text must be final before 7 Dec.
 
-| Surface | Users | Notes |
-|---|---|---|
-| Customer app (LIFF inside LINE) | Players | Court booking, solo classes, group classes, packages, wallet, referrals, waitlist, receipts. TH/EN |
-| Club admin console | Owner, front desk | Calendar, walk-ins, customers, coaches, pricing, promotions, closures, reports, receipts, settings, staff audit log, setup checklist |
-| Coach portal | Coaches | Today, schedule, availability, leave, session detail, earnings |
-| Platform console | BOOQ team | Clubs list, new-club wizard, club detail, launch/test mode, templates, team audit log, read-only support view, pause club |
-| LINE messaging | Everyone | Rich menu, confirmation, reminder, waitlist offer, cancellation, coach change |
-| Back end | All of the above | Tenancy, availability and holds, payments, packages and credits, waitlist, receipts, audit |
+## 1. Spec-driven development, as this repo does it
 
-Core rules already fixed in the design: unpaid slot is held 15 min; free cancel until 12 h before;
-waitlist offer has a 30 min claim window and none within 2 h of start; coach never offered a 7th
-teaching hour in a row; bundle hours work on either court, any time, and expire (reminders at 14 and 3 days);
-group credit returns on cancellation 12 h or more ahead; money always goes straight to the club.
+For each feature `F##` in the backlog, files live in `specs/features/F##-name/`:
 
-## 2. Spec-driven development: the steps
+| Gate | File | Drafted by | Approved by | Rules |
+|---|---|---|---|---|
+| 1 Requirements | `requirements.md` | Claude from the PRD and hand-off | **A person** | Keep requirement IDs. Acceptance criteria in Given/When/Then |
+| 2 Design | `design.md` | Claude | **A person** | Tables and migrations, API routes, state machine, permission checks, canvas boards used, how it meets PDPA, no-double-booking and TEXT rules |
+| 3 Tasks | `tasks.md` | Claude | A person (quick) | Each task under a day, names its requirement IDs |
+| 4 Build | code + tests | Claude, one task per run | Reviewer | Tests first from the acceptance criteria. Run tests and type checks. Tick the task. Commit message starts with the IDs, e.g. `BOOK-03 hold slot for payment window` |
+| Change | PRD → hand-off → feature specs | | | Code never gets ahead of the spec |
 
-The rule: no code without a spec, no spec without acceptance criteria, and the spec is the only
-thing the roles share. Specs live in `/specs`, versioned in git, changed only by pull request.
+Two stop signs from `CLAUDE.md` apply to every session: if code and spec disagree, **stop and ask**; never invent a price, amount or setting (TBD values are empty club settings).
 
-**Step 0. Repo and conventions (half a day)**
-Monorepo layout, branch naming (`role/feature`), PR template, definition of done, `CLAUDE.md`
-describing the above so every sub-chat starts from the same rules.
+Nothing in gates 1 to 3 is self-approved. A sub-chat finishes a draft, reports, and waits.
 
-**Step 1. Ingest the design into a product spec**
-Turn the canvas into text. One file per journey in `/specs/journeys/` (the ten flows A to K already
-exist in the flow maps), one per screen group in `/specs/screens/` (C, A, K, P, L, S, R), and
-`/specs/rules.md` for every business rule with its number. Export design tokens
-(`project/ds/booq/tokens.json`) to `/specs/design-tokens.json`.
+## 2. Feature backlog and build order (from the hand-off)
 
-**Step 2. Open-questions register**
-`/specs/open-questions.md`: every TBD with owner, options, deadline. Section 4 is the first draft.
-Nothing in a blocked area is built until its question is closed.
+| # | Feature | IDs | Depends on | Wave |
+|---|---|---|---|---|
+| F01 | Platform foundation: clubs, locations, resources, roles, settings, audit | PLAT | Booq core | 1 |
+| F02 | LINE Login, LIFF, first sign in | AUTH | F01 | 1 |
+| F03 | Court booking, schedule, payment hold | BOOK | F01, F02 | 2 |
+| F04 | Checkout, pricing, add-ons, promo codes | PAY, PROMO | F03 | 2 |
+| F05 | Beam payments (Hunter launch) | PAY | F04 | 2 |
+| F10 | LINE messages and rich menu | LINE | F03 | 2 |
+| F06 | Packages, credit and wallet ledgers | PKG | F04 | 3 |
+| F09 | Cancellation and closures | CANCEL | F06 | 3 |
+| F13 | Receipts, reports, daily close | RCPT | F05 | 3 |
+| F11 | Club admin A0 to A17 | ADMIN | F03 to F09 | 3, grows with each feature |
+| F07 | Solo classes, coach picker, rest rule | COACH | F03, F06 | 4 |
+| F08 | Group classes and waitlist | CLASS | F06 | 4 |
+| F12 | Coach portal K1 to K6 | COACH | F07 | 4 |
+| F14 | Referrals and birthday discount | PROMO | F06 | 5 |
+| F15 | Platform console P1 to P6 | PLAT | F01 | 3 to 5 (needed for Testing and Go live) |
+| F16 | Slip checking and backup mode | PAY | F04 | **Not for Hunter launch** |
 
-**Step 3. Domain model and glossary**
-`/specs/domain.md`: entities (Club, Court, Product, Booking, Hold, Package, Credit, WalletEntry,
-Payment, Slip, Coach, Leave, Class, Waitlist, Referral, Receipt, AuditEvent), states and transitions
-for each (booking, payment, club status Draft/Testing/Live/Paused), and who may change what.
+Cross-cutting, specified inside every feature's design.md: PDPA, no double booking, TEXT-01 to TEXT-06, audit entries (PLAT-04).
 
-**Step 4. Contracts**
-Before any implementation: `/specs/api/openapi.yaml` (REST), `/specs/events.md` (domain events such as
-`booking.confirmed`, `waitlist.offer_sent`, which LINE messaging and reports consume),
-`/specs/db/schema.sql` or ORM schema, `/specs/integrations/` (LINE, Beam, bank slip check).
-Front end builds against a mock server generated from the OpenAPI file, so nobody waits for the back end.
+Removed, never build: A3 Check-in and any check-in QR, A11 Gift vouchers, A15 Messages editor, an everyday slip review queue.
 
-**Step 5. Acceptance criteria and test plan**
-Each journey gets Given/When/Then scenarios in `/specs/acceptance/`. Edge cases come from the S screens
-(day full, slip rejected, checking delayed, time ran out, offline, club paused). QA writes these
-before the build, so they are the definition of done, not an afterthought.
-
-**Step 6. Architecture decisions**
-`/specs/adr/NNNN-*.md`, one per decision (stack, tenancy model, payments approach, i18n, hosting).
-Short: context, decision, consequences.
-
-**Step 7. Slice the work into vertical increments**
-Order below. Each slice ships a working end-to-end path with tests, not a layer.
-
-| Slice | Contents | Why this order |
-|---|---|---|
-| 0 | Foundation: repo, CI, DB, auth with LINE, tenancy, design-system package, mock server | Everyone depends on it |
-| 1 | Flow 0: book one hour and pay, plus the admin calendar view of it | The design says this is the most common path and gets built first |
-| 2 | Club onboarding: platform wizard P1 to P4, setup checklist A0, templates | Needed to create any club at all, including the real one |
-| 3 | Flow F front desk (walk-in, cash/PromptPay with reason, daily close) and receipts | Staff can run a day |
-| 4 | Flow D cancel, refunds and credits, LINE messages | Closes the loop on money |
-| 5 | Packages: flows H and I, wallet, referral (flow E) | Revenue features |
-| 6 | Coaches and classes: flows B, C, G, waitlist, coach portal K | Largest rule surface |
-| 7 | Reports, coach payouts, promotions, audit log, support view, pause club | Operate and support |
-| 8 | Hardening: load, security review, backups, launch rehearsal | Go live |
-
-**Step 8. The build loop, per slice**
-1. Spec Owner confirms the slice spec and acceptance criteria are final.
-2. Architect confirms contracts cover it, or updates them first (spec PR).
-3. Back end and front end build in parallel against the contract.
-4. QA runs the acceptance scenarios; failures go back as issues referencing the spec line.
-5. Reviewer checks the diff against the spec, not against taste.
-6. Spec and code are merged together. If code needed a different behaviour, the spec PR comes first.
-
-**Step 9. Keep spec and code in sync**
-CI fails if the OpenAPI file and the generated client differ, if a migration has no schema change in
-`/specs/db`, or if a PR touches `/specs` without a changelog line. Monthly: Spec Owner audits drift.
+Schedule reality: that is 15 features in about five weeks to the 7 Dec test start. Wave 1 and 2 are the minimum for a mock end-to-end booking
+(sign in, book, pay with Beam, LINE confirmation). Waves 3 and 4 must land inside the test window. F14 and most of F15 can follow, except what is
+needed to put Hunter into Testing and Live (P2 to P4). The Orchestrator should re-cut the waves with the user after the first requirements are approved.
 
 ## 3. Roles (sub-chats)
 
-Each role is its own Claude Code session on its own branch, started with a brief from
-`/docs/roles/<role>.md` (to be generated from the table below). The Orchestrator is this chat.
-Roles talk through the repo (specs, issues, PRs) and through messages from the Orchestrator, never by
-editing each other's folders.
+Each role is a Claude Code session on its own branch (`<role>/<feature>`), started with `CLAUDE.md` plus the kickoff prompt in section 5.
+Roles coordinate through the repo (specs, issues, PRs) and through the Orchestrator, not by editing each other's folders.
 
-| # | Role | Owns | Reads | Produces | Does not |
-|---|---|---|---|---|---|
-| 0 | **Orchestrator / tech lead** (this chat) | Slice plan, merges, conflict resolution, role briefs | Everything | Task assignments, integration branch, status | Write feature code except glue |
-| 1 | **Product spec owner** | `/specs/journeys`, `/specs/rules.md`, `/specs/open-questions.md`, acceptance criteria | Design canvas, flow maps | Specs with numbered rules and Given/When/Then; closes questions with the user | Decide stack or write code |
-| 2 | **Architect** | `/specs/domain.md`, `/specs/api`, `/specs/events.md`, `/specs/db`, `/specs/adr` | Specs | Contracts, schema, ADRs, mock server | Implement features |
-| 3 | **Back end: booking core** | Availability, holds and expiry, court and coach scheduling, rest rule, waitlist, cancellations, closures | Contracts | Services, migrations, unit and integration tests | Touch payment code |
-| 4 | **Back end: payments and wallet** | Beam and PromptPay/slip check, packages, credits, wallet, refunds, promo codes, referral, receipts, VAT toggle | Contracts, payment provider docs | Same, plus reconciliation job | Touch booking rules |
-| 5 | **Back end: platform and integrations** | Tenancy, club lifecycle, auth and roles, LINE (webhook, LIFF login, rich menu, push), audit log, support-view access, notifications | Contracts, LINE docs | Same | Touch pricing rules |
-| 6 | **Front end: customer app** | LIFF app, C screens, S edge states, TH/EN, rich-menu deep links | Design canvas, tokens, mock server | Screens matching the design, component tests | Call the back end outside the contract |
-| 7 | **Front end: admin and coach** | A and K screens, calendar, setup checklist | Same | Same | Same |
-| 8 | **Front end: platform console and design system** | P screens, shared UI kit and token package used by 6 and 7, club brand presets | Same | Component library, Storybook, P screens | Build club-specific screens |
-| 9 | **QA / test engineer** | `/specs/acceptance`, e2e suite (Playwright), test data, fake-slip and sandbox fixtures, regression pack | Specs, running builds | Test plans, e2e tests, bug reports tied to spec lines, release sign-off | Fix bugs (files them) |
-| 10 | **DevOps / SRE** | CI/CD, environments, secrets, observability, backups, Thai data region, cost | ADRs | Pipelines, IaC, dashboards, runbooks | Product code |
-| 11 | **Security and compliance** | Threat model, PDPA (personal data, consent, deletion), payment and slip handling, RBAC review, audit-log integrity, tax-receipt rules | Specs, code | Review reports, required fixes, checklists | Merge anything |
-| 12 | **Code reviewer** | Every PR against its spec | Specs, diff | Review comments, approve/block | Write features |
+| # | Role | Owns (folders / features) | Produces | Must not |
+|---|---|---|---|---|
+| 0 | **Orchestrator** (this chat) | Backlog order, branch/merge, spec approvals routing, lane disputes | Task assignments, integration, status to the user | Write feature code except glue |
+| 1 | **Spec drafter** | `specs/features/*/requirements.md` and `design.md` drafts, with the Architect | Drafts from the PRD and hand-off with Given/When/Then; keeps IDs; flags gaps | Approve its own drafts, decide TBDs |
+| 2 | **Architect / data** | Booq core mapping (Store→Club, Branch→Location), migrations, row-level security by club ID, server jobs, API conventions | The shared `design.md` pieces: schema, RLS, uniqueness rules for no double booking, job runner | Feature UI |
+| 3 | **Back end: booking** | F03, F07 (rules), F08, F09 | Availability, holds and expiry, atomic court+coach reservation, rest rule, waitlist, cancellation, closures | Payment and pricing code |
+| 4 | **Back end: commerce** | F04, F05, F06, F14, F16 later | Pricing, add-ons, promo/referral, Beam integration with signed callbacks, credit and wallet ledgers | Booking rules |
+| 5 | **Back end: platform and LINE** | F01, F02, F10, F15 API, audit, support view, pause | Auth, roles, club lifecycle, LIFF, Messaging API, rich menu, Flex cards, usage counts | Pricing |
+| 6 | **Front end: player app** | F02 to F10 screens (C1 to C17, S-, G-) | LIFF app at 375 px, Thai and English | Call anything outside the API contract |
+| 7 | **Front end: admin and coach** | F11, F12 (A0 to A17, K1 to K6) | Console at 1280 px, coach portal at 375 px | Same |
+| 8 | **Front end: platform console and design system** | F15 UI (P1 to P6), Palette D tokens, shared components | Token package and components used by 6 and 7 | Club-specific screens |
+| 9 | **Content / i18n** | `locales/*`, `copy-index.csv`, TEXT-01 to 06 checks | Variable pass (TEXT-03), lookup helper, lint that finds hard-coded text, new keys flagged for writers | Edit wording of an existing key |
+| 10 | **QA** | Acceptance tests from every approved requirements.md, Playwright, fake Beam and fake LINE | Tests first, regression pack, mock-booking test plan for 7 Dec | Fix bugs (files them with the ID) |
+| 11 | **DevOps** | CI, environments, secrets, backups (daily), monitoring, Thai-region hosting | Pipelines and runbooks | Product code |
+| 12 | **Security / PDPA** | Threat model, RLS tests, Beam callback signature checks, consent, copy/delete flows | Review reports, blocking findings | Merge anything |
+| 13 | **Reviewer** | Every PR vs requirement IDs and canvas board | Approve / block with reasons | Write features |
 
-Optional later: **Content and i18n** (Thai/English copy, LINE message wording), **Data and reports** (A13, payouts, exports), **Support/ops** (runbook for flow K).
+Parallelism: after the Architect's shared schema and API conventions exist, roles 3 to 5 and 6 to 8 work at the same time per wave.
+QA and Content start on day one. A role whose feature is not yet approved at gates 1 and 2 does not write code.
 
-How the work parallelises: after Step 4, roles 3, 4, 5 work against the contract and 6, 7, 8 against the mock
-server at the same time. QA (9) writes scenarios from Step 5 onward, so tests exist before features land.
-DevOps (10) is needed in slice 0, security (11) reviews contracts in Step 4 and each slice before merge.
+## 4. Open items that are settings, not blockers
 
-Suggested first wave of sessions: 1 (spec), 2 (architect), 10 (devops), 8 (design system). The rest start
-when Step 4 contracts exist, so they have something to build against.
+The hand-off says build these as empty club settings: add-on prices, Head Coach price, referral reward, friend discount, birthday discount,
+max future court hours (BOOK-05, empty means no limit), class-below-minimum alert time, wallet balance expiry, coach pay numbers.
 
-## 4. Open questions found in the design
+Still needing a decision from the user (they affect the code, see `docs/canvas-gaps.md` for detail)
+1. **PAY-03.** Late Beam payment after the hold ends: approve if the slot is still open, else put the value in the wallet. Assumed, not confirmed. The PRD also says late payments are approved if the slot is open, which agrees for the first half only.
+2. **Receipt address.** The app hides the club address but receipts legally show it. Keep it on the PDF receipt only? (PRD open question)
+3. **Stack.** The PRD suggests Next.js + LIFF SDK, Postgres (Supabase) with row-level security, server jobs. It is not a requirement. Confirm we use it.
+4. **Date of birth lock.** The canvas locks DOB for players after entry (designer suggestion). Not in the PRD.
+5. **"Owed to customers" in reports.** Whether wallet balances count with unused package credit.
+6. **LINE monthly cap.** What happens when a club hits its plan's message limit (LINE-06 only shows usage and alerts).
+7. **Beam facts** (needed for F05, not for code design): Hunter's Beam merchant account, sandbox credentials and confirmed fees; the club's LINE OA plan (free plan's 300 messages will not cover Hunter).
 
-The authoritative register is `PRODUCT-SPEC.md` section 12 (Q-1 to Q-17, plus design defects D-1 to D-10).
-The short list below was the first pass and is kept for context. See `HANDOFF.md` for state and kickoff prompts.
+## 5. Kickoff prompts for sub-chats
 
-| # | Question | Where it shows up | Blocks |
-|---|---|---|---|
-| Q1 | **Payment model.** Settings says "Beam, each booking gets its own QR, no slips, no backup mode". Flows, C11 and A04 still describe PromptPay QR plus slip upload, slip verification and a backup slip-check screen. Which is real, or are both supported per club? | Settings vs flows, F1 vs F1b screens | Slice 1 |
-| Q2 | Max future court hours per player `[X]` | Settings, Booking | Slice 1 |
-| Q3 | Below-minimum class alert `[X]` hours before | Settings, Coaches and classes | Slice 6 |
-| Q4 | Wallet balance expiry | Settings, Packages and wallet | Slice 5 |
-| Q5 | VAT: tax invoices off until the club registers; receipt format and numbering | Settings, R receipts | Slice 3 |
-| Q6 | Support view: look only or can act (setting says BOOQ can make changes for 24 h) | Platform flows | Slice 7 |
-| Q7 | Self sign-up for clubs, BOOQ's own pricing, multiple branches, web address | Platform flows "Open questions" | Slice 2 |
-| Q8 | Variants: the canvas has several visual variants (V-, T-, H- sets, palettes). Which is final? | V-Palettes, H- vs T- vs plain sets | Slice 0 design system |
-| Q9 | Tech stack and hosting (design does not say) | n/a | Slice 0 |
+Shared preamble, pasted first:
+> You are working on BOOQ (Hunter Tennis Club is the first club). Read `CLAUDE.md`, then `specs/product/prd-v1.2.md`, `specs/product/handoff-v1.2.md` and `docs/DEVELOPMENT-PLAN.md`. Follow the Spec-Driven loop: requirements, then design, then tasks, then one task per run. Draft and stop at each gate; a person approves requirements and design. Work on branch `<role>/<feature>`, edit only the folders your role owns, name requirement IDs in commits, never invent a rule, price or setting, never write user-facing text in code (use `locales/*.json` keys). If code and spec disagree, stop and ask. Do not open a pull request unless asked.
 
-## 5. Recommended defaults, to be confirmed
+Role blocks (each is appended to the preamble):
+- **Spec drafter:** "Role: spec drafter. Draft `specs/features/F01-platform-foundation/requirements.md` from PLAT-01 to PLAT-06 and PDPA-01, with Given/When/Then for each. Then F02. Keep IDs, cite PRD sections, list gaps as questions. Wait for approval before design.md."
+- **Architect / data:** "Role: architect. Draft the shared design for F01: Booq core mapping (Store→Club, Branch→Location), the data model in the hand-off, row-level security by club ID, the uniqueness rule that reserves court and coach in one transaction including holds, UTC-free Asia/Bangkok handling, money as integer satang, ledgers for credit and wallet, the job runner for holds, reminders, expiries."
+- **Back end roles:** "Role: back end `<booking|commerce|platform-line>`. Own the features listed for your role in `docs/DEVELOPMENT-PLAN.md` section 3. Start only when requirements.md and design.md for the feature are approved. Tests first from the acceptance criteria."
+- **Front end roles:** "Role: front end `<player|admin-coach|platform+design-system>`. Build from the hi-fi boards named in design.md and the mock/real API. Palette D, DM Sans with Noto Sans Thai, 375 px or 1280 px, WCAG AA, 44 px targets, states never by colour alone. All text from `locales/*`; buttons never wrap; content scrolls."
+- **Content / i18n:** "Role: content and i18n. Do the TEXT-03 pass: replace sample values (names, dates, times, prices, counts) with named variables in both `locales/en.json` and `locales/th.json` using the same key and same variable names, without editing wording. Produce `locales/copy-index.csv` (key, screens, canvas boards; the file is not in the repo yet and needs the writers' spreadsheets or a canvas scan). Add a lint that fails on hard-coded user-facing text. Report new keys needed."
+- **QA:** "Role: QA. Turn each approved requirement's acceptance criteria into tests before the code exists. Build a fake Beam (valid, bad signature, wrong amount, late) and a fake LINE. Plan the 7 Dec mock-booking test. File bugs with the requirement ID."
+- **DevOps:** "Role: DevOps. CI with lint, types, tests and the hard-coded-text check; preview environments; secrets handling for LINE and Beam keys; daily backups; monitoring for jobs and LINE token failures."
+- **Security / PDPA:** "Role: security. Review each feature's design.md before approval: tenancy isolation, server-side permission checks, BOOQ staff blocked from player/booking/payment data, Beam callback verification, consent and data copy/delete, slips and staff notes staff-only."
+- **Reviewer:** "Role: reviewer. Check each PR against its requirement IDs and canvas board. Block on: decided TBDs, wrong lane, missing tests, hard-coded text, missing audit entry, missing club ID scope."
 
-Not decided by the design, so these are proposals for the Architect to turn into ADRs:
+## 6. Next actions
 
-- TypeScript monorepo, Next.js for the three web consoles and the LIFF app, a Node API (NestJS or Fastify), PostgreSQL, Redis for holds and queues.
-- Tenancy by `club_id` on every row with row-level security.
-- Time handling: store UTC, render Asia/Bangkok, club-level timezone field for later.
-- Money as integer satang, never floats.
-- OpenAPI first, generated clients, mock server from the spec.
-- Hosting in a region close to Thailand with daily backups and PDPA-aware retention.
+1. User confirms the stack (section 4, item 3) and answers PAY-03 and the receipt-address question, or says to proceed with the stated assumptions.
+2. Orchestrator starts: Spec drafter (F01, F02), Architect/data, Content/i18n, DevOps, QA harness.
+3. A person approves F01 and F02 requirements, then design.
+4. Waves 1 and 2 start building; Orchestrator re-cuts waves with the user against the 7 Dec date.
