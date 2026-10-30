@@ -4,7 +4,7 @@ Oct 30, 2026 · @Criclabs
 
 ## Overview
 
-Build Hunter Tennis Club's booking app as the first club on the existing Booq core, running as a LINE LIFF app, live for public booking on 29 Dec 2026. Hunter testing starts 7 Dec 2026.
+Build Hunter Tennis Club's booking app as the first club on the Booq core. There is no earlier Booq code or database, so Hunter is the first real build and the core is created with it (decision 30 Oct 2026). The Notion Booq Product Reference is superseded by this doc and the PRD, running as a LINE LIFF app, live for public booking on 29 Dec 2026. Hunter testing starts 7 Dec 2026.
 
 | Item         | Value                                                                                                                    |
 |--------------|--------------------------------------------------------------------------------------------------------------------------|
