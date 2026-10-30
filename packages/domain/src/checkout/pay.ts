@@ -116,7 +116,7 @@ export async function placeOrder(tx: Tx, customerId: string, choice: QuoteReques
   if (claim.reused === true) {
     // The caller's live hold for this selection: drop the order just made and return that one (D47).
     await tx.query('rollback to savepoint place_order');
-    return { orderId: claim.order_id, bookingIds: claim.booking_ids, holdExpiresAt: claim.hold_expires_at, reused: true, confirmed: false, receiptId: null };
+    return { orderId: claim.order_id, bookingIds: claim.booking_ids, holdExpiresAt: isoOrNull(claim.hold_expires_at), reused: true, confirmed: false, receiptId: null };
   }
   await tx.query('release savepoint place_order');
   // booking_ids are in start order, the same order as the quote's hours.
@@ -151,8 +151,10 @@ export async function placeOrder(tx: Tx, customerId: string, choice: QuoteReques
     const done = await tx.query<{ receipt: string }>('select app.complete_zero_money_order($1) as receipt', [orderId]);
     return { orderId, bookingIds: claim.booking_ids, holdExpiresAt: null, reused: false, confirmed: true, receiptId: done.rows[0]!.receipt };
   }
-  return { orderId, bookingIds: claim.booking_ids, holdExpiresAt: claim.hold_expires_at, reused: false, confirmed: false, receiptId: null };
+  return { orderId, bookingIds: claim.booking_ids, holdExpiresAt: isoOrNull(claim.hold_expires_at), reused: false, confirmed: false, receiptId: null };
 }
+
+const isoOrNull = (v: string | Date | null): string | null => (v === null ? null : new Date(v).toISOString());
 
 /** The caller's live hold for exactly this selection, if any (D47). The Pay route asks it before repricing. */
 export async function findLiveHold(tx: Tx, choice: QuoteRequest): Promise<PlacedOrder | null> {

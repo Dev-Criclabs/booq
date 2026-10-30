@@ -91,19 +91,5 @@ describe('classification', () => {
     expect(res.problems.filter((p) => p.table.startsWith('public.rich_menu'))).toEqual([]);
   });
 
-  it('no application role reaches either table before F10-T07', async () => {
-    const c = await tdb.pool.connect();
-    try {
-      for (const role of ['booq_app', 'booq_worker', 'booq_platform']) {
-        for (const t of ['rich_menu_label', 'rich_menu']) {
-          await c.query('begin');
-          await c.query(`set local role ${role}`);
-          await expect(c.query(`select 1 from public.${t}`)).rejects.toThrow(/permission denied/);
-          await c.query('rollback');
-        }
-      }
-    } finally {
-      c.release();
-    }
-  });
+  // Who reaches these tables is F10-T07 (0606, line-grants.test.ts).
 });
