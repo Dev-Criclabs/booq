@@ -55,6 +55,8 @@ importers:
 
   packages/payments: {}
 
+  packages/secrets: {}
+
   packages/testing: {}
 
   packages/time: {}
