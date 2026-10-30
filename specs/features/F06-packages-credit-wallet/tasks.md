@@ -85,6 +85,6 @@ T01 to T03 first, then T04, T06a, T06b, T07, T05, T08, T09, T10, T11, T12 (the o
 
 ## Follow-up added by F09 (gate 3 of that feature, 30 Oct 2026, D158)
 
-- [ ] **F06-T25** Migration 0515: `app.wallet_return_line(order_line, reason)`: returns the wallet spend of one order line (a one hour cancel needs one line; `wallet_return(order)` returns every spend row). IDs: PKG-01-AC8, R1-AC6, AC7, D158. Role: BE-C · Deps T04 · Size: S
+- [x] **F06-T25** Migration 0515: `app.wallet_return_line(order_line, reason)`: returns the wallet spend of one order line (a one hour cancel needs one line; `wallet_return(order)` returns every spend row). IDs: PKG-01-AC8, R1-AC6, AC7, D158. Role: BE-C · Deps T04 · Size: S
   Tests first: only the named line's spend rows come back; a repeat returns once (key `return:{spend_id}`); a line with no spend returns nothing; a spend of another order is refused.
 
