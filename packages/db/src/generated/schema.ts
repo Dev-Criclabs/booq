@@ -430,6 +430,7 @@ export interface PublicDataExport {
   expires_at: string | null;
   row_count: number | null;
   requested_at: string;
+  request_id: string | null;
 }
 
 export interface PublicDataRequest {
