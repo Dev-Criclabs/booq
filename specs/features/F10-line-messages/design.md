@@ -40,7 +40,7 @@ F10 uses the number block 0601 to 0699 (assumption A-1; the build plan names blo
 | `0604_line_usage.sql` | `platform.club_line_usage` and sync support (FA §5.6), `platform.config` rows for 70, 80 and 100 |
 | `0605_functions.sql` | `app.enqueue_message`, `app.void_messages`, `app.cap_state`, `app.mark_undeliverable` |
 | `0606_grants_policies.sql` | Policies and grants; the sender role and the platform reader |
-| `0607_settings_keys.sql` | Registry rows: `reminder_hours` (list, Tennis template 24 and 2, D116), cap thresholds in `platform.config` |
+| `0607_settings_keys.sql` | Registry row `reminder_hours` (list, Tennis template 24 and 2, D116); the cap thresholds are in `platform.config` from 0604 |
 
 ### 4.1 Tables
 

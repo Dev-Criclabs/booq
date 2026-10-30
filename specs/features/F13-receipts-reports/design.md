@@ -32,11 +32,12 @@ F13 uses the number block 0701 to 0799 (assumption A-1; the build plan names blo
 | `0701_receipt.sql` | `receipt`, `receipt_counter` (FA §2.4), `receipt_void`; append-only triggers; unique indexes |
 | `0702_issue_receipt.sql` | `app.issue_receipt` and its helpers; test series handling |
 | `0703_payment_port.sql` | Registers the F13 port in `app.payment_ports` (§4.1) |
-| `0704_daily_close.sql` | `daily_close` |
-| `0705_coach_payout.sql` | `coach_payout`, `coach_payout_adjustment` |
-| `0706_report_views.sql` | The report views and functions of §4.7 |
-| `0707_grants_policies.sql` | Policies and grants; the accountant column limits (D35) |
-| `0708_settings_keys.sql` | Registry rows: none are new (`receipt_prefix` is `club.receipt_prefix` from P2 step 1, `vat_enabled` is F01); a CHECK that Go live needs the prefix (D106) is F01's checklist item |
+| `0704_void_receipt.sql` | `app.void_receipt` (§4.3) |
+| `0705_daily_close.sql` | `daily_close` and `app.run_daily_close` |
+| `0706_coach_payout.sql` | `coach_payout`, `coach_payout_adjustment` and the payout functions |
+| `0707_report_views_a.sql` | Report views: cash by type, package sales, online against staff, no show rate, new against returning |
+| `0708_report_views_b.sql` | Report views: revenue earned, value owed, occupancy, partner report |
+| `0709_grants_policies.sql` | Policies and grants; the accountant column limits (D35). No new settings rows: `receipt_prefix` is `club.receipt_prefix` from P2 step 1 and `vat_enabled` is F01; a CHECK that Go live needs the prefix (D106) is F01's checklist item |
 
 ### 3.1 `receipt` (class D)
 
@@ -175,7 +176,7 @@ First real receipt after Go live is 000001 of its year and the test series never
 
 New keys in `locales/pending/F13.json`: Void, Copy of receipt, Test receipt, the wallet credit receipt wording, receipt lines for credit, wallet and each method, daily close labels and totals, void reason, report titles and labels, payout labels, export confirmation; writers own the wording (D51). Existing L keys first (for example L-0061).
 
-Boards: R-Receipt-TH, R-Receipt-EN, H-A14-Receipts, H-A13-Reports, G-A13b-Coach-payouts, H-C17-Profile-receipts and the T- twins; G-C17-Privacy for what stays on record. The R-Receipt boards are not in the repo (Q3 of the requirements).
+Boards: R-Receipt-TH, R-Receipt-EN, H-A14-Receipts, H-A13-Reports, G-A13b-Coach-payouts, H-C17-Profile-receipts and the T- twins; G-C17-Privacy for what stays on record. The R-Receipt boards are in the canvas backup (`docs/orchestrator/canvas-backup/12ae5a85-7762-44b9-9b19-9df906c1e373/project/R-Receipt-EN.dc.html and R-Receipt-TH.dc.html`); the spec wins over the canvas and the sample data is not copied (`docs/canvas-gaps.md` B5, B9).
 
 ## 13. Assumptions to confirm (recommended defaults, D147)
 
