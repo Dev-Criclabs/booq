@@ -102,12 +102,13 @@ describe('player booking routes (F03-T21)', () => {
     player = playerBookingRoutes({ db, clubBySlug: async (slug) => (SLUGS[slug] ? { clubId: SLUGS[slug]! } : null) });
   });
 
-  it('declares GET /bookings/:id and POST /bookings/:id/release behind a session (club.read)', async () => {
+  it('declares GET /bookings/:id (booking.read.own) and POST /bookings/:id/release (a signed in person)', async () => {
     expect(player.map((r) => `${r.def.method} ${r.def.path}`)).toEqual(['GET /bookings/:id', 'POST /bookings/:id/release']);
-    for (const r of player) expect(r.def.permission).toBe('club.read');
+    expect(get().def.permission).toBe('booking.read.own');
+    expect(release().def.needsPerson).toBe(true);
     const { id } = await hold();
     expect(await get().handle({ session: null, input: { id } }, deps)).toEqual({ ok: false, status: 401, code: 'unauthenticated' });
-    expect(await release().handle({ session: null, input: { id } }, deps)).toEqual({ ok: false, status: 401, code: 'unauthenticated' });
+    expect(await release().handle({ session: null, input: { id } }, deps)).toEqual({ ok: false, status: 401, code: 'sign_in_required' });
   });
 
   it("the player reads their own booking; another player's is 404 (ROLE-01-AC4)", async () => {
@@ -158,8 +159,9 @@ describe('staff booking routes (F03-T22 move and release)', () => {
   it('front desk and owner only: a guest is 401; a player, coach or accountant is 403', async () => {
     expect(staff.map((r) => `${r.def.method} ${r.def.path}`)).toEqual(['PUT /staff/bookings/:id/move', 'POST /staff/bookings/:id/release']);
     const { id } = await book(18, P1, false);
+    expect(move().def.permission).toBe('booking.move');
+    expect(release().def.permission).toBe('booking.create.staff');
     for (const r of staff) {
-      expect(r.def.permission).toBe('booking.write');
       expect(await r.handle({ session: null, input: { id } }, deps)).toEqual({ ok: false, status: 401, code: 'unauthenticated' });
       for (const s of [as(P1, 'player'), as(P2, 'coach', 'player'), as(P2, 'accountant', 'player')]) {
         expect(await r.handle({ session: s, input: { id, courtId: COURT2, start: '2026-12-02T20:00:00+07:00' } }, deps)).toEqual({ ok: false, status: 403, code: 'forbidden' });

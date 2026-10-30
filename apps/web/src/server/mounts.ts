@@ -2,6 +2,7 @@ import { createClaimService, createDataRequestService, createImportService, crea
 import type { Route } from '@booq/auth';
 import type { Db } from '@booq/db';
 import { bangkokDate } from '@booq/time';
+import { playerBookingRoutes, publicScheduleRoutes, staffBookingRoutes } from '../api/booking/routes';
 import { claimRoutes } from '../api/claim/routes';
 import { dataRequestRoutes } from '../api/data-request/routes';
 import { profileRoutes } from '../api/profile/routes';
@@ -36,5 +37,6 @@ export const mounts: readonly Mount[] = [
     }),
   (m) => claimRoutes({ db: m.db, service: () => createClaimService() }),
   (m) => dataRequestRoutes({ db: m.db, service: () => createDataRequestService() }),
+  (m) => [publicScheduleRoutes, playerBookingRoutes, staffBookingRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
   (m) => profileRoutes({ db: m.db, service: () => createProfileEditService({ today: () => bangkokDate(m.now()) }) }),
 ];
