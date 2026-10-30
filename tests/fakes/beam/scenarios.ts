@@ -36,7 +36,7 @@ export async function signedWithOtherClubKey(ctx: ScenarioContext, otherClubKeyB
   return ctx.beam.pay(ctx.charge.chargeId, ctx.target, { signing: 'wrong-key', otherKeyBase64: otherClubKeyBase64, markPaid: false });
 }
 
-/** 3. Wrong amount. Validly signed, amount differs from the order. D24: not confirmed, flagged for the owner. */
+/** 3. Wrong amount. Validly signed, amount differs from the order. D24, D36: not confirmed, flagged for the owner, answered 2xx. */
 export type WrongAmountVariant = 'one-satang-less' | 'one-satang-more' | 'baht-for-satang' | 'double';
 
 export function wrongAmountOf(charge: BeamCharge, variant: WrongAmountVariant): Satang {
@@ -161,10 +161,10 @@ export const BEAM_SCENARIOS: ScenarioSpec[] = [
     id: 'BEAM-03-wrong-amount',
     title: 'Wrong amount (1 satang less, 1 satang more, baht sent for satang, double)',
     requirements: ['PAY-02'],
-    decisions: ['D24'],
+    decisions: ['D24', 'D36'],
     steps: ['Same setup', 'Validly signed callback whose amount differs from the order'],
-    // Status code: undecided. 2xx stops Beam retrying; a 4xx makes Beam retry 10 times against a flagged order.
-    expected: { ...BASE, httpStatus: 'undecided', booking: 'not-confirmed', ownerFlag: true, nothingElseChanged: false, open: ['Q-19 (HTTP status only)'] },
+    // D36: recorded, flagged for the owner, answered with a success status so Beam stops retrying.
+    expected: { ...BASE, httpStatus: '2xx', booking: 'not-confirmed', ownerFlag: true, nothingElseChanged: false },
   },
   {
     id: 'BEAM-04-duplicate',

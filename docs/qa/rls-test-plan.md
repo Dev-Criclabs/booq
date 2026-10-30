@@ -135,7 +135,7 @@ Hand-off Roles table. Each row is run at L1 where the table is directly granted,
 | RLS-R01 | Player | Read and write own profile; own bookings; own credits, wallet, receipts, referrals; browse schedule states | Read another player's row, booking, receipt, wallet or credits; read staff notes or slips (even their own); see who holds or booked a slot (the schedule shows state only) |
 | RLS-R02 | Coach | Own schedule, availability, leave, attendance, session notes, own earnings; roster of own sessions | Other coaches' schedules; customer payments; club revenue; players not in own sessions |
 | RLS-R03 | Front desk | Bookings, walk ins, cash with reason code, customers | Revenue reports; coach pay; change prices, rules or staff; void a receipt |
-| RLS-R04 | Accountant | Read and export reports and receipts | Any write to bookings, prices or balances; customer contact details beyond what reports need (still open, Q-29f) |
+| RLS-R04 | Accountant | Read and export reports and receipts | Any write to bookings, prices or balances; phone numbers and dates of birth (names on receipts and reports only, D35) |
 | RLS-R05 | Owner (and any person with several roles, ROLE-01-AC2) | Everything in club A, rights are the union of roles | Anything in club B (RLS-A01 to A06 run as Owner too) |
 | RLS-R06 | Role change | A user whose role is removed loses access on the **next request**, not at token expiry | Cached tokens keep working after deactivation (A17 deactivate) |
 | RLS-R07 | Route matrix | Every API route × every role (including anonymous and platform roles) has an allow or deny row in one table; a route with no row fails the build | Hidden UI but open API |

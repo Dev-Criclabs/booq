@@ -80,7 +80,7 @@ The catalogue is `BEAM_SCENARIOS` in `scenarios.ts`. Expected outcomes come from
 |---|---|---|---|
 | 1 | **Valid payment** | `validPayment` | Booking **confirmed**; order paid; one receipt (RCPT-01); one Booking confirmed Flex card in the player's language (LINE-04). 2xx |
 | 2 | **Bad signature** | `badSignature(mode)` for 5 modes; `signedWithOtherClubKey` | **Rejected, logged and alerted** (D24); nothing else changes (PAY-02). 4xx |
-| 3 | **Wrong amount** (1 satang less, 1 satang more, baht sent for satang, double) | `wrongAmount(variant)` | Validly signed, so it is accepted as a message but the booking is **not confirmed**, the order is **flagged for the owner**, and staff credit the wallet with a reason (D24). HTTP status undecided (Q-19) |
+| 3 | **Wrong amount** (1 satang less, 1 satang more, baht sent for satang, double) | `wrongAmount(variant)` | Validly signed, so it is accepted as a message but the booking is **not confirmed**, the order is **flagged for the owner**, and staff credit the wallet with a reason (D24). Answered with a **success status** so Beam stops retrying (D36) |
 | 4 | **Duplicate callback** | `duplicateCallbackSequential`, `duplicateCallbackParallel` | **Ignored with success** (D24). After all copies: the effect of one payment. Concurrency version CONC-26 |
 | 5 | **Late callback after hold** | `lateCallbackAfterHold(variant, {beforePay})` | The QR expired when the hold ended (D18). `slot-still-open`: **approved**. `slot-taken-confirmed`, `slot-held-by-other`, `solo-coach-lost` (court and coach both must be free, otherwise all of it), `closure-created`: not confirmed, **amount paid goes to the wallet**, player gets a LINE message, a receipt for the money received (accountant to confirm) (D25) |
 

@@ -111,7 +111,7 @@ An integration test boots the app's route handlers against a real database that 
 | `integration/audit` | Every change to a booking, balance, price or setting writes an audit entry with actor, old and new value, reason; platform actions also write the P6 log | PLAT-04 |
 | `acceptance/F01, F02` | One todo per approved acceptance criterion (173): `tests/acceptance/` | ROLE, PLAT, PDPA, AUTH, LINE-01 |
 | `integration/platform` | Club lifecycle Draft, Testing, Live, Paused; go live needs every P4 check; pause rules; support view is setup only; 24 hour allow-changes switch expires | PLAT-01..03 |
-| `integration/test-mode` | Test flag set on the server at creation, own non legal receipt series, purge removes only flagged rows of that club and blocks Go live if one cannot be removed, only owner and named BOOQ testers can sign in, BOOQ sees pass or fail only, Beam sandbox only and no simulate payment route exists | PLAT-07, D4, D26 |
+| `integration/test-mode` | Test flag set on the server at creation, own non legal receipt series, purge removes only flagged rows of that club and blocks Go live if one cannot be removed, only owner and named BOOQ testers can sign in, BOOQ sees pass or fail only, Beam sandbox only and no simulate payment route exists; test key set in Testing, live set after Go live, swap is a P4 check; test rows excluded from every report, daily close, receipts list and aggregate | PLAT-07, D4, D26, D32, D33 |
 | `integration/pdpa` | Consent stored at first sign in; copy of my data; delete on request; staff notes and slips not visible to players | PDPA-01 |
 | `concurrency/*` | Race conditions, see `concurrency-tests.md` | BOOK-04 and others |
 | `rls/*` | See `rls-test-plan.md` | PLAT, PDPA-01 |
@@ -201,7 +201,7 @@ Purpose: prove end to end, with Hunter staff and friendly players, that the book
 | 6 | Automated suite green on staging build: unit, integration, concurrency, RLS, E2E | QA | this strategy |
 | 7 | Test accounts: at least 2 players (1 Adult, 1 Student by DOB), 1 front desk, 1 owner, 1 accountant, 1 coach, 1 platform admin, 1 onboarding specialist | Hunter / QA | roles table |
 | 8 | Questions in `open-questions.md` marked A or B answered | Product owner | open-questions |
-| 9 | Test data is flagged on the server at creation, uses its own non legal receipt numbers, and the purge at Go live is rehearsed on a copy (D4, PLAT-07-AC1 to AC4). Sandbox keys and the live key swap are a go live check (Q-33) | Architect | RCPT-01, PLAT-07 |
+| 9 | Test data is flagged on the server at creation, uses its own non legal receipt numbers, and the purge at Go live is rehearsed on a copy (D4, PLAT-07-AC1 to AC4). Each club holds two Beam key sets, Testing uses the test set, and the swap to live keys is a P4 go live item with a smoke test (D32) | Architect | RCPT-01, PLAT-07 |
 
 ### 6.2 Test data volumes (QA suggestion, product owner may change)
 
@@ -275,7 +275,7 @@ Each line is a script; every script runs once in Thai and once in English, and o
 2. Every requirement ID that applies to Hunter's launch has a green test in `traceability.md`, or a recorded decision by the product owner that it ships without one.
 3. All "before go live" questions in `open-questions.md` answered.
 4. Beam test with the real sandbox or merchant account passed for S1, S7, S8 and the bad signature check; real LINE device checks passed.
-5. The purge ran (PLAT-07-AC3/AC4) and Hunter's real receipt sequence starts at 000001 (D4). Sandbox keys replaced by live keys (Q-33).
+5. The purge ran (PLAT-07-AC3/AC4) and Hunter's real receipt sequence starts at 000001 (D4). Live Beam keys in use and the swap smoke test passed (D32).
 6. A backup restore drill has been done once (PDPA-01 daily backups; DevOps runs it, QA witnesses).
 
 ### 6.7 Bugs

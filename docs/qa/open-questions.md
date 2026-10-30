@@ -39,8 +39,7 @@ Questions already open elsewhere are not repeated: `canvas-gaps.md` C1 (correcte
 
 | # | Pri | Req | Question | Waits |
 |---|---|---|---|---|
-| Q-19 | B | PAY-02 | D24 answers the rules (bad signature: rejected, logged, alerted; valid signature with wrong amount: not confirmed, flagged for the owner, staff credit the wallet with a reason; duplicate: ignored with success). **Still open:** the HTTP status the app returns for a validly signed wrong amount (2xx stops Beam retrying; a 4xx makes Beam retry up to 10 times, DOC) | Fake Beam scenario 3 |
-| Q-20 | B | PAY-03 | D25 answers "still open", the solo class case and the LINE message. **Still open:** D25 says a receipt is issued for money received "(accountant to confirm)". Until confirmed the tests mark receipts for a late wallet credit as undecided | PAY-03 tests |
+| Q-20 | B | PAY-03 | D25 answers "still open", the solo class case and the LINE message. **Still open, with the accountant:** whether a receipt is issued for a late wallet credit. Until then the tests mark it undecided | PAY-03 tests |
 | Q-21 | B | PAY-04 | Is the package QR validity ("[15] minutes") the same club setting as the hold time (10, 15 or 20)? If a payment arrives after the unpaid package order was cancelled, does the value go to the wallet like PAY-03? | PAY-04 tests |
 | Q-22 | B | PAY-06 | What are the cash reason codes (list)? Is cash allowed for packages? Which roles (Front desk and Owner only?) | PAY-06 tests |
 | Q-24 | B | PDPA-01 | "Delete on request": receipts must keep an unbroken legal sequence, ledgers must balance, and audit entries are needed. Does delete mean anonymise the player and keep the financial rows? What does "copy of my data" contain (staff notes? slips?) | PDPA tests, RLS-R01 |
@@ -58,7 +57,6 @@ Questions already open elsewhere are not repeated: `canvas-gaps.md` C1 (correcte
 
 | # | Pri | Req | Question | Waits |
 |---|---|---|---|---|
-| Q-29 | B | PLAT-02, roles | D27, D3 and D15 answer: what setup only includes, Paused is look only, 404 for another club, BOOQ staff sign in, secrets write only. **Still open:** (f) may the Accountant see customer contact details (names, phones) in reports and exports? | RLS-R04 |
 
 ## Answered (user decisions, `docs/decisions.md`)
 
@@ -76,16 +74,13 @@ QA tests and the fakes follow these. Wording of the rules is in the decision log
 | Q-32 | LINE-06 | D17 (new LINE-07) |
 | Q-28 | PLAT-06, P1, P3, P4 | D2, D14 |
 | Q-30 | PLAT-04, PKG-01 | D28 |
+| Q-19 | PAY-02 | D24, D36 (validly signed wrong amount: recorded, flagged for the owner, answered with a success status so Beam stops retrying) |
+| Q-29 | PLAT-02, roles | D27, D3, D15, D35 (Accountant sees names, not phone numbers or dates of birth) |
+| Q-33 | PLAT-07, D16 | D32 (two Beam key sets, test and live; Testing uses test; the key swap is a P4 go live item with a smoke test; test LINE pushes use the real OA and count toward the cap) |
+| Q-34 | PLAT-07-AC7 | D33 (test rows excluded from reports, daily close, receipts lists and platform counts; shown only in test mode views) |
+| Q-35 | PDPA-01-AC9 | D34 (TLS in transit, host disk encryption at rest, extra app level encryption for stored secrets) |
 
-Also answered in part: Q-27b by D9 (a non friend is not blocked at checkout; the app shows the confirmation and asks them to add the OA), Q-29 and Q-19 as narrowed above.
-
-## New questions after the F01/F02 requirements and decisions
-
-| # | Pri | Req | Question | Waits |
-|---|---|---|---|---|
-| Q-33 | A | PLAT-07, D16 | The 7 Dec test runs on **production** with Hunter in Testing (D16). How does a production club in Testing use Beam's **sandbox** keys and the paid LINE OA, and how are the live keys swapped at Go live? A wrong key at Go live means real payments fail or test payments are accepted. QA needs this as a go live check in P4 and a smoke test. Also: test pushes use the real OA and count toward the monthly cap (LINE-07) | 7 Dec plan, PLAT-07 |
-| Q-34 | B | PLAT-07-AC7 | Are test flagged rows excluded from every report, the daily close, receipts lists and the P1 aggregates, not only P1? The spec is silent outside P1 (its own Q-E) | PLAT-07 tests |
-| Q-35 | B | PDPA-01 | PDPA-01-AC9 says data is encrypted but names no standard (its Q23). Needs a decision before QA can test it | PDPA tests |
+Also answered in part: Q-27b by D9 (a non friend is not blocked at checkout; the app shows the confirmation and asks them to add the OA).
 
 ## Gaps in the requirement set itself
 
