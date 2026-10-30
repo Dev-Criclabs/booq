@@ -25,6 +25,15 @@ create table platform.legal_text (
 alter table platform.legal_release owner to booq_owner;
 alter table platform.legal_text owner to booq_owner;
 revoke all on platform.legal_release, platform.legal_text from public;
+alter table platform.legal_release enable row level security;
+alter table platform.legal_release force row level security;
+alter table platform.legal_text enable row level security;
+alter table platform.legal_text force row level security;
+create policy legal_release_definer on platform.legal_release for all to booq_owner using (true) with check (true);
+create policy legal_text_definer on platform.legal_text for all to booq_owner using (true) with check (true);
+-- BOOQ staff read what was published (the console lists releases); nobody else reads these tables directly.
+create policy legal_release_read on platform.legal_release for select to booq_platform using (platform.staff_role() is not null);
+create policy legal_text_read on platform.legal_text for select to booq_platform using (platform.staff_role() is not null);
 grant select on platform.legal_release, platform.legal_text to booq_platform;
 do $$
 declare t text;
