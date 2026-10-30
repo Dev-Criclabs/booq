@@ -1,6 +1,7 @@
 import type { Db } from '../../../db/src/tx';
 import { validateFullName, validatePhone, type NameErrorCode, type PhoneErrorCode } from '../../../domain/src/phone';
 import { clubOfToken, hashToken, parseSessionCookie } from './cookie';
+import { chooseLanguage, parseLangCookie } from './language';
 import type { SignInDirectory, SignInTx, createSignInService } from './session';
 
 // POST /auth/profile (F02-T09; AUTH-02-AC1 to AC8, AC28, AC30; D11, D100, D105; design 4.3).
@@ -64,8 +65,12 @@ export function createProfileService(options: ProfileOptions) {
         return { ok: false, status: 400, code: 'bad_input' };
       }
       const noticeVersion = b['noticeVersion'];
-      const language = b['language'];
-      if (typeof noticeVersion !== 'string' || noticeVersion.trim() === '' || noticeVersion.length > MAX_VERSION || (language !== 'th' && language !== 'en')) {
+      // The language is the one the client sends; without one, the guest's own toggle choice (cookie `lang`),
+      // then the club's default (AUTH-02-AC27). The sign-in request carried no usable LINE or browser language.
+      const sent = b['language'];
+      if (sent !== undefined && sent !== 'th' && sent !== 'en') return { ok: false, status: 400, code: 'bad_input' };
+      const language = sent ?? chooseLanguage({ guestChoice: parseLangCookie(input.cookieHeader), preferred: undefined, clubDefault: club.defaultLanguage });
+      if (typeof noticeVersion !== 'string' || noticeVersion.trim() === '' || noticeVersion.length > MAX_VERSION) {
         return { ok: false, status: 400, code: 'bad_input' };
       }
       if (b['consent'] !== true) return { ok: false, status: 400, code: 'consent_required' };

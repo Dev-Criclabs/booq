@@ -5,6 +5,8 @@ import {
   type BookingErrorCode,
   courtsFor,
   getBooking,
+  moveStaffBooking,
+  releaseStaffHold,
   releaseOwnHold,
   requestHash,
   scheduleDays,
@@ -33,7 +35,6 @@ const STATUS: Record<BookingErrorCode, number> = {
   outside_window: 400,
   in_the_past: 400,
   not_releasable: 409,
-  club_paused: 409,
   forbidden: 403,
 };
 // A refusal raised by a booking function in the database (BK001, message = the code; design 4.2).
@@ -117,20 +118,40 @@ function hashOf(method: string, path: string, ctx: RouteContext): string {
 
 /**
  * F03-T21: GET /bookings/:id and POST /bookings/:id/release (design 5.2). Every club person holds
- * club.read (D115); the service narrows it to the player's own booking (staff may read the club's), and
- * another player's booking is not found (ROLE-01-AC4). Only an awaiting payment hold can be released.
+ * booking.read.own (D115); the service narrows it to the player's own booking (staff may read the club's),
+ * and another player's booking is not found (ROLE-01-AC4). The release needs a signed in person (a guest
+ * gets sign_in_required); only their own awaiting payment hold can be released.
  */
 export function playerBookingRoutes(deps: BookingRouteDeps): BookingRoute<unknown>[] {
   return [
-    route({ method: 'GET', path: '/bookings/:id', permission: 'club.read' }, async (ctx) => {
+    route({ method: 'GET', path: '/bookings/:id', permission: 'booking.read.own' }, async (ctx) => {
       const c = await sessionContext(deps, ctx, 'player_app');
       return inTx(deps.db, c, (tx) => getBooking(tx, viewerOf(c), inputOf(ctx)['id']));
     }),
-    route({ method: 'POST', path: '/bookings/:id/release', permission: 'club.read' }, async (ctx) => {
+    route({ method: 'POST', path: '/bookings/:id/release', needsPerson: true }, async (ctx) => {
       const c = await sessionContext(deps, ctx, 'player_app');
       const key = idempotencyKeyOf(ctx);
       const hash = hashOf('POST', '/bookings/:id/release', ctx);
       return inTx(deps.db, c, (tx) => withIdempotency(tx, key, hash, () => releaseOwnHold(tx, viewerOf(c), inputOf(ctx)['id'])));
     }),
+  ];
+}
+
+/**
+ * F03-T22 (move and release): PUT /staff/bookings/:id/move and POST /staff/bookings/:id/release (design 5.3).
+ * Front desk and owner only: booking.move to move, booking.create.staff to abandon a hold (design 5.3, 8).
+ * In a Paused club owner and front desk may still act on existing bookings (D107).
+ */
+export function staffBookingRoutes(deps: BookingRouteDeps): BookingRoute<unknown>[] {
+  const staff = <T>(method: 'PUT' | 'POST', path: string, permission: string, fn: (tx: Tx, c: ClubContext, input: Record<string, unknown>) => Promise<T>) =>
+    route({ method, path, permission }, async (ctx) => {
+      const c = await sessionContext(deps, ctx, 'admin');
+      const key = idempotencyKeyOf(ctx);
+      const hash = hashOf(method, path, ctx);
+      return inTx(deps.db, c, (tx) => withIdempotency(tx, key, hash, () => fn(tx, c, inputOf(ctx))));
+    });
+  return [
+    staff('PUT', '/staff/bookings/:id/move', 'booking.move', (tx, c, i) => moveStaffBooking(tx, viewerOf(c), i['id'], { courtId: i['courtId'], start: i['start'] })),
+    staff('POST', '/staff/bookings/:id/release', 'booking.create.staff', (tx, c, i) => releaseStaffHold(tx, viewerOf(c), i['id'])),
   ];
 }

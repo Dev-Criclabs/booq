@@ -198,10 +198,58 @@ describe('who may move (D60, D107)', () => {
     expect((await where(booking)).resource_id).toBe(COURT1);
   });
 
-  it('in a Paused club front desk is refused and the owner can still move', async () => {
+  it('in a Paused club front desk and the owner can still move existing bookings (D107, migration 0225)', async () => {
     const { booking } = await book(P1, 18);
     await tdb.query(`update public.club set status = 'paused' where id = $1`, [A]);
-    expect(await move(front, booking, COURT2, 20)).toEqual({ ok: false, code: 'club_paused', detail: undefined });
-    expect(await move(owner, booking, COURT2, 20)).toEqual({ ok: true, value: true });
+    expect(await move(front, booking, COURT2, 20)).toEqual({ ok: true, value: true });
+    expect(await move(owner, booking, COURT1, 21)).toEqual({ ok: true, value: true });
+  });
+});
+
+describe('the move handler of the coach rules (F03-T31, migration 0227; F07 design A-3)', () => {
+  // A stand-in for F07's app.coach_rules_check_move: a run cap of two coach hours a day, counting the
+  // coach's hours except the moved booking's own row, which is the point of the fifth argument.
+  beforeEach(async () => {
+    await tdb.query(`create function public.t_rules(p_club uuid, p_coach uuid, p_resource uuid, p_starts timestamptz[]) returns void language sql as $$ select $$`);
+    await tdb.query(`select app.register_coach_rules('public.t_rules'::regproc)`);
+    await tdb.query(`create table public.t_rule_calls (n serial, booking uuid)`);
+    await tdb.query(`grant all on public.t_rule_calls, public.t_rule_calls_n_seq to public`);
+    await tdb.query(`create function public.t_rules_move(p_club uuid, p_coach uuid, p_resource uuid, p_starts timestamptz[], p_booking uuid) returns void language plpgsql as $$
+      begin
+        insert into public.t_rule_calls (booking) values (p_booking);
+        if (select count(*) from public.occupancy o where o.club_id = p_club and o.coach_id = p_coach
+             and o.booking_id is distinct from p_booking) + cardinality(p_starts) > 2 then
+          perform app.refuse('rest_rule');
+        end if;
+      end $$`);
+  });
+  const ruleCalls = async () => (await tdb.query(`select booking from public.t_rule_calls order by n`)).rows.map((r) => r.booking);
+
+  it('with only the four argument hook registered (F07 move handler not installed) the move behaves as before', async () => {
+    const { booking } = await book(P1, 18, { coach: COACH });
+    expect(await move(front, booking, COURT2, 20)).toEqual({ ok: true, value: true });
+    expect(await ruleCalls()).toEqual([]);
+  });
+
+  it('the registered move handler gets the booking id, so a move inside the run does not count its own row twice', async () => {
+    await tdb.query(`select app.register_coach_rules_move('public.t_rules_move'::regproc)`);
+    await book(P1, 18, { coach: COACH });
+    const { booking } = await book(P2, 19, { court: COURT2, coach: COACH });
+    expect(await move(front, booking, COURT2, 20)).toEqual({ ok: true, value: true });
+    expect(await ruleCalls()).toEqual([booking]);
+  });
+
+  it('a move that breaks the rule is refused and nothing changes', async () => {
+    await book(P1, 18, { coach: COACH });
+    await book(P2, 19, { court: COURT2, coach: COACH });
+    const { booking } = await book(P1, 22, { coach: COACH });
+    await tdb.query(`select app.register_coach_rules_move('public.t_rules_move'::regproc)`);
+    const before = await where(booking);
+    expect(await move(front, booking, COURT1, 20)).toEqual({ ok: false, code: 'rest_rule', detail: undefined });
+    expect(await where(booking)).toEqual(before);
+  });
+
+  it('only the database owner registers the handler: the app role cannot', async () => {
+    await expect(run(front, (tx) => tx.query(`select app.register_coach_rules_move('public.t_rules_move'::regproc)`))).rejects.toThrow();
   });
 });

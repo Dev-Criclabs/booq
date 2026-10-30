@@ -44,6 +44,7 @@ const counts = async () => ({
 
 beforeEach(async () => {
   tdb = await createTestDatabase();
+  await tdb.seedNotice();   // sign-up checks the current notice version (D152)
   server = await line.serve();
   await tdb.query(`insert into public.club (id, slug, name_th, name_en, status) values ($1,'a','ก','A','live')`, [A]);
   await tdb.query(`insert into public.line_connection (club_id, login_channel_id, liff_id) values ($1,'loginA','liffA')`, [A]);
@@ -109,6 +110,15 @@ describe('what is refused creates nothing (AUTH-02-AC2, AC3)', () => {
     }
     expect(await complete(cookie, 'nope')).toEqual({ ok: false, status: 400, code: 'bad_input' });
     expect((await counts()).users).toBe(2);
+  });
+  it('without a language in the body, the guest’s lang cookie is used, then the club default (AUTH-02-AC27)', async () => {
+    const { language: _drop, ...noLanguage } = GOOD;
+    const a = await pending();
+    expect(await complete(`${a}; lang=en`, noLanguage)).toEqual({ ok: true, state: 'active' });
+    expect((await players())[0]!.language).toBe('en');
+    const b = await pending('UTESTER');
+    expect(await complete(b, noLanguage)).toEqual({ ok: true, state: 'active' });
+    expect((await players()).find((p) => p.line_user_id === 'UTESTER')!.language).toBe('th'); // the club's default
   });
   it('a bad language or notice version is refused', async () => {
     const cookie = await pending();

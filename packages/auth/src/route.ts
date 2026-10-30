@@ -53,11 +53,14 @@ export class Reply<T> {
 
 export type RouteResult<T> =
   | { ok: true; status: 200; body: T }
-  | { ok: false; status: number; code: string };
+  | { ok: false; status: number; code: string; params?: RouteParams };
 
 /** A typed refusal from a handler: a status and a code, never text (TEXT-01). */
+export type RouteParams = Readonly<Record<string, string | number | boolean>>;
+
 export class RouteError extends Error {
-  constructor(readonly status: number, readonly code: string) {
+  /** `params` carry plain values the client needs to choose the right text (for example `{ hours: 4 }`); they are never text themselves. */
+  constructor(readonly status: number, readonly code: string, readonly params?: RouteParams) {
     super(code);
   }
 }
@@ -106,7 +109,7 @@ export function route<T>(def: RouteDeclaration, handler: (ctx: RouteContext) => 
         const ctx = { ...(session as RouteSession), input: req.input, cookie: req.cookie, body: req.body, rawBody: req.rawBody, headers: req.headers };
         return { ok: true, status: 200, body: await handler(ctx) };
       } catch (e) {
-        if (e instanceof RouteError) return { ok: false, status: e.status, code: e.code };
+        if (e instanceof RouteError) return { ok: false, status: e.status, code: e.code, ...(e.params ? { params: e.params } : {}) };
         return { ok: false, status: 500, code: 'internal' };
       }
     },

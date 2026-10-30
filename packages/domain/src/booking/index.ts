@@ -6,3 +6,4 @@ export * from './errors';
 export * from './schedule';
 export * from './player';
 export * from './idempotency';
+export * from './staff';

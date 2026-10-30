@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Reply, route, RouteError, type RouteSession } from './route';
 import { serveRoutes, type ServeDeps } from './serve';
+import { createRateLimiter } from './rate-limit';
 import { findUndeclaredRoutes } from './check';
 
 // F02 / apps/web transport: serveRoutes turns a table of declared routes into a standard
@@ -164,7 +165,81 @@ describe('build check accepts serveRoutes', () => {
   it('serveRoutes(table, deps) counts as declared; a bare handler or a wrapper around nothing does not', () => {
     expect(findUndeclaredRoutes(file('export const GET = serveRoutes(table, deps);'))).toEqual([]);
     expect(findUndeclaredRoutes(file('export const POST = serveRoutes<unknown>(\n table, deps);'))).toEqual([]);
+    expect(findUndeclaredRoutes(file('export const GET = servePlatform(platformSource);'))).toEqual([]);
     expect(findUndeclaredRoutes(file('export const GET = async () => new Response("x");'))).toHaveLength(1);
     expect(findUndeclaredRoutes(file('export const GET = somethingElse(table);'))).toHaveLength(1);
+  });
+});
+
+describe('Idempotency-Key header', () => {
+  const idem = route({ method: 'POST', path: '/pay', public: true }, async (ctx) => ({ key: (ctx.input as { idempotencyKey?: unknown }).idempotencyKey ?? null }));
+  const h = serveRoutes([idem], deps());
+  it('arrives as input.idempotencyKey, and a value in the body or query cannot stand in for it', async () => {
+    const r = await call(h, 'POST', '/api/c/hunter/pay?idempotencyKey=fromquery', { body: { idempotencyKey: 'frombody' }, headers: { 'idempotency-key': 'key-123_ABC' } });
+    expect(await r.json()).toEqual({ key: 'key-123_ABC' });
+    const none = await call(h, 'POST', '/api/c/hunter/pay?idempotencyKey=fromquery', { body: { idempotencyKey: 'frombody' } });
+    expect(await none.json()).toEqual({ key: null });
+  });
+  it.each(['has space', 'a'.repeat(201), 'ünï'])('refuses the header value %j', async (v) => {
+    const r = await call(h, 'POST', '/api/c/hunter/pay', { body: {}, headers: { 'idempotency-key': v } });
+    expect(r.status).toBe(400);
+  });
+});
+
+describe('typed params on a refusal', () => {
+  const limited = route({ method: 'GET', path: '/limit', public: true }, async () => {
+    throw new RouteError(409, 'limit_reached', { hours: 4 });
+  });
+  const taken = route({ method: 'GET', path: '/taken', public: true }, async () => {
+    throw new RouteError(409, 'slot_unavailable', { by: 'coach' });
+  });
+  const plain = route({ method: 'GET', path: '/plain', public: true }, async () => {
+    throw new RouteError(404, 'not_found');
+  });
+  const h = serveRoutes([limited, taken, plain], deps());
+  it('are returned beside the code, so the client can pick the right text', async () => {
+    const a = await call(h, 'GET', '/api/c/hunter/limit');
+    expect([a.status, await a.json()]).toEqual([409, { code: 'limit_reached', params: { hours: 4 } }]);
+    const b = await call(h, 'GET', '/api/c/hunter/taken');
+    expect(await b.json()).toEqual({ code: 'slot_unavailable', params: { by: 'coach' } });
+  });
+  it('are absent when the route gave none: existing callers still get codes only', async () => {
+    const r = await call(h, 'GET', '/api/c/hunter/plain');
+    expect(await r.json()).toEqual({ code: 'not_found' });
+  });
+  it('only plain values are carried: strings, numbers and booleans, short', async () => {
+    const weird = route({ method: 'GET', path: '/weird', public: true }, async () => {
+      throw new RouteError(400, 'bad', { ok: true, n: 1, s: 'x', obj: { a: 1 } as never, long: 'y'.repeat(300) });
+    });
+    const r = await call(serveRoutes([weird], deps()), 'GET', '/api/c/hunter/weird');
+    expect(await r.json()).toEqual({ code: 'bad', params: { ok: true, n: 1, s: 'x' } });
+  });
+});
+
+describe('rate limit on chosen routes', () => {
+  const at = { t: 5_000_000 };
+  const limited = () =>
+    serveRoutes(
+      [route({ method: 'POST', path: '/auth/session', public: true }, async () => ({ ok: 1 })), route({ method: 'GET', path: '/public/config', public: true }, async () => 'cfg')],
+      deps({ rateLimit: { limiter: createRateLimiter({ limit: 2, windowSeconds: 60, now: () => new Date(at.t) }), routes: ['POST /auth/session'] } }),
+    );
+  it('refuses the attempt after the limit with 429, rate_limited and Retry-After', async () => {
+    const h = limited();
+    const ip = { 'x-forwarded-for': '203.0.113.9, 10.0.0.1' };
+    expect((await call(h, 'POST', '/api/c/hunter/auth/session', { body: {}, headers: ip })).status).toBe(200);
+    expect((await call(h, 'POST', '/api/c/hunter/auth/session', { body: {}, headers: ip })).status).toBe(200);
+    const third = await call(h, 'POST', '/api/c/hunter/auth/session', { body: {}, headers: ip });
+    expect([third.status, await third.json(), third.headers.get('retry-after')]).toEqual([429, { code: 'rate_limited' }, '60']);
+  });
+  it('counts per caller and per club, leaves other routes alone, and opens when the window ends', async () => {
+    const h = limited();
+    const a = { 'x-real-ip': '198.51.100.1' };
+    for (let i = 0; i < 2; i += 1) await call(h, 'POST', '/api/c/hunter/auth/session', { body: {}, headers: a });
+    expect((await call(h, 'POST', '/api/c/hunter/auth/session', { body: {}, headers: a })).status).toBe(429);
+    expect((await call(h, 'POST', '/api/c/hunter/auth/session', { body: {}, headers: { 'x-real-ip': '198.51.100.2' } })).status).toBe(200);
+    expect((await call(h, 'POST', '/api/c/other-club/auth/session', { body: {}, headers: a })).status).toBe(200);
+    expect((await call(h, 'GET', '/api/c/hunter/public/config', { headers: a })).status).toBe(200);
+    at.t += 61_000;
+    expect((await call(h, 'POST', '/api/c/hunter/auth/session', { body: {}, headers: a })).status).toBe(200);
   });
 });

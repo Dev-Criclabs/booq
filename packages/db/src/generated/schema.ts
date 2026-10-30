@@ -29,6 +29,15 @@ export interface AppFeatureKeys {
   requires_payment_option: string | null;
 }
 
+export interface AppLaunchProducers {
+  check_key: string;
+  kind: string;
+  derive_fn: unknown | null;
+  guard_fn: unknown | null;
+  only_payment_option: string | null;
+  task: string;
+}
+
 export interface AppMoveHandlers {
   name: string;
   handler: unknown;
@@ -41,6 +50,11 @@ export interface AppPauseHandlers {
   created_at: string;
 }
 
+export interface AppPaymentPorts {
+  port: string;
+  handler: unknown;
+}
+
 export interface AppReleaseHandlers {
   name: string;
   handler: unknown;
@@ -49,6 +63,8 @@ export interface AppReleaseHandlers {
 
 export interface AppSettingKeys {
   setting_key: string;
+  required: boolean;
+  slip_only: boolean;
 }
 
 export interface AppSetupSteps {
@@ -120,6 +136,21 @@ export interface PlatformLaunchCheck {
   result: string;
   checked_at: string | null;
   checked_by: string | null;
+}
+
+export interface PlatformLegalRelease {
+  seq: number;
+  version: string | null;
+  published_at: string;
+  published_by: string;
+}
+
+export interface PlatformLegalText {
+  seq: number;
+  kind: string;
+  language: string;
+  title: string;
+  body: string;
 }
 
 export interface PlatformOwnerContactChange {
@@ -454,6 +485,36 @@ export interface PublicCourtPriceRule {
   price_satang: number;
 }
 
+export interface PublicCreditLedger {
+  club_id: string;
+  id: string;
+  package_id: string;
+  change: number;
+  reason: string;
+  booking_id: string | null;
+  order_line_id: string | null;
+  staff_id: string | null;
+  note: string | null;
+  dedupe_key: string | null;
+  is_test: boolean;
+  created_at: string;
+}
+
+export interface PublicCustomerPackage {
+  club_id: string;
+  id: string;
+  customer_id: string;
+  product_id: string;
+  product_snapshot: unknown;
+  credits_total: number;
+  purchased_at: string;
+  purchase_date: string;
+  expires_at: string;
+  order_id: string | null;
+  is_test: boolean;
+  created_at: string;
+}
+
 export interface PublicDataExport {
   club_id: string;
   id: string;
@@ -530,6 +591,33 @@ export interface PublicLocation {
   name: string;
 }
 
+export interface PublicMessageOutbox {
+  club_id: string;
+  id: string;
+  user_id: string;
+  kind: string;
+  params: unknown;
+  dedupe_key: string;
+  send_at: string;
+  status: string;
+  void_reason: string | null;
+  attempts: number;
+  last_error: string | null;
+  retry_key: string;
+  sent_at: string | null;
+  is_test: boolean;
+  created_at: string;
+}
+
+export interface PublicNotificationPref {
+  club_id: string;
+  id: string;
+  user_id: string;
+  reminders: boolean;
+  promotions: boolean;
+  is_test: boolean;
+}
+
 export interface PublicOccupancy {
   club_id: string;
   id: string;
@@ -598,6 +686,7 @@ export interface PublicOrders {
   birthday_entitlement: boolean | null;
   quote_hash: string | null;
   priced_at: string | null;
+  kind: string;
 }
 
 export interface PublicOwnerFlag {
@@ -622,6 +711,35 @@ export interface PublicOwnerNotice {
   created_at: string;
   seen_at: string | null;
   seen_by: string | null;
+}
+
+export interface PublicPackageExtension {
+  club_id: string;
+  id: string;
+  package_id: string;
+  kind: string;
+  old_expires_at: string;
+  new_expires_at: string;
+  reason: string | null;
+  staff_id: string | null;
+  pause_id: string | null;
+  is_test: boolean;
+  created_at: string;
+}
+
+export interface PublicPackageProduct {
+  club_id: string;
+  id: string;
+  name_th: string;
+  name_en: string;
+  credit_type: string;
+  credits: number;
+  validity_months: number;
+  price_group_id: string | null;
+  coach_tier_id: string | null;
+  price_satang: number | null;
+  active: boolean;
+  created_at: string;
 }
 
 export interface PublicPartner {
@@ -652,6 +770,7 @@ export interface PublicPayment {
   confirmed_at: string | null;
   is_test: boolean;
   created_at: string;
+  received_satang: number | null;
 }
 
 export interface PublicPaymentConnection {
@@ -724,6 +843,13 @@ export interface PublicPromoRedemption {
   is_test: boolean;
 }
 
+export interface PublicRateLimitHit {
+  club_id: string;
+  key_hash: string;
+  window_start: string;
+  hits: number;
+}
+
 export interface PublicResource {
   club_id: string;
   id: string;
@@ -756,14 +882,42 @@ export interface PublicUserStaffNote {
   is_test: boolean;
 }
 
+export interface PublicWalletAccount {
+  club_id: string;
+  id: string;
+  customer_id: string;
+  is_test: boolean;
+  created_at: string;
+}
+
+export interface PublicWalletLedger {
+  club_id: string;
+  id: string;
+  customer_id: string;
+  change_satang: string;
+  reason: string;
+  booking_id: string | null;
+  order_id: string | null;
+  order_line_id: string | null;
+  payment_id: string | null;
+  referral_id: string | null;
+  staff_id: string | null;
+  note: string | null;
+  dedupe_key: string | null;
+  is_test: boolean;
+  created_at: string;
+}
+
 export interface Tables {
   'app.anonymise_handlers': AppAnonymiseHandlers;
   'app.claim_handlers': AppClaimHandlers;
   'app.coach_rules_hook': AppCoachRulesHook;
   'app.deletion_impact_handlers': AppDeletionImpactHandlers;
   'app.feature_keys': AppFeatureKeys;
+  'app.launch_producers': AppLaunchProducers;
   'app.move_handlers': AppMoveHandlers;
   'app.pause_handlers': AppPauseHandlers;
+  'app.payment_ports': AppPaymentPorts;
   'app.release_handlers': AppReleaseHandlers;
   'app.setting_keys': AppSettingKeys;
   'app.setup_steps': AppSetupSteps;
@@ -775,6 +929,8 @@ export interface Tables {
   'platform.config': PlatformConfig;
   'platform.export_request': PlatformExportRequest;
   'platform.launch_check': PlatformLaunchCheck;
+  'platform.legal_release': PlatformLegalRelease;
+  'platform.legal_text': PlatformLegalText;
   'platform.owner_contact_change': PlatformOwnerContactChange;
   'platform.platform_staff': PlatformPlatformStaff;
   'platform.staff_assignment': PlatformStaffAssignment;
@@ -804,6 +960,8 @@ export interface Tables {
   'public.coach_tier': PublicCoachTier;
   'public.coach_tier_price': PublicCoachTierPrice;
   'public.court_price_rule': PublicCourtPriceRule;
+  'public.credit_ledger': PublicCreditLedger;
+  'public.customer_package': PublicCustomerPackage;
   'public.data_export': PublicDataExport;
   'public.data_request': PublicDataRequest;
   'public.idempotency_key': PublicIdempotencyKey;
@@ -811,12 +969,16 @@ export interface Tables {
   'public.import_row': PublicImportRow;
   'public.line_connection': PublicLineConnection;
   'public.location': PublicLocation;
+  'public.message_outbox': PublicMessageOutbox;
+  'public.notification_pref': PublicNotificationPref;
   'public.occupancy': PublicOccupancy;
   'public.opening_hours': PublicOpeningHours;
   'public.order_line': PublicOrderLine;
   'public.orders': PublicOrders;
   'public.owner_flag': PublicOwnerFlag;
   'public.owner_notice': PublicOwnerNotice;
+  'public.package_extension': PublicPackageExtension;
+  'public.package_product': PublicPackageProduct;
   'public.partner': PublicPartner;
   'public.payment': PublicPayment;
   'public.payment_connection': PublicPaymentConnection;
@@ -824,7 +986,10 @@ export interface Tables {
   'public.price_group': PublicPriceGroup;
   'public.promo_code': PublicPromoCode;
   'public.promo_redemption': PublicPromoRedemption;
+  'public.rate_limit_hit': PublicRateLimitHit;
   'public.resource': PublicResource;
   'public.user_consent': PublicUserConsent;
   'public.user_staff_note': PublicUserStaffNote;
+  'public.wallet_account': PublicWalletAccount;
+  'public.wallet_ledger': PublicWalletLedger;
 }

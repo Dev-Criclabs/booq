@@ -41,7 +41,7 @@ Depends on: F01 T03 to T07 (database, context, tenant suite), T08 (settings), T1
 - [x] **F03-T14** `app.reclaim_order` for a late payment. IDs: BOOK-03-AC7, AC8, decision D25. Role: BE-B · Deps T13 · Size: M
   Tests first: slot open reclaims and confirms; slot taken, held or closed raises `slot_unavailable`; a solo class with the coach busy raises it and leaves nothing partial.
 - [x] **F03-T15** `app.move_booking` (staff): in-place update, conflicts re-checked by the constraints, coach rules, customer message enqueued. IDs: BOOK-04-AC7. Role: BE-B · Deps T08 · Size: M
-  Tests first: a move onto a taken slot or a busy coach is refused and nothing changes; a successful move enqueues one message.
+  Tests first: a move onto a taken slot or a busy coach is refused and nothing changes; a successful move enqueues one message; in a Paused club owner and front desk may still move (D107, migration 0225 replaces 0219's owner-only check).
 - [x] **F03-T16** Opening hours and court change guard `app.count_live_occupancy`, called by the F01 `PUT /hours` and `PUT /resources/{id}` routes. IDs: decision D50. Role: BE-B · Deps T08, F01-T08 · Size: S
   Tests first: shortening hours or deactivating a court over a live booking is refused with the closure hint; with no bookings it succeeds.
 
@@ -62,8 +62,9 @@ Depends on: F01 T03 to T07 (database, context, tenant suite), T08 (settings), T1
   Tests first: guest access works; the response has the seven states (the client adds Selected), `mine` only for a signed in player, `waitlist` flag; a full day reports Day full.
 - [x] **F03-T21** Player routes `GET /bookings/{id}` and `POST /bookings/{id}/release`. IDs: BOOK-03-AC14, ROLE-AC4. Role: BE-B · Deps T06, T13 · Size: S
   Tests first: another player's booking is 404; releasing a confirmed booking is refused.
-- [ ] **F03-T22** Staff routes `POST /staff/bookings`, `PUT /staff/bookings/{id}/move`, `POST /staff/bookings/{id}/release`, with permissions and the Paused rule (owner may still manage existing bookings). IDs: BOOK-04-AC7, decisions D43, D60. Role: BE-B · Deps T10, T15 · Size: M
-  Tests first: front desk and owner only; a staff booking awaiting payment holds for the hold time; in a Paused club front desk is refused and the owner can move and release.
+- [x] **F03-T22** Staff routes `PUT /staff/bookings/{id}/move` and `POST /staff/bookings/{id}/release`, with permissions and the Paused rule (owner and front desk may still manage existing bookings, D107). IDs: BOOK-04-AC7, decisions D43, D60, D107. Role: BE-B · Deps T10, T15 · Size: M
+  Tests first: front desk and owner only; in a Paused club owner and front desk can move and release.
+  `POST /staff/bookings` is superseded by F04's `POST /staff/orders/quote` and `/pay` (F04-T13), which price the order and call `reserve_court`; its test "a staff booking awaiting payment holds for the hold time" moved to F04-T13.
 - [ ] **F03-T23** Performance check of the schedule: seeded month of bookings, throttled 4G profile, under 2 seconds, loading and offline states. IDs: BOOK-01-AC13. Role: QA · Deps T20 · Size: S
   Tests first: the budget test is the task; fails if over.
 
@@ -87,9 +88,17 @@ Depends on: F01 T03 to T07 (database, context, tenant suite), T08 (settings), T1
 
 F04 calls `reserve_court` from its Pay route and builds the order lines on the `orders` shell. F05 calls `confirm_booking` and `reclaim_order`. F06 registers its release handler. F07 registers `coach_rules_check`. F08 registers the waitlist advance handler and owns the Join waitlist screens. F09 calls `release_hold` for closures. F10 supplies the outbox behind the released and moved messages.
 
-- [ ] **F03-T29** Migration 0222 or the next free `02xx` number: `app.add_coach_to_booking(booking, coach)` (definer): claims the coach on an existing confirmed court booking under the same exclusion constraint, turns the booking into a solo class, runs the coach rules hook, and refuses with `slot_unavailable by coach` when the coach is busy. IDs: BOOK-04-AC2, AC3, R2-AC9 (F04), decision D111. Role: Arch · Deps F03-T02, T09 · Size: S
+- [~] **F03-T29** **Superseded by F07-T06 (orchestrator decision, 30 Oct 2026): not built; F07-T06 owns `app.add_coach_to_booking(booking, coach, order)`.** Original text: Migration 0222 or the next free `02xx` number: `app.add_coach_to_booking(booking, coach)` (definer): claims the coach on an existing confirmed court booking under the same exclusion constraint, turns the booking into a solo class, runs the coach rules hook, and refuses with `slot_unavailable by coach` when the coach is busy. IDs: BOOK-04-AC2, AC3, R2-AC9 (F04), decision D111. Role: Arch · Deps F03-T02, T09 · Size: S
   Tests first: a busy coach refuses and the booking is unchanged; a free coach is claimed and the occupancy row now holds court and coach; a second coach on the same hour is refused by the database; another club's booking is not found; only the booking's owner or staff may add a coach.
 
 ## Order and size
 
 T01 to T06 first (data and release), then T07 to T14 in sequence (the claim), T15 and T16 in parallel, then B, C and D in parallel, then E. About 28 tasks.
+
+## Follow-ups added by F07 and F08 (gate 3 of those features, 30 Oct 2026)
+
+- [ ] **F03-T30** Migration 0411 (rule D159: it redefines `release_hold` and the release reason CHECK, last defined by F05's 0403, so it is numbered above 0403 and above F05's 0409): `booking.release_reason` gains `offer_ended` (a waitlist offer that ended: declined, expired or passed on); F10's `booking_released` skips it as it skips `payment_unavailable`. IDs: CLASS-02-AC2, AC14, WAIT-01-AC3, D155. Role: BE-B · Deps F03-T02 (booking), F08 design C-1 · Size: S
+  Tests first: `release_hold(booking, 'offer_ended')` releases the hold and returns every reservation through the release handlers; the reason is accepted only for a booking with a `waitlist_entry_id` once F08-T03 exists; existing reasons are unchanged.
+- [x] **F03-T31** Migration 0227 (rule D159: it redefines `move_booking`, last defined by 0225, the D107 Paused change, so it is numbered above 0225): `app.move_booking` calls the second coach rules handler `app.coach_rules_check_move(club, coach, resource, starts[], booking)` that F07-T03 registers with `app.register_coach_rules_move`, so a moved booking ignores its own row. IDs: COACH-01-AC11, R3 (F07), BOOK-06. Role: BE-B · Deps F03 `move_booking`, F07-T03 · Size: S
+  Tests first: moving a booking inside a six hour run does not count its own row twice; a move that breaks the rest rule is refused; with F07 not installed the move behaves as before.
+
