@@ -41,13 +41,10 @@ export const mounts: readonly Mount[] = [
     }),
   (m) => claimRoutes({ db: m.db, service: () => createClaimService() }),
   (m) => dataRequestRoutes({ db: m.db, service: () => createDataRequestService() }),
-<<<<<<< HEAD
   (m) => staffRoutes({ db: m.db }),
   (m) => dobHistoryRoutes({ db: m.db }),
   (m) => lineFriendRoutes({ db: m.db }),
-=======
   (m) => [publicScheduleRoutes, playerBookingRoutes, staffBookingRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
->>>>>>> origin/main
   (m) => profileRoutes({ db: m.db, service: () => createProfileEditService({ today: () => bangkokDate(m.now()) }) }),
   (m) => checkoutRoutes({ db: m.db, clubBySlug: m.clubBySlug, sources: quoteSources }),
 ];
