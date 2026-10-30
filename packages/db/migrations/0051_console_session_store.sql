@@ -18,7 +18,10 @@ create index console_session_by_staff on platform.console_session (staff_id);
 create table platform.console_challenge (
   id_hash text primary key check (id_hash ~ '^[0-9a-f]{64}$'),
   staff_id uuid not null references platform.platform_staff (id),
-  expires_at timestamptz not null
+  expires_at timestamptz not null,
+  -- The identity provider's first-step token, kept server side under the opaque challenge id. The application seals it
+  -- (AES-256-GCM) before it gets here, so the column never holds a usable token; it is never logged.
+  provider_token_enc text check (provider_token_enc is null or provider_token_enc like 'v1.%')
 );
 
 create table platform.console_login_state (
@@ -68,16 +71,17 @@ create function platform.console_sessions_delete_for(p_staff uuid) returns void
 language sql security definer set search_path = pg_catalog, pg_temp
 as $$ delete from platform.console_session where staff_id = p_staff $$;
 
-create function platform.console_challenge_put(p_id_hash text, p_staff uuid, p_expires bigint) returns void
+create function platform.console_challenge_put(p_id_hash text, p_staff uuid, p_expires bigint, p_provider_token_enc text) returns void
 language sql security definer set search_path = pg_catalog, pg_temp
 as $$
-  insert into platform.console_challenge (id_hash, staff_id, expires_at) values (p_id_hash, p_staff, platform.console_ts(p_expires))
-  on conflict (id_hash) do update set staff_id = excluded.staff_id, expires_at = excluded.expires_at
+  insert into platform.console_challenge (id_hash, staff_id, expires_at, provider_token_enc)
+    values (p_id_hash, p_staff, platform.console_ts(p_expires), p_provider_token_enc)
+  on conflict (id_hash) do update set staff_id = excluded.staff_id, expires_at = excluded.expires_at, provider_token_enc = excluded.provider_token_enc
 $$;
 
-create function platform.console_challenge_get(p_id_hash text) returns table (staff_id uuid, expires_at bigint)
+create function platform.console_challenge_get(p_id_hash text) returns table (staff_id uuid, expires_at bigint, provider_token_enc text)
 language sql stable security definer set search_path = pg_catalog, pg_temp
-as $$ select c.staff_id, platform.console_ms(c.expires_at) from platform.console_challenge c where c.id_hash = p_id_hash $$;
+as $$ select c.staff_id, platform.console_ms(c.expires_at), c.provider_token_enc from platform.console_challenge c where c.id_hash = p_id_hash $$;
 
 create function platform.console_challenge_delete(p_id_hash text) returns void
 language sql security definer set search_path = pg_catalog, pg_temp
@@ -135,7 +139,7 @@ begin
     'platform.console_ms(timestamptz)', 'platform.console_ts(bigint)',
     'platform.console_session_put(text, uuid, bigint, bigint, bigint)', 'platform.console_session_get(text)',
     'platform.console_session_delete(text)', 'platform.console_sessions_delete_for(uuid)',
-    'platform.console_challenge_put(text, uuid, bigint)', 'platform.console_challenge_get(text)', 'platform.console_challenge_delete(text)',
+    'platform.console_challenge_put(text, uuid, bigint, text)', 'platform.console_challenge_get(text)', 'platform.console_challenge_delete(text)',
     'platform.console_failure_add(uuid)', 'platform.console_failure_clear(uuid)', 'platform.console_lock_set(uuid, bigint)', 'platform.console_lock_get(uuid)',
     'app.sweep_console_sessions(integer)'] loop
     execute format('alter function %s owner to booq_owner', f);
@@ -145,7 +149,7 @@ begin
     'platform.console_ms(timestamptz)', 'platform.console_ts(bigint)',
     'platform.console_session_put(text, uuid, bigint, bigint, bigint)', 'platform.console_session_get(text)',
     'platform.console_session_delete(text)', 'platform.console_sessions_delete_for(uuid)',
-    'platform.console_challenge_put(text, uuid, bigint)', 'platform.console_challenge_get(text)', 'platform.console_challenge_delete(text)',
+    'platform.console_challenge_put(text, uuid, bigint, text)', 'platform.console_challenge_get(text)', 'platform.console_challenge_delete(text)',
     'platform.console_failure_add(uuid)', 'platform.console_failure_clear(uuid)', 'platform.console_lock_set(uuid, bigint)', 'platform.console_lock_get(uuid)'] loop
     execute format('grant execute on function %s to booq_platform', f);
   end loop;

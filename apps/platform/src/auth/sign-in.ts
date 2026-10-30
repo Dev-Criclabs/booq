@@ -58,6 +58,8 @@ export interface ChallengeRecord {
   id: string;
   staffId: string;
   expiresAt: number;
+  /** The identity provider's first-step token, kept server side under the challenge id. Sealed at rest by the database store; never logged. */
+  providerToken?: string;
 }
 
 export interface AuthStore {

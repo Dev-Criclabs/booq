@@ -8,6 +8,7 @@ import { createDbAuditSink, createDbAuthStore, createDbStaffDirectory } from './
 // The shared console session store (migration 0051): the AuthStore contract over Postgres, the ids hashed at rest,
 // the failure count atomic, and one process able to continue what another began.
 const KEY = 'k'.repeat(48);
+const SEAL = 's'.repeat(48);
 const AUTH_USER = '99999999-0000-4000-8000-000000000001';
 const identity: IdentityProvider = {
   async verifyPassword(email, password) {
@@ -34,7 +35,7 @@ afterEach(async () => {
 
 describe('AuthStore over Postgres', () => {
   it('keeps a session and a challenge, updates a session, and forgets them', async () => {
-    const store = createDbAuthStore(pdb);
+    const store = createDbAuthStore(pdb, { sealKey: SEAL });
     await store.putSession({ id: 'sess-1', staffId, createdAt: 1_800_000_000_123, lastSeenAt: 1_800_000_000_123, stepUpAt: 1_800_000_000_123 });
     expect(await store.getSession('sess-1')).toEqual({ id: 'sess-1', staffId, createdAt: 1_800_000_000_123, lastSeenAt: 1_800_000_000_123, stepUpAt: 1_800_000_000_123 });
     await store.putSession({ id: 'sess-1', staffId, createdAt: 5, lastSeenAt: 1_800_000_060_000, stepUpAt: 1_800_000_030_000 });
@@ -49,7 +50,7 @@ describe('AuthStore over Postgres', () => {
   });
 
   it('ends every session of one staff member and only theirs', async () => {
-    const store = createDbAuthStore(pdb);
+    const store = createDbAuthStore(pdb, { sealKey: SEAL });
     const other = (await tdb.query(`insert into platform.platform_staff (auth_user_id, email, display_name, role) values ('99999999-0000-4000-8000-000000000002','sam@booq.example','Sam','onboarding_specialist') returning id`)).rows[0].id;
     for (const [id, who] of [['a', staffId], ['b', staffId], ['c', other]] as const) await store.putSession({ id, staffId: who, createdAt: 1, lastSeenAt: 1, stepUpAt: 1 });
     await store.deleteSessionsFor(staffId);
@@ -58,7 +59,7 @@ describe('AuthStore over Postgres', () => {
   });
 
   it('counts failures atomically, clears them, and keeps the lock', async () => {
-    const store = createDbAuthStore(pdb);
+    const store = createDbAuthStore(pdb, { sealKey: SEAL });
     const counts = await Promise.all([1, 2, 3, 4].map(() => store.addFailure(staffId)));
     expect([...counts].sort()).toEqual([1, 2, 3, 4]);
     await store.clearFailures(staffId);
@@ -70,7 +71,7 @@ describe('AuthStore over Postgres', () => {
   });
 
   it('holds only a hash of each id, and the tables cannot be read or changed by the console role', async () => {
-    const store = createDbAuthStore(pdb);
+    const store = createDbAuthStore(pdb, { sealKey: SEAL });
     await store.putSession({ id: 'secret-session-id', staffId, createdAt: 1, lastSeenAt: 1, stepUpAt: 1 });
     await store.putChallenge({ id: 'secret-challenge-id', staffId, expiresAt: 2 });
     const stored = JSON.stringify([...(await tdb.query('select * from platform.console_session')).rows, ...(await tdb.query('select * from platform.console_challenge')).rows]);
@@ -82,14 +83,37 @@ describe('AuthStore over Postgres', () => {
   });
 
   it('refuses a malformed hash and an unknown staff member', async () => {
-    const store = createDbAuthStore(pdb);
+    const store = createDbAuthStore(pdb, { sealKey: SEAL });
     await expect(store.putSession({ id: 'x', staffId: '99999999-9999-4999-8999-999999999999', createdAt: 1, lastSeenAt: 1, stepUpAt: 1 })).rejects.toThrow();
+  });
+});
+
+describe('the provider token', () => {
+  it('is kept under the challenge, sealed at rest, returned to the same key, and lost to a different key', async () => {
+    const store = createDbAuthStore(pdb, { sealKey: SEAL });
+    await store.putChallenge({ id: 'chal-t', staffId, expiresAt: 5, providerToken: 'provider-first-step-token' });
+    expect((await store.getChallenge('chal-t'))?.providerToken).toBe('provider-first-step-token');
+    const raw = JSON.stringify((await tdb.query('select * from platform.console_challenge')).rows);
+    expect(raw).not.toContain('provider-first-step-token');
+    expect(raw).toContain('v1.');
+    expect((await createDbAuthStore(pdb, { sealKey: 'x'.repeat(48) }).getChallenge('chal-t'))).toEqual({ id: 'chal-t', staffId, expiresAt: 5 });
+    await store.putChallenge({ id: 'chal-n', staffId, expiresAt: 5 });
+    expect(await store.getChallenge('chal-n')).toEqual({ id: 'chal-n', staffId, expiresAt: 5 });
+  });
+  it('a short sealing key is refused', () => {
+    expect(() => createDbAuthStore(pdb, { sealKey: 'short' })).toThrow(/32/);
+  });
+  it('a sign-in that carries a token in the challenge is single use like any other', async () => {
+    const store = createDbAuthStore(pdb, { sealKey: SEAL });
+    await store.putChallenge({ id: 'once', staffId, expiresAt: 5, providerToken: 't' });
+    await store.deleteChallenge('once');
+    expect(await store.getChallenge('once')).toBeNull();
   });
 });
 
 describe('two processes, one store', () => {
   const build = (clock: ControllableClock, db: PlatformDb) =>
-    createPlatformAuth({ identity, staff: createDbStaffDirectory(db), audit: createDbAuditSink(db), store: createDbAuthStore(db), clock, signingKey: KEY });
+    createPlatformAuth({ identity, staff: createDbStaffDirectory(db), audit: createDbAuditSink(db), store: createDbAuthStore(db, { sealKey: SEAL }), clock, signingKey: KEY });
 
   it('a session begun in one process is accepted by another, and sign-out in one ends it in both', async () => {
     const clock = new ControllableClock('2026-12-01T03:00:00Z');

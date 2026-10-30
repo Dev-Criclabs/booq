@@ -108,7 +108,7 @@ export function createPlatformTable(parts: PlatformParts): PlatformSource {
     identity,
     staff: createDbStaffDirectory(db),
     audit: createDbAuditSink(db),
-    store: createDbAuthStore(db), // shared by every console process (migration 0051)
+    store: createDbAuthStore(db, { sealKey: config.signingKey }), // shared by every console process (migration 0051)
     clock,
     signingKey: config.signingKey,
   });

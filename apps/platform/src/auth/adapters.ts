@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHash, hkdfSync, randomBytes } from 'node:crypto';
 import type { PlatformDb } from '@booq/db';
 import type { AuditSink, AuthStore, StaffDirectory, StaffRecord } from './sign-in';
 
@@ -60,19 +60,42 @@ export class IdentityUnavailable extends Error {
  * hashed here before they leave the process, so the tables never hold a usable cookie. Times are
  * milliseconds since the epoch, from the application clock.
  */
-export function createDbAuthStore(db: PlatformDb): AuthStore {
+export function createDbAuthStore(db: PlatformDb, options: { sealKey: string }): AuthStore {
+  if (options.sealKey.length < 32) throw new Error('console store: the sealing key must be at least 32 characters');
   const hash = (id: string) => createHash('sha256').update(id).digest('hex');
+  // The provider's token is sealed with AES-256-GCM under a key derived from the console signing key, so a copy
+  // of the table alone does not yield it. Format: v1.<iv>.<tag>.<ciphertext>, base64url.
+  const sealKey = Buffer.from(hkdfSync('sha256', options.sealKey, 'booq-console', 'challenge-provider-token', 32));
+  const seal = (plain: string) => {
+    const iv = randomBytes(12);
+    const cipher = createCipheriv('aes-256-gcm', sealKey, iv);
+    const ct = Buffer.concat([cipher.update(plain, 'utf8'), cipher.final()]);
+    return `v1.${iv.toString('base64url')}.${cipher.getAuthTag().toString('base64url')}.${ct.toString('base64url')}`;
+  };
+  const unseal = (sealed: string): string | null => {
+    const [v, iv, tag, ct] = sealed.split('.');
+    if (v !== 'v1' || !iv || !tag || !ct) return null;
+    try {
+      const d = createDecipheriv('aes-256-gcm', sealKey, Buffer.from(iv, 'base64url'));
+      d.setAuthTag(Buffer.from(tag, 'base64url'));
+      return Buffer.concat([d.update(Buffer.from(ct, 'base64url')), d.final()]).toString('utf8');
+    } catch {
+      return null; // a different key or a changed value: as if there were no token
+    }
+  };
   const tx = <T>(run: (q: (sql: string, args: unknown[]) => Promise<Record<string, unknown>[]>) => Promise<T>) =>
     db.withPlatformTx({ staffId: null }, (t) => run(async (sql, args) => (await t.query(sql, args)).rows as Record<string, unknown>[]));
   const call = (sql: string, args: unknown[]) => tx((q) => q(sql, args));
   const num = (v: unknown) => Number(v);
   return {
     async putChallenge(c) {
-      await call('select platform.console_challenge_put($1, $2, $3)', [hash(c.id), c.staffId, c.expiresAt]);
+      await call('select platform.console_challenge_put($1, $2, $3, $4)', [hash(c.id), c.staffId, c.expiresAt, c.providerToken === undefined ? null : seal(c.providerToken)]);
     },
     async getChallenge(id) {
-      const r = (await call('select staff_id, expires_at from platform.console_challenge_get($1)', [hash(id)]))[0];
-      return r ? { id, staffId: String(r['staff_id']), expiresAt: num(r['expires_at']) } : null;
+      const r = (await call('select staff_id, expires_at, provider_token_enc from platform.console_challenge_get($1)', [hash(id)]))[0];
+      if (!r) return null;
+      const token = r['provider_token_enc'] === null ? null : unseal(String(r['provider_token_enc']));
+      return { id, staffId: String(r['staff_id']), expiresAt: num(r['expires_at']), ...(token === null ? {} : { providerToken: token }) };
     },
     async deleteChallenge(id) {
       await call('select platform.console_challenge_delete($1)', [hash(id)]);
