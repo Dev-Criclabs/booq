@@ -1,12 +1,9 @@
-import { createClaimService, createDataRequestService, createImportService, normalizePhone } from '@booq/domain';
+import { createClaimService } from '@booq/domain';
 import { createDbDirectory, createProfileService, createPublicConfigService, createSignInService, type LineVerifier, type RouteSession, type ServeDeps } from '@booq/auth';
 import type { Db } from '@booq/db';
-import { bangkokDate } from '@booq/time';
 import type { Route } from '@booq/auth';
 import { authRoutes } from '../api/auth/routes';
-import { claimRoutes } from '../api/claim/routes';
-import { dataRequestRoutes } from '../api/data-request/routes';
-import { importRoutes } from '../api/import/routes';
+import { mounts, type Mount } from './mounts';
 
 // The web app's composition root (F02, F01): the one place that wires the database, the LINE
 // verifier and the clock into the services and the route table. Settings are read from the
@@ -47,6 +44,8 @@ export interface WebParts {
   verifier: LineVerifier;
   now(): Date;
   config: WebConfig;
+  /** Extra mounts, for tests. The real ones are in mounts.ts. */
+  extraMounts?: readonly Mount[];
 }
 
 export function createWebTable(parts: WebParts): { table: Route<unknown>[]; deps: ServeDeps } {
@@ -59,13 +58,7 @@ export function createWebTable(parts: WebParts): { table: Route<unknown>[]; deps
 
   const table: Route<unknown>[] = [
     ...authRoutes({ signIn, profile, publicConfig }),
-    ...importRoutes({
-      db,
-      limits: config.importLimits,
-      service: (limits) => createImportService({ limits, today: () => bangkokDate(now()), normalizePhone }),
-    }),
-    ...claimRoutes({ db, service: () => claims }),
-    ...dataRequestRoutes({ db, service: () => createDataRequestService() }),
+    ...[...mounts, ...(parts.extraMounts ?? [])].flatMap((mount) => mount({ db, now, config })),
   ];
 
   return {
