@@ -13,6 +13,7 @@ export const tables: Fragment = {
   'public.club_status_change': { class: 'D' },
   // audit (F01-T10)
   'audit.registry': { class: 'infra' },
+  'app.test_tables': { class: 'infra' },   // F01-T26
   'public.audit_entry': { class: 'D' },
   'public.audit_erasure': { class: 'D' },
 };

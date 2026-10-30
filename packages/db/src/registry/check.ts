@@ -8,7 +8,10 @@ export type ProblemKind =
   | 'no-club-id'
   | 'no-unique-club-id-id'
   | 'personal-column-in-setup-table'
-  | 'wrong-schema-for-class';
+  | 'wrong-schema-for-class'
+  | 'is-test-not-registered'
+  | 'is-test-registered-without-column'
+  | 'is-test-trigger-missing';
 
 export interface Problem {
   kind: ProblemKind;
@@ -82,6 +85,32 @@ export async function checkTableClasses(db: Pick<Pool, 'query'>, registry: Regis
       for (const col of t.columns as string[]) {
         if (PERSONAL.test(col) && !allowed.has(col)) problems.push({ kind: 'personal-column-in-setup-table', table: key, detail: col });
       }
+    }
+  }
+
+  // Test-mode tables (F01-T26): every table with an is_test column is in app.test_tables, and back.
+  const reg = await db.query(`
+    select to_regclass('app.test_tables') is not null as present`);
+  if (reg.rows[0].present) {
+    const { rows: tt } = await db.query(
+      `select table_schema || '.' || table_name as key, auto_flag,
+              exists (select 1 from pg_trigger g where g.tgrelid = to_regclass(quote_ident(table_schema) || '.' || quote_ident(table_name))
+                        and g.tgname = 'is_test_set' and not g.tgisinternal) as has_set,
+              exists (select 1 from pg_trigger g where g.tgrelid = to_regclass(quote_ident(table_schema) || '.' || quote_ident(table_name))
+                        and g.tgname = 'is_test_keep' and not g.tgisinternal) as has_keep
+         from app.test_tables`,
+    );
+    const registered = new Map(tt.map((r) => [r.key as string, r]));
+    for (const t of rows) {
+      const key = `${t.schema}.${t.name}`;
+      const has = (t.columns as string[]).includes('is_test');
+      const r = registered.get(key);
+      if (has && !r) problems.push({ kind: 'is-test-not-registered', table: key });
+      if (!has && r) problems.push({ kind: 'is-test-registered-without-column', table: key });
+      if (has && r && ((r.auto_flag && !r.has_set) || !r.has_keep)) problems.push({ kind: 'is-test-trigger-missing', table: key });
+    }
+    for (const key of registered.keys()) {
+      if (!rows.some((t) => `${t.schema}.${t.name}` === key)) problems.push({ kind: 'is-test-registered-without-column', table: key, detail: 'table does not exist' });
     }
   }
 
