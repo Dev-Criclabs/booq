@@ -309,6 +309,7 @@ Isolation is READ COMMITTED. Correctness comes from constraints plus row locks t
 2. `wallet_account` and `customer_package` rows, ascending id
 2b. the `promo_code` row, when an order uses a code with a cap (counting a use at Pay, decision D66)
 3. `booking` and `class_session` rows, ascending id
+3c. the court advisory lock `app.lock_resource(resource)` (`pg_advisory_xact_lock(hash('resource', club_id, resource_id))`), ascending resource id, taken **immediately before** the write of an `occupancy` row and after every row lock above. Two claims of one court insert their rows and then each wait on the other's uncommitted row in the exclusion constraint; the lock queues them instead (migration 0229, BOOK-04-AC1, AC12). A transaction that holds a court lock takes no further lock except 4. Every function that writes court `occupancy` calls it: `reserve_court`, `move_booking`, `confirm_booking`, `reclaim_order` (F03); `add_coach_to_booking`, `f07_release`, `substitute_coach`, `reclaim_coach_add` (F07, 0810); `generate_sessions` (F08, 0905); `cancel_session` and the closure writers (F08, F09). A row the function inserts for itself (an add row, a substitution) is written before the lock, not after it.
 4. `receipt_counter` row, last
 
 `withClubTx` (§4) retries a transaction automatically on `40P01` (deadlock) and `40001`, up to three times, so every handler must be safe to run twice. Do not make HTTP calls (Beam, LINE) while holding locks. Call out after commit, or before the transaction starts.
@@ -624,7 +625,7 @@ Nothing left to pay (PAY-07) skips Beam: one transaction confirms the booking.
 7. If the looked-up status is not `SUCCEEDED`, record and stop.
 8. Run `applyPayment()` in the same transaction as the event insert; respond 200 after commit.
 
-PAY-02 says a bad signature or wrong amount "changes nothing". It is read as: no booking, order, payment status or ledger change. The immutable `payment_event` row is written because it is the evidence.
+PAY-02 says a bad signature or wrong amount "changes nothing". It is read as: no booking, order, payment status or ledger change. The immutable `payment_event` row is written because it is the evidence. **Exception (D147, migration 0414):** a call with a bad signature writes no `payment_event` row, because the row would take the dedupe key (charge id and event type) and block the real event that follows; the evidence is the P1 alert and a `club_health` row written by the server. A wrong amount with a valid signature is still logged.
 
 ### 6.6 `applyPayment()` (decision D25)
 

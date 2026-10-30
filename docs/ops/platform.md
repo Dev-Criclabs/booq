@@ -10,6 +10,7 @@ BOOQ staff sign in with email and a second factor (D3). The password check happe
 |---|---|---|
 | `DATABASE_URL` | yes | Role `booq_platform` only. Never `booq_app` or `booq_worker` credentials (FA 4.4) |
 | `PLATFORM_SIGNING_KEY` | yes | **Secret.** 32+ characters. Signs the console session cookie. Separate from every club key and from `WEB_RATE_LIMIT_KEY`. Rotating it signs every staff member out, which is acceptable |
+| `SECRETS_PUBLIC_KEY` | yes, to write a club's LINE and Beam values | Public key PEM of this environment's club secrets pair (`secrets.md`). **Public key only**: this app must never hold `SECRETS_PRIVATE_KEY` |
 | `PLATFORM_MAX_BODY_BYTES` | yes | Whole number above 0. Security proposes 64 KiB for small JSON (`webhook_max_body_bytes`); Security to confirm for the console |
 | `APP_BASE_URL` | yes | `https` address of the club app, for owner and tester invite links |
 | `HEALTH_TOKEN` | optional | 16+ characters. Absent means the health route is not mounted, so the external monitor has nothing to poll: **required for the 7 Dec test** (`worker.md`) |
@@ -25,6 +26,7 @@ These are not environment variables. They are rows an admin enters in the consol
 | Key | What happens if it is unset | Value |
 |---|---|---|
 | `console_enrolment_ttl_hours` **(branch)** | Issuing a staff enrolment link is refused (`enrolment:not_configured`), so **no new BOOQ teammate can be invited or have a second factor reset**. The number is hours the single-use link stays valid; it must be above 0 | **No value proposed.** A BOOQ admin decides. (Security's `invite_ttl_hours` figures are for club invites, a different setting) |
+| `line_send_max_attempts`, `line_send_retry_seconds` (F10) | The LINE sender has no retry limit or base backoff for a push that fails on a token problem. Messages stay unsent or retry without bound, depending on the code | **No value proposed.** Token-failure retry limit and base backoff, a BOOQ admin or Security decides. Alerts on token failure are in `plan.md` section 5 |
 | `pay_tap_limit_count`, `pay_tap_limit_window_seconds` | No limit on new payment holds (F03 design 4.8, D61) | Security proposes 5 holds per 600 s (`threat-model.md` section 6); approval is Security's and the owner's |
 
 The first BOOQ admin account needs a way in before this works (first-admin bootstrap): that is the Architect's and BE-P's design, not set here. Add any other `platform.config` key to this table when a feature adds one.

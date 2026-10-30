@@ -48,7 +48,39 @@ describe('recorded launch checks', () => {
   });
 });
 
+describe('the launch overview', () => {
+  const get = (as: 'admin' | 'spec' | 'loner' | null) => h.call('GET', `/clubs/${CLUB}/launch`, { as });
+  it('lists the required checks with their results and which are recorded by hand', async () => {
+    await h.tdb.query(`update platform.config set value = $1::jsonb where key = 'required_launch_checks'`, [JSON.stringify([{ key: 'receipt_prefix_set', owed_by: 'booq' }, { key: 'product_priced', owed_by: 'owner' }])]);
+    await h.call('PUT', `/clubs/${CLUB}/launch/product_priced`, { body: { result: 'pass' }, as: 'admin' });
+    const r = await get('spec');
+    expect(r.status).toBe(200);
+    expect(r.body.clubStatus).toBe('testing');
+    expect(r.body.clubName).toBe('A');
+    expect(r.body.items).toEqual([
+      { item: 'receipt_prefix_set', result: expect.any(String), owed_by: 'booq', recorded: false },
+      { item: 'product_priced', result: 'pass', owed_by: 'owner', recorded: true },
+    ]);
+  });
+  it('the list shipped with the migrations names the recorded checks; an unassigned specialist and an unknown club are 404, a guest 401', async () => {
+    expect((await get('loner')).status).toBe(404);
+    expect((await get(null)).status).toBe(401);
+    expect((await h.call('GET', '/clubs/99999999-9999-4999-8999-999999999999/launch', { as: 'admin' })).status).toBe(404);
+    const shipped = (await get('admin')).body.items as Array<{ item: string; recorded: boolean }>;
+    expect(shipped.filter((i) => i.recorded).map((i) => i.item).sort()).toEqual(['beam_key_swap', 'owner_signed_in', 'owner_verified', 'product_priced', 'test_booking_completed']);
+  });
+});
+
 describe('config', () => {
+  it('any staff member reads the values that are set, in key order; a guest does not', async () => {
+    await h.call('PUT', '/config/pay_tap_limit_count', { body: { value: 5 }, as: 'admin' });
+    const r = await h.call('GET', '/config', { as: 'spec' });
+    expect(r.status).toBe(200);
+    const keys = (r.body.config as Array<{ key: string }>).map((c) => c.key);
+    expect(keys).toEqual([...keys].sort());
+    expect(r.body.config).toContainEqual({ key: 'pay_tap_limit_count', value: 5 });
+    expect((await h.call('GET', '/config', { as: null })).status).toBe(401);
+  });
   it('an admin sets a value and it is audited; a number key must be above zero', async () => {
     expect((await h.call('PUT', '/config/tester_invite_ttl_hours', { body: { value: 48 }, as: 'admin' })).status).toBe(200);
     expect((await h.tdb.query(`select value from platform.config where key = 'tester_invite_ttl_hours'`)).rows[0].value).toBe(48);

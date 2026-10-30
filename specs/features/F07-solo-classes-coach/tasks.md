@@ -40,6 +40,8 @@ Depends on: F01 (people, roles, settings registry with `rest_cap_hours`, route w
 - [x] **F07-T08** Migration 0808: policies and grants, the coach and Accountant column limits, table class, audit and test table registry entries. IDs: CC-1, CC-3, PDPA-01. Role: BE-B · Deps T01 to T07 · Size: S
   Tests first: the blind suite shows BOOQ staff read nothing; a coach reads only their own leave, availability and sessions; the Accountant reads no pay.
   - Built (Architect): `0808_coach_policies.sql`, `coach-policies.test.ts`. Select-only grants and read policies on the six F07 tables (coach_pay was done in 0802); a coach reads only their own rows, the front desk sees leave dates through `public.coach_leave_calendar` without type or note, the Accountant and BOOQ staff read nothing. The registry, audit and test table entries were added with each table in 0801 to 0807.
+- [x] **F07-T09** Migration 0810 (rule D159): the F07 occupancy writers take the court lock `app.lock_resource` (FA 3.4 step 3c, 0229) immediately before the occupancy write: `add_coach_to_booking` and `f07_release` (0806), `substitute_coach` (0807), `reclaim_coach_add` (0809). The rows they insert themselves are written before the lock. IDs: BOOK-04-AC1, AC12. Role: Architect · Deps 0229 · Size: S
+  Tests first: `coach-add.test.ts` (the court lock is taken); the existing F07 suites pass.
 
 ## B. Wiring in other features (listed, owned by their lists)
 

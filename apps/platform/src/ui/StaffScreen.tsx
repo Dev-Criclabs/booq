@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { signOut } from './auth';
+import { ConsoleNav } from './ConsoleNav';
 import { StepUpPanel } from './StepUpPanel';
 import { t } from './i18n';
 import { deactivate, invite, loadTeam, resetFactor, ROLE_KEY, type LinkOutcome, type Member } from './staff';
@@ -76,11 +76,6 @@ export function StaffScreen() {
     await run();
   }
 
-  async function onSignOut() {
-    await signOut(window.fetch.bind(window));
-    window.location.replace('/sign-in');
-  }
-
   async function copy() {
     if (!shown) return;
     try {
@@ -92,9 +87,10 @@ export function StaffScreen() {
   }
 
   return (
+    <>
+    <ConsoleNav current="team" />
     <main className="page wide" data-testid="staff">
       <h1>{t('X-new.staff_title')}</h1>
-      <p><button type="button" className="btn secondary small" onClick={() => void onSignOut()} data-testid="sign-out">{t('X-new.signout')}</button></p>
       {pending ? (
         <StepUpPanel
           signInHref="/sign-in?next=/staff"
@@ -172,5 +168,6 @@ export function StaffScreen() {
         </>
       ) : null}
     </main>
+    </>
   );
 }
