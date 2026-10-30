@@ -20,7 +20,8 @@ describe('the slot is not open (outcome wallet_late)', () => {
     expect(await bookingStatus(taken)).toBe('awaiting_payment');
     expect(await pay(p)).toEqual({ status: 'succeeded', outcome: 'wallet_late', qr_image: null, confirmed: true });
     const calls = await log();
-    expect(calls.map((l) => l.port)).toEqual(['credit_wallet', 'issue_receipt']);
+    expect(calls.map((l) => l.port)).toEqual(['credit_wallet', 'issue_receipt', 'enqueue_message']);
+    expect(calls[2]!.args).toEqual(['late_payment', expect.any(String), { payment_id: p, outcome: 'wallet_late', amount_satang: 50000 }, `late:${p}`]);
     expect(calls[0]!.args).toEqual(['wallet_credit', expect.any(String), 50000, 'late_payment', `late_payment:${p}`, p]);
     expect(calls[1]!.args).toEqual([expect.any(String), p, 'wallet_credit']);
   });

@@ -15,6 +15,9 @@ export interface UsageCounts {
 export type ClubCountsResult = { ok: true; counts: UsageCounts } | { ok: false; code: 'not_found' };
 export interface PortfolioRow {
   clubId: string;
+  nameTh: string;
+  nameEn: string;
+  status: string;
   bookingsConfirmed30d: number;
 }
 
@@ -51,13 +54,13 @@ export function createUsageService(deps: { db: PlatformDb; /** Today's Asia/Bang
     async portfolio(staffId: string): Promise<PortfolioRow[]> {
       if (!(await activeStaff(staffId))) return [];
       return db.withPlatformTx({ staffId, staffLabel: 'usage' }, async (tx) => {
-        const { rows } = await tx.query<{ id: string; total: string }>(
-          `select c.id, coalesce(sum(u.value) filter (where u.metric = 'bookings_confirmed' and u.day >= $1::date - $2::int and u.day <= $1::date), 0)::text as total
+        const { rows } = await tx.query<{ id: string; name_th: string; name_en: string; status: string; total: string }>(
+          `select c.id, c.name_th, c.name_en, c.status, coalesce(sum(u.value) filter (where u.metric = 'bookings_confirmed' and u.day >= $1::date - $2::int and u.day <= $1::date), 0)::text as total
              from public.club c left join platform.club_usage_daily u on u.club_id = c.id
-            group by c.id order by c.id`,
+            group by c.id, c.name_th, c.name_en, c.status order by c.name_en, c.id`,
           [deps.today(), WINDOW_DAYS_BEFORE_TODAY],
         );
-        return rows.map((r) => ({ clubId: r.id, bookingsConfirmed30d: Number(r.total) }));
+        return rows.map((r) => ({ clubId: r.id, nameTh: r.name_th, nameEn: r.name_en, status: r.status, bookingsConfirmed30d: Number(r.total) }));
       });
     },
   };

@@ -485,6 +485,21 @@ export interface PublicCourtPriceRule {
   price_satang: number;
 }
 
+export interface PublicCreditLedger {
+  club_id: string;
+  id: string;
+  package_id: string;
+  change: number;
+  reason: string;
+  booking_id: string | null;
+  order_line_id: string | null;
+  staff_id: string | null;
+  note: string | null;
+  dedupe_key: string | null;
+  is_test: boolean;
+  created_at: string;
+}
+
 export interface PublicCustomerPackage {
   club_id: string;
   id: string;
@@ -873,6 +888,24 @@ export interface PublicWalletAccount {
   created_at: string;
 }
 
+export interface PublicWalletLedger {
+  club_id: string;
+  id: string;
+  customer_id: string;
+  change_satang: string;
+  reason: string;
+  booking_id: string | null;
+  order_id: string | null;
+  order_line_id: string | null;
+  payment_id: string | null;
+  referral_id: string | null;
+  staff_id: string | null;
+  note: string | null;
+  dedupe_key: string | null;
+  is_test: boolean;
+  created_at: string;
+}
+
 export interface Tables {
   'app.anonymise_handlers': AppAnonymiseHandlers;
   'app.claim_handlers': AppClaimHandlers;
@@ -925,6 +958,7 @@ export interface Tables {
   'public.coach_tier': PublicCoachTier;
   'public.coach_tier_price': PublicCoachTierPrice;
   'public.court_price_rule': PublicCourtPriceRule;
+  'public.credit_ledger': PublicCreditLedger;
   'public.customer_package': PublicCustomerPackage;
   'public.data_export': PublicDataExport;
   'public.data_request': PublicDataRequest;
@@ -955,4 +989,5 @@ export interface Tables {
   'public.user_consent': PublicUserConsent;
   'public.user_staff_note': PublicUserStaffNote;
   'public.wallet_account': PublicWalletAccount;
+  'public.wallet_ledger': PublicWalletLedger;
 }

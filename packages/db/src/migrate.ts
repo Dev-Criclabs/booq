@@ -4,7 +4,9 @@ import { join } from 'node:path';
 import type { Pool } from 'pg';
 
 // SQL-first migrations (build plan section 4): numbered files, one transaction each,
-// a merged file is never edited (its checksum is stored), numbers only go up.
+// a merged file is never edited (its checksum is stored). Each file runs once, in number order within a run.
+// A file numbered below the highest applied one is applied too (feature blocks interleave over time, decision
+// of the architecture review of 30 Oct): check-migrations guards the cases where order would change the result.
 export interface Migration {
   version: string; // '0001'
   name: string; // '0001_roles_schemas'
@@ -34,10 +36,11 @@ export function loadMigrations(dir: string): Migration[] {
 
 const LOCK_KEY = 7_244_001; // arbitrary constant; one migrator at a time
 
-export async function applyMigrations(pool: Pool, dir: string): Promise<{ applied: string[] }> {
+export async function applyMigrations(pool: Pool, dir: string): Promise<{ applied: string[]; outOfOrder: string[] }> {
   const migrations = loadMigrations(dir);
   const client = await pool.connect();
   const applied: string[] = [];
+  const outOfOrder: string[] = [];
   try {
     await client.query('select pg_advisory_lock($1)', [LOCK_KEY]);
     await client.query('create schema if not exists booq_migrations');
@@ -58,7 +61,7 @@ export async function applyMigrations(pool: Pool, dir: string): Promise<{ applie
         if (recorded !== m.checksum) throw new Error(`Migration ${m.name} changed after it was applied; write a new migration instead`);
         continue;
       }
-      if (m.version < highest) throw new Error(`Migration ${m.name} is out of order: ${highest} is already applied`);
+      if (m.version < highest) outOfOrder.push(m.name);   // allowed: a feature block below one already applied
       try {
         await client.query('begin');
         await client.query(m.sql);
@@ -70,7 +73,7 @@ export async function applyMigrations(pool: Pool, dir: string): Promise<{ applie
       }
       applied.push(m.name);
     }
-    return { applied };
+    return { applied, outOfOrder };
   } finally {
     await client.query('select pg_advisory_unlock($1)', [LOCK_KEY]).catch(() => undefined);
     client.release();
