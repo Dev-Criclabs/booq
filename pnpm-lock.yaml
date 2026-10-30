@@ -25,7 +25,11 @@ importers:
 
   apps/web: {}
 
-  apps/worker: {}
+  apps/worker:
+    dependencies:
+      '@booq/db':
+        specifier: workspace:*
+        version: link:../../packages/db
 
   packages/auth: {}
 
