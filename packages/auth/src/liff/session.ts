@@ -1,7 +1,7 @@
 import type { Db } from '../../../db/src/tx';
 import type { LineVerifier } from './verify';
 import type { Logger } from './log-redaction';
-import { clubOfToken, hashToken, newSessionToken, parseSessionCookie, serializeSessionCookie } from './cookie';
+import { clearSessionCookie, clubOfToken, hashToken, newSessionToken, parseSessionCookie, serializeSessionCookie } from './cookie';
 
 // POST /auth/session and per-request authentication (F02-T07; LINE-01-AC1 to AC5, AC10, AC11,
 // AC13; AUTH-01-AC13 to AC15; design 4.2, 4.4, 6.3, 6.4). The ID token is checked with LINE against
@@ -100,6 +100,23 @@ export function createSignInService(options: SignInOptions) {
       if (outcome === 'not_found') return { ok: false, status: 404, code: 'not_found' };
       if (outcome === 'account_inactive') return { ok: false, status: 403, code: 'account_inactive' };
       return { ok: true, state: outcome, clubId: club.clubId, setCookie: serializeSessionCookie(token, options.sessionSeconds), ...(invite ? { invite } : {}) };
+    },
+
+    /**
+     * POST /auth/logout (ROLE-02-AC4 club side, AUTH-02-AC5). Revokes this session only and clears the
+     * cookie. No cookie, or one already revoked, is fine. A token issued for another club is not touched.
+     * Deactivating a person ends all their sessions in the database (trigger), so no call is needed for that.
+     */
+    async logout(input: { slug: string; cookieHeader: string | undefined }): Promise<{ ok: true; setCookie: string } | { ok: false; status: 404; code: 'not_found' }> {
+      if (typeof input.slug !== 'string' || !SLUG.test(input.slug)) return { ok: false, status: 404, code: 'not_found' };
+      const club = await directory.clubBySlug(input.slug);
+      if (!club) return { ok: false, status: 404, code: 'not_found' };
+      const token = parseSessionCookie(input.cookieHeader);
+      if (token) {
+        if (clubOfToken(token) !== club.clubId) return { ok: false, status: 404, code: 'not_found' };
+        await db.withClubTx(guest(club.clubId), (tx) => tx.query('select app.revoke_session($1)', [hashToken(token)]));
+      }
+      return { ok: true, setCookie: clearSessionCookie() };
     },
 
     async authenticate(input: { slug: string; cookieHeader: string | undefined }): Promise<AuthenticateResult> {

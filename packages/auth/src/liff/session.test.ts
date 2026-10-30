@@ -240,3 +240,52 @@ describe('invites at sign in', () => {
     expect(r.ok && r.invite).toBeUndefined();
   });
 });
+
+// F02-T12 logout and revocation (ROLE-02-AC4 club side; AUTH-02-AC5).
+describe('logout and revocation', () => {
+  const login = async (lineId: string) => {
+    const r = await signIn('a', tokenFor(lineId));
+    if (!r.ok) throw new Error('sign in failed');
+    return r.setCookie.split(';')[0]!;
+  };
+  it('logout revokes the session and clears the cookie', async () => {
+    const cookie = await login('UPLAYER');
+    const out = await svc.logout({ slug: 'a', cookieHeader: cookie });
+    expect(out).toMatchObject({ ok: true });
+    expect(out.ok && out.setCookie).toContain('Max-Age=0');
+    expect(await svc.authenticate({ slug: 'a', cookieHeader: cookie })).toEqual({ ok: false, status: 401, code: 'unauthenticated' });
+    expect((await sessions()).map((s) => s.state)).toEqual(['revoked']);
+  });
+  it('a second logout, or one without a cookie, is fine and still clears the cookie', async () => {
+    const cookie = await login('UPLAYER');
+    await svc.logout({ slug: 'a', cookieHeader: cookie });
+    expect(await svc.logout({ slug: 'a', cookieHeader: cookie })).toMatchObject({ ok: true });
+    expect(await svc.logout({ slug: 'a', cookieHeader: undefined })).toMatchObject({ ok: true });
+  });
+  it('logout only touches its own session: another device of the same person stays signed in', async () => {
+    const phone = await login('UPLAYER');
+    const laptop = await login('UPLAYER');
+    await svc.logout({ slug: 'a', cookieHeader: phone });
+    expect(await svc.authenticate({ slug: 'a', cookieHeader: laptop })).toMatchObject({ ok: true, state: 'active' });
+  });
+  it('another club’s address does not revoke, and says not found', async () => {
+    const cookie = await login('UPLAYER');
+    expect(await svc.logout({ slug: 'b', cookieHeader: cookie })).toEqual({ ok: false, status: 404, code: 'not_found' });
+    expect(await svc.authenticate({ slug: 'a', cookieHeader: cookie })).toMatchObject({ ok: true });
+  });
+  it('deactivating a person ends all their sessions at once', async () => {
+    const one = await login('UPLAYER');
+    const two = await login('UPLAYER');
+    await tdb.query(`update public.app_user set active = false where id = $1`, [PLAYER]);
+    for (const c of [one, two]) expect(await svc.authenticate({ slug: 'a', cookieHeader: c })).toEqual({ ok: false, status: 401, code: 'unauthenticated' });
+    expect((await sessions()).every((s) => s.state === 'revoked')).toBe(true);
+    expect(await signIn('a', tokenFor('UPLAYER'))).toEqual({ ok: false, status: 403, code: 'account_inactive' });
+  });
+  it('a role taken away shows on the next request without signing out', async () => {
+    const cookie = await login('UTESTER');
+    await tdb.query(`insert into public.app_user_role (club_id, user_id, role) values ($1,$2,'accountant')`, [A, TESTER]);
+    expect(await svc.authenticate({ slug: 'a', cookieHeader: cookie })).toMatchObject({ roles: ['accountant', 'player'] });
+    await tdb.query(`delete from public.app_user_role where user_id = $1 and role = 'accountant'`, [TESTER]);
+    expect(await svc.authenticate({ slug: 'a', cookieHeader: cookie })).toMatchObject({ ok: true, roles: ['player'] });
+  });
+});

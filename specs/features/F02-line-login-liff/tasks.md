@@ -47,7 +47,7 @@ Depends on F01 tasks: T03 to T07 (database, context, tenant suite), T10 and T11 
   Review amendment: SR-01 and D122. Redemption is the atomic single-use statement; an owner invite requires the bound LINE ID; a tester invite yields player only; a BOOQ account never receives a token. Extra tests: parallel redemption has one winner; the wrong LINE ID is refused; the bound owner's return visit only opens the club.
 - [ ] **F02-T11** Route markers `public` / `needs_person` and the `sign_in_required` code, with the return path (slot, package, multi-hour list in the URL). IDs: AUTH-01-AC2, AC3, AC5, AC9, AC10. Role: BE-P · Deps F01-T13 · Size: S
   Tests first: a guest on checkout, My bookings, Credits and wallet, Refer a friend and Profile gets `sign_in_required`; a guest hold request is refused; browse pages need nothing.
-- [ ] **F02-T12** Logout and session revocation on role change or deactivation. IDs: ROLE-02-AC4 (club side), AUTH-02-AC5. Role: BE-P · Deps T07 · Size: S
+- [x] **F02-T12** Logout and session revocation on role change or deactivation. IDs: ROLE-02-AC4 (club side), AUTH-02-AC5. Role: BE-P · Deps T07 · Size: S
   Tests first: logout revokes; deactivating a person ends all their sessions.
 
 ## C. Price group and profile
