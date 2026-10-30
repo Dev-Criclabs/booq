@@ -8,7 +8,7 @@ Depends on: F01 (people, roles, settings registry with `rest_cap_hours`, route w
 
 **Overlap to resolve first.** F03-T29 already lists a migration for `app.add_coach_to_booking(booking, coach)`. F07's design defines `app.add_coach_to_booking(booking, coach, order)` with the add order and a release handler (T06). Decided by the orchestrator (30 Oct 2026): F03-T29 is dropped (never built) and F07-T06 owns the function.
 
-**Cross-feature tasks (named here, owned by other lists, listed for the orchestrator), with their approval and dependency order:** F03-T31 (0228) before T09; F10-T06 before T10; F09-T04 (it reads `coach_was_changed`) after T07; T18 after F09-T04. The tasks are: F03-T31 (`app.move_booking` calls `coach_rules_check_move`), F07-T03 supplies the second handler; F09's free cancel for a substituted coach (F09-T04). Not startable until the rest of F07 exists: F13-T10 and F12 read `coach_pay` (T02).
+**Cross-feature tasks (named here, owned by other lists, listed for the orchestrator), with their approval and dependency order:** F03-T31 (0227) before T09; F10-T06 before T10; F09-T04 (it reads `coach_was_changed`) after T07; T18 after F09-T04. The tasks are: F03-T31 (`app.move_booking` calls `coach_rules_check_move`), F07-T03 supplies the second handler; F09's free cancel for a substituted coach (F09-T04). Not startable until the rest of F07 exists: F13-T10 and F12 read `coach_pay` (T02).
 
 ## A. Tables and rules
 
