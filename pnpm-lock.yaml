@@ -49,6 +49,15 @@ importers:
         specifier: 19.3.0
         version: 19.3.0
 
+  apps/staff-invite:
+    dependencies:
+      '@booq/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@booq/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+
   apps/web:
     dependencies:
       '@booq/auth':
@@ -63,6 +72,9 @@ importers:
       '@booq/line':
         specifier: workspace:*
         version: link:../../packages/line
+      '@booq/secrets':
+        specifier: workspace:*
+        version: link:../../packages/secrets
       '@booq/time':
         specifier: workspace:*
         version: link:../../packages/time

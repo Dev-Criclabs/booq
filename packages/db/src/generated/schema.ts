@@ -407,6 +407,17 @@ export interface PublicBookingCancel {
   is_test: boolean;
 }
 
+export interface PublicBookingCoachAdd {
+  club_id: string;
+  order_id: string;
+  booking_id: string;
+  coach_id: string;
+  status: string;
+  hold_expires_at: string | null;
+  is_test: boolean;
+  created_at: string;
+}
+
 export interface PublicClaimRequest {
   club_id: string;
   id: string;
@@ -723,6 +734,7 @@ export interface PublicLineConnection {
   plan_message_limit: number | null;
   secret_last4: unknown;
   tested_at: string | null;
+  webhook_token_hash: string | null;
 }
 
 export interface PublicLocation {
@@ -826,6 +838,7 @@ export interface PublicOrders {
   birthday_entitlement: boolean | null;
   quote_hash: string | null;
   priced_at: string | null;
+  zero_money_receipt_id: string | null;
   kind: string;
 }
 
@@ -1123,6 +1136,7 @@ export interface Tables {
   'public.birthday_entitlement_use': PublicBirthdayEntitlementUse;
   'public.booking': PublicBooking;
   'public.booking_cancel': PublicBookingCancel;
+  'public.booking_coach_add': PublicBookingCoachAdd;
   'public.claim_request': PublicClaimRequest;
   'public.club': PublicClub;
   'public.club_feature': PublicClubFeature;
