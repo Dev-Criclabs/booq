@@ -1,6 +1,6 @@
 # F05 Beam payments (Hunter launch) · Requirements
 
-Status: **DRAFT for approval (gate 1).** Drafted 30 Oct 2026. Nothing here is approved until a person says so. No design or code follows until then.
+Status: **Approved 30 Oct 2026** (gate 1). Recorded in `docs/decisions.md`, round 8: the drafter's F04 and F05 requirements and the answers D59 to D80 were approved by the user. Revision 2 applies D59 to D80 and the hand-off rows PAY-02, PAY-04, PAY-07, PROMO-01, BOOK-05, PLAT-03. Changes after approval go PRD, then hand-off, then this file. No design or code follows until the design gate.
 
 Feature: F05 Beam payments. Depends on: F04. Requirement IDs: PAY-01 to PAY-06 (PAY-07 is in F04, PAY-08 is F16 and not for Hunter). Wave 2.
 
@@ -10,7 +10,7 @@ Feature: F05 Beam payments. Depends on: F04. Requirement IDs: PAY-01 to PAY-06 (
 |---|---|---|
 | PRD | `specs/product/prd-v1.2.md` | Payments, cancellation, credits and wallet (Checkout and payment, Tax and receipts); Payment checking and LINE message costs (Option A, Beam); Platform foundation (Payments row); Customer app pages C11, C11P |
 | HO | `specs/product/handoff-v1.2.md` | Payments and receipts (PAY-01 to PAY-08, RCPT-01 to RCPT-03); BOOK-03; CANCEL-02; PLAT-07; Architecture |
-| Decisions | `docs/decisions.md` | D18, D24, D25, D26, D27, D32, D33, D34, D36, D37, D45, D47, D48, D56; round 1 (PAY-03) |
+| Decisions | `docs/decisions.md` | D18, D24, D25, D26, D27, D32, D33, D34, D36, D37, D45, D47, D48, D56, D71 to D80; round 1 (PAY-03). PRD change log "Decisions 30 Oct (7)"; HO PAY-02, PAY-04 |
 | Gaps | `docs/canvas-gaps.md` | A2, A3 |
 | QA | `docs/qa/traceability.md`, `open-questions.md`, `tests/fakes/README.md` (branch `qa/test-strategy`) | PAY rows; Q-19 to Q-21, Q-31 |
 | Beam public docs | https://docs.beamcheckout.com (read 30 Oct 2026) | See "What Beam's public docs state" below |
@@ -77,7 +77,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 - PAY-01-AC4. Given a club, when its Beam keys are stored, then there are two sets, test and live; a club in Testing uses the test set and a Live club uses the live set (D32). A key of one set is never used for the other environment.
 - PAY-01-AC5. Given the P4 launch checklist, when a club goes Live, then swapping to the live key set is a required item with a smoke test, and Go live is refused until it passes (D32, F01 PLAT-07-AC10).
 - PAY-01-AC6. Given the P2 step 5 Test connection, when BOOQ staff press it, then the test charges a sandbox call with the test set and shows pass or fail only; no player data is involved.
-- PAY-01-AC7. Given the club's Beam merchant account is missing or its keys fail, when a player taps Pay, then the order is refused with a try again message, nothing is held that cannot be paid, and an alert shows in P1 (the alert text and place are Q7). Hunter's Beam merchant account and confirmed fees are open for setup, not for code (HO).
+- PAY-01-AC7. Given the club's Beam merchant account is missing or its keys fail, when a player taps Pay, then the order is refused with a try again message and nothing is held that cannot be paid. A failed key check or an unreachable Beam shows an alert in P1, and a failed key check also reaches the owner (D75). Hunter's Beam merchant account and confirmed fees are open for setup, not for code (HO).
 - PAY-01-AC8. Given a stored key, when anyone views it, then only the last 4 characters show and it can only be replaced (D27, D34).
 - PAY-01-AC9. Given test mode, when a test payment is made, then it uses Beam's sandbox only. There is no in app "simulate payment" action in any status (D26); no route can confirm a booking without a valid signed callback.
 - PAY-01-AC10. Given a Beam club, when a player is paid back for a cancel or a closure, then nothing is sent to Beam: refunds are wallet or credit (PAY-05). The Option A wording "Refunds go back by PromptPay" in P2 step 5 and the PRD cost section is wrong and is not built (Gaps A3).
@@ -104,20 +104,22 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 **Acceptance criteria.**
 
 - PAY-02-AC1. Given a signed in player taps Pay with an amount due, when the order and hold are created (F03 BOOK-03), then the server creates one Beam charge for that order for exactly the amount due in satang, with the club's keys for its environment, and the player sees its QR on C11.
-- PAY-02-AC2. Given the QR, when it is created, then it expires exactly when the hold ends, so a payment of that QR after the hold ends is a late payment (D18, PAY-03).
-- PAY-02-AC3. Given a second tap on Pay for the same order, when the request arrives, then the server returns the same hold and the same QR and creates no second charge (D47).
+- PAY-02-AC2. Given the QR, when it is created, then it expires slightly before the hold ends, by a margin that is a platform setting (D80, refines D18), so a QR never outlives the hold. A payment reported after the hold ends is a late payment (D18, PAY-03).
+- PAY-02-AC3. Given a second tap on Pay for the same order, when the request arrives and the charge is still pending, then the server returns the same hold and the same QR and creates no second charge (D47). If the charge has failed inside the hold, the second tap creates a new charge in the same hold (D72).
 - PAY-02-AC4. Given a callback with a valid signature for a charge that succeeded and an amount equal to the order's amount due in satang, when it arrives before the hold ends, then the booking is confirmed, the hold becomes the booking, the order is Confirmed, and the receipt and the Booking confirmed LINE card follow (F13, F10).
 - PAY-02-AC5. Given a callback with a bad signature, when it arrives, then it is rejected with an error status, logged and alerted, and changes nothing: no order, booking, ledger, receipt, LINE message or audit state (D24).
-- PAY-02-AC6. Given a validly signed callback whose amount is not equal to the order's amount due, when it arrives, then the booking is not confirmed, the event is recorded and flagged for the owner, and the callback gets a success status so Beam stops retrying (D36, refines D24). Staff credit the player's wallet with the money received, with a reason, in A6 (D24). Who sees the flag and what the player sees is Q7 and Q9.
+- PAY-02-AC6. Given a validly signed callback whose amount is not equal to the order's amount due, when it arrives, then the booking is not confirmed, the event is recorded, the owner sees a banner in the club admin, and the callback gets a success status so Beam stops retrying (D36, D75). The player sees that the payment was received and the club is checking (D77). Staff credit the full amount received, including any overpayment, to the player's wallet with the reason `wrong_amount` (D77, D78), and that credit gets its own receipt (D79).
 - PAY-02-AC7. Given a duplicate callback for a charge already processed, when it arrives, then it is ignored with a success status and changes nothing (D24); parallel duplicates give exactly one confirmation and one receipt.
-- PAY-02-AC8. Given a callback for a charge that fails, when it arrives, then the order stays awaiting payment until the hold ends, the player sees that the payment did not go through, and nothing is confirmed. Whether the player can try again within the hold (a failed charge cannot be retried) is Q4.
-- PAY-02-AC9. Given a callback for a charge that does not match any order, or an order of another club, when it arrives, then it is rejected and changes nothing. The response status for an unknown charge is Q3.
+- PAY-02-AC8. Given a callback for a charge that fails, when it arrives, then the order stays awaiting payment until the hold ends, the player sees that the payment did not go through, and nothing is confirmed. A second tap on Pay then creates a new charge in the same hold (D72); the new QR expires by the same rule (AC2).
+- PAY-02-AC9. Given a validly signed callback for a charge that matches no order, when it arrives, then it is answered with success and flagged; a callback with a bad signature is rejected (D71, D24). A callback that is validly signed but for an order of another club cannot arise, because it is verified with that club's key (AC10).
 - PAY-02-AC10. Given the callback endpoint, when it is called, then the club is identified from the request and the signature is checked with that club's key before any content is trusted; the raw body is verified before parsing (the docs sign the exact raw body).
 - PAY-02-AC11. Given a callback and a hold expiry at the same instant, when both run, then exactly one outcome stands: confirmed, or released with the late payment rule (BOOK-04-AC8).
 - PAY-02-AC12. Given a callback arrives for an order created before a pause, when the club is Paused, then it is still processed (a started payment is not refused by the pause; confirms with F01 Q12).
 - PAY-02-AC13. Given the callback is delivered, when it is stored, then the event is recorded (event name, charge reference, order, amount, result, time) without card or personal data, append only (D28).
 - PAY-02-AC14. Given a payment of a test order, when the callback arrives, then it comes from Beam's sandbox and the order is flagged test and excluded from reports (D26, D33).
-- PAY-02-AC15. Given a failed delivery to our endpoint (our server errors), when Beam retries, then repeated deliveries are safe because of AC7. What happens if every retry fails and the payment is never reported is Q5.
+- PAY-02-AC15. Given a callback never arrives (all of Beam's retries fail, or the player paid and nothing was reported), when the order is still awaiting payment, then the server may check Beam's charge status and confirms the booking only when the amount and the reference match; the check and its result are recorded in the audit log (D73). A confirmation by this check is subject to the same hold and late payment rules as a callback.
+- PAY-02-AC16. Given an order is created and its charge, when the request goes to Beam, then only the order reference is sent: no player name, phone, date of birth or LINE ID (D76).
+- PAY-02-AC17. Given a second successful payment for an order already Confirmed (a different charge paying it again), when it is reported, then the amount is credited to the wallet with the reason `duplicate_payment` (D78); whether that gets a receipt is Q1.
 
 **Meets.**
 
@@ -141,11 +143,11 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 - PAY-03-AC1. Given a payment that Beam reports after the hold ended, when the slot is still open (no other hold, no booking and no closure on it), then the booking is approved and confirmed, with a receipt and the Booking confirmed card (D25).
 - PAY-03-AC2. Given such a payment and the slot is held, booked or closed (a closure, including one that cancelled this hold, D48), when it is reported, then the value is credited to the player's wallet, nothing is booked, and the player gets a LINE message (D25).
 - PAY-03-AC3. Given a solo class, when its late payment arrives, then court and coach must both be free for it to be approved; if either is not, all of it goes to the wallet and nothing is partly booked (D25).
-- PAY-03-AC4. Given a late payment credited to the wallet, when it is saved, then the wallet credit equals the money paid, is a ledger row with a reason, and gets its own receipt for the money received (D37, F13).
+- PAY-03-AC4. Given a late payment credited to the wallet, when it is saved, then the wallet credit equals the money paid, is a ledger row with the reason `late_payment` (D78), and gets its own receipt for the money received (D37, F13).
 - PAY-03-AC5. Given the slot check, when it runs, then it runs inside the booking transaction with the uniqueness rule, so two late payments for one slot cannot both be approved and a late payment cannot take a slot from a player who now holds it.
 - PAY-03-AC6. Given a hold that was released, when the player is told, then they already got Booking released when the hold ended (D45); the late payment message says what happened to the money (approved or wallet).
 - PAY-03-AC7. Given the order that was released, when a late payment is approved, then the same order and amounts are used; it is not repriced.
-- PAY-03-AC8. Given a late payment arrives for a package order that was cancelled, when it is reported, then what happens is Q6.
+- PAY-03-AC8. Given a late payment arrives for a package order that was cancelled, when it is reported, then the value goes to the wallet with its own receipt (D74).
 
 **Meets.**
 
@@ -166,13 +168,13 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 
 **Acceptance criteria.**
 
-- PAY-04-AC1. Given a player buys a package alone, when they pay, then no slot hold exists and a QR is created for the exact amount with a validity of the club's package order setting (Hunter 15 minutes).
+- PAY-04-AC1. Given a player buys a package alone, when they pay, then no slot hold exists and a QR is created for the exact amount with a validity of the club's package QR time setting (its own setting, default 15 minutes, D74).
 - PAY-04-AC2. Given the QR validity ends without payment, when it ends, then the order is cancelled and nothing is charged or credited; no ledger rows and no receipt exist.
 - PAY-04-AC3. Given a payment arrives while the QR is valid, when the callback is verified (PAY-02), then the package is added with its credits, expiry and receipt (F06, F13).
 - PAY-04-AC4. Given a package bought with a booking, when the player pays, then the booking's hold governs and the QR expires with it (BOOK-03, D18).
-- PAY-04-AC5. Given a payment arrives after a package order was cancelled, when it is reported, then the value goes to the wallet and gets its own receipt (consistent with PAY-03, D37); whether this is right is Q6.
+- PAY-04-AC5. Given a payment arrives after a package order was cancelled, when it is reported, then the value goes to the wallet and gets its own receipt (D74, PAY-03).
 - PAY-04-AC6. Given C11P, when it shows, then it states the QR time as a variable `{minutes}` and shows Time ran out when the QR has expired.
-- PAY-04-AC7. Given the package order setting (Hunter 15), when it is a separate setting or the hold setting, then which of the two it is, is Q6.
+- PAY-04-AC7. Given the package QR time, then it is its own club setting and is not the hold time (D74).
 
 **Meets.** PDPA: not beyond CC-3. No double booking: a package alone has no slot; nothing can double book. Club scope: per club. TEXT: C11P text with `{minutes}`; fixed "15 minutes" in canvas text is a canvas bug (Gaps A5).
 
@@ -191,7 +193,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 - PAY-05-AC1. Given any cancel, closure, failed payment or wrong amount, when value is returned, then it is returned as wallet balance or package credit and never as money to the player's bank or Beam.
 - PAY-05-AC2. Given the whole system, when its routes, buttons and admin actions are listed, then none refunds money or withdraws the wallet (route inventory test; QA CANCEL-02).
 - PAY-05-AC3. Given the Beam client in the app, when it is built, then it has no refund call at all; a test double fails if a refund is attempted.
-- PAY-05-AC4. Given a validly signed wrong amount callback (PAY-02-AC6), when staff make the player whole, then it is a wallet credit with a reason, not a refund to Beam.
+- PAY-05-AC4. Given a validly signed wrong amount callback (PAY-02-AC6), when staff make the player whole, then it is a wallet credit with the reason `wrong_amount`, not a refund to Beam (D77, D78).
 - PAY-05-AC5. Given the P2 step 5 text and the PRD cost section saying refunds go back by PromptPay, when F05 is built, then that text is not built (Gaps A3).
 
 **Meets.** PDPA: not relevant. No double booking: not relevant. Club scope: per club wallet. TEXT: the cancel and wallet texts say wallet or credit (F09 keys).
@@ -233,19 +235,12 @@ Proposed by the drafter; writers own the wording; numbers from the i18n role aft
 
 No key is added by this draft.
 
+## Actions for a person (the user's own tasks, not questions)
+
+- **Beam merchant account and sandbox.** Hunter's Beam merchant account, sandbox keys, the webhook signing key and Beam's confirmed fees (open for setup, not code, HO). The design step needs the sandbox to confirm the wire details listed above (QA Q-31).
+
 ## Open questions
 
-Numbered so the person approving can answer by number.
+Answered by D71 to D80 and removed: unknown charge, failed charge, a callback that never arrives, package QR time and a payment after cancel, alert places, data sent to Beam, wrong amount handling, wallet reason names, receipt for a wrong amount credit, and the QR expiry margin. One new question remains from the new reasons:
 
-1. **Hunter's Beam merchant account and fees.** Account, sandbox keys, the webhook signing key and Beam's confirmed fees are open for setup, not code (HO). When will the sandbox be ready for the design step?
-2. **Beam's wire details.** The docs state the items listed above. Payment link fields, test data and the refund lifecycle were not read. Confirm the docs and the sandbox before the design step (QA Q-31).
-3. **Callback for an unknown charge (PAY-02-AC9).** Reject with an error status (Beam retries up to 10 times) or answer success and flag it?
-4. **Failed charge inside the hold (PAY-02-AC8).** A failed charge cannot be retried, a new one is needed. D47 says a second tap on Pay returns the same QR. Should a second tap after a failed charge create a new charge within the same hold?
-5. **A payment never reported.** If Beam cannot deliver the callback (all retries fail), the player has paid but we never know. May the server ask Beam for the charge status as a safety net (the docs describe polling), and who reconciles? Is polling allowed to confirm a booking, or only to alert?
-6. **Package orders (PAY-04).** Is the 15 minute package QR time the same setting as the hold (10, 15 or 20) or its own? What happens to a payment that arrives after the package order was cancelled (wallet, as PAY-03, or refused)? (QA Q-21.)
-7. **Alerts and flags.** Where do the bad signature alert, the wrong amount flag, the failed key check and the unreachable Beam alert show (P1, an owner banner, a LINE message to the owner) and who is told?
-8. **Data sent to Beam.** The docs show a reference id and a return URL. Does Beam need any customer detail, and may we send none beyond the order reference?
-9. **Wrong amount (PAY-02-AC6).** What does the player see while staff credit the wallet (a message, nothing)? How long should staff take? Is an overpayment also credited in full?
-10. **Wallet reasons (PAY-03-AC4).** The ledger lists wallet reasons only as booking or referral. What are the reason names for a late payment credit, a wrong amount credit and a cancel credit (QA Q-12)? And the wording of the late payment messages (new keys, writers).
-11. **Receipts for wallet credits.** D37 says a late payment that goes to the wallet gets its own receipt. Does a wrong amount credit from staff get one too?
-12. **Clock and expiry.** Beam's docs say timestamps are UTC. The QR expiry equals the hold end (D18); how is a clock difference between us and Beam handled so the QR never outlives the hold by a second?
+1. **Duplicate payment (PAY-02-AC17).** D78 names the wallet reason `duplicate_payment` but the logs do not say when it applies or whether it gets a receipt. Assumed: a second successful charge for an order already Confirmed (for example the player paid an old QR after a new one was created, D72) is credited in full to the wallet. Does it get its own receipt like D37 and D79?

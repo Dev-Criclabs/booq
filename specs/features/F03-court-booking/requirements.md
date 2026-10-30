@@ -10,7 +10,7 @@ Feature: F03 Court booking, schedule and payment hold. Depends on: F01, F02. Req
 |---|---|---|
 | PRD | `specs/product/prd-v1.2.md` | Club facts; Court booking; Payments, cancellation, credits and wallet (Checkout and payment, hold); Quality and scope (No double bookings, backup mode); Design and content rules (Layout and states); Customer app pages C4, C10, C11; LINE notifications; Key flows 0 and A |
 | HO | `specs/product/handoff-v1.2.md` | Business rules as requirements (BOOK-01 to BOOK-05, COACH-01, COACH-02); Architecture (Integrity rules); Performance; Screen inventory (Player app, booking) |
-| Decisions | `docs/decisions.md` | D6, D8, D18, D19, D25, D27, D28, D33, D38 to D52; round 1 (PAY-03). PRD change log row "Decisions 30 Oct (6)"; HO BOOK-01, BOOK-03, BOOK-05, BOOK-06, WAIT-01, LINE-05 |
+| Decisions | `docs/decisions.md` | D6, D8, D18, D19, D25, D27, D28, D33, D38 to D52, D59 to D61, D80; round 1 (PAY-03). PRD change log row "Decisions 30 Oct (6)"; HO BOOK-01, BOOK-03, BOOK-05, BOOK-06, WAIT-01, LINE-05 |
 | Gaps | `docs/canvas-gaps.md` | A1, A5, C4 |
 | QA | `docs/qa/traceability.md`, `open-questions.md`, `concurrency-tests.md` (branch `qa/test-strategy`) | Q-01, Q-03, Q-04, Q-05, Q-06 and the BOOK rows; reused here |
 | F01, F02 | `specs/features/F01-platform-foundation/requirements.md`, `F02-line-login-liff/requirements.md` | Club scope, roles, Paused, guest browsing, sign in |
@@ -119,7 +119,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not list
 - BOOK-03-AC4. Given a held slot, when another player or a guest views the schedule, then it shows Held and cannot be selected, with no sign of who holds it.
 - BOOK-03-AC5. Given a hold that has reached its end time without a confirmed payment, when it ends, then the booking and hold are released, the slot returns to Open, and the player gets the LINE message Booking released in their language (LINE-05, F10 sends it). It is sent to Beam clubs too, when the hold ends (D45).
 - BOOK-03-AC6. Given the hold end time passes, when anyone reads the schedule before the release job has run, then the expired hold never blocks the slot: availability is computed with the end time, not with the job (derived from BOOK-04; no slot is stuck after expiry).
-- BOOK-03-AC7. Given a payment is confirmed before the hold ends, when the payment arrives, then the booking becomes Confirmed and the hold becomes the booking. A payment reported after the hold has ended is a late payment and follows PAY-03 (F05): approved only if the slot is still open, otherwise the value goes to the wallet (D18). The Beam QR itself expires exactly when the hold ends (D18).
+- BOOK-03-AC7. Given a payment is confirmed before the hold ends, when the payment arrives, then the booking becomes Confirmed and the hold becomes the booking. A payment reported after the hold has ended is a late payment and follows PAY-03 (F05): approved only if the slot is still open, otherwise the value goes to the wallet (D18). The Beam QR expires slightly before the hold ends, by a platform margin (D18, D80).
 - BOOK-03-AC8. Given "slot still open" for a late payment, when it is decided, then it means no other hold, no booking and no closure on that slot; for a solo class, court and coach must both be free, otherwise all of it goes to the wallet with nothing partial (D25). F03 supplies this check; F05 applies it.
 - BOOK-03-AC9. Given nothing is left to pay (credits or wallet cover it, PAY-07), when the player taps Pay, then the booking is confirmed at once in the same transaction with no QR and no visible hold, but the slot is still checked and reserved under BOOK-04.
 - BOOK-03-AC10. Given a booking made together with a package purchase, when the player pays, then the slot is held as above. A package bought alone has no hold (PAY-04, F06).
@@ -129,7 +129,8 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not list
 - BOOK-03-AC13. Given the owner changes the hold setting, when a hold already exists, then it keeps the end time it was created with; the new value applies to holds created afterwards (D46).
 - BOOK-03-AC14. Given the countdown on the pay screen, when the hold has ended, then the screen shows Time ran out with a way to pick a slot again (S-C11-Time-ran-out), and nothing is charged.
 - BOOK-03-AC15. Given the player taps Pay a second time, or on a second device, for the same slot, when the request arrives, then the server returns the same hold and the same Beam QR, never a second hold (D47).
-- BOOK-03-AC16. Given a Paused club, when a hold already exists at the moment of the pause, then it runs to its normal end and releases; no new holds start (F01 PLAT-03).
+- BOOK-03-AC18. Given a per player limit on repeated Pay taps, when a player taps Pay again and again (the same order or new holds), then the server stops them after the limit. The limit is a platform setting whose value Security sets (D61, HO BOOK-05); it is not a club setting. The same order's second tap still returns the same hold (D47).
+- BOOK-03-AC16. Given a Paused club, when a hold already exists at the moment of the pause, then it runs to its normal end and releases. No new holds start from players or from staff; the owner can still manage existing bookings (D60, HO PLAT-03).
 
 **Meets.**
 
@@ -193,7 +194,7 @@ Note Gaps A2 and A5: slip screens (H-C11-PromptPay and H-C11b) are for slip club
 - BOOK-05-AC4. Given two parallel requests from one player at N-1 held hours, when both run, then exactly one succeeds, because the check happens inside the booking transaction (QA CONC-28).
 - BOOK-05-AC5. Given a played or past booking, when the limit is counted, then it does not count (future hours only).
 - BOOK-05-AC6. Given the limit is changed, when it is saved, then it is a settings change and audited (PLAT-04); bookings already made are not removed.
-- BOOK-05-AC7. Given the limit is set, when it is counted, then it counts all of the player's future hours: confirmed, paid by bundle credit, solo class and unpaid held hours (D49, HO BOOK-05). Staff made bookings for the player count too.
+- BOOK-05-AC7. Given the limit is set, when it is counted, then it counts all of the player's future hours: confirmed, paid by bundle credit, solo class and unpaid held hours (D49, HO BOOK-05). Staff made bookings for the player count too. Group class seats do not count (D59).
 - BOOK-05-AC9. Given staff book for a player who is at the limit, when they save, then the booking is refused unless staff override it with a logged reason, which is written to the audit log (D49, PLAT-04). Which roles may override is Q1.
 - BOOK-05-AC8. Given the limit is set, when a player is refused, then the message uses a named variable `{hours}` and comes from a P key in both languages.
 
