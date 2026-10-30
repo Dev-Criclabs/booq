@@ -46,9 +46,9 @@ describe('app_user_names (D35)', () => {
     const r = await db.withClubTx(as(['accountant', 'player'], ACC), (t) => t.query('select id from public.app_user'));
     expect(r.rows).toEqual([{ id: ACC }]);
   });
-  it('the view exposes only club, id and names: no contact or identity column', async () => {
+  it('the view exposes only club, id and the two names: no contact or identity column', async () => {
     const cols = (await tdb.query(`select column_name from information_schema.columns where table_name = 'app_user_names' order by ordinal_position`)).rows.map((x) => x.column_name);
-    expect(cols).toEqual(['club_id', 'id', 'display_name']);
+    expect(cols).toEqual(['club_id', 'id', 'display_name', 'full_name']); // F02 (0101) appended full_name
   });
   it('owner and front desk read names too; a plain player or a coach reads none', async () => {
     for (const roles of [['owner', 'player'], ['front_desk', 'player']]) {

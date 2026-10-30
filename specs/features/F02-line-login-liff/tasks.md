@@ -13,10 +13,12 @@ Depends on F01 tasks: T03 to T07 (database, context, tenant suite), T10 and T11 
 
 ## A. Data and session
 
-- [ ] **F02-T01** Migration 0101: player columns on `app_user`, unique `(club_id, line_user_id)`, phone index, `duplicate_phone_flags` view. IDs: AUTH-02-AC28, LINE-01-AC14, CC-1. Role: BE-P · Deps F01-T12 · Size: S
+- [x] **F02-T01** Migration 0101: player columns on `app_user`, unique `(club_id, line_user_id)`, phone index, `duplicate_phone_flags` view. IDs: AUTH-02-AC28, LINE-01-AC14, CC-1. Role: BE-P · Deps F01-T12 · Size: S
   Tests first: the same person at two clubs has two rows; unique on club and LINE id; a shared phone is allowed and flagged on both records.
-- [ ] **F02-T02** Migration 0102: `auth_session` (hash only), pending state with a 30 minute life, housekeeping purge. IDs: LINE-01-AC13, AUTH-02-AC3. Role: BE-P · Deps T01, F01-T34 · Size: S
+  - Built (Architect): `0101_player_profile.sql`. Columns on `app_user` (full_name, phone, phone_normalized, date_of_birth, language, level, line_friend, line_friend_checked_at) with CHECKs; level codes `new`, `beginner`, `intermediate`, `advanced` (labels are copy); the unique `(club_id, line_user_id)` was already in 0003; phone index not unique; view `duplicate_phone_flags` (owner and front desk); `app_user_names` now carries `full_name`; a person may update only their profile columns; the friend state is written by `app.set_line_friend(line_user_id, friend)` (definer, club from the context) instead of an update right for the webhook, a small change from the design's `SECURITY INVOKER` handler.
+- [x] **F02-T02** Migration 0102: `auth_session` (hash only), pending state with a 30 minute life, housekeeping purge. IDs: LINE-01-AC13, AUTH-02-AC3. Role: BE-P · Deps T01, F01-T34 · Size: S
   Tests first: the table never holds a token; an expired pending row is purged; a revoked session is refused at once.
+  - Built (Architect): `0102_auth_session.sql`. Hash only (CHECK: sha-256 hex), no table privilege for any app role; `app.create_session`, `app.touch_session` (refuses revoked, expired, other club or deactivated person), `app.revoke_session` for `booq_app`; deactivating a person revokes their sessions in the same transaction; `app.purge_expired_sessions()` for the worker per club. Expiry is passed by the caller (platform config, no code default). The sessions of a test account are test data (flag follows the person).
 - [x] **F02-T03** Log redaction for `idToken`, `access_token`, `Authorization`, with a test that scans captured logs. IDs: LINE-01-AC13. Role: BE-P · Size: S
   Tests first: a request carrying a token produces no log line containing it.
 
