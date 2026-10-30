@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { PlatformDb } from '@booq/db';
+import { LINE_USER_ID } from '../line-id';
 
 // POST /clubs (P2 step 1) and GET /clubs/{id} progress (P3) (F01-T23 part a; PLAT-01-AC1, AC2, AC9;
 // design 5.2 and 7.1). Transport-neutral, like the other platform services.
@@ -47,6 +48,7 @@ function validate(body: unknown): Record<string, string> | null {
   if (REQUIRED.some((k) => out[k] === undefined)) return null;
   if (out['owner_email'] !== undefined && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(out['owner_email'])) return null;
   if (out['template_id'] !== undefined && !UUID.test(out['template_id'])) return null;
+  if (out['owner_line'] !== undefined && !LINE_USER_ID.test(out['owner_line'])) return null;
   return out;
 }
 

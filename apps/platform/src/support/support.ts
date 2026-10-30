@@ -1,4 +1,5 @@
 import type { PlatformDb, PlatformTx } from '@booq/db';
+import { LINE_USER_ID } from '../line-id';
 import type { Connections, ConnectionPlan, TestOutcome } from '../connections/connections';
 
 // The support view (F01-T19; PLAT-02-AC2 to AC7, AC9; design 5.2): GET and PUT
@@ -87,6 +88,7 @@ async function applySection(tx: PlatformTx, clubId: string, section: string, bod
     }
     case 'basics': {
       const values = pick(body, BASICS);
+      if (typeof values['owner_line'] === 'string' && !LINE_USER_ID.test(values['owner_line'])) throw new Invalid();
       // The owner contact is not a plain column write: after an owner invite exists a second admin
       // must approve it (platform.change_owner_contact decides, review T18 R5).
       const owner = Object.fromEntries(Object.entries(values).filter(([k]) => OWNER_COLUMNS.includes(k)));

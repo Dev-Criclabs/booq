@@ -23,7 +23,7 @@ const blockers = (who: string, to: string) => setStatus(who, to).then(() => null
 const progress = (who: string, club = CLUB) =>
   pdb.withPlatformTx(as(who, club), async (tx) => (await tx.query(`select platform.club_progress($1) as p`, [club])).rows[0]?.p);
 
-const owner = `owner_name = 'Nok', owner_phone = '0812345678', owner_line = '@nok', owner_email = 'nok@example.com'`;
+const owner = `owner_name = 'Nok', owner_phone = '0812345678', owner_line = 'U00000000000000000000000000000002', owner_email = 'nok@example.com'`;
 async function completeStep(step: string, club = CLUB) {
   switch (step) {
     case 'basics': {

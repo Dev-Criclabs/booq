@@ -1,5 +1,6 @@
 import { hashInviteToken, newInviteToken } from '@booq/auth';
 import type { PlatformDb, PlatformTx } from '@booq/db';
+import { LINE_USER_ID } from '../line-id';
 
 // The owner invite and the owner contact (F01-T23 part b; SR-01, D122, ROLE-02-AC8; review T18 R5;
 // design 5.2 and 7.1). Transport-neutral, like the other platform services.
@@ -145,6 +146,7 @@ export function createOwnerService(deps: { db: PlatformDb; mailer: InviteMailer;
       return { ok: false, code: 'invalid' };
     }
     if (input['owner_email'] !== undefined && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(input['owner_email'] as string)) return { ok: false, code: 'invalid' };
+    if (input['owner_line'] !== undefined && !LINE_USER_ID.test(input['owner_line'] as string)) return { ok: false, code: 'invalid' };
     if (!actor.stepUpFresh) return { ok: false, code: 'step_up_required' };
     if (!UUID.test(clubId)) return { ok: false, code: 'not_found' };
     try {
