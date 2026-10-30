@@ -29,6 +29,15 @@ export interface AppFeatureKeys {
   requires_payment_option: string | null;
 }
 
+export interface AppLaunchProducers {
+  check_key: string;
+  kind: string;
+  derive_fn: unknown | null;
+  guard_fn: unknown | null;
+  only_payment_option: string | null;
+  task: string;
+}
+
 export interface AppMoveHandlers {
   name: string;
   handler: unknown;
@@ -54,6 +63,8 @@ export interface AppReleaseHandlers {
 
 export interface AppSettingKeys {
   setting_key: string;
+  required: boolean;
+  slip_only: boolean;
 }
 
 export interface AppSetupSteps {
@@ -535,6 +546,24 @@ export interface PublicLocation {
   name: string;
 }
 
+export interface PublicMessageOutbox {
+  club_id: string;
+  id: string;
+  user_id: string;
+  kind: string;
+  params: unknown;
+  dedupe_key: string;
+  send_at: string;
+  status: string;
+  void_reason: string | null;
+  attempts: number;
+  last_error: string | null;
+  retry_key: string;
+  sent_at: string | null;
+  is_test: boolean;
+  created_at: string;
+}
+
 export interface PublicOccupancy {
   club_id: string;
   id: string;
@@ -767,6 +796,7 @@ export interface Tables {
   'app.coach_rules_hook': AppCoachRulesHook;
   'app.deletion_impact_handlers': AppDeletionImpactHandlers;
   'app.feature_keys': AppFeatureKeys;
+  'app.launch_producers': AppLaunchProducers;
   'app.move_handlers': AppMoveHandlers;
   'app.pause_handlers': AppPauseHandlers;
   'app.payment_ports': AppPaymentPorts;
@@ -817,6 +847,7 @@ export interface Tables {
   'public.import_row': PublicImportRow;
   'public.line_connection': PublicLineConnection;
   'public.location': PublicLocation;
+  'public.message_outbox': PublicMessageOutbox;
   'public.occupancy': PublicOccupancy;
   'public.opening_hours': PublicOpeningHours;
   'public.order_line': PublicOrderLine;

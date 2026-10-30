@@ -12,7 +12,7 @@ Not startable until their lists exist: F10 enqueues are called by F07 (substitut
 
 - [ ] **F10-T01** Check G1 to G4 against LINE's documentation and the club's Official Account (rich menu API and image limits, quota and consumption endpoints, Login `sub` equals Messaging API user id, Flex size limit for a two hour card). Record each result in design section 12. IDs: LINE-02, LINE-06, LINE-04. Role: BE-P · Deps the LINE test provider and Official Account (Login channel 2012300015, LIFF 2012300015-WIi1jtLB, `docs/ops/accounts.md`), so no wait for Hunter's OA · Size: S
   Tests first: none (a written record); a failed check goes to the orchestrator as a question before T08 or T10 starts. Until Hunter's real OA is ready (the ops plan has it after the 7 Dec test start), T08 to T13 are built and tested against the fake LINE and checked on the test OA.
-- [ ] **F10-T02** Migration 0601: `message_outbox` as FA §5.3 with the design columns, unique `(club_id, dedupe_key)`, partial index on `send_at` where pending, status and `void_reason` checks. IDs: LINE-03-AC6, CC-1, CC-3. Role: BE-P · Deps F01-T12 · Size: S
+- [x] **F10-T02** Migration 0601: `message_outbox` as FA §5.3 with the design columns, unique `(club_id, dedupe_key)`, partial index on `send_at` where pending, status and `void_reason` checks. IDs: LINE-03-AC6, CC-1, CC-3. Role: BE-P · Deps F01-T12 · Size: S
   Tests first: a duplicate dedupe key is refused; a CHECK refuses `params` with a name, phone or date of birth key; another club's rows are not reachable.
 - [ ] **F10-T03** Migration 0602: `notification_pref` (reminders default on, promotions default off, A-2). IDs: LINE-05, D94. Role: BE-P · Deps T02 · Size: S
   Tests first: defaults as stated; a player writes only their own row.
