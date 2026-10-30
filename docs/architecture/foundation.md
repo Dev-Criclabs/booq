@@ -625,7 +625,7 @@ Nothing left to pay (PAY-07) skips Beam: one transaction confirms the booking.
 7. If the looked-up status is not `SUCCEEDED`, record and stop.
 8. Run `applyPayment()` in the same transaction as the event insert; respond 200 after commit.
 
-PAY-02 says a bad signature or wrong amount "changes nothing". It is read as: no booking, order, payment status or ledger change. The immutable `payment_event` row is written because it is the evidence.
+PAY-02 says a bad signature or wrong amount "changes nothing". It is read as: no booking, order, payment status or ledger change. The immutable `payment_event` row is written because it is the evidence. **Exception (D147, migration 0414):** a call with a bad signature writes no `payment_event` row, because the row would take the dedupe key (charge id and event type) and block the real event that follows; the evidence is the P1 alert and a `club_health` row written by the server. A wrong amount with a valid signature is still logged.
 
 ### 6.6 `applyPayment()` (decision D25)
 
