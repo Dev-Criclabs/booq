@@ -20,8 +20,8 @@ export function createStaffInviteClient(deps: {
   signingSecret: string;
   fetch?: typeof fetch;
   now(): Date;
-  /** Called after a reset or a deactivation succeeded, to end that teammate's console sessions (the AuthStore's deleteSessionsFor). */
-  endSessions?(staffId: string): Promise<void>;
+  /** Ends every open console session of one teammate (AuthStore.deleteSessionsFor, through the sign-in module). */
+  endSessionsFor(staffId: string): Promise<void>;
 }) {
   const base = deps.url.replace(/\/+$/, '');
   const doFetch = deps.fetch ?? fetch;
@@ -49,15 +49,15 @@ export function createStaffInviteClient(deps: {
     async resetFactor(actor: StaffInviteActor, targetStaffId: string): Promise<Done> {
       const r = await post('/reset-factor', { ...base2(actor), targetStaffId });
       if (!r || r.status !== 200) return failure(r);
-      await deps.endSessions?.(targetStaffId);
+      await deps.endSessionsFor(targetStaffId); // the old factor must not keep a session open (ROLE-02-AC4)
       return { ok: true };
     },
     async deactivate(actor: StaffInviteActor, targetStaffId: string): Promise<Done> {
       const r = await post('/deactivate', { ...base2(actor), targetStaffId });
-      // A provider failure after the record was made inactive (502) still ends the sessions: sign in is refused here already.
-      if (r && r.status === 502) await deps.endSessions?.(targetStaffId);
+      // A provider failure after the row was made inactive is still a deactivation here: sign in is refused, so end the sessions anyway.
+      if (r && r.status === 502 && (r.json as { code?: unknown } | null)?.code === 'provider_failed') await deps.endSessionsFor(targetStaffId);
       if (!r || r.status !== 200) return failure(r);
-      await deps.endSessions?.(targetStaffId);
+      await deps.endSessionsFor(targetStaffId);
       return { ok: true };
     },
   };
