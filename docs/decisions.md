@@ -3,6 +3,17 @@
 Decisions made by the user, newest first. Each is also written into the PRD change log or hand-off where it changes a rule
 (`CLAUDE.md`: rule changes start in the PRD, then the hand-off, then the feature specs).
 
+## 30 Oct 2026, round 5 (approved as recommended)
+
+| # | Decision |
+|---|---|
+| D32 | Each club holds two sets of Beam keys, test and live. Testing status uses the test set. Swapping to the live set at Go live is a required item on the P4 launch checklist, with a smoke test. Test LINE messages go through the real Official Account and count toward the monthly cap |
+| D33 | Test-flagged records are excluded everywhere: reports, daily close, receipts lists and platform counts. They show only in test-mode views |
+| D34 | Personal data is encrypted in transit (TLS) and at rest (the host's standard disk encryption). Stored secrets such as Beam and LINE keys get an extra layer of encryption in the app |
+| D35 | The Accountant sees names on receipts and reports, not phone numbers or dates of birth |
+| D36 | A validly signed Beam callback with the wrong amount: record it, flag it for the owner, return a success status so Beam stops retrying (refines D24) |
+| Open | Whether a late payment that goes to the wallet gets its own receipt is with the accountant |
+
 ## 30 Oct 2026, round 4 (approved as recommended)
 
 F01 and F02 requirements were approved by the user on 30 Oct 2026 (branch `spec/f01-f02-requirements`).
