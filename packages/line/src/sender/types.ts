@@ -3,6 +3,8 @@
 // LineTransport pushes them with the club's own token and the row's retry key (F10-T09, http-transport.ts).
 // Tests use the fake LINE.
 
+import type { MessageFacts } from '../messages/facts';
+
 export type MessageLanguage = 'th' | 'en';
 
 /** A LINE message object (text or Flex), as the Messaging API push takes it. */
@@ -19,6 +21,8 @@ export interface OutgoingMessage {
   params: Record<string, unknown>;
   /** Read at send time (D93). */
   language: MessageLanguage;
+  /** Names, times and amounts looked up at send time from the ids in params (app.message_facts). */
+  facts: MessageFacts;
 }
 
 export interface MessageBuilder {
