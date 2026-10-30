@@ -198,10 +198,10 @@ describe('who may move (D60, D107)', () => {
     expect((await where(booking)).resource_id).toBe(COURT1);
   });
 
-  it('in a Paused club front desk is refused and the owner can still move', async () => {
+  it('in a Paused club front desk and the owner can still move existing bookings (D107, migration 0225)', async () => {
     const { booking } = await book(P1, 18);
     await tdb.query(`update public.club set status = 'paused' where id = $1`, [A]);
-    expect(await move(front, booking, COURT2, 20)).toEqual({ ok: false, code: 'club_paused', detail: undefined });
-    expect(await move(owner, booking, COURT2, 20)).toEqual({ ok: true, value: true });
+    expect(await move(front, booking, COURT2, 20)).toEqual({ ok: true, value: true });
+    expect(await move(owner, booking, COURT1, 21)).toEqual({ ok: true, value: true });
   });
 });
