@@ -84,7 +84,7 @@ Migration numbers are 0301 to 0399 and rise with task order (the migrator refuse
 
 ## Follow-up added by F08 (gate 3 of that feature, 30 Oct 2026)
 
-- [ ] **F04-T22a** Migration 0314: `order_line.kind` gains `class_seat`, with the CHECK that a `class_seat` line names its booking and carries the same allocation columns as a court hour line. IDs: CLASS-01-AC14, AC17, R4 (F04). Role: BE-C · Deps F04-T12 (Pay) · Size: S
+- [ ] **F04-T22a** Migration 0516 (D159: above F06-T03b's 0504, which also redefines the kind CHECK; build it after F06-T03b, the final CHECK lists every kind): `order_line.kind` gains `class_seat`, with the CHECK that a `class_seat` line names its booking and carries the same allocation columns as a court hour line. IDs: CLASS-01-AC14, AC17, R4 (F04). Role: BE-C · Deps F04-T12 (Pay) · Size: S
   Tests first: a `class_seat` line without a booking is refused; the deferred sum invariant of 0303 holds for a seat line; existing kinds are unchanged.
 - [ ] **F04-T22b** Migration 0315: Pay calls `app.take_seat` (F08-T05b) for a `class_seat` line and prices it from credit, wallet or the class template's drop in price (null means no drop in price, D157), in the order of D22. IDs: CLASS-01-AC14, AC15, R4 (F04), D22, D157. Role: BE-C · Deps F04-T22a, F08-T05b · Size: M
   Tests first: a seat paid by credit, then wallet, then money; a null drop in price needs credit or wallet; a group credit of the wrong audience is refused; a full session refuses the seat and nothing is used up.
