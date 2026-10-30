@@ -15,7 +15,14 @@ export type Done = { ok: true } | { ok: false; code: StaffInviteFailure };
 
 const KNOWN = new Set<string>(['unauthorized', 'forbidden', 'step_up_required', 'bad_input', 'email_taken', 'same_person', 'last_admin', 'not_found', 'provider_failed', 'internal']);
 
-export function createStaffInviteClient(deps: { url: string; signingSecret: string; fetch?: typeof fetch; now(): Date }) {
+export function createStaffInviteClient(deps: {
+  url: string;
+  signingSecret: string;
+  fetch?: typeof fetch;
+  now(): Date;
+  /** Called after a reset or a deactivation succeeded, to end that teammate's console sessions (the AuthStore's deleteSessionsFor). */
+  endSessions?(staffId: string): Promise<void>;
+}) {
   const base = deps.url.replace(/\/+$/, '');
   const doFetch = deps.fetch ?? fetch;
   async function post(path: string, body: Record<string, unknown>): Promise<{ status: number; json: unknown } | null> {
@@ -41,11 +48,17 @@ export function createStaffInviteClient(deps: { url: string; signingSecret: stri
     },
     async resetFactor(actor: StaffInviteActor, targetStaffId: string): Promise<Done> {
       const r = await post('/reset-factor', { ...base2(actor), targetStaffId });
-      return r && r.status === 200 ? { ok: true } : failure(r);
+      if (!r || r.status !== 200) return failure(r);
+      await deps.endSessions?.(targetStaffId);
+      return { ok: true };
     },
     async deactivate(actor: StaffInviteActor, targetStaffId: string): Promise<Done> {
       const r = await post('/deactivate', { ...base2(actor), targetStaffId });
-      return r && r.status === 200 ? { ok: true } : failure(r);
+      // A provider failure after the record was made inactive (502) still ends the sessions: sign in is refused here already.
+      if (r && r.status === 502) await deps.endSessions?.(targetStaffId);
+      if (!r || r.status !== 200) return failure(r);
+      await deps.endSessions?.(targetStaffId);
+      return { ok: true };
     },
   };
 }

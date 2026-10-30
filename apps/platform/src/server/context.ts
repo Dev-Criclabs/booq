@@ -18,6 +18,8 @@ import { createTesterService } from '../testers/testers';
 import { testerRoutes } from '../testers/routes';
 import { supportRoutes } from '../support/routes';
 import { createSupportService } from '../support/support';
+import { createWebhookTokenService } from '../webhook-token/webhook-token';
+import { webhookTokenRoutes } from '../webhook-token/routes';
 import type { Connections } from '../connections/connections';
 import type { PlatformRoute, PlatformSource } from '../http/server';
 
@@ -123,6 +125,7 @@ export function createPlatformTable(parts: PlatformParts): PlatformSource {
       ...ownerRoutes({ owner: createOwnerService({ db, mailer: parts.mailer ?? mailerNotConnected, baseUrl: config.appBaseUrl }) }),
       ...testerRoutes({ testers: createTesterService({ db, baseUrl: config.appBaseUrl }) }),
       ...supportRoutes({ support: createSupportService({ db, ...(parts.connections ? { connections: parts.connections } : {}) }) }),
+      ...webhookTokenRoutes({ webhookTokens: createWebhookTokenService({ db, baseUrl: config.appBaseUrl }) }),
       ...(config.healthToken ? healthRoutes({ health: createHealthService({ db, token: config.healthToken }) }) : []),
       ...(parts.extraRoutes ?? []),
     ],

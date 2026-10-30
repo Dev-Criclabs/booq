@@ -39,4 +39,16 @@ describe('staff-invite client', () => {
     const down = createStaffInviteClient({ url: 'https://x', signingSecret: SECRET, fetch: (async () => { throw new Error('down'); }) as unknown as typeof fetch, now: () => NOW });
     expect(await down.deactivate(actor, 't-1')).toEqual({ ok: false, code: 'unreachable' });
   });
+
+  it('ends the teammate\'s console sessions after a reset or a deactivation, and not after a refusal', async () => {
+    const ended: string[] = [];
+    const mk = (status: number, body: unknown) =>
+      createStaffInviteClient({ url: 'https://x', signingSecret: SECRET, now: () => NOW, endSessions: async (id) => void ended.push(id), fetch: (async () => new Response(JSON.stringify(body), { status })) as unknown as typeof fetch });
+    await mk(200, { ok: true }).resetFactor(actor, 't-1');
+    await mk(200, { ok: true }).deactivate(actor, 't-2');
+    await mk(502, { code: 'provider_failed' }).deactivate(actor, 't-3');
+    await mk(409, { code: 'same_person' }).resetFactor(actor, 't-4');
+    await mk(403, { code: 'forbidden' }).deactivate(actor, 't-5');
+    expect(ended).toEqual(['t-1', 't-2', 't-3']);
+  });
 });
