@@ -25,7 +25,11 @@
     "A-new.data_request_bad_transition": "This request has already been handled.",
     "A-new.claim_not_open": "This claim has already been handled.",
     "A-new.data_request_future_booking": "This player has a booking that has not happened yet. Cancel it first, then confirm the deletion.",
-    "A-new.data_request_already_erased": "This player's data has already been deleted."
+    "A-new.data_request_already_erased": "This player's data has already been deleted.",
+    "X-new.webhook_token_shown_once": "Copy this address now. It is shown once and cannot be read back. Making a new one stops the old address working.",
+    "X-new.webhook_token_replaced": "The previous address no longer works. Update it in the {provider} console.",
+    "X-new.webhook_token_look_only": "This club can only be viewed now. Ask the owner to allow BOOQ changes first.",
+    "X-new.webhook_token_step_up": "Confirm your second factor again to make a webhook address."
   },
   "th": {
     "L-new.club_paused": "BOOQ หยุดการจองออนไลน์ของ {clubName} ชั่วคราว เหตุผล: {reason} การจองที่มีอยู่และการแจ้งเตือนไม่ได้รับผลกระทบ และวันหมดอายุของแพ็กเกจและกระเป๋าเงินจะเลื่อนออกไปตามระยะเวลาที่หยุด",
