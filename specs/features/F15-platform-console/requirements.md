@@ -1,6 +1,6 @@
 # F15 Platform console P1 to P6 · Requirements
 
-Status: **DRAFT for approval (gate 1).** Drafted 30 Oct 2026. Nothing here is approved until a person says so. No design or code follows until then.
+Status: **Approved 30 Oct 2026** (gate 1). Recorded in `docs/decisions.md`, round 11: D146 approves the F14 and F15 requirements and D129 to D145 answer their questions. Revision 2 applies D137 to D145. Q10 (platform log retention) stays open and parked. Changes after approval go PRD, then hand-off, then this file. No design or code follows until the design gate.
 
 Feature: F15 Platform console. Depends on: F01. Requirement IDs: PLAT-01 to PLAT-07 as they appear on the P pages (F01 owns the rules and data; F15 owns the screens and platform routes), ROLE-02, LINE-06, and the page rules the hand-off has no ID for (labelled R1 to R6, local to this file). Waves 3 to 5; P2 to P4 are needed to put Hunter into Testing and Live.
 
@@ -10,7 +10,7 @@ Feature: F15 Platform console. Depends on: F01. Requirement IDs: PLAT-01 to PLAT
 |---|---|---|
 | PRD | `specs/product/prd-v1.2.md` | BOOQ platform and club onboarding (Who uses it, What a club needs before it can go live, Platform console pages, Platform flows J and K, Pausing a live club, Support access, What changes in the club app, Platform foundation, Open questions for the platform); Payment checking and LINE message costs; Key dates |
 | HO | `specs/product/handoff-v1.2.md` | Roles, platform console and data protection (PLAT-01 to PLAT-07, ROLE-02, PDPA-01); LINE integration (LINE-06, LINE-07); Screen inventory (Platform console row); Payments (PAY-01) |
-| Decisions | `docs/decisions.md` | D2, D3, D4, D14, D15, D26, D27, D32, D33, D75, D98, D100, D101, D102, D103, D108, D114, D122, D123; D6 (shared domain with the club in the URL) |
+| Decisions | `docs/decisions.md` | D2, D3, D4, D14, D15, D26, D27, D32, D33, D75, D98, D100, D101, D102, D103, D108, D114, D122, D123, D137 to D145; D6 (shared domain with the club in the URL) |
 | Gaps | `docs/canvas-gaps.md` | A2 (slip tests in P4), B6, C7 |
 | F01 | `specs/features/F01-platform-foundation/requirements.md` | The rules F15 shows: status, support view, pause, audit, templates, export, test mode |
 | Other features | F05, F10, F11, F13 | Beam keys and tests, rich menu and LINE health, A0 and A16, receipts series |
@@ -49,7 +49,7 @@ H- hi-fi, F4-, F5a-, F5b- flow copies (not repeated). Boards: H-P1-Clubs, H-P1-C
 
 **Acceptance criteria.**
 
-- ROLE-02-F15-AC1. Given the platform console, when a BOOQ staff member opens it, then they sign in with email plus a second factor, not LINE; without the second factor no session is created (F01 ROLE-02-AC1).
+- ROLE-02-F15-AC1. Given the platform console, when a BOOQ staff member opens it, then they sign in with email plus a second factor that is an authenticator app (D137), not LINE; without the second factor no session is created (F01 ROLE-02-AC1).
 - ROLE-02-F15-AC2. Given P6, when a platform admin invites a teammate (name, role), then an invite goes out and the teammate sets their own email sign in and second factor; the role is Platform admin or Onboarding specialist; a specialist is assigned clubs.
 - ROLE-02-F15-AC3. Given P6, when a platform admin assigns clubs to a specialist, then the specialist sees only those clubs in P1 (P1 "Onboarding specialists only see clubs assigned to them").
 - ROLE-02-F15-AC4. Given a teammate is removed or deactivated, when it is saved, then they cannot sign in and open sessions end (F01 ROLE-02-AC4).
@@ -94,12 +94,12 @@ H- hi-fi, F4-, F5a-, F5b- flow copies (not repeated). Boards: H-P1-Clubs, H-P1-C
 - P1-AC2. Given the bookings count and the message count, then they are aggregate numbers computed on the server; there is no way to open the rows behind them (D2, PLAT-02-AC11).
 - P1-AC3. Given a club in Testing, when P1 loads, then its counts show "Test only" and test data is excluded from the live counts (D33).
 - P1-AC4. Given status filter chips (All, Live, Testing, Draft, Paused) with counts, when one is chosen, then the list is filtered.
-- P1-AC5. Given alerts, when P1 loads, then clubs with alerts are listed first. Alert kinds in v1 are those the spec names: LINE token failed or expired (LINE-06, D114), LINE message cap at 70 percent (LINE-07, D98), Beam key check failed and Beam unreachable (D75), a bad signature on Beam callbacks (D75), LINE usage unreadable (D97), owner has not opened the invite, a failed live check in P3. Each alert opens the club in P3.
+- P1-AC5. Given alerts, when P1 loads, then clubs with alerts are listed first. The alert kinds are final for v1 (D144): LINE token failed or expired (LINE-06, D114), LINE message cap at 70 percent (LINE-07, D98), Beam key check failed and Beam unreachable (D75), a bad signature on Beam callbacks (D75), LINE usage unreadable (D97), owner has not opened the invite or signed in (D138), a failed live check in P3. Each alert opens the club in P3.
 - P1-AC6. Given a club row, when it is clicked, then P3 Club detail opens.
 - P1-AC7. Given the LINE message count, when it is shown, then it comes from LINE's own count for the club's Official Account against the club's plan limit (F10 LINE-06-AC2), and the plan (free or paid) shows.
 - P1-AC8. Given the New club button, when a platform admin or specialist presses it, then P2 starts and the club is saved as a Draft.
 - P1-AC9. Given a paused club, when P1 loads, then it shows Paused with its reason in P3 (H-P1-Clubs-paused).
-- P1-AC10. Given what P1 shows for a club with a deleted owner or no owner, then it is not decided (Q2).
+- P1-AC10. Given a club whose owner has not signed in, when P1 loads, then it shows an alert for that club, and P3 offers a fresh owner invite bound to the owner's LINE ID (D138, D122).
 
 **Meets.** PDPA: counts only (CC-3). No double booking: not relevant. Club scope: per club row; specialists by assignment. TEXT: X keys.
 
@@ -117,16 +117,16 @@ H- hi-fi, F4-, F5a-, F5b- flow copies (not repeated). Boards: H-P1-Clubs, H-P1-C
 
 - P2-AC1. Given P2 step 1 (Club basics), when it is filled, then it holds the club name in Thai and English, the legal company name, tax ID (13 digits), branch, the registered address printed on receipts, the owner's name, phone, LINE ID and email, and the default language; the receipt prefix is also set here and is required before Go live (D106).
 - P2-AC2. Given the owner's LINE ID entered in step 1, when the club is saved, then the owner invite is bound to that LINE ID and is single use (D122).
-- P2-AC3. Given P2 step 2 (Plan), when it is shown, then it states one BOOQ plan of ฿1,900 a month plus VAT for every club, not editable per club, and sets only the trial end and the billing start (PRD). Whether BOOQ bills through the platform is open (Q3).
-- P2-AC4. Given P2 step 3 (Courts and hours), when it is filled, then it holds the sport, the location (Hunter: Main location · Head office; Add location exists in the data model, F01 Q26), the courts as resources (name, sport, indoor or outdoor, lights, players) and opening hours per day; bookings stay 60 minutes on the hour (PRD, F01).
+- P2-AC3. Given P2 step 2 (Plan), when it is shown, then it states one BOOQ plan of ฿1,900 a month plus VAT for every club, not editable per club, and sets only the trial end and the billing start, which are dates BOOQ keeps; there is no billing in the platform in v1 (D139).
+- P2-AC4. Given P2 step 3 (Courts and hours), when it is filled, then it holds the sport (Tennis, Padel, Pickleball or Badminton; Badminton is a sport label that uses the Blank template, D141), the location (Hunter: Main location · Head office; Add location exists in the data model, F01 Q26), the courts as resources (name, sport, indoor or outdoor, lights, players) and opening hours per day; bookings stay 60 minutes on the hour (PRD, F01).
 - P2-AC5. Given P2 step 4 (LINE), when it is filled, then it holds the LINE provider, the Official Account ID, the LINE Login channel ID, the LIFF app ID and the Messaging API token (stored encrypted, write only, last 4 shown, D27, D34), each with a Test and a result, and a step by step guide; the three must sit under one provider (D7).
 - P2-AC6. Given P2 step 4, when the rich menu is uploaded, then the club's own menu goes to its own Official Account with the owner's labels, and it can be redone after the owner sets labels (F10 LINE-02-AC5).
-- P2-AC7. Given P2 step 5 (Payments), when it is filled, then the club picks Beam or PromptPay with slip checking (PAY-01); for Beam it holds the club's own Beam merchant details in two sets, test and live, with a Test connection (D32); the slip option is F16 and is not built for Hunter.
+- P2-AC7. Given P2 step 5 (Payments), when it is filled, then the club picks Beam or PromptPay with slip checking (PAY-01); for Beam, BOOQ staff enter the Beam merchant ID, the test and live API keys and the webhook signing key at setup, write only (D142, D27, D32), with a Test connection; the slip option is F16 and is not built for Hunter.
 - P2-AC8. Given any step, when BOOQ staff press Save draft or Next, then the club is saved as a Draft and later steps stay editable; a club with unsaved required fields stays Draft.
 - P2-AC9. Given the Tests, when a test fails, then the club stays Draft or Testing and P3 shows what is missing and who owes it (Flow J).
 - P2-AC10. Given the wizard text "Refunds go back by PromptPay" on the Beam option (PRD, Gaps A3), when F15 is built, then it is not built; the text says wallet or package credit (D117).
 - P2-AC11. Given P2, when a club is created, then it records the template chosen (Tennis or Blank) and the creator, and writes P6 (PLAT-05-AC12).
-- P2-AC12. Given a club's web address, when it is created, then the club is reached on the one shared BOOQ domain with the club in the URL (D6); how the club's URL name is set and checked for uniqueness is Q4.
+- P2-AC12. Given a club's web address, when it is created, then the club is reached on the one shared BOOQ domain with the club in the URL (D6). The URL name is set in P2 step 1, must be unique, may change while the club is in Draft or Testing and is fixed after Go live (D140).
 
 **Meets.** PDPA: owner contact details are club setup data BOOQ may hold (D2). No double booking: not relevant. Club scope: P2 creates one club. TEXT: X keys, English only; Thai fields (club name Thai) are club data, not text.
 
@@ -169,7 +169,7 @@ H- hi-fi, F4-, F5a-, F5b- flow copies (not repeated). Boards: H-P1-Clubs, H-P1-C
 - P4-AC1. Given a club in Testing, when P4 loads, then it shows the test mode results as pass or fail per check only, never the test bookings, players, payments or receipts (D4, PLAT-07-AC6), and a Run tests again action.
 - P4-AC2. Given the test checklist, when it is built for a Beam club, then it holds checks that apply to Beam (a mock court booking with bundle hours, a sandbox payment confirmed by a verified callback, the LINE confirmation arrives, the reminder is sent, the receipt PDF has the club's legal details, the booking shows on the club calendar); the fake slip checks of the canvas board are for slip clubs only (Gaps A2, F16). The full Beam list is F01 Q7.
 - P4-AC3. Given test payments, when they run, then they use Beam's sandbox only; there is no in app simulate payment (D26).
-- P4-AC4. Given the Go live checklist, when it is shown, then it holds: all setup steps done, LINE and payment checks pass today, at least one product and every required rule set, prices and packages checked by the owner, staff and coaches invited, test bookings will be cleared (deleted at Go live), the owner agrees to the go live date; and beyond these, the owner has signed in, one completed test booking, the per player pay tap limit is set, and the Beam key swap with its smoke test is done (D108, D32).
+- P4-AC4. Given the Go live checklist, when it is shown, then it holds: all setup steps done, LINE and payment checks pass today, at least one product, the rules required for booking to work set (empty TBD values do not block Go live, D143), prices and packages checked by the owner, staff and coaches invited, test bookings will be cleared (deleted at Go live), the owner agrees to the go live date; and beyond these, the owner has signed in, one completed test booking, the per player pay tap limit is set, and the Beam key swap with its smoke test is done (D108, D32).
 - P4-AC5. Given any line unticked, when staff press Go live, then the server refuses and the button is locked (PLAT-01-AC3).
 - P4-AC6. Given Go live, when it completes, then the status becomes Live, the club moves to the live Beam key set, all test flagged rows are purged (only tester kind rows; owner, staff and coach accounts and audit entries survive, D100, D101), the real receipt series starts at 000001 for the Bangkok year (D4, D106), and P6 records it.
 - P4-AC7. Given a failed purge, when any row cannot be purged, then Go live does not complete and the club stays Testing (F01 PLAT-07-AC4).
@@ -188,12 +188,12 @@ H- hi-fi, F4-, F5a-, F5b- flow copies (not repeated). Boards: H-P1-Clubs, H-P1-C
 
 **Acceptance criteria.**
 
-- P5-AC1. Given P5, when it loads, then it lists the templates (Tennis with Hunter's setup, Padel and Pickleball "to build", Blank) and shows the selected template's products, prices and rules (H-P5-Templates).
+- P5-AC1. Given P5, when it loads, then it lists the templates: Tennis with Hunter's setup and Blank are usable; Padel and Pickleball show as to build and cannot be chosen (D145); it shows the selected template's products, prices and rules (H-P5-Templates).
 - P5-AC2. Given the Tennis template, when it is shown, then it carries the PRD default prices and the rules of F01 PLAT-05-AC15 and AC16; Blank shows no products and empty rules (H-P5b-Templates-blank, D8).
 - P5-AC3. Given a template, when it shows "Used by n clubs", then it states that changes affect new clubs only.
-- P5-AC4. Given New template, Duplicate and Edit on the canvas, when F15 is built, then whether they exist in v1 is F01 Q5.
+- P5-AC4. Given New template, Duplicate and Edit on the canvas, when F15 is built, then only Tennis and Blank are usable in v1 (D145); the three actions are not built unless F01 Q5 says otherwise.
 - P5-AC5. Given a club picks a template, when it is applied (P2 or A0 step 7), then it is copied into the club (F01 PLAT-05-AC7) and written to P6.
-- P5-AC6. Given Blank, when a club starts from it, then Go live stays blocked until at least one product and every required rule is set (PRD P5, F01 PLAT-01-AC4).
+- P5-AC6. Given Blank, when a club starts from it, then Go live stays blocked until at least one product and the rules required for booking to work are set (PRD P5, F01 PLAT-01-AC4, D143).
 
 **Meets.** PDPA: not relevant. No double booking: a template cannot set booking length. Club scope: templates are platform data; copies are club data. TEXT: X keys.
 
@@ -232,13 +232,7 @@ No key is added by this draft.
 
 ## Open questions
 
-1. **Second factor and the sign in screen (ROLE-02).** Which second factor (authenticator app, SMS, email code), and is there a board for the BOOQ sign in screen? (Reset by another platform admin is settled, D123.)
-2. **A club with no owner signed in.** What does P1 show and what does P3 offer when the owner invite is unopened for a long time, or the owner left?
-3. **Billing through the platform (PRD open question, C7).** The plan is ฿1,900 a month plus VAT but P2 step 2 says billing through the platform is open. Is BOOQ billing built in v1, or are trial end and billing start only dates BOOQ keeps?
-4. **Club URL name (D6).** Where is the club's name in the URL set (a P2 field), who checks it is unique, and can it change after Go live?
-5. **Sports on P2 step 3.** The canvas lists Tennis, Padel, Pickleball and Badminton, but P5 has templates Tennis, Padel, Pickleball and Blank only. Is Badminton a sport label without a template, or removed?
-6. **P2 step 5 for a Beam club.** Which Beam details does BOOQ enter (merchant ID, API key and webhook signing key in two sets) and which does the club owner enter? Hunter's account and sandbox are the user's own task.
-7. **Beam test list (F01 Q7).** The full P4 checks for a Beam club, and which "every rule is set" must be ticked for Hunter with TBD settings empty.
-8. **Alert kinds.** Are the alert kinds in P1-AC5 the full list for v1, and who is told for each (BOOQ only, or also the owner)? D75 and D114 settle some.
-9. **Templates actions (F01 Q5).** New template, Duplicate and Edit in v1 or only Tennis and Blank?
-10. **Platform audit retention (P6-AC6).** How long is P6 kept? (Parked pattern with F01 Q13.)
+D137 to D145 answer the earlier questions on the second factor, a club with no owner signed in, billing, the club URL name, Badminton, the Beam details in step 5, Go live rules, alert kinds and template actions, and they are removed. Two remain:
+
+1. **Beam test list for P4 (F01 Q7).** Recommended default (D147): the P4 checks for a Beam club are the six in P4-AC2 (mock court booking with bundle hours, a sandbox payment confirmed by a verified callback, the LINE confirmation arrives, the reminder is sent, the receipt PDF has the club's legal details, the booking shows on the club calendar), with the fake slip checks left to slip clubs (F16). The orchestrator confirms or amends it.
+2. **Platform audit retention (P6-AC6, Q10).** How long is P6 kept? Parked by the user (retention periods); not decided here.
