@@ -24,6 +24,7 @@ Depends on: F01 `club.receipt_prefix`, `vat_enabled`, T13 route wrapper, T18 gra
   Tests first: front desk, Accountant, coach and player refused; blank reason refused; a second void refuses; no other row changes.
 - [ ] **F13-T06** `renderReceipt(receipt, language, copy)` in `packages/receipts`: A4 PDF from the snapshot, all text by key, legal name, tax ID, branch and address from the club record, test mark, Copy mark. IDs: RCPT-01-AC11, AC12, RCPT-02, TEXT-01, TEXT-03. Role: BE-C · Deps T01, T19 (may start with the keys that exist and add the rest in `locales/pending/F13.json`) · Size: M
   Tests first: same snapshot gives the same content in Thai and English; reprint carries the original number and date and a Copy mark; no literal user facing string in the template (lint); dates use the international year; longest Thai line does not clip.
+  Orchestrator note (F06-T04, 0505): a `wallet_credit` line stores its text key in `description_key` and the key again in `name_th`/`name_en`; render the line text from `description_key` through the language files (key `L-new.wallet_credit_line`, pending in f06.json), never from the name columns.
 
 ## C. Daily close and reports
 

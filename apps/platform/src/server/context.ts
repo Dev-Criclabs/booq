@@ -1,5 +1,5 @@
-import { createMemoryAuthStore, createPlatformAuth, type IdentityProvider } from '../auth/sign-in';
-import { createDbAuditSink, createDbStaffDirectory, IdentityUnavailable } from '../auth/adapters';
+import { createPlatformAuth, type IdentityProvider } from '../auth/sign-in';
+import { createDbAuditSink, createDbAuthStore, createDbStaffDirectory, IdentityUnavailable } from '../auth/adapters';
 import { authRoutes } from '../auth/routes';
 import { createRateLimiter, type RateLimiter } from '@booq/auth';
 import type { PlatformDb } from '@booq/db';
@@ -16,6 +16,8 @@ import { createOwnerService, type InviteMailer } from '../owner/owner';
 import { ownerRoutes } from '../owner/routes';
 import { createTesterService } from '../testers/testers';
 import { testerRoutes } from '../testers/routes';
+import { adminRoutes } from '../admin/routes';
+import { createAdminService } from '../admin/admin';
 import { supportRoutes } from '../support/routes';
 import { createSupportService } from '../support/support';
 import type { Connections } from '../connections/connections';
@@ -106,7 +108,7 @@ export function createPlatformTable(parts: PlatformParts): PlatformSource {
     identity,
     staff: createDbStaffDirectory(db),
     audit: createDbAuditSink(db),
-    store: createMemoryAuthStore(), // sessions live in this process: a durable shared store comes with the hosting choice
+    store: createDbAuthStore(db, { sealKey: config.signingKey }), // shared by every console process (migration 0051)
     clock,
     signingKey: config.signingKey,
   });
@@ -122,6 +124,7 @@ export function createPlatformTable(parts: PlatformParts): PlatformSource {
       }),
       ...ownerRoutes({ owner: createOwnerService({ db, mailer: parts.mailer ?? mailerNotConnected, baseUrl: config.appBaseUrl }) }),
       ...testerRoutes({ testers: createTesterService({ db, baseUrl: config.appBaseUrl }) }),
+      ...adminRoutes({ admin: createAdminService({ db }) }),
       ...supportRoutes({ support: createSupportService({ db, ...(parts.connections ? { connections: parts.connections } : {}) }) }),
       ...(config.healthToken ? healthRoutes({ health: createHealthService({ db, token: config.healthToken }) }) : []),
       ...(parts.extraRoutes ?? []),

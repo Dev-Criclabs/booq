@@ -1,6 +1,4 @@
 import { describe, expect, it, vi } from 'vitest';
-import { noticeVersion } from './consent';
-import { translator } from './i18n';
 import { continueKey, missing, submitProfile, type ProfileInput } from './profile-setup';
 
 // C2 submit (F02-T20): AUTH-02-AC1 to AC6.
@@ -9,7 +7,7 @@ const next = '/c/hunter/checkout?court=2&date=2027-01-09&from=18:00&to=19:00';
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 function input(over: Partial<ProfileInput>, reply: () => Promise<Response> | Response = () => json(200, { state: 'active' })) {
   const f = vi.fn(async () => reply()) as unknown as typeof fetch;
-  return { f, input: { slug: 'hunter', next, fullName: 'Ploy Srisuk', phone: '081 234 5678', consent: true, language: 'th' as const, noticeVersion: async () => 'v', fetch: f, ...over } };
+  return { f, input: { slug: 'hunter', next, fullName: 'Ploy Srisuk', phone: '081 234 5678', consent: true, language: 'th' as const, noticeVersion: 'v3' as string | null, fetch: f, ...over } };
 }
 
 describe('C2 submit', () => {
@@ -18,7 +16,7 @@ describe('C2 submit', () => {
     expect(await submitProfile(s.input)).toEqual({ kind: 'go', url: next });
     const [url, init] = (s.f as unknown as { mock: { calls: [string, RequestInit][] } }).mock.calls[0]!;
     expect(url).toBe('/api/c/hunter/auth/profile');
-    expect(JSON.parse(init.body as string)).toEqual({ fullName: 'Ploy Srisuk', phone: '081 234 5678', consent: true, noticeVersion: 'v', language: 'th' });
+    expect(JSON.parse(init.body as string)).toEqual({ fullName: 'Ploy Srisuk', phone: '081 234 5678', consent: true, noticeVersion: 'v3', language: 'th' });
   });
 
   it('AUTH-02-AC3: without consent nothing is sent and the screen says what is missing', async () => {
@@ -53,12 +51,15 @@ describe('C2 submit', () => {
   });
 });
 
-describe('notice version (AUTH-02-AC4)', () => {
-  it('is a fingerprint of the consent text shown, different per language', async () => {
-    const th = await noticeVersion(translator('th'), 'th');
-    expect(th).toMatch(/^text-sha256:[0-9a-f]{32}$/);
-    expect(th.length).toBeLessThanOrEqual(64);
-    expect(await noticeVersion(translator('th'), 'th')).toBe(th);
-    expect(await noticeVersion(translator('en'), 'en')).not.toBe(th);
+describe('notice version (D152, AUTH-02-AC4)', () => {
+  it('sends the current release from the club config, and nothing when none is published', async () => {
+    const none = input({ noticeVersion: null });
+    expect(await submitProfile(none.input)).toEqual({ kind: 'error', key: 'P-new.notice_unavailable' });
+    expect(none.f).not.toHaveBeenCalled();
+  });
+
+  it('a release published meanwhile asks for consent again; no release is the unavailable message', async () => {
+    expect(await submitProfile(input({}, () => json(409, { code: 'notice_version_stale' })).input)).toEqual({ kind: 'stale' });
+    expect(await submitProfile(input({}, () => json(409, { code: 'no_notice' })).input)).toEqual({ kind: 'error', key: 'P-new.notice_unavailable' });
   });
 });

@@ -51,7 +51,7 @@ beforeEach(async () => {
       db,
       verifier: createLineVerifier({ baseUrl: server.url, now: () => clock.now() }),
       now: () => new Date(),
-      config: { sessionSeconds: 3600, maxBodyBytes: 100_000, importLimits: null, signInRateLimit: { limit: 3, windowSeconds: 60 } },
+      config: { sessionSeconds: 3600, maxBodyBytes: 100_000, importLimits: null, signInRateLimit: { limit: 3, windowSeconds: 60, hmacKey: 'k'.repeat(40) } },
     }),
   );
 });
@@ -119,8 +119,25 @@ describe('rate limit on sign-in (value from config)', () => {
     const body = { idToken: line.issueIdToken('UPERSON', A) };
     for (let i = 0; i < 3; i += 1) expect((await call('POST', '/api/c/a/auth/session', { body, headers: ip })).status).toBe(200);
     const blocked = await call('POST', '/api/c/a/auth/session', { body, headers: ip });
-    expect(blocked).toMatchObject({ status: 429, body: { code: 'rate_limited' }, retryAfter: '60' });
+    expect(blocked).toMatchObject({ status: 429, body: { code: 'rate_limited' } });
+    expect(Number(blocked.retryAfter)).toBeGreaterThanOrEqual(1);
+    expect(Number(blocked.retryAfter)).toBeLessThanOrEqual(60);
     expect(await sessions()).toHaveLength(3);
     expect((await call('POST', '/api/c/a/auth/session', { body, headers: { 'x-real-ip': '203.0.113.8' } })).status).toBe(200);
+  });
+  it('is counted in the database per club, by a hash: the address itself is never stored, and another club is not affected', async () => {
+    const ip = { 'x-forwarded-for': '203.0.113.9, 10.0.0.1' };
+    for (let i = 0; i < 3; i += 1) await call('POST', '/api/c/a/auth/session', { body: { idToken: line.issueIdToken('UPERSON', A) }, headers: ip });
+    expect((await call('POST', '/api/c/a/auth/session', { body: { idToken: line.issueIdToken('UPERSON', A) }, headers: ip })).status).toBe(429);
+    const hits = (await tdb.query('select club_id, key_hash, hits from public.rate_limit_hit')).rows;
+    expect(hits).toHaveLength(1);
+    expect(hits[0]).toMatchObject({ club_id: A, hits: 4 });
+    expect(hits[0].key_hash).toMatch(/^[0-9a-f]{64}$/);
+    expect(JSON.stringify(hits)).not.toContain('203.0.113.9');
+    expect((await call('POST', '/api/c/b/auth/session', { body: { idToken: line.issueIdToken('UOTHER', B) }, headers: ip })).status).toBe(200);
+  });
+  it('an unknown club is 404 and nothing is counted', async () => {
+    expect((await call('POST', '/api/c/nope/auth/session', { body: {}, headers: { 'x-real-ip': '203.0.113.7' } })).status).toBe(404);
+    expect((await tdb.query('select count(*)::int n from public.rate_limit_hit')).rows[0].n).toBe(0);
   });
 });

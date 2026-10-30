@@ -20,14 +20,11 @@ export function Notice({ t, nameKey, doc }: { t: T; nameKey: string; doc: Notice
     <main className="app notice" data-testid="notice">
       <h1 className="notice-title">{doc.title}</h1>
       <p className="notice-version">{t('P-new.notice_version', { version: doc.version })}</p>
-      {doc.sections.map((s, i) => (
-        <section key={i} className="notice-section">
-          <h2>{s.heading}</h2>
-          {paragraphs(s.body).map((p, j) => (
-            <p key={j}>{p}</p>
-          ))}
-        </section>
-      ))}
+      <section className="notice-section">
+        {paragraphs(doc.body).map((p, j) => (
+          <p key={j}>{p}</p>
+        ))}
+      </section>
     </main>
   );
 }
