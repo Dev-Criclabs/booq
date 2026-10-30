@@ -14,6 +14,10 @@ export interface PlatformContext {
   /** Reason for the audited change, when the screen asked for one. */
   reason?: string;
   supportSessionId?: string;
+  /** The club being visited, so a note in the club's own audit log can name it (audit.note reads app.club_id). */
+  clubId?: string;
+  /** Shown in the club's audit log as the actor, for example the staff member's name. */
+  actorLabel?: string;
 }
 
 export interface PlatformTx {
@@ -44,6 +48,7 @@ export function createPlatformDb(options: PlatformDbOptions): PlatformDb {
     async withPlatformTx<T>(ctx: PlatformContext, fn: (tx: PlatformTx) => Promise<T>): Promise<T> {
       if (ctx.staffId !== null && !UUID.test(ctx.staffId)) throw new Error('withPlatformTx: staff id must be a uuid or null');
       if (ctx.supportSessionId !== undefined && !UUID.test(ctx.supportSessionId)) throw new Error('withPlatformTx: support session id must be a uuid');
+      if (ctx.clubId !== undefined && !UUID.test(ctx.clubId)) throw new Error('withPlatformTx: club id must be a uuid');
       for (let attempt = 0; ; attempt += 1) {
         const client = await pool.connect();
         let ended = false;
@@ -59,8 +64,9 @@ export function createPlatformDb(options: PlatformDbOptions): PlatformDb {
           // actor_platform_staff_id makes the audit writer record a BOOQ staff actor (audit.write).
           await client.query(
             `select set_config('app.platform_staff_id', $1, true), set_config('app.actor_platform_staff_id', $1, true),
-                    set_config('app.support_session_id', $2, true), set_config('app.reason', $3, true), set_config('app.request_id', $4, true)`,
-            [ctx.staffId ?? '', ctx.supportSessionId ?? '', ctx.reason ?? '', ctx.requestId ?? ''],
+                    set_config('app.support_session_id', $2, true), set_config('app.reason', $3, true), set_config('app.request_id', $4, true),
+                    set_config('app.club_id', $5, true), set_config('app.actor_label', $6, true)`,
+            [ctx.staffId ?? '', ctx.supportSessionId ?? '', ctx.reason ?? '', ctx.requestId ?? '', ctx.clubId ?? '', ctx.actorLabel ?? ''],
           );
           const result = await fn(tx);
           await client.query('commit');

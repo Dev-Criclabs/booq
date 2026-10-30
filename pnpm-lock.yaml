@@ -23,6 +23,9 @@ importers:
 
   apps/platform:
     dependencies:
+      '@booq/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@booq/time':
         specifier: workspace:*
         version: link:../../packages/time
@@ -47,7 +50,14 @@ importers:
         specifier: ^8.23.1
         version: 8.23.1
 
-  packages/domain: {}
+  packages/domain:
+    dependencies:
+      '@booq/auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@booq/db':
+        specifier: workspace:*
+        version: link:../db
 
   packages/i18n: {}
 
