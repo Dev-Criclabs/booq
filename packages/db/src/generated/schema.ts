@@ -485,6 +485,21 @@ export interface PublicCourtPriceRule {
   price_satang: number;
 }
 
+export interface PublicCustomerPackage {
+  club_id: string;
+  id: string;
+  customer_id: string;
+  product_id: string;
+  product_snapshot: unknown;
+  credits_total: number;
+  purchased_at: string;
+  purchase_date: string;
+  expires_at: string;
+  order_id: string | null;
+  is_test: boolean;
+  created_at: string;
+}
+
 export interface PublicDataExport {
   club_id: string;
   id: string;
@@ -655,6 +670,35 @@ export interface PublicOwnerNotice {
   seen_by: string | null;
 }
 
+export interface PublicPackageExtension {
+  club_id: string;
+  id: string;
+  package_id: string;
+  kind: string;
+  old_expires_at: string;
+  new_expires_at: string;
+  reason: string | null;
+  staff_id: string | null;
+  pause_id: string | null;
+  is_test: boolean;
+  created_at: string;
+}
+
+export interface PublicPackageProduct {
+  club_id: string;
+  id: string;
+  name_th: string;
+  name_en: string;
+  credit_type: string;
+  credits: number;
+  validity_months: number;
+  price_group_id: string | null;
+  coach_tier_id: string | null;
+  price_satang: number | null;
+  active: boolean;
+  created_at: string;
+}
+
 export interface PublicPartner {
   club_id: string;
   id: string;
@@ -794,6 +838,14 @@ export interface PublicUserStaffNote {
   is_test: boolean;
 }
 
+export interface PublicWalletAccount {
+  club_id: string;
+  id: string;
+  customer_id: string;
+  is_test: boolean;
+  created_at: string;
+}
+
 export interface Tables {
   'app.anonymise_handlers': AppAnonymiseHandlers;
   'app.claim_handlers': AppClaimHandlers;
@@ -846,6 +898,7 @@ export interface Tables {
   'public.coach_tier': PublicCoachTier;
   'public.coach_tier_price': PublicCoachTierPrice;
   'public.court_price_rule': PublicCourtPriceRule;
+  'public.customer_package': PublicCustomerPackage;
   'public.data_export': PublicDataExport;
   'public.data_request': PublicDataRequest;
   'public.idempotency_key': PublicIdempotencyKey;
@@ -859,6 +912,8 @@ export interface Tables {
   'public.orders': PublicOrders;
   'public.owner_flag': PublicOwnerFlag;
   'public.owner_notice': PublicOwnerNotice;
+  'public.package_extension': PublicPackageExtension;
+  'public.package_product': PublicPackageProduct;
   'public.partner': PublicPartner;
   'public.payment': PublicPayment;
   'public.payment_connection': PublicPaymentConnection;
@@ -870,4 +925,5 @@ export interface Tables {
   'public.resource': PublicResource;
   'public.user_consent': PublicUserConsent;
   'public.user_staff_note': PublicUserStaffNote;
+  'public.wallet_account': PublicWalletAccount;
 }
