@@ -83,6 +83,10 @@ Migration numbers are 0301 to 0399 and rise with task order (the migrator refuse
 
 ## Follow-up added by F08 (gate 3 of that feature, 30 Oct 2026)
 
-- [ ] **F04-T22** Migration 0314 or the next free `03xx` number: `order_line.kind` gains `class_seat`; Pay calls `app.take_seat` (F08-T05) for it; a class seat is priced from credit, wallet or the class template's drop in price (null means no drop in price, D157); Pay accepts an offer's held booking and order as the claim instead of making a second reservation. IDs: CLASS-01-AC14, AC15, CLASS-02-AC3, AC6, R4 (F04), D157. Role: BE-C · Deps F04-T12 (Pay), F08-T05 · Size: M
-  Tests first: a seat paid by credit then wallet then money (D22); a null drop in price needs credit or wallet; claiming an offer pays the held booking and reserves nothing twice; an expired offer answers `spot_gone`; a group credit of the wrong audience is refused.
+- [ ] **F04-T22a** Migration 0314: `order_line.kind` gains `class_seat`, with the CHECK that a `class_seat` line names its booking and carries the same allocation columns as a court hour line. IDs: CLASS-01-AC14, AC17, R4 (F04). Role: BE-C · Deps F04-T12 (Pay) · Size: S
+  Tests first: a `class_seat` line without a booking is refused; the deferred sum invariant of 0303 holds for a seat line; existing kinds are unchanged.
+- [ ] **F04-T22b** Migration 0315: Pay calls `app.take_seat` (F08-T05b) for a `class_seat` line and prices it from credit, wallet or the class template's drop in price (null means no drop in price, D157), in the order of D22. IDs: CLASS-01-AC14, AC15, R4 (F04), D22, D157. Role: BE-C · Deps F04-T22a, F08-T05b · Size: M
+  Tests first: a seat paid by credit, then wallet, then money; a null drop in price needs credit or wallet; a group credit of the wrong audience is refused; a full session refuses the seat and nothing is used up.
+- [ ] **F04-T22c** Migration 0316: Pay accepts a waitlist offer's held booking and order as the claim instead of making a second reservation; an ended offer answers `spot_gone`. IDs: CLASS-02-AC3, AC6, WAIT-01-AC2. Role: BE-C · Deps F04-T22b, F08-T06 · Size: S
+  Tests first: claiming pays the held booking and reserves nothing twice; an expired offer answers `spot_gone` and the hold is already released; two claims for one offer give one success.
 
