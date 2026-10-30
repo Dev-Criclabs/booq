@@ -13,7 +13,7 @@ Not startable until their lists exist: F10 enqueues are called by F07 (substitut
 - [ ] **F10-T01** Check G1 to G4 against LINE's documentation and the club's Official Account (rich menu API and image limits, quota and consumption endpoints, Login `sub` equals Messaging API user id, Flex size limit for a two hour card). Record each result in design section 12. IDs: LINE-02, LINE-06, LINE-04. Role: BE-P · Deps the LINE test provider and Official Account (Login channel 2012300015, LIFF 2012300015-WIi1jtLB, `docs/ops/accounts.md`), so no wait for Hunter's OA · Size: S
   Tests first: none (a written record); a failed check goes to the orchestrator as a question before T08 or T10 starts. Until Hunter's real OA is ready (the ops plan has it after the 7 Dec test start), T08 to T13 are built and tested against the fake LINE and checked on the test OA.
 - [ ] **F10-T02** Migration 0601: `message_outbox` as FA §5.3 with the design columns, unique `(club_id, dedupe_key)`, partial index on `send_at` where pending, status and `void_reason` checks. IDs: LINE-03-AC6, CC-1, CC-3. Role: BE-P · Deps F01-T12 · Size: S
-  Tests first: a duplicate dedupe key is refused; `params` with a name, phone or date of birth key is refused by the enqueue check; another club's rows are not reachable.
+  Tests first: a duplicate dedupe key is refused; a CHECK refuses `params` with a name, phone or date of birth key; another club's rows are not reachable.
 - [ ] **F10-T03** Migration 0602: `notification_pref` (reminders default on, promotions default off, A-2). IDs: LINE-05, D94. Role: BE-P · Deps T02 · Size: S
   Tests first: defaults as stated; a player writes only their own row.
 - [ ] **F10-T04** Migration 0603: `rich_menu_label` (six rows per club, tile 1 to 6) and `rich_menu` (one active row per club). IDs: LINE-02-AC1, AC2. Role: BE-P · Deps T02 · Size: S
@@ -23,12 +23,12 @@ Not startable until their lists exist: F10 enqueues are called by F07 (substitut
 
 ## B. Functions and grants
 
-- [ ] **F10-T06** Migration 0605: `app.enqueue_message`, `app.void_messages`, `app.cap_state`, `app.mark_undeliverable`. IDs: LINE-03, LINE-05, LINE-07-AC1 to AC4, D96. Role: BE-P · Deps T02 to T05 · Size: M
-  Tests first: the same dedupe key enqueues once; at 80 percent no reminder row is created and queued reminders are voided with `cap` and never revived; at 100 percent on a free plan a message becomes `undeliverable`; a reminder whose hour has passed is not queued; every row of a Testing club is `is_test`.
+- [ ] **F10-T06** Migration 0605: `app.enqueue_message(...) returns uuid` and its registration as the fifth payment port `enqueue_message` in `app.payment_ports`, `app.void_messages`, `app.cap_state`, `app.mark_undeliverable`. IDs: LINE-03, LINE-05, LINE-07-AC1 to AC4, D96. Role: BE-P · Deps T02 to T05 · Size: M
+  Tests first: the port is registered and `apply_payment` with the port missing fails closed; the same dedupe key enqueues once and returns the same id; `booking_released` is not enqueued for the reason `payment_unavailable`; at 80 percent no reminder row is created and queued reminders are voided with `cap` and never revived; at 100 percent on a free plan a message becomes `undeliverable`; a reminder whose hour has passed is not queued; every row of a Testing club is `is_test`.
 - [ ] **F10-T07** Migration 0606: policies and grants (the sender role, the platform reader). IDs: LINE-03, CC-2, D27. Role: BE-P · Deps T06 · Size: S
   Tests first: the blind suite shows BOOQ staff read no outbox row; only the sender role reads the LINE token; no club role can read it.
-- [ ] **F10-T07b** Migration 0607: settings registry rows `reminder_hours` (Tennis template 24 and 2, D116). IDs: LINE-05, D116. Role: BE-P · Deps T07, F01 registry · Size: S
-  Tests first: the registry row exists with the template values; an empty list sends no reminder.
+- [ ] **F10-T07b** Migration 0607: settings key `reminder_hours` in `app.setting_keys`, its entry in `settings-registry.ts` and its Tennis template row (24 and 2, D116). IDs: LINE-05, D116. Role: BE-P · Deps T07, F01 registry · Size: S
+  Tests first: `reminder_hours` is in `app.setting_keys` and `settings-registry.ts` and the two tests agree; a new club's template holds `[24, 2]`; an empty list sends no reminder.
 
 ## C. Sender, rich menu, health
 
