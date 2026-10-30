@@ -91,6 +91,19 @@ describe('the sign-in journey over HTTP', () => {
     expect((await tdb.query(`select count(*)::int n from public.app_user where line_user_id = 'UNEW'`)).rows[0].n).toBe(0);
   });
 
+  it('a guest’s language toggle sets the lang cookie, and the choice is saved at first sign in', async () => {
+    const toggle = await call('PUT', '/api/c/hunter/public/language', { body: { language: 'en' } });
+    expect(toggle).toMatchObject({ status: 200, body: { language: 'en' } });
+    expect(toggle.setCookie).toMatch(/^lang=en; Path=\/; Secure; SameSite=Lax; Max-Age=\d+$/);
+    expect(await call('PUT', '/api/c/hunter/public/language', { body: { language: 'fr' } })).toMatchObject({ status: 400, body: { code: 'bad_input' } });
+    expect(await call('PUT', '/api/c/hunter/public/language', { body: { language: 'th', roles: ['owner'] } })).toMatchObject({ status: 400 });
+
+    const cookie = (await call('POST', '/api/c/hunter/auth/session', { body: { idToken: token() } })).setCookie!.split(';')[0]!;
+    const { language: _l, ...noLanguage } = PROFILE;
+    expect(await call('POST', '/api/c/hunter/auth/profile', { body: noLanguage, cookie: `${cookie}; lang=en` })).toMatchObject({ status: 200 });
+    expect((await tdb.query(`select language from public.app_user where line_user_id = 'UNEW'`)).rows[0].language).toBe('en');
+  });
+
   it('a bad token is 401 and sets no cookie; the token is not echoed; an unknown club is 404', async () => {
     const bad = await call('POST', '/api/c/hunter/auth/session', { body: { idToken: 'garbage-token-value' } });
     expect(bad).toMatchObject({ status: 401, body: { code: 'invalid_token' }, setCookie: null });

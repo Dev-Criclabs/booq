@@ -1,4 +1,4 @@
-import { Reply, route, RouteError, hashToken, type Route, type RouteContext, type createProfileService, type createPublicConfigService, type createSignInService } from '@booq/auth';
+import { LANG_COOKIE_SECONDS, Reply, route, RouteError, hashToken, serializeLangCookie, type Route, type RouteContext, type createProfileService, type createPublicConfigService, type createSignInService } from '@booq/auth';
 
 // Sign-in routes (F02-T05 to T12; design 5): the transport over the sign-in, profile and config
 // services. All are `public`: they are how a guest becomes a person. The club comes from the
@@ -47,6 +47,13 @@ export function authRoutes(deps: AuthRouteDeps): Route<unknown>[] {
       const result = await deps.signIn.logout({ slug: slugOf(ctx), cookieHeader: ctx.cookie });
       if (!result.ok) throw new RouteError(result.status, result.code);
       return new Reply({ ok: true }, { setCookie: result.setCookie });
+    }),
+
+    // The guest's TH | EN toggle (AUTH-02-AC27): kept in a first-party cookie and written to the player record at first sign in.
+    route({ method: 'PUT', path: '/public/language', public: true }, async (ctx) => {
+      const body = ctx.body as Record<string, unknown> | undefined;
+      if (!body || typeof body !== 'object' || Object.keys(body).some((k) => k !== 'language') || (body['language'] !== 'th' && body['language'] !== 'en')) throw bad();
+      return new Reply({ language: body['language'] }, { setCookie: serializeLangCookie(body['language'], LANG_COOKIE_SECONDS) });
     }),
 
     route({ method: 'GET', path: '/public/config', public: true }, async (ctx) => {
