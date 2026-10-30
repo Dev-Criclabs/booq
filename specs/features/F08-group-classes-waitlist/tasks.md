@@ -4,9 +4,9 @@ Status: **DRAFT for a quick check (gate 3).** Drafted 30 Oct 2026 from the appro
 
 Roles: **BE-B** back end booking, **FE-P** front end player app, **FE-A** front end admin and coach, **QA**, **Content**.
 
-Depends on: F01 (settings `group_min_players`, `group_max_players`, `below_min_alert_minutes`, `waitlist_claim_minutes`, `waitlist_no_offer_hours`; T13 route wrapper; T18 blind suite; T34 worker); F03 (`booking`, `occupancy`, `release_hold`, `release_handlers`, `public_slot_state`); F04 (Pay, order lines, `class_seat` line kind); F06 (group credit eligibility); F07 (`coach_check`, `ignore_session`); F09 (`return_booking_value`, `cancel_handlers`); F10 (`app.enqueue_message`). Migration numbers 0901 to 0909, one task per file, rising in task order (T01 0901, T02 0902, T03 0903, T04 0904, T05 0905, T06 0906, T07 0907, T08 0908, T09 0909; the design's table lists the same files).
+Depends on: F01 (settings `group_min_players`, `group_max_players`, `below_min_alert_minutes`, `waitlist_claim_minutes`, `waitlist_no_offer_hours`; T13 route wrapper; T18 blind suite; T34 worker); F03 (`booking`, `occupancy`, `release_hold`, `release_handlers`, `public_slot_state`); F04 (Pay, order lines, `class_seat` line kind); F06 (group credit eligibility); F07 (`coach_check`, `ignore_session`); F09 (`return_booking_value`, `cancel_handlers`); F10 (`app.enqueue_message`). Migration numbers 0901 to 0911, one task per file, rising in task order (T01 0901, T02 0902, T03 0903, T04 0904, T05a 0905, T05b 0906, T05c 0907, T06 0908, T07 0909, T08 0910, T09 0911; the design's table lists the same files).
 
-**Cross-feature tasks this list needs (owned by the other lists, listed for the orchestrator):** F03-T30 (release reason `offer_ended`, C-1), F04-T22 (`class_seat` line kind and Pay reusing an offer's held booking, C-2), F07-T03 (`coach_check` default argument `ignore_session`, C-3), F09-T03 (the `cancel_handlers` registry), F09-T04 (the free cancel flag for an edited session) and F09-T05 (`return_booking_value`) (C-5), F10-T23 (`waitlist_ended` and `class_session_changed` kinds and the `waitlist_pass_on` call, C-4). Not startable until their owners have merged: T05 waits for F07-T03, F03-T30 and F04-T22; T06 waits for F03-T30; T14 waits for F09-T05; T11 (messages) waits for F10-T23.
+**Cross-feature tasks this list needs (owned by the other lists, listed for the orchestrator):** F03-T30 (release reason `offer_ended`, C-1), F04-T22a (the `class_seat` line kind, 0314), F04-T22b (Pay takes and prices a seat, 0315) and F04-T22c (Pay accepts an offer's held booking, 0316) (C-2), F07-T03 (`coach_check` default argument `ignore_session`, C-3), F09-T03 (the `cancel_handlers` registry), F09-T04 (the free cancel flag for an edited session) and F09-T05 (`return_booking_value`) (C-5), F10-T23 (`waitlist_ended` and `class_session_changed` kinds and the `waitlist_pass_on` call, C-4). Approval and dependency order (the numbers are tasks in other lists, all needing the reviewer's approval first): F03-T30 and F07-T03 before T05a and T06; F04-T22a before T05b; F04-T22b after T05b; F04-T22c after T06; F09-T03, F09-T04 and F09-T05 before T07 and T14; F10-T23 before T11.
 
 ## A. Tables
 
@@ -21,31 +21,35 @@ Depends on: F01 (settings `group_min_players`, `group_max_players`, `below_min_a
 
 ## B. Functions
 
-- [ ] **F08-T05** Migration 0905: `app.class_visible`, `app.generate_sessions`, `app.check_template`, `app.take_seat` (capacity under the session row lock), `app.cancel_session`, `app.edit_session`. IDs: CLASS-01-AC1 to AC4, AC9 to AC15, AC17, CC-4. Role: BE-B · Deps T03, F07-T03, F03-T30, F04-T22 · Size: M
-  Tests first: court and coach claimed together or the session is `needs_attention`; two parallel takers of the last seat give one success; a held seat counts toward capacity and an expired hold does not; an edit with no live seat rewrites future sessions, one with a seat marks the session `edited`; cancel frees court and coach; the roster never carries a date of birth.
-- [ ] **F08-T06** Migration 0906: `app.join_waitlist`, `app.leave_waitlist`, `app.waitlist_advance`, `app.offer_hold`, `app.decline_offer`, `app.offer_expire`, `app.waitlist_pass_on`, and the trigger that marks an entry `claimed` when its booking confirms. IDs: CLASS-02-AC1 to AC16, WAIT-01-AC1 to AC5. Role: BE-B · Deps T04, T05, F03-T30 · Size: M
+- [ ] **F08-T05a** Migration 0905: `app.class_visible`, `app.generate_sessions`, `app.check_template` (the dry run over the booking window, a clash returns the dates). IDs: CLASS-01-AC1 to AC3, AC5, AC9, AC12. Role: BE-B · Deps T03, F07-T03, F03-T30 · Size: M
+  Tests first: court and coach claimed together or the session is `needs_attention`; a template clash lists the dates; a guest sees Adult classes only; an hour outside opening hours is refused; the rest run counts a group class.
+- [ ] **F08-T05b** Migration 0906: `app.take_seat` (capacity under the session row lock). IDs: CLASS-01-AC4, AC14, AC15, AC17, CC-4. Role: BE-B · Deps T05a, F04-T22a · Size: S
+  Tests first: two parallel takers of the last seat give one success; a held seat counts toward capacity and an expired hold does not; one live seat per player and session.
+- [ ] **F08-T05c** Migration 0907: `app.cancel_session`, `app.edit_session`. IDs: CLASS-01-AC10, AC11, AC13. Role: BE-B · Deps T05b · Size: M
+  Tests first: an edit with no live seat rewrites future sessions, one with a seat marks the session `edited`; cancel frees court and coach; a template cancel keeps past sessions; the roster never carries a date of birth.
+- [ ] **F08-T06** Migration 0908: `app.join_waitlist`, `app.leave_waitlist`, `app.waitlist_advance`, `app.offer_hold`, `app.decline_offer`, `app.offer_expire`, `app.waitlist_pass_on`, and the trigger that marks an entry `claimed` when its booking confirms. IDs: CLASS-02-AC1 to AC16, WAIT-01-AC1 to AC5. Role: BE-B · Deps T04, T05c, F03-T30 · Size: M
   Tests first: the offer is a held booking, so the slot never shows Open to others while the first in line has a live offer; the offer ends at the earlier of now plus the claim time and the start (D157); a declined or expired offer is final for that entry; a player with a live offer at the same start is skipped and keeps their place; no offer inside `waitlist_no_offer_hours`; a held court hour shows Join waitlist (D157).
-- [ ] **F08-T07** Migration 0907: `app.f08_release` registered in `app.release_handlers` at `ord` 50, and `app.f08_cancel` registered in F09's `app.cancel_handlers` at `ord` 30. IDs: CLASS-01-AC13, CLASS-02-AC2, AC14. Role: BE-B · Deps T06, F09-T03 · Size: S
+- [ ] **F08-T07** Migration 0909: `app.f08_release` registered in `app.release_handlers` at `ord` 50, and `app.f08_cancel` registered in F09's `app.cancel_handlers` at `ord` 30. IDs: CLASS-01-AC13, CLASS-02-AC2, AC14. Role: BE-B · Deps T06, F09-T03 · Size: S
   Tests first: a released held seat calls `waitlist_advance` once; a cancelled seat calls it in the cancel transaction; the handlers are idempotent.
-- [ ] **F08-T08** Migration 0908: views `public_class_state` (counts only) and `waitlist_position`. IDs: CLASS-01-AC5 to AC8, CLASS-02-AC8, AC14. Role: BE-B · Deps T06 · Size: S
+- [ ] **F08-T08** Migration 0910: views `public_class_state` (counts only) and `waitlist_position`. IDs: CLASS-01-AC5 to AC8, CLASS-02-AC8, AC14. Role: BE-B · Deps T06 · Size: S
   Tests first: the public view holds counts and no names; a player sees only their own position.
-- [ ] **F08-T09** Migration 0909: policies and grants, table class, audit and test table registry entries. IDs: CC-1, CC-3. Role: BE-B · Deps T01 to T08 · Size: S
+- [ ] **F08-T09** Migration 0911: policies and grants, table class, audit and test table registry entries. IDs: CC-1, CC-3. Role: BE-B · Deps T01 to T08 · Size: S
   Tests first: the blind suite shows BOOQ staff read nothing; a coach reads the roster of their own sessions only; the Accountant reads no waitlist.
 
 ## C. Jobs and messages
 
-- [ ] **F08-T10** Worker tasks `class_generate`, `offer_expiry`, `class_below_minimum` (per club, `withClubTx`, idempotent, test clock). IDs: CLASS-01-AC2, AC16, CLASS-02-AC4, AC15. Role: BE-B · Deps T05, T06, F01-T34 · Size: M
+- [ ] **F08-T10** Worker tasks `class_generate`, `offer_expiry`, `class_below_minimum` (per club, `withClubTx`, idempotent, test clock). IDs: CLASS-01-AC2, AC16, CLASS-02-AC4, AC15. Role: BE-B · Deps T05a, T06, F01-T34 · Size: M
   Tests first: generation runs once a day after Bangkok midnight and at template save and reports `needs_attention`; an expired offer is released and passed on once; the below minimum alert fires at `start_at` minus the setting and is inert while the setting is empty.
 - [ ] **F08-T11** Enqueue `waitlist_offer`, `waitlist_ended`, `class_session_changed`, `class_below_minimum` through `app.enqueue_message` with the dedupe keys of the catalogue; an undeliverable offer calls `waitlist_pass_on`. IDs: CLASS-02-AC2, AC11, CLASS-01-AC16, LINE-05. Role: BE-B · Deps T06, F10-T06, F10-T23 · Size: S
   Tests first: each message once by dedupe key; an undeliverable offer passes to the next entry; no owner message for `needs_attention` (A-9).
 
 ## D. Routes
 
-- [ ] **F08-T12** Public and player routes: classes, class detail, join, my waitlist, leave, offer detail, claim, decline (schemas in `packages/contract`). IDs: CLASS-01-AC5 to AC8, CLASS-02-AC1 to AC8, WAIT-01. Role: BE-B · Deps T08, F04-T22, F01-T13 · Size: M
+- [ ] **F08-T12** Public and player routes: classes, class detail, join, my waitlist, leave, offer detail, claim, decline (schemas in `packages/contract`). IDs: CLASS-01-AC5 to AC8, CLASS-02-AC1 to AC8, WAIT-01. Role: BE-B · Deps T08, F04-T22b, F04-T22c, F01-T13 · Size: M
   Tests first: a guest sees Adult classes only; claim checks the entry is `offered`, owned and unexpired and answers `spot_gone` after the offer ends; no player route takes a seat directly.
-- [ ] **F08-T13** Staff routes: templates, sessions, edit, cancel, resolve, roster, waitlist, coach roster. IDs: CLASS-01-AC1, AC9 to AC13, CC-2. Role: BE-B · Deps T05, T09, F01-T13 · Size: M
+- [ ] **F08-T13** Staff routes: templates, sessions, edit, cancel, resolve, roster, waitlist, coach roster. IDs: CLASS-01-AC1, AC9 to AC13, CC-2. Role: BE-B · Deps T05c, T09, F01-T13 · Size: M
   Tests first: only the owner edits templates and sessions; front desk cancels with a reason; a template clash returns the dates; a coach sees only their own roster.
-- [ ] **F08-T14** Cancel a session returns value for every seat through F09's `return_booking_value` and ends the entries with `waitlist_ended`. IDs: CLASS-01-AC13, CLASS-02-AC11. Role: BE-B · Deps T05, T07, F09-T05 · Size: S
+- [ ] **F08-T14** Cancel a session returns value for every seat through F09's `return_booking_value` and ends the entries with `waitlist_ended`. IDs: CLASS-01-AC13, CLASS-02-AC11. Role: BE-B · Deps T05c, T07, F09-T05 · Size: S
   Tests first: every seat gets credit, wallet and money back with no cash; waiting entries end with the reason `session_cancelled`; a repeat changes nothing.
 
 ## E. Screens
@@ -63,9 +67,9 @@ Depends on: F01 (settings `group_min_players`, `group_max_players`, `below_min_a
 
 ## F. QA
 
-- [ ] **F08-T20** Concurrency suite: two takers of the last seat, an offer and a walk-in racing for one slot, two claims for one offer, an offer expiring while its claim pays, cancel and advance in one transaction. IDs: CLASS-01-AC4, CLASS-02-AC6, AC7, AC14, WAIT-01-AC2, CC-4. Role: QA · Deps T06, T07 · Size: M
-  Tests first: the suite is the task (20 parallel requests per case).
+- [ ] **F08-T20** Concurrency suite: two takers of the last seat, an offer and a walk-in racing for one slot, two claims for one offer, an offer expiring while its claim pays, cancel and advance in one transaction. IDs: CLASS-01-AC4, CLASS-01-AC18, CLASS-02-AC6, AC7, AC14, WAIT-01-AC2, CC-4. Role: QA · Deps T06, T07 · Size: M
+  Tests first: the suite is the task (20 parallel requests per case). Fixture rule (CLASS-01-AC18): no fixture or test copies the canvas sample sessions of C7, C16 or A08 (Gaps B1, B2); fixtures are built from the templates in the test itself.
 - [ ] **F08-T21** Acceptance sweep: every acceptance criterion of CLASS-01, CLASS-02 and WAIT-01 has a named test; walk the F08 boards; file gaps with the ID. IDs: CLASS-01, CLASS-02, WAIT-01. Role: QA · Deps all · Size: M
   Tests first: a table of criteria to tests with none empty.
 
-Order: T01 to T04, then T05 and T06 once the cross-feature tasks are merged, T07 to T09, T10, T11, T12 to T14, T19 early, then the screens, then F. About 21 tasks, each under a day. The screens use T19's keys: a screen task starts with the keys that exist and adds the rest in `locales/pending/F08.json`.
+Order: T01 to T04, then T05a, T05b, T05c and T06 once the cross-feature tasks are merged, T07 to T09, T10, T11, T12 to T14, T19 early, then the screens, then F. About 21 tasks, each under a day. The screens use T19's keys: a screen task starts with the keys that exist and adds the rest in `locales/pending/F08.json`.
