@@ -1,6 +1,6 @@
 # F10 LINE messages and rich menu · Requirements
 
-Status: **DRAFT for approval (gate 1).** Drafted 30 Oct 2026. Nothing here is approved until a person says so. No design or code follows until then.
+Status: **Approved 30 Oct 2026** (gate 1), approved by the user in chat as drafted. The open questions below were not answered by this approval and stay open; none is guessed, and the design step lists each as an assumption to confirm. Changes after approval go PRD, then hand-off, then this file. No design or code follows until the design gate.
 
 Feature: F10 LINE messages and rich menu. Depends on: F03. Requirement IDs: LINE-02 to LINE-07 (LINE-01 is F02). Wave 2.
 
