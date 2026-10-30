@@ -80,13 +80,23 @@ export function parseQuoteRequest(body: unknown): QuoteRequest {
   };
 }
 
+async function customerDob(tx: Tx, customerId: string): Promise<{ dob: string | null }> {
+  try {
+    const r = (await tx.query<{ dob: string | null }>('select app.customer_dob_for_pricing($1)::text as dob', [customerId])).rows[0];
+    return { dob: r?.dob ?? null };
+  } catch (e) {
+    if (/^customer: not found/.test((e as Error).message ?? '')) throw new CheckoutError('customer_not_found');
+    throw e;
+  }
+}
+
 interface Row<T> {
   rows: T[];
 }
 const one = <T>(r: Row<T>): T | undefined => r.rows[0];
 
 /** Read everything the engine needs for `customerId` and price the request. Throws CheckoutError. */
-export async function quoteFor(tx: Tx, customerId: string, req: QuoteRequest, sources: QuoteSources): Promise<QuoteView> {
+export async function quoteFor(tx: Tx, customerId: string, req: QuoteRequest, sources: QuoteSources, opts: { forCustomer?: boolean } = {}): Promise<QuoteView> {
   const club = one(await tx.query<{ status: string; today: string }>(
     `select c.status, (app.now() at time zone 'Asia/Bangkok')::date::text as today from public.club c where c.id = app.club_id()`,
   ));
@@ -97,7 +107,9 @@ export async function quoteFor(tx: Tx, customerId: string, req: QuoteRequest, so
   const court = one(await tx.query<{ active: boolean }>(`select active from public.resource where club_id = app.club_id() and id = $1`, [req.courtId]));
   if (!court || !court.active) throw new CheckoutError('resource_inactive');
 
-  const person = one(await tx.query<{ dob: string | null }>(
+  // A player prices for themselves; staff price as the customer (ROLE-01-AC4) through the definer read, which
+  // returns only the date of birth and refuses a person who is not an active, claimed customer of the club.
+  const person = opts.forCustomer ? await customerDob(tx, customerId) : one(await tx.query<{ dob: string | null }>(
     `select date_of_birth::text as dob from public.app_user where club_id = app.club_id() and id = $1`,
     [customerId],
   ));

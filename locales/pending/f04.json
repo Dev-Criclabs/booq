@@ -17,7 +17,8 @@
     "P-new.one_code_per_order": "Only one code can be used per booking.",
     "P-new.birthday_not_available": "Your birthday discount has already been used. Please check the price again.",
     "P-new.credit_unavailable": "Your credits or wallet balance changed. Please check the price again.",
-    "P-new.payment_unavailable": "Payment is not available right now. Nothing was booked or charged. Please try again later."
+    "P-new.payment_unavailable": "Payment is not available right now. Nothing was booked or charged. Please try again later.",
+    "A-new.customer_not_found": "We could not find this player. Check the name or phone number and try again."
   },
   "th": {
     "P-new.checkout_bad_input": "ข้อมูลที่เลือกไม่ถูกต้อง กรุณาย้อนกลับและเลือกใหม่",
@@ -36,6 +37,7 @@
     "P-new.one_code_per_order": "ใช้โค้ดได้เพียงหนึ่งโค้ดต่อการจอง",
     "P-new.birthday_not_available": "ส่วนลดวันเกิดของคุณถูกใช้ไปแล้ว กรุณาตรวจสอบราคาอีกครั้ง",
     "P-new.credit_unavailable": "เครดิตหรือยอดเงินในวอลเล็ตของคุณเปลี่ยนไป กรุณาตรวจสอบราคาอีกครั้ง",
-    "P-new.payment_unavailable": "ขณะนี้ยังชำระเงินไม่ได้ ยังไม่มีการจองหรือเรียกเก็บเงิน กรุณาลองใหม่ภายหลัง"
+    "P-new.payment_unavailable": "ขณะนี้ยังชำระเงินไม่ได้ ยังไม่มีการจองหรือเรียกเก็บเงิน กรุณาลองใหม่ภายหลัง",
+    "A-new.customer_not_found": "ไม่พบผู้เล่นคนนี้ กรุณาตรวจสอบชื่อหรือเบอร์โทรแล้วลองอีกครั้ง"
   }
 }

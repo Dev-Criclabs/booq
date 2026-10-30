@@ -120,7 +120,7 @@ describe('startPayment', () => {
     expect(alerts).toEqual([{ kind: 'beam_unreachable', clubId: A }]);
     expect((await tdb.query(`select status, restore_reason from public.promo_redemption where order_id = $1`, [order])).rows).toEqual([{ status: 'restored', restore_reason: 'payment_unavailable' }]);
     expect(await count(`select count(*) as n from public.owner_flag`)).toBe(0);
-    expect(await inTx((tx) => findLiveHold(tx, parsePayRequest({ courtId: COURT, hours: [HOUR], quoteHash: '0'.repeat(64) }).choice))).toBeNull();
+    expect(await inTx((tx) => findLiveHold(tx, parsePayRequest({ courtId: COURT, hours: [HOUR], quoteHash: '0'.repeat(64) }).choice, ME))).toBeNull();
   });
 
   it('missing keys release the hold, flag the owner and raise the P1 alert (PAY-01-AC7, D75)', async () => {
