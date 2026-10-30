@@ -45,3 +45,16 @@ export const fixtureSources = (over: Partial<QuoteSources> = {}): QuoteSources =
   coach: async (_tx, id) => (id === IDS.COACH ? { tierId: IDS.TIER, priceSatang: null } : null),
   ...over,
 });
+
+/** F13's issue_receipt and F10's enqueue_message ports as fakes until those features register theirs. They log
+ *  their calls in public.__f04_port_log. */
+export async function fakeReceiptAndMessagePorts(tdb: TestDatabase): Promise<void> {
+  await tdb.query(`create table if not exists public.__f04_port_log (n serial, port text, args jsonb)`);
+  await tdb.query(`grant all on public.__f04_port_log, public.__f04_port_log_n_seq to booq_owner`);
+  await tdb.query(`create or replace function public.__f04_issue_receipt(o uuid, p uuid, k text) returns uuid language sql as $$
+    insert into public.__f04_port_log (port, args) values ('issue_receipt', jsonb_build_array(o, p, k)); select gen_random_uuid() $$`);
+  await tdb.query(`create or replace function public.__f04_enqueue_message(k text, u uuid, p jsonb, d text, s timestamptz) returns uuid language sql as $$
+    insert into public.__f04_port_log (port, args) values ('enqueue_message', jsonb_build_array(k, u, d)); select gen_random_uuid() $$`);
+  await tdb.query(`select app.register_payment_port('issue_receipt', 'public.__f04_issue_receipt(uuid, uuid, text)'::regprocedure)`);
+  await tdb.query(`select app.register_payment_port('enqueue_message', 'public.__f04_enqueue_message(text, uuid, jsonb, text, timestamptz)'::regprocedure)`);
+}

@@ -4,7 +4,7 @@ import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
 import { CheckoutError } from './errors';
 import { findLiveHold, parsePayRequest, placeOrder, preparePay } from './pay';
 import { quoteFor } from './quote';
-import { fixtureSources, IDS, seedHunter } from './test-fixture';
+import { fakeReceiptAndMessagePorts, fixtureSources, IDS, seedHunter } from './test-fixture';
 
 // F04-T12a: the Pay gate and the reprice (R4-AC9, R8-AC1, R7-AC1, D63; design 4.5 steps 1 and 2). Nothing
 // is created by this step: a changed price returns the new quote and the player confirms again.
@@ -266,9 +266,11 @@ describe('placeOrder: entitlements and the ledger', () => {
 });
 
 // F04-T12d: nothing left to pay confirms at once (PAY-07-AC1 to AC6, PROMO-01-AC13, R7-AC3, D64).
-// Skipped until the Architect's app.complete_zero_money_order reaches main (requested 30 Oct).
-describe.skip('placeOrder: the zero money path', () => {
+// Uses app.complete_zero_money_order (0319); F13's receipt and F10's message ports are fakes here.
+describe('placeOrder: the zero money path', () => {
   const HOUR_Z = '2026-12-02T07:00:00+07:00';
+  beforeEach(async () => fakeReceiptAndMessagePorts(tdb));
+  const ports = async () => (await tdb.query(`select port, args from public.__f04_port_log order by n`)).rows as Array<{ port: string; args: unknown[] }>;
   const placeWith = async (body: Record<string, unknown>, over: Parameters<typeof fixtureSources>[0] = {}) => {
     const src = fixtureSources(over);
     const hash = (await inTx((tx) => quoteFor(tx, ME, parsePayRequest({ ...body, quoteHash: '0'.repeat(64) }).choice, src))).quoteHash;
@@ -289,6 +291,9 @@ describe.skip('placeOrder: the zero money path', () => {
     expect((await tdb.query(`select status, money_satang from public.orders where id = $1`, [r.orderId])).rows[0]).toEqual({ status: 'paid', money_satang: 0 });
     expect((await tdb.query(`select status, hold_expires_at from public.booking where order_id = $1`, [r.orderId])).rows).toEqual([{ status: 'confirmed', hold_expires_at: null }]);
     expect(await count('payment')).toBe(0);
+    // One receipt for the order in the same series, and the Booking confirmed card (PAY-07-AC4, AC6, D64).
+    expect((await ports()).map((p) => p.port)).toEqual(['issue_receipt', 'enqueue_message']);
+    expect((await ports())[0]!.args).toEqual([r.orderId, null, 'order']);
   });
 
   it('the wallet covering it all confirms the same way (PAY-07-AC1, AC4)', async () => {

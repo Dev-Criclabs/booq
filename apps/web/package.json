@@ -6,6 +6,7 @@
   "main": "src/index.ts",
   "dependencies": {
     "@booq/auth": "workspace:*",
+    "@booq/beam": "workspace:*",
     "@booq/db": "workspace:*",
     "@booq/domain": "workspace:*",
     "@booq/line": "workspace:*",
