@@ -35,6 +35,7 @@ Read this before every task. It sets the rules for building BOOQ with Spec-Drive
 - Never write user facing text in the code. Every piece of text on a screen, in a LINE message, on a receipt or in an error comes from the language files.
 - The files are `locales/en.json` and `locales/th.json`. Keys match the UX copy spreadsheets the writers use, such as `P-0004` (P player app, A club admin, K coach portal, L LINE and receipt, X platform console).
 - `locales/copy-index.csv` lists every key with its screens and canvas boards. Look up a key there by screen before using it.
+- New text for a feature goes in `locales/pending/<feature>.json` (D81). Only the Content role merges pending keys into `locales/en.json` and `locales/th.json`.
 - One key can be used on several screens. Reuse it; never copy the text into a new key.
 - When a text holds sample values (names, dates, times, prices, counts), replace them with named variables such as `{amount}`, `{date}` or `{court}` in both files. Keep the same key, and use the same variable names in both languages.
 - Never edit the wording of an existing key. Writers own the wording, and their refined files replace these later. If new text is needed, add a new key in both files following the same prefix and numbering, and list it in the task so it goes to the writers.
