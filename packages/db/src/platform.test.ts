@@ -197,6 +197,24 @@ describe('blindness and classification', () => {
     }
   });
 
+  it('anon and authenticated hold no privilege on any table, view, sequence or function outside pg_catalog, extension functions aside (SR-06)', async () => {
+    const r = await tdb.query(`
+      select n.nspname, c.relname, c.relkind, r.rolname
+        from pg_class c join pg_namespace n on n.oid = c.relnamespace
+        cross join (values ('anon'), ('authenticated')) as r(rolname)
+       where n.nspname not in ('pg_catalog', 'information_schema', 'pg_toast') and c.relkind in ('r','v','m','S','p')
+         and (case when c.relkind = 'S' then has_sequence_privilege(r.rolname, c.oid, 'usage,select,update')
+                   else has_table_privilege(r.rolname, c.oid, 'select,insert,update,delete,truncate,references,trigger') end)`);
+    expect(r.rows).toEqual([]);
+    const f = await tdb.query(`
+      select n.nspname, p.proname, r.rolname
+        from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+        cross join (values ('anon'), ('authenticated')) as r(rolname)
+       where n.nspname in ('app', 'platform', 'audit', 'public') and has_function_privilege(r.rolname, p.oid, 'execute')
+         and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')`);
+    expect(f.rows).toEqual([]);
+  });
+
   it('every platform table is registered as class P and passes the structure check', async () => {
     const registry = await collectRegistry();
     for (const t of ['platform_staff', 'staff_assignment', 'support_session', 'audit_log', 'club_usage_daily', 'config', 'template', 'template_item', 'launch_check', 'export_request']) {
