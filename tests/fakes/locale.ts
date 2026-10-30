@@ -49,18 +49,28 @@ export function templateToRegex(template: string): RegExp {
 }
 
 /** Which key (if any) produced this rendered text in this language? */
-export function findKeyFor(lang: Lang, rendered: string): string | undefined {
+/** A template that is only variables, such as "{dateLong}", matches any text in any language. */
+export function isBareVariableTemplate(template: string): boolean {
+  return variablesOf(template).length > 0 && template.replace(/\{[A-Za-z_][A-Za-z0-9_]*\}/g, '').trim() === '';
+}
+
+export function findKeyFor(lang: Lang, rendered: string, opts: { ignoreBareVariables?: boolean } = {}): string | undefined {
   const file = loadLocale(lang);
   for (const [key, template] of Object.entries(file)) {
-    if (template === rendered) return key;
+    if (template === rendered && !(opts.ignoreBareVariables && isBareVariableTemplate(template))) return key;
   }
   for (const [key, template] of Object.entries(file)) {
+    if (opts.ignoreBareVariables && isBareVariableTemplate(template)) continue;
     if (variablesOf(template).length > 0 && templateToRegex(template).test(rendered)) return key;
   }
   return undefined;
 }
 
-export const THAI_CHAR = /[฀-๿]/;
+/**
+ * Thai LETTERS only: consonants, vowels, tone marks (U+0E01 to U+0E3A, U+0E40 to U+0E4E). The baht sign ฿ (U+0E3F),
+ * Thai digits and Thai symbols sit in the same Unicode block but are not language: an English card shows ฿1,300.
+ */
+export const THAI_CHAR = /[\u0E01-\u0E3A\u0E40-\u0E4E]/;
 
 export function containsThai(text: string): boolean {
   return THAI_CHAR.test(text);
