@@ -39,3 +39,8 @@ If the F06 or F13 designs name these differently, only the registry rows and thi
 
 ## Open point for the orchestrator
 The status of an order for a wallet outcome stays as it is (`released` or `cancelled`); only the payment records the outcome. If the PRD wants the order marked differently, say so before T05a.
+
+## Update (migration 0410, accepted D147)
+- A fifth port: `enqueue_message(kind text, user uuid, params jsonb, dedupe_key text, send_at timestamptz) returns uuid`, registered by F10 (0605). `apply_payment` sends `booking_confirmed` (`confirmed:{order}`) after `applied` and `applied_late` for an order with hours, and `late_payment` (`late:{payment}`) after every wallet outcome.
+- `credit_wallet` returns the **order id** of the `wallet_credit` order (F06 does the lookup).
+- A package bought with a booking: with the hold running, `grant_package`, then `reserve_credit_and_wallet` if the order has an allocation, then `confirm_booking`, in one sub-block; the late path does reclaim, re-apply, grant, reserve. When the reserve or the confirmation cannot be done the sub-block is undone, the payment goes to the wallet (`wallet_late`) and the hold is released with the reason `payment_unavailable`. A grant that raises (`payment:grant:*`) is not caught: the payment stays pending.

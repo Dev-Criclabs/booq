@@ -1,4 +1,5 @@
 import type { RateLimiter } from './rate-limit';
+import { BODY_METHODS, callerOf, fail, json, matchPath, readJsonBody, withRouteHeaders } from './http';
 import { checkRouteTable, Reply, type Route, type RouteDeps, type RouteResult, type RouteSession } from './route';
 
 // serveRoutes (apps/web transport; FA 4.3): turns a table of declared routes into one standard
@@ -27,51 +28,11 @@ export interface ServeContext {
   params: Promise<{ slug: string; path?: string[] | undefined }>;
 }
 
-/** A route may add headers but not take over these: the body is JSON, never sniffed, and only a Reply sets a cookie. */
-const RESERVED = new Set(['content-type', 'content-length', 'x-content-type-options', 'set-cookie', 'transfer-encoding']);
-
-function withRouteHeaders(res: Response, extra: Readonly<Record<string, string>> | undefined): Response {
-  if (!extra) return res;
-  for (const [k, v] of Object.entries(extra)) if (!RESERVED.has(k.toLowerCase())) res.headers.set(k, v);
-  return res;
-}
-
-const BODY_METHODS = new Set(['POST', 'PUT', 'PATCH']);
-const HEADERS = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
-
-function json(status: number, body: unknown, extra: Record<string, string> = {}): Response {
-  return new Response(JSON.stringify(body), { status, headers: { ...HEADERS, ...extra } });
-}
-/** Only short plain values go out as params: strings, finite numbers, booleans. */
-function cleanParams(params: Readonly<Record<string, unknown>> | undefined): Record<string, string | number | boolean> | undefined {
-  if (!params) return undefined;
-  const out: Record<string, string | number | boolean> = {};
-  for (const [k, v] of Object.entries(params).slice(0, 10)) {
-    if ((typeof v === 'string' && v.length <= 200) || (typeof v === 'number' && Number.isFinite(v)) || typeof v === 'boolean') out[k] = v;
-  }
-  return Object.keys(out).length ? out : undefined;
-}
-const fail = (status: number, code: string, params?: Readonly<Record<string, unknown>>) => {
-  const p = cleanParams(params);
-  return json(status, p ? { code, params: p } : { code });
-};
 const IDEMPOTENCY_KEY = /^[A-Za-z0-9._:-]{1,200}$/;
 
 interface Compiled {
   route: Route<unknown>;
   segments: string[];
-}
-
-function matchPath(segments: string[], actual: string[]): Record<string, string> | null {
-  if (segments.length !== actual.length) return null;
-  const params: Record<string, string> = {};
-  for (let i = 0; i < segments.length; i += 1) {
-    const want = segments[i]!;
-    const got = actual[i]!;
-    if (want.startsWith(':')) params[want.slice(1)] = decodeURIComponent(got);
-    else if (want !== got) return null;
-  }
-  return params;
 }
 
 export type ServeSource = { table: readonly Route<unknown>[]; deps: ServeDeps };
@@ -105,26 +66,6 @@ function serveNow(table: readonly Route<unknown>[], deps: ServeDeps): (request: 
   if (problems.length) throw new Error(`route table: ${problems.map((p) => `${p.method ?? '?'} ${p.path ?? '?'}: ${p.problem}`).join('; ')}`);
   const compiled: Compiled[] = table.map((route) => ({ route, segments: route.def.path.split('/').filter(Boolean) }));
 
-  async function readBody(request: Request): Promise<Record<string, unknown> | Response> {
-    if (!(request.headers.get('content-type') ?? '').toLowerCase().startsWith('application/json')) {
-      // An empty body needs no content type.
-      const text = await request.clone().text();
-      return text === '' ? {} : fail(415, 'unsupported_media_type');
-    }
-    const declared = Number(request.headers.get('content-length'));
-    if (Number.isFinite(declared) && declared > deps.maxBodyBytes) return fail(413, 'payload_too_large');
-    const text = await request.text();
-    if (new TextEncoder().encode(text).length > deps.maxBodyBytes) return fail(413, 'payload_too_large');
-    if (text === '') return {};
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      return fail(400, 'bad_input');
-    }
-    return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : fail(400, 'bad_input');
-  }
-
   return async (request, context) => {
     try {
       const { slug, path = [] } = await context.params;
@@ -150,12 +91,12 @@ function serveNow(table: readonly Route<unknown>[], deps: ServeDeps): (request: 
   async function answer(request: Request, found: { route: Route<unknown>; params: Record<string, string> }, method: string, slug: string): Promise<Response> {
     let body: Record<string, unknown> = {};
     if (BODY_METHODS.has(method)) {
-      const read = await readBody(request);
+      const read = await readJsonBody(request, deps.maxBodyBytes);
       if (read instanceof Response) return read;
       body = read;
     }
     if (deps.rateLimit?.routes.includes(`${found.route.def.method} ${found.route.def.path}`)) {
-      const caller = request.headers.get('x-real-ip') ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+      const caller = callerOf(request);
       const hit = deps.rateLimit.limiter.hit(`${found.route.def.method} ${found.route.def.path}|${slug}|${caller}`);
       if (!hit.allowed) return json(429, { code: 'rate_limited' }, { 'retry-after': String(hit.retryAfterSeconds) });
     }

@@ -5,9 +5,15 @@
   "type": "module",
   "main": "src/index.ts",
   "dependencies": {
-    "@booq/time": "workspace:*",
-    "@booq/db": "workspace:*",
     "@booq/auth": "workspace:*",
-    "@booq/secrets": "workspace:*"
+    "@booq/db": "workspace:*",
+    "@booq/secrets": "workspace:*",
+    "@booq/time": "workspace:*",
+    "next": "16.4.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0"
   }
 }
