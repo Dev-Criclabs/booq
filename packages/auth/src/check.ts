@@ -1,7 +1,7 @@
 // Build check (F01-T13, F01-T36): a route file may export an HTTP handler only as
 // `export const GET = route(...)`. A bare function, an unwrapped constant or a re-export
 // has no declared permission, feature or public flag, so it fails the build.
-// `serveRoutes(table, deps)` counts too: its table can only hold routes made by route(), and it
+// `serveRoutes(table, deps)` and the console's `servePlatform(table, deps)` count too: its table can only hold routes made by route(), and it
 // checks the table (declared, no duplicates) when it is created.
 
 export interface SourceFile {
@@ -38,7 +38,7 @@ export function findUndeclaredRoutes(files: readonly SourceFile[]): UndeclaredRo
       if (!c) return;
       // The wrapper call may start on this line or the next.
       const rest = `${c[2] ?? ''} ${lines[i + 1] ?? ''}`;
-      if (!/=\s*(?:route|serveRoutes)\s*(?:<[^>]*>)?\s*\(/.test(rest)) out.push({ path, line: i + 1, method: c[1] as string });
+      if (!/=\s*(?:route|serveRoutes|servePlatform)\s*(?:<[^>]*>)?\s*\(/.test(rest)) out.push({ path, line: i + 1, method: c[1] as string });
     });
   }
   return out;

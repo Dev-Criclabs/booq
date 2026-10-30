@@ -165,6 +165,7 @@ describe('build check accepts serveRoutes', () => {
   it('serveRoutes(table, deps) counts as declared; a bare handler or a wrapper around nothing does not', () => {
     expect(findUndeclaredRoutes(file('export const GET = serveRoutes(table, deps);'))).toEqual([]);
     expect(findUndeclaredRoutes(file('export const POST = serveRoutes<unknown>(\n table, deps);'))).toEqual([]);
+    expect(findUndeclaredRoutes(file('export const GET = servePlatform(platformSource);'))).toEqual([]);
     expect(findUndeclaredRoutes(file('export const GET = async () => new Response("x");'))).toHaveLength(1);
     expect(findUndeclaredRoutes(file('export const GET = somethingElse(table);'))).toHaveLength(1);
   });
