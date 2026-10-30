@@ -24,6 +24,14 @@ export interface AppReleaseHandlers {
   ord: number;
 }
 
+export interface AppSetupSteps {
+  step_key: string;
+  position: number;
+  owed_by: string;
+  check_fn: unknown;
+  created_at: string;
+}
+
 export interface AppTestTables {
   table_schema: string;
   table_name: string;
@@ -80,6 +88,17 @@ export interface PlatformLaunchCheck {
   result: string;
   checked_at: string | null;
   checked_by: string | null;
+}
+
+export interface PlatformOwnerContactChange {
+  id: string;
+  club_id: string;
+  requested_by: string;
+  requested_at: string;
+  changes: unknown;
+  status: string;
+  decided_by: string | null;
+  decided_at: string | null;
 }
 
 export interface PlatformPlatformStaff {
@@ -648,6 +667,7 @@ export interface Tables {
   'app.coach_rules_hook': AppCoachRulesHook;
   'app.pause_handlers': AppPauseHandlers;
   'app.release_handlers': AppReleaseHandlers;
+  'app.setup_steps': AppSetupSteps;
   'app.test_tables': AppTestTables;
   'audit.registry': AuditRegistry;
   'platform.audit_log': PlatformAuditLog;
@@ -655,6 +675,7 @@ export interface Tables {
   'platform.config': PlatformConfig;
   'platform.export_request': PlatformExportRequest;
   'platform.launch_check': PlatformLaunchCheck;
+  'platform.owner_contact_change': PlatformOwnerContactChange;
   'platform.platform_staff': PlatformPlatformStaff;
   'platform.staff_assignment': PlatformStaffAssignment;
   'platform.support_session': PlatformSupportSession;
