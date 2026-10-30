@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { checkLink, finishEnrolment, groupSecret, startEnrolment, tokenFromHash } from './enrol';
 import { fill, hasKey, t } from './i18n';
 import { BASICS_FIELDS, changeStatus, errorKey as clubErrorKey, issueWebhookToken, itemKey, LAUNCH_KEY, loadClub, pauseClub, RESULT_KEY, saveBasics, sendOwnerInvite, SETUP_KEY } from './club';
+import { loadLaunch, MARK_KEY, openChecks, recordResult } from './launch';
+import { isKnown, KNOWN, labelKey, loadConfig, parse, saveValue, show } from './config';
 import { counts, FILTER_KEY, loadClubs, STATUS_KEY, visible, type ClubRow } from './clubs';
 import { safeNext, signInWithCode, signInWithPassword, stepUp } from './auth';
 import { deactivate, errorKey, invite, loadTeam, resetFactor } from './staff';
@@ -211,5 +213,62 @@ describe('club page', () => {
     expect(c.seen[0]).toEqual({ url: '/api/clubs/c1/support/setup/basics', method: 'PUT', body: { name_en: 'Hunter Club', owner_name: null } });
     expect(await saveBasics(router({ 'PUT /clubs/c1/support/setup/basics': { status: 200, json: { changed: ['owner_phone'], pendingOwnerContact: 'req-1' } } }), 'c1', { ...same, owner_phone: '082' }, was)).toEqual({ kind: 'saved', pendingOwnerContact: true });
     expect(await saveBasics(router({ 'PUT /clubs/c1/support/setup/basics': { status: 409, json: { code: 'look_only' } } }), 'c1', { ...same, name_en: 'X' }, was)).toEqual({ kind: 'error', key: 'X-new.club_look_only' });
+  });
+});
+
+describe('launch page', () => {
+  const launch = { clubName: 'Hunter', clubStatus: 'testing', items: [{ item: 'product_priced', result: 'pending', owed_by: 'owner', recorded: true }, { item: 'line_test', result: 'pass', owed_by: 'booq', recorded: false }] };
+  it('loads the checks, counts the open ones, and says why when it cannot', async () => {
+    expect(await loadLaunch(reply(200, launch), 'c1')).toEqual({ kind: 'ok', launch });
+    expect(openChecks(launch.items as never)).toBe(1);
+    expect(openChecks([])).toBe(0);
+    expect(await loadLaunch(reply(404, { code: 'not_found' }), 'c1')).toMatchObject({ kind: 'error', key: 'X-new.club_not_found', notFound: true });
+    expect(await loadLaunch(reply(401, {}), 'c1')).toMatchObject({ kind: 'error', signIn: true });
+    expect(await loadLaunch(reply(200, { items: 'no' }), 'c1')).toMatchObject({ kind: 'error' });
+    expect(await loadLaunch((async () => { throw new Error('offline'); }) as unknown as typeof fetch, 'c1')).toEqual({ kind: 'error', key: 'X-new.club_unavailable' });
+    for (const k of Object.values(MARK_KEY)) expect(hasKey(k), k).toBe(true);
+  });
+  it('records a result with the check named in the path, and each refusal has its text', async () => {
+    const c = calls();
+    await recordResult(c.f, 'c1', 'product_priced', 'pass');
+    expect(c.seen[0]).toEqual({ url: '/api/clubs/c1/launch/product_priced', method: 'PUT', body: { result: 'pass' } });
+    expect(await recordResult(reply(200, {}), 'c1', 'x', 'fail')).toEqual({ kind: 'done' });
+    expect(await recordResult(reply(409, { code: 'not_testing' }), 'c1', 'x', 'pass')).toEqual({ kind: 'error', key: 'X-new.launch_not_testing' });
+    expect(await recordResult(reply(400, { code: 'not_recorded' }), 'c1', 'x', 'pass')).toEqual({ kind: 'error', key: 'X-new.launch_not_recorded' });
+    expect(await recordResult(reply(403, { code: 'step_up_required' }), 'c1', 'x', 'pass')).toMatchObject({ kind: 'error', stepUp: true });
+    expect(await recordResult(reply(403, { code: 'forbidden' }), 'c1', 'x', 'pass')).toEqual({ kind: 'error', key: 'X-new.staff_forbidden' });
+  });
+});
+
+describe('settings page', () => {
+  it('every setting the page knows has a text key that exists', () => {
+    expect(KNOWN.length).toBeGreaterThan(10);
+    for (const { key } of KNOWN) expect(hasKey(labelKey(key)), key).toBe(true);
+    expect(isKnown('pay_tap_limit_count')).toBe(true);
+    expect(isKnown('invented')).toBe(false);
+  });
+  it('a number must be above zero and a list must be a list; nothing is guessed', () => {
+    expect(parse('number', ' 72 ')).toEqual({ ok: true, value: 72 });
+    expect(parse('number', '1.5')).toEqual({ ok: true, value: 1.5 });
+    for (const bad of ['', '0', '-1', 'abc', '1e3', '1,5', ' ']) expect(parse('number', bad), bad).toEqual({ ok: false, key: 'X-new.config_number_needed' });
+    expect(parse('list', '[{"key":"a"}]')).toEqual({ ok: true, value: [{ key: 'a' }] });
+    for (const bad of ['', '{}', '"x"', '[', 'null']) expect(parse('list', bad), bad).toEqual({ ok: false, key: 'X-new.config_json_needed' });
+    expect(show(5)).toBe('5');
+    expect(show([{ a: 1 }])).toBe('[{"a":1}]');
+  });
+  it('loads the values by key, or says why not', async () => {
+    expect(await loadConfig(reply(200, { config: [{ key: 'a', value: 1 }, { key: 'b', value: [2] }] }))).toEqual({ kind: 'ok', values: { a: 1, b: [2] } });
+    expect(await loadConfig(reply(401, {}))).toMatchObject({ kind: 'error', signIn: true });
+    expect(await loadConfig((async () => { throw new Error('offline'); }) as unknown as typeof fetch)).toEqual({ kind: 'error', key: 'X-new.club_unavailable' });
+  });
+  it('saves a parsed value; a bad one sends nothing; each refusal has its text', async () => {
+    const c = calls();
+    expect(await saveValue(c.f, 'invite_ttl_hours', 'number', '48')).toEqual({ kind: 'saved' });
+    expect(c.seen[0]).toEqual({ url: '/api/config/invite_ttl_hours', method: 'PUT', body: { value: 48 } });
+    expect(await saveValue(c.f, 'invite_ttl_hours', 'number', 'soon')).toEqual({ kind: 'error', key: 'X-new.config_number_needed' });
+    expect(c.seen).toHaveLength(1);
+    expect(await saveValue(reply(400, { code: 'invalid' }), 'x', 'number', '1')).toEqual({ kind: 'error', key: 'X-new.config_invalid' });
+    expect(await saveValue(reply(403, { code: 'step_up_required' }), 'x', 'number', '1')).toMatchObject({ kind: 'error', stepUp: true });
+    expect(await saveValue(reply(403, { code: 'forbidden' }), 'x', 'number', '1')).toEqual({ kind: 'error', key: 'X-new.staff_forbidden' });
   });
 });
