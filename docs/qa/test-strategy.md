@@ -1,6 +1,6 @@
 # BOOQ test strategy
 
-Owner: QA role. Branch `qa/test-strategy`. Status: **draft for approval**. Written 30 Oct 2026.
+Owner: QA role. Branch `qa/test-strategy`. Status: **draft for approval**. Written 30 Oct 2026, updated the same day for the user's decisions D1 to D31 (`docs/decisions.md`).
 
 Sources: `CLAUDE.md`, `specs/product/prd-v1.2.md`, `specs/product/handoff-v1.2.md`, `docs/DEVELOPMENT-PLAN.md`, `docs/canvas-gaps.md`.
 Companion files in this folder:
@@ -31,7 +31,7 @@ In order of damage if it fails. This order drives where the test effort goes.
 
 The PRD's suggested stack is adopted (30 Oct 2026): Next.js with the LIFF SDK, Postgres (Supabase) with row level security by club ID, server jobs for holds, reminders and expiries. Payments by Beam, messages through the LINE Messaging API.
 
-QA proposals that the Architect and DevOps must accept before they become fixed (none of these are in the spec):
+Vitest, Playwright, a real Postgres in tests and a controllable clock were **accepted by the user on 30 Oct 2026 (D30)**. The rest of this table is still a QA proposal for the Architect and DevOps (none of it is in the spec):
 
 | Choice | Proposal | Why |
 |---|---|---|
@@ -79,11 +79,11 @@ The rule is: if a rule can be a pure function, it is one, and it has a unit test
 | Slot rules | 18:30 refused; 18:00 accepted; 06:00 first slot; 23:00 last slot (ends 24:00); 24:00 start refused; day 30 ahead boundary (see Q-04); 61 days refused; slot in the past | BOOK-01 |
 | Hold time | Hold length only 10, 15 or 20; other values refused; default 15; backup mode 60 is F16 only | BOOK-03 |
 | Price groups | Adult at 18 years 0 days vs 17 years 364 days; switch on the 18th birthday; DOB corrected later changes the price group going forward | AUTH-02 |
-| Pricing | Court ฿500; solo = court ฿500 + coach; Adult Coach tier ฿1,300; Student ฿1,200; money is integer satang (50000); percentage rounding (needs Q-17) | COACH-02, PRICE |
-| Coach availability | On leave hidden; booked hidden; 6 in a row allowed, 7th hidden; a gap hour resets the run (needs Q-09); solo, group and staff bookings all count | COACH-01 |
-| Credit application | Solo credit never applied to a coach added at court checkout; solo credit still leaves ฿500 court due; order in which credit, wallet and payment apply (needs Q-15) | COACH-03, COACH-04 |
+| Pricing | Court ฿500; solo = court ฿500 + coach; Adult Coach tier ฿1,300; Student ฿1,200; money is integer satang (50000); percentage rounding half up to the satang, add-ons excluded unless the code says so (D23) | COACH-02, PRICE |
+| Coach availability | On leave hidden; booked hidden; 6 in a row allowed, 7th hidden; a free hour between resets the run, unpaid held hours and uncancelled group classes count (D19); solo, group and staff bookings all count | COACH-01 |
+| Credit application | Solo credit never applied to a coach added at court checkout; solo credit still leaves ฿500 court due; order of use: package credit, then wallet, then money (D22) | COACH-03, COACH-04 |
 | Ledgers | Balance = sum of rows; reasons limited to the allowed set (reserve, return, use, forfeit, expire, adjust); staff entries need a note | PKG-01 |
-| Package expiry | Purchase + 3 months, + 5 months; month end purchase (30 Nov + 3 months); time of day of expiry (needs Q-11); pause extension adds the pause length | PKG-02, PKG-03, PLAT-03 |
+| Package expiry | Purchase + 3 months, + 5 months; month end purchase (30 Nov + 3 months = 28 Feb, D20); expiry at 23:59 Asia/Bangkok on that day (D20); pause extension adds the pause length | PKG-02, PKG-03, PLAT-03 |
 | Cancel rules | Exactly 12h 00m 00s before start = full return; 11h 59m 59s = forfeit; no show = forfeit; credit goes to package, money to wallet; mixed payment split; solo substitution overrides the window | CANCEL-01 |
 | Waitlist | Order by position; offer expiry 30 min; no offer when start is under 2 h away; skip declined | CLASS-02 |
 | Promo | One code per order; stacking per code with birthday; caps (total, per customer, first time only, minimum spend) | PROMO-01 |
@@ -109,7 +109,9 @@ An integration test boots the app's route handlers against a real database that 
 | `integration/line` | Each message type sent once, to the right OA, in the right language, at the right time; usage counter; token failure alert; rich menu has 6 tiles | LINE-02..06 |
 | `integration/jobs` | Hold expiry, reminders 24h and 2h, package expiry reminders 14 and 3 days, waitlist offer expiry, birthday message. All run on the fake clock | BOOK-03, LINE-05, PKG-03 |
 | `integration/audit` | Every change to a booking, balance, price or setting writes an audit entry with actor, old and new value, reason; platform actions also write the P6 log | PLAT-04 |
+| `acceptance/F01, F02` | One todo per approved acceptance criterion (173): `tests/acceptance/` | ROLE, PLAT, PDPA, AUTH, LINE-01 |
 | `integration/platform` | Club lifecycle Draft, Testing, Live, Paused; go live needs every P4 check; pause rules; support view is setup only; 24 hour allow-changes switch expires | PLAT-01..03 |
+| `integration/test-mode` | Test flag set on the server at creation, own non legal receipt series, purge removes only flagged rows of that club and blocks Go live if one cannot be removed, only owner and named BOOQ testers can sign in, BOOQ sees pass or fail only, Beam sandbox only and no simulate payment route exists | PLAT-07, D4, D26 |
 | `integration/pdpa` | Consent stored at first sign in; copy of my data; delete on request; staff notes and slips not visible to players | PDPA-01 |
 | `concurrency/*` | Race conditions, see `concurrency-tests.md` | BOOK-04 and others |
 | `rls/*` | See `rls-test-plan.md` | PLAT, PDPA-01 |
@@ -145,7 +147,7 @@ Run against a deployed preview or local stack with fake Beam and fake LINE. Scre
 | E2E-21 Thai and English: every journey above runs once in each language; longest string layout checks | all | TEXT-06 |
 | E2E-22 Receipt PDF in Thai and English visually compared to the canvas boards R-Receipt-TH and R-Receipt-EN | F1 | RCPT-02 |
 | E2E-23 Rich menu tile deep links open the right page directly (browser level) | LINE-02 | BOOK-02, LINE-02 |
-| E2E-24 Removed features absent: no check in, no gift vouchers, no message editor, no slip review queue | all | CLAUDE.md |
+| E2E-24 Removed features absent: no check in, no gift vouchers, no message editor, no slip review queue, no simulate payment action | all | CLAUDE.md, D26 |
 | E2E-25 Performance: court grid and class schedule under 2 s on throttled 4G (Chromium network emulation, cold cache, 30 day strip) | C4, C7 | Performance |
 
 **Layout checks (TEXT-06).** For every screen the Playwright run injects the longest string of either language for each key it renders (Thai is usually longer), at 375 px, and asserts: no horizontal scroll, no button text wraps to two lines (button height unchanged), content area scrolls. Screenshots are kept as artifacts; they are not pixel baselines except for the two receipts.
@@ -162,8 +164,9 @@ A short list, run on the 7 Dec window, because no tool can do them: LIFF silent 
 |---|---|---|---|
 | Local / CI | Unit, integration, concurrency, RLS, E2E | Fake Beam | Fake LINE |
 | Preview per PR | E2E smoke | Fake Beam | Fake LINE |
-| Staging | Full E2E, the 7 Dec window, Hunter in status Testing | Beam sandbox if credentials exist, else fake Beam (open item: Hunter's Beam merchant account and sandbox credentials) | A real test LINE OA and LIFF app for device checks; fake LINE for automation |
-| Production | No tests. Only the go live smoke checklist, read only | Live | Live |
+| Staging | Development and QA only (D16). Full E2E on fake Beam, Beam sandbox when credentials exist | Fake Beam, then Beam sandbox (open item: Hunter's Beam merchant account and sandbox credentials) | A real test LINE OA and LIFF app for device checks; fake LINE for automation |
+| Production, Hunter in status Testing | **The 7 Dec test window runs here (D16).** Test data is flagged and purged at Go live (PLAT-07). Testers are the owner and named BOOQ testers only | **Beam sandbox only. No in app simulate payment (D26)** | Hunter's real OA; test pushes count toward the monthly cap (LINE-07) |
+| Production, Live | Go live smoke checklist, read only, after the purge | Live keys | Live |
 
 **Fixtures.** A seed builder in `tests/support` (to be written when the schema exists) creates: Club A "Hunter fixture" (2 courts, 06:00 to 24:00, ฿500 flat, Adult and Student groups, 10 hour and 20 hour bundles, solo and group packs from the PRD tables), Club B "second club" (different prices, one court, slip option) with its own players, and platform staff accounts. Settings that are TBD in the PRD (add on prices, Head Coach price, referral reward, friend discount, birthday discount, max future hours, class below minimum alert, wallet expiry, coach pay) are **set by the fixture to named test values and labelled as test values**; they are not product defaults and the tests never assume them outside the fixture. Where the check says "empty means no limit" (BOOK-05) a second fixture leaves it empty.
 
@@ -192,13 +195,13 @@ Purpose: prove end to end, with Hunter staff and friendly players, that the book
 |---|---|---|---|
 | 1 | Hunter club is in status Testing, passed P2 and P3 setup | Platform / Hunter | PLAT-01 |
 | 2 | Waves 1 and 2 are deployed to staging (sign in, court booking, checkout, Beam, LINE messages). Waves 3 and 4 inside the window (the development plan says they must land inside it) | Orchestrator | DEVELOPMENT-PLAN |
-| 3 | Beam sandbox credentials for Hunter exist, or the owner has agreed to test with the fake Beam and re test with Beam before go live | Hunter / Beam | Open item |
+| 3 | Beam sandbox credentials for Hunter exist and a sandbox PromptPay charge can be paid by a tester (D26 allows sandbox only; Q-31 says this is not yet confirmed from Beam's docs) | Hunter / Beam | Open item, Q-31 |
 | 4 | A real test LINE OA with a Messaging API token, LINE Login channel and LIFF app, rich menu uploaded | Hunter / DevOps | Open item (paid plan needed to test volume) |
 | 5 | Privacy consent, receipt and payment text final | Writers / Product | Hand-off, Text and language files |
 | 6 | Automated suite green on staging build: unit, integration, concurrency, RLS, E2E | QA | this strategy |
 | 7 | Test accounts: at least 2 players (1 Adult, 1 Student by DOB), 1 front desk, 1 owner, 1 accountant, 1 coach, 1 platform admin, 1 onboarding specialist | Hunter / QA | roles table |
-| 8 | Decisions on the blocking questions in `open-questions.md` marked "before 7 Dec" | Product owner | open-questions |
-| 9 | Test mode data is separated from real data and cannot consume real receipt numbers (Q-23) | Architect | RCPT-01 |
+| 8 | Questions in `open-questions.md` marked A or B answered | Product owner | open-questions |
+| 9 | Test data is flagged on the server at creation, uses its own non legal receipt numbers, and the purge at Go live is rehearsed on a copy (D4, PLAT-07-AC1 to AC4). Sandbox keys and the live key swap are a go live check (Q-33) | Architect | RCPT-01, PLAT-07 |
 
 ### 6.2 Test data volumes (QA suggestion, product owner may change)
 
@@ -251,7 +254,7 @@ Each line is a script; every script runs once in Thai and once in English, and o
 | S19 Messages | Count pushes for one booking | LINE-05, LINE-06 | About 3 to 4 pushes; counter in P1 matches |
 | S20 Performance | Court grid on 4G in LINE | Performance | Under 2 seconds |
 | S21 Removed features | Look for check in, vouchers, message editor | CLAUDE.md | None present |
-| S22 Data rights | Ask for a copy of my data; ask for deletion | PDPA-01 | Both work and are logged (rules in Q-24) |
+| S22 Data rights | Ask for a copy of my data; ask for deletion | PDPA-01 | Both work and are logged (PDPA-01-AC3/AC4; Q-24 for receipts and ledgers) |
 
 ### 6.5 Schedule (working back from 7 Dec; dates are proposals)
 
@@ -263,7 +266,7 @@ Each line is a script; every script runs once in Thai and once in English, and o
 | 30 Nov to 4 Dec | Dress rehearsal by QA on staging with the scripts in 6.4; bugs triaged |
 | **7 Dec** | Hunter test window opens, QA on call, daily bug triage |
 | Mid window | Waves 3 and 4 land; re run S9 to S15 |
-| By 22 Dec | Retest all fixed bugs; clean up of test data (Q-23); final privacy, receipt and payment text check |
+| By 22 Dec | Retest all fixed bugs; test data purge rehearsed (PLAT-07); final privacy, receipt and payment text check |
 | 29 Dec | Public booking opens, go live smoke checklist |
 
 ### 6.6 Exit criteria for go live
@@ -272,7 +275,7 @@ Each line is a script; every script runs once in Thai and once in English, and o
 2. Every requirement ID that applies to Hunter's launch has a green test in `traceability.md`, or a recorded decision by the product owner that it ships without one.
 3. All "before go live" questions in `open-questions.md` answered.
 4. Beam test with the real sandbox or merchant account passed for S1, S7, S8 and the bad signature check; real LINE device checks passed.
-5. Test data purged or segregated, and the receipt sequence starts clean (Q-23).
+5. The purge ran (PLAT-07-AC3/AC4) and Hunter's real receipt sequence starts at 000001 (D4). Sandbox keys replaced by live keys (Q-33).
 6. A backup restore drill has been done once (PDPA-01 daily backups; DevOps runs it, QA witnesses).
 
 ### 6.7 Bugs

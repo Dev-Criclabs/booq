@@ -2,6 +2,7 @@ export * from './clock';
 export * from './locale';
 export * from './beam/types';
 export * from './beam/wire';
+export * from './beam/wire.vector';
 export * from './beam/fake-beam';
 export * from './beam/scenarios';
 export * from './line/types';

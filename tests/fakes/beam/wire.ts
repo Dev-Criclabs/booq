@@ -1,20 +1,27 @@
 import { createHmac } from 'node:crypto';
-import type { WireFormat } from './types';
+import type { BeamEventName, WireFormat } from './types';
 
 /**
- * PLACEHOLDER wire format: HMAC-SHA256 over `${timestamp}.${body}`, hex, in two made-up headers.
- * It is NOT Beam's real scheme (Q-31). It exists so the fake can produce correct and incorrect
- * signatures today. Replace this class when Beam's sandbox documentation is available; no scenario changes.
+ * Beam's documented webhook signing (https://docs.beamcheckout.com/webhook-authentication):
+ *  1. the key is a base64 string; decode it to bytes;
+ *  2. HMAC-SHA256 over the exact request body bytes;
+ *  3. base64 encode the digest; it must equal the X-Beam-Signature header.
+ * Also documented: header x-beam-event carries the event name.
+ * NOT documented (so not simulated): a timestamp, a replay window, an event id.
+ * Test vector from the docs is checked in tests/fakes/beam/wire.vector.ts.
  */
-export class PlaceholderHmacWire implements WireFormat {
-  readonly name = 'placeholder-hmac-sha256';
-  readonly replayWindowSeconds = 300;
+export class BeamHmacWire implements WireFormat {
+  readonly name = 'beam-documented-hmac-sha256-base64';
 
-  sign(rawBody: string, secret: string, timestampSeconds: number): Record<string, string> {
-    const mac = createHmac('sha256', secret).update(`${timestampSeconds}.${rawBody}`).digest('hex');
+  sign(rawBody: string, keyBase64: string, eventName: BeamEventName): Record<string, string> {
     return {
-      'x-fake-beam-timestamp': String(timestampSeconds),
-      'x-fake-beam-signature': mac,
+      'content-type': 'application/json',
+      'x-beam-event': eventName,
+      'x-beam-signature': hmacBase64(rawBody, keyBase64),
     };
   }
+}
+
+export function hmacBase64(rawBody: string, keyBase64: string): string {
+  return createHmac('sha256', Buffer.from(keyBase64, 'base64')).update(Buffer.from(rawBody, 'utf8')).digest('base64');
 }

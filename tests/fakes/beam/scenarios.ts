@@ -1,6 +1,6 @@
 // Fake Beam scenarios: the five required by the QA brief, plus the variants they need.
-// Each scenario has (1) a runner that drives the fake, and (2) a catalogue entry that says what
-// the APP must do afterwards. The catalogue is the oracle; it comes from the spec, not from code.
+// Each scenario has (1) a runner that drives the fake, and (2) a catalogue entry that says what the APP must do.
+// The catalogue is the oracle. It comes from the spec and the user's decisions (docs/decisions.md D18 to D26), not from code.
 import type { Clock } from '../clock';
 import { FakeClock } from '../clock';
 import type { FakeBeam } from './fake-beam';
@@ -19,114 +19,102 @@ export interface ScenarioContext {
 
 /** 1. Valid payment: correct signature, exact amount, inside the hold. */
 export async function validPayment(ctx: ScenarioContext): Promise<DeliveryRecord> {
-  return ctx.beam.pay(ctx.charge.id, ctx.target);
+  return ctx.beam.pay(ctx.charge.chargeId, ctx.target);
 }
 
-/** 2. Bad signature. Every variant must leave the app untouched (PAY-02). */
-export const BAD_SIGNATURE_MODES: ReadonlyArray<SigningMode> = [
-  'wrong-secret',
-  'tampered-body',
-  'missing',
-  'malformed',
-  'stale-timestamp',
-];
+/** 2. Bad signature. Every variant is rejected, logged and alerted (D24) and changes nothing (PAY-02). */
+export const BAD_SIGNATURE_MODES: ReadonlyArray<SigningMode> = ['wrong-key', 'tampered-body', 'reformatted-body', 'missing', 'malformed'];
 
 export async function badSignature(ctx: ScenarioContext, mode: SigningMode): Promise<DeliveryRecord> {
   if (mode === 'correct') throw new Error('badSignature: pass a bad mode');
-  // markPaid false: from Beam's side nothing was paid. The attacker only has the endpoint.
-  return ctx.beam.pay(ctx.charge.id, ctx.target, { signing: mode, markPaid: false });
+  // markPaid false: from Beam's side nothing was paid. The sender only has the endpoint address.
+  return ctx.beam.pay(ctx.charge.chargeId, ctx.target, { signing: mode, markPaid: false });
 }
 
-/** 2b. A club A secret used on a club B charge (tenancy, RLS-A12). */
-export async function signedWithOtherClubSecret(ctx: ScenarioContext, otherClubSecret: string): Promise<DeliveryRecord> {
-  return ctx.beam.pay(ctx.charge.id, ctx.target, { signing: 'wrong-secret', otherSecret: otherClubSecret, markPaid: false });
+/** 2b. Club A's webhook key used on a club B charge (tenancy, RLS-A12). */
+export async function signedWithOtherClubKey(ctx: ScenarioContext, otherClubKeyBase64: string): Promise<DeliveryRecord> {
+  return ctx.beam.pay(ctx.charge.chargeId, ctx.target, { signing: 'wrong-key', otherKeyBase64: otherClubKeyBase64, markPaid: false });
 }
 
-/** 3. Wrong amount. Validly signed, amount differs from the order. */
+/** 3. Wrong amount. Validly signed, amount differs from the order. D24: not confirmed, flagged for the owner. */
 export type WrongAmountVariant = 'one-satang-less' | 'one-satang-more' | 'baht-for-satang' | 'double';
 
 export function wrongAmountOf(charge: BeamCharge, variant: WrongAmountVariant): Satang {
   switch (variant) {
     case 'one-satang-less':
-      return charge.amountSatang - 1;
+      return charge.amount - 1;
     case 'one-satang-more':
-      return charge.amountSatang + 1;
+      return charge.amount + 1;
     case 'baht-for-satang': // 500 sent where 50000 expected: unit confusion
-      return Math.round(charge.amountSatang / 100);
+      return Math.round(charge.amount / 100);
     case 'double':
-      return charge.amountSatang * 2;
+      return charge.amount * 2;
   }
 }
 
 export async function wrongAmount(ctx: ScenarioContext, variant: WrongAmountVariant): Promise<DeliveryRecord> {
-  return ctx.beam.pay(ctx.charge.id, ctx.target, { amountSatang: wrongAmountOf(ctx.charge, variant) });
+  return ctx.beam.pay(ctx.charge.chargeId, ctx.target, { amount: wrongAmountOf(ctx.charge, variant) });
 }
 
-/** 4. Duplicate callback: same event id twice, one after the other or at the same moment. */
-export async function duplicateCallback(ctx: ScenarioContext, how: 'sequential' | 'parallel', copies = 2): Promise<DeliveryRecord[]> {
-  const first = await ctx.beam.pay(ctx.charge.id, ctx.target);
-  if (how === 'sequential') {
-    const rest: DeliveryRecord[] = [];
-    for (let i = 1; i < copies; i++) rest.push(await ctx.beam.deliver(first.event, ctx.target));
-    return [first, ...rest];
-  }
-  // parallel: build a fresh event and send all copies at once (first delivery above is dropped from the count by the caller)
-  const event = ctx.beam.buildPaidEvent(ctx.charge.id);
-  return ctx.beam.deliverParallel(event, ctx.target, copies);
+/** 4. Duplicate callback: the same signed bytes again (D24: ignored with success). */
+export async function duplicateCallbackSequential(ctx: ScenarioContext, copies = 2): Promise<DeliveryRecord[]> {
+  const first = await ctx.beam.pay(ctx.charge.chargeId, ctx.target);
+  const rest: DeliveryRecord[] = [];
+  for (let i = 1; i < copies; i++) rest.push(await ctx.beam.redeliver(first, ctx.target));
+  return [first, ...rest];
 }
 
-/** 4b. Parallel duplicates without a prior sequential delivery (CONC-26). */
-export async function duplicateCallbackParallelOnly(ctx: ScenarioContext, copies: number): Promise<DeliveryRecord[]> {
-  const event = ctx.beam.buildPaidEvent(ctx.charge.id);
-  return ctx.beam.deliverParallel(event, ctx.target, copies);
+/** 4b. n identical deliveries at the same moment (CONC-26). The charge is marked paid first. */
+export async function duplicateCallbackParallel(ctx: ScenarioContext, copies: number): Promise<DeliveryRecord[]> {
+  const body = ctx.beam.webhookBody(ctx.charge.chargeId, { status: 'SUCCEEDED' });
+  return ctx.beam.deliverParallel('charge.succeeded', body, ctx.target, copies);
 }
 
 /**
- * 5. Late callback after the hold. The test supplies what happened to the slot in the meantime.
- * `holdSeconds` is the club's hold time (10, 15 or 20 minutes); the clock moves past it.
+ * 5. Late callback after the hold. D18: the QR expires exactly when the hold ends, so a payment Beam reports after
+ * that is a late payment (PAY-03). The test supplies what happened to the slot meanwhile.
  */
 export type LateVariant =
-  | 'slot-still-open' // nobody took it: approved (PAY-03)
+  | 'slot-still-open' // nobody took it: approved
   | 'slot-taken-confirmed' // another player confirmed it: value to wallet
-  | 'slot-held-by-other' // another player is paying for it right now: value to wallet
-  | 'solo-coach-lost' // court free but coach booked: all or nothing, so wallet
-  | 'closure-created'; // staff closed the slot meanwhile: wallet (Q-20)
+  | 'slot-held-by-other' // another player is paying for it: value to wallet
+  | 'solo-coach-lost' // court free but coach booked: all or nothing, so all to wallet (D25)
+  | 'closure-created'; // staff closed the slot meanwhile: wallet (D25)
 
 export interface LateOptions {
-  holdSeconds: number;
-  /** How long after the hold ends the payment arrives. */
-  lateBySeconds?: number;
-  /** The test makes the slot state match the variant here, using the app's own API. */
+  /** The test makes the slot state match the variant here, after the hold job has run, using the app's own API. */
   beforePay?: (variant: LateVariant) => Promise<void>;
+  lateBySeconds?: number;
 }
 
-export async function lateCallbackAfterHold(ctx: ScenarioContext, variant: LateVariant, opts: LateOptions): Promise<DeliveryRecord> {
+export async function lateCallbackAfterHold(ctx: ScenarioContext, variant: LateVariant, opts: LateOptions = {}): Promise<DeliveryRecord> {
   if (!(ctx.clock instanceof FakeClock)) throw new Error('lateCallbackAfterHold needs a FakeClock to move time');
-  ctx.clock.advanceSeconds(opts.holdSeconds + (opts.lateBySeconds ?? 60));
-  // Let the app's job release the hold and run any other due jobs before the callback arrives.
-  // The test does that between these two lines through beforePay, or by calling runDueJobs() itself.
+  const expiry = Date.parse(ctx.charge.encodedImage.expiry);
+  const target = expiry + (opts.lateBySeconds ?? 60) * 1000;
+  if (target > ctx.clock.now().getTime()) ctx.clock.advanceMs(target - ctx.clock.now().getTime());
   await opts.beforePay?.(variant);
-  return ctx.beam.pay(ctx.charge.id, ctx.target);
+  return ctx.beam.pay(ctx.charge.chargeId, ctx.target);
 }
 
 // ---------- catalogue: what the app must do (the oracle) ----------
 
-export type OrderEffect = 'paid' | 'unchanged' | 'cancelled-or-wallet';
-
 export interface ExpectedOutcome {
-  /** HTTP status the app answers. 'undecided' = open question, assert only that it is not 5xx. */
-  httpStatus: number | '2xx' | '4xx' | 'undecided';
-  /** Booking state after the callback. */
-  booking: 'confirmed' | 'unchanged' | 'not-confirmed-value-to-wallet';
-  /** Wallet ledger change. 'amount-paid' = a credit row for the money Beam received. */
-  walletCredit: 'none' | 'amount-paid' | 'undecided';
-  /** New receipts issued by this delivery. */
+  /** HTTP status the app answers. 'undecided' = open; assert only that it is not 5xx. */
+  httpStatus: '2xx' | '4xx' | 'undecided';
+  booking: 'confirmed' | 'unchanged' | 'not-confirmed';
+  /** Wallet ledger row created automatically by this delivery. */
+  walletCredit: 'none' | 'amount-paid';
+  /** New receipts issued by this delivery. 'undecided' = D25 says issued for money received, accountant to confirm. */
   receipts: 0 | 1 | 'undecided';
-  /** Booking confirmed Flex cards pushed to the player. */
   confirmedCards: 0 | 1;
-  /** Total ledger rows, audit entries and LINE pushes beyond those named here must be zero. */
+  /** A LINE message to the player explaining a late payment that went to the wallet (D25). */
+  lateWalletMessage: boolean;
+  /** Bad signature: rejected, logged and alerted (D24). */
+  securityAlert: boolean;
+  /** Valid signature, wrong amount: flagged for the owner; staff credit the wallet with a reason (D24). */
+  ownerFlag: boolean;
+  /** Everything not named here (ledger rows, audit entries, pushes) must be zero. */
   nothingElseChanged: boolean;
-  /** Open questions that decide fields marked 'undecided'. */
   open?: string[];
 }
 
@@ -134,18 +122,21 @@ export interface ScenarioSpec {
   id: string;
   title: string;
   requirements: string[];
+  decisions: string[];
   steps: string[];
   expected: ExpectedOutcome;
 }
 
-const NO_CHANGE: ExpectedOutcome = {
-  httpStatus: 'undecided',
+const BASE: ExpectedOutcome = {
+  httpStatus: '2xx',
   booking: 'unchanged',
   walletCredit: 'none',
   receipts: 0,
   confirmedCards: 0,
+  lateWalletMessage: false,
+  securityAlert: false,
+  ownerFlag: false,
   nothingElseChanged: true,
-  open: ['Q-19'],
 };
 
 export const BEAM_SCENARIOS: ScenarioSpec[] = [
@@ -153,70 +144,53 @@ export const BEAM_SCENARIOS: ScenarioSpec[] = [
     id: 'BEAM-01-valid',
     title: 'Valid payment',
     requirements: ['PAY-02', 'LINE-04', 'RCPT-01'],
-    steps: [
-      'Player taps Pay: hold created, charge created for the exact amount',
-      'Fake Beam sends charge.succeeded, correct signature, exact amount, inside the hold',
-    ],
-    expected: {
-      httpStatus: '2xx',
-      booking: 'confirmed',
-      walletCredit: 'none',
-      receipts: 1,
-      confirmedCards: 1,
-      nothingElseChanged: false,
-    },
+    decisions: ['D18'],
+    steps: ['Player taps Pay: hold created, charge created for the exact amount, QR expiry = end of hold', 'charge.succeeded, correct signature, exact amount, inside the hold'],
+    expected: { ...BASE, booking: 'confirmed', receipts: 1, confirmedCards: 1, nothingElseChanged: false },
   },
   {
     id: 'BEAM-02-bad-signature',
-    title: 'Bad signature (wrong secret, tampered body, missing, malformed, stale timestamp)',
+    title: 'Bad signature (wrong key, tampered body, reformatted body, missing, malformed)',
     requirements: ['PAY-02', 'RLS-A12'],
-    steps: ['Same setup as BEAM-01', 'Fake Beam sends the callback with each of BAD_SIGNATURE_MODES'],
-    expected: { ...NO_CHANGE, httpStatus: '4xx', open: ['Q-19', 'Q-31'] },
+    decisions: ['D24'],
+    steps: ['Same setup as BEAM-01', 'Callback with each of BAD_SIGNATURE_MODES'],
+    // Beam treats 4xx and 5xx as failure and retries up to 10 times (DOC); rejecting with 4xx is expected.
+    expected: { ...BASE, httpStatus: '4xx', securityAlert: true, nothingElseChanged: false },
   },
   {
     id: 'BEAM-03-wrong-amount',
     title: 'Wrong amount (1 satang less, 1 satang more, baht sent for satang, double)',
     requirements: ['PAY-02'],
+    decisions: ['D24'],
     steps: ['Same setup', 'Validly signed callback whose amount differs from the order'],
-    expected: { ...NO_CHANGE, httpStatus: 'undecided', open: ['Q-19'] },
+    // Status code: undecided. 2xx stops Beam retrying; a 4xx makes Beam retry 10 times against a flagged order.
+    expected: { ...BASE, httpStatus: 'undecided', booking: 'not-confirmed', ownerFlag: true, nothingElseChanged: false, open: ['Q-19 (HTTP status only)'] },
   },
   {
     id: 'BEAM-04-duplicate',
-    title: 'Duplicate callback (same event id, one after the other and at the same moment)',
+    title: 'Duplicate callback (same bytes again, one after the other and at the same moment)',
     requirements: ['PAY-02', 'RCPT-01', 'LINE-04'],
-    steps: ['Valid payment is delivered', 'The same event is delivered again, and a separate run delivers N copies in parallel'],
-    expected: {
-      // After all copies: exactly the effect of ONE valid payment.
-      httpStatus: '2xx',
-      booking: 'confirmed',
-      walletCredit: 'none',
-      receipts: 1,
-      confirmedCards: 1,
-      nothingElseChanged: false,
-      open: ['Q-19'],
-    },
+    decisions: ['D24'],
+    steps: ['Valid payment delivered', 'The same signed bytes delivered again; a separate run delivers n copies in parallel'],
+    // Beam's payload has no event id (DOC), so the app dedupes on the charge, not an event id (Q-31).
+    expected: { ...BASE, booking: 'confirmed', receipts: 1, confirmedCards: 1, nothingElseChanged: false },
   },
   {
     id: 'BEAM-05a-late-open',
     title: 'Late callback after the hold, slot still open',
     requirements: ['PAY-03', 'BOOK-03', 'LINE-04'],
-    steps: ['Pay tapped, hold expires, release message sent', 'Payment arrives after the hold, nobody took the slot'],
-    expected: { httpStatus: '2xx', booking: 'confirmed', walletCredit: 'none', receipts: 1, confirmedCards: 1, nothingElseChanged: false, open: ['Q-20'] },
+    decisions: ['D18', 'D25'],
+    steps: ['Pay tapped, hold ends, QR expires, release message sent', 'Payment reported after the hold; no other hold, booking or closure on the slot'],
+    expected: { ...BASE, booking: 'confirmed', receipts: 1, confirmedCards: 1, nothingElseChanged: false },
   },
   {
     id: 'BEAM-05b-late-taken',
-    title: 'Late callback after the hold, slot taken or held by someone else, or coach lost, or closure',
+    title: 'Late callback after the hold, slot taken or held, or coach lost, or closure',
     requirements: ['PAY-03', 'BOOK-04'],
-    steps: ['As above, but the slot is now confirmed or held by another player (or the coach is booked, or a closure covers it)', 'Payment arrives'],
-    expected: {
-      httpStatus: '2xx',
-      booking: 'not-confirmed-value-to-wallet',
-      walletCredit: 'amount-paid',
-      receipts: 'undecided',
-      confirmedCards: 0,
-      nothingElseChanged: false,
-      open: ['Q-20', 'Q-25'],
-    },
+    decisions: ['D18', 'D25'],
+    steps: ['As above, but another hold, booking or closure now covers the slot (solo class: court and coach both must be free)', 'Payment reported'],
+    // D25: a receipt is issued for money received (accountant to confirm).
+    expected: { ...BASE, booking: 'not-confirmed', walletCredit: 'amount-paid', receipts: 'undecided', lateWalletMessage: true, nothingElseChanged: false, open: ['D25 receipt, accountant to confirm', 'Q-25'] },
   },
 ];
 

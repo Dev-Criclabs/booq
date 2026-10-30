@@ -1,6 +1,6 @@
 # Fake Beam and fake LINE: design
 
-Status: skeleton, type checked and smoke tested on 30 Oct 2026. Owner: QA. The fakes do not import app code. They sit **outside** the app and speak to it the way Beam and LINE do, so the real adapters are exercised.
+Status: skeleton, type checked and smoke tested on 30 Oct 2026; Beam side rebuilt the same day on Beam's public docs. Owner: QA. The fakes do not import app code. They sit **outside** the app and speak to it the way Beam and LINE do, so the real adapters are exercised.
 
 Why fakes and not mocks: PAY-02, PAY-03, LINE-03 and LINE-04 are about what crosses the boundary (a signed callback in, a push out). A mock inside the app skips the code that matters.
 
@@ -11,8 +11,9 @@ Why fakes and not mocks: PAY-02, PAY-03, LINE-03 and LINE-04 are about what cros
 | `clock.ts` | `Clock` interface and `FakeClock`. Default start `2026-12-07T09:00:00+07:00`. Time moves only by `advance*()` |
 | `locale.ts` | Resolve `locales/en.json` and `th.json` keys with `{variables}`; find which key produced a rendered text. Tests never assert literal wording |
 | `beam/types.ts` | Charges, events, signed deliveries, signing modes, `WireFormat` |
-| `beam/wire.ts` | **Placeholder** signature scheme (HMAC-SHA256). Not Beam's real scheme (Q-31) |
-| `beam/fake-beam.ts` | `FakeBeam`: create charge, pay, expire, deliver, retry, refund trap |
+| `beam/wire.ts` | Beam's documented signature: base64 HMAC-SHA256 over the exact body, `x-beam-event` header |
+| `beam/wire.vector.ts` | The docs' test vector (body to be pasted from the docs page) |
+| `beam/fake-beam.ts` | `FakeBeam`: create charge, pay, fail, deliver, redeliver, retry, HTTP façade, refund trap |
 | `beam/scenarios.ts` | The five scenarios as runners, plus the catalogue of what the app must do |
 | `line/types.ts` | Club channels, users, pushes, rich menu, faults |
 | `line/fake-line.ts` | `FakeLine`: push recording per club and language, ID token verify, friendship, quota, rich menu, optional HTTP server |
@@ -25,16 +26,16 @@ Why fakes and not mocks: PAY-02, PAY-03, LINE-03 and LINE-04 are about what cros
 
 The app will have adapters for Beam and LINE behind interfaces with a base URL setting (testability request 6). Two ways to connect, both supported:
 
-1. **HTTP.** The test starts the fake's server (`FakeLine.serve()`; an HTTP façade for Beam is not written yet; the pattern is the same) and gives its URL to the app config. The app calls it as it would the real service.
+1. **HTTP.** The test starts the fake's server (`FakeLine.serve()`, `FakeBeam.serve()`) and gives its URL to the app config. The app calls it as it would the real service.
 2. **Direct.** For Beam callbacks the test passes a `DeliveryTarget`: a function that receives `{headers, rawBody}` and returns `{status}`. Use `fetch` to the app's callback route, or call the route handler in process.
 
 ```ts
 const clock = new FakeClock();
-const beam = new FakeBeam({ clock, merchants: { 'hunter-merchant': 'whsec_test_A', 'club-b-merchant': 'whsec_test_B' } });
+const beam = new FakeBeam({ clock, merchants: { 'hunter-merchant': { apiKey: 'k1', webhookKeyBase64: keyA }, 'club-b-merchant': { apiKey: 'k2', webhookKeyBase64: keyB } } });
 const line = new FakeLine({ clock, channels: [/* one per club */] });
 
 // 1. app creates the charge through its Beam adapter pointed at the fake; the test finds it:
-const charge = beam.getCharge(chargeIdFromApp);
+const charge = beam.getCharge(chargeIdFromApp); // charge.chargeId, charge.amount (satang)
 // 2. a scenario drives the callback:
 const rec = await validPayment({ beam, clock, target: postToApp, charge });
 // 3. assertions on the APP state (order, booking, ledgers, receipts) and on the fakes (pushes, refunds)
@@ -44,34 +45,46 @@ beam.assertNoRefunds();
 
 ## 3. Fake Beam
 
-### 3.1 Interface
+Built on Beam's public docs (https://docs.beamcheckout.com, read 30 Oct 2026). In the source, **DOC** marks something the docs state and **GUESS** marks something they do not (Q-31).
 
-App facing: `createCharge({merchantId, orderRef, amountSatang, expiresInSeconds})`, `getCharge(id)`, `refund()` (always throws and records: **no cash refund exists**, CANCEL-02, PAY-05).
-Test facing: `pay(chargeId, target, options)`, `expire(chargeId, target)`, `deliver(event, target, signingMode)`, `deliverParallel(event, target, n)`, `deliveries`, `refundAttempts`, `assertNoRefunds()`.
+### 3.1 What comes from the docs
 
-Rules built into the fake: amounts are positive integers of satang; each club is its own merchant with its own webhook secret (so a club A secret on a club B charge is a bad signature, RLS-A12); the fake can pay an expired charge (late payment) because real Beam behaviour is unknown (Q-02, Q-31); it retries a 5xx up to `maxAttempts`.
+| Item | Taken from the docs |
+|---|---|
+| Create a QR charge | `POST /api/v1/charges`, HTTP Basic `merchantId:apiKey`, body with `amount`, `currency: THB`, `paymentMethod.qrPromptPay.expiryTime` (ISO 8601 UTC), `referenceId`. Response `actionRequired: ENCODED_IMAGE` and `encodedImage.expiry`. Playground base `https://playground.api.beamcheckout.com`, production `https://api.beamcheckout.com` |
+| Read a charge | `GET /api/v1/charges/{chargeId}` |
+| Amount | Integer in the smallest unit: satang for THB (`10000` = 100.00 THB) |
+| Webhook | HTTP POST to the registered URL. Body is the charge object as GET returns it. Event name in header `x-beam-event` (`charge.succeeded`, `charge.failed`) |
+| Signature | Header `X-Beam-Signature` = base64 of HMAC-SHA256 over the **exact** request body bytes, using the base64 decoded webhook key. "Without formatting, otherwise the signature will not match". A test vector is in the docs (`beam/wire.vector.ts`; the full body must be pasted from the docs page to run it) |
+| Retries | Any 2xx stops retrying. Other responses retry, default 10 attempts with exponential backoff |
+| Idempotency | Header `x-beam-idempotency-key` on POST and PATCH, up to 255 characters, kept 12 hours |
+| Refund | `POST /api/v1/refunds`. The fake answers 403 and records it; `assertNoRefunds()` fails the test (CANCEL-02, PAY-05) |
+| Sandbox | The Playground environment with its own Lighthouse keys. D26: tests use the sandbox only, no in app simulate payment |
 
-### 3.2 Signing modes
+### 3.2 What stays a guess (Q-31)
 
-`correct`, `wrong-secret`, `tampered-body` (signed, then the amount is changed), `missing`, `malformed`, `stale-timestamp` (outside the replay window).
+No event id and no timestamp in the webhook (so the fake sends none; no replay protection can be tested); what an expired QR becomes (the fake leaves it PENDING, the docs say an abandoned payment can stay PENDING for good); whether a QR can still be paid after `expiryTime` (the fake allows it, because D18 and PAY-03 define a late payment as one Beam reports after the hold ends); backoff intervals (the fake uses 2, 4, 8 ... seconds on the fake clock); `failureCode` values; the idempotency response on a repeat (the fake returns the same charge); and whether a sandbox PromptPay QR can be paid by a tester at all, which decides if D26 works on 7 Dec.
 
-### 3.3 The five scenarios and what the app must do
+### 3.3 Interface
 
-The catalogue is `BEAM_SCENARIOS` in `scenarios.ts`. Expected outcomes come from the spec only; fields still open are `undecided` and name their question.
+App facing: `createCharge(merchantId, request, idempotencyKey?)`, `getCharge(id)`, `serve()` for the HTTP paths above.
+Test facing: `pay(chargeId, target, options)`, `fail(...)`, `deliver(...)`, `redeliver(record)`, `deliverParallel(...)`, `webhookBody(...)`, `deliveries`, `refundAttempts`, `assertNoRefunds()`.
 
-| # | Scenario | Runner | Drives | App must |
-|---|---|---|---|---|
-| 1 | **Valid payment** | `validPayment` | Correct signature, exact amount, inside the hold | Booking **confirmed**; order paid; one receipt (RCPT-01); one Booking confirmed Flex card in the player's language (LINE-04); hold converted. HTTP 2xx |
-| 2 | **Bad signature** | `badSignature(mode)` for each of 5 modes; `signedWithOtherClubSecret` | Callback that fails verification | **Changes nothing** (PAY-02): booking and order unchanged, no ledger row, no receipt, no LINE push. Rejected with a 4xx (exact status undecided, Q-19). Hold still runs out normally |
-| 3 | **Wrong amount** | `wrongAmount(variant)`: 1 satang less, 1 satang more, baht sent for satang (500 not 50000), double | Validly signed callback with a different amount | **Changes nothing** (PAY-02). Real money may have arrived: how the club and player are told is Q-19 |
-| 4 | **Duplicate callback** | `duplicateCallback('sequential' or 'parallel')`, `duplicateCallbackParallelOnly(n)` | Same event id again, and n copies at the same moment | After all copies: the effect of **one** payment. One confirmation, one receipt, one card, one ledger effect. Later copies answer 2xx with no effect (Q-19c). Concurrency version is CONC-26 |
-| 5 | **Late callback after hold** | `lateCallbackAfterHold(variant, {holdSeconds, beforePay})` | Clock moves past the hold, hold job runs, then a valid callback arrives | `slot-still-open`: **approved** as a normal confirmation. `slot-taken-confirmed`, `slot-held-by-other`, `solo-coach-lost` (all or nothing), `closure-created`: booking not confirmed and the **amount paid goes to the wallet** with a ledger row (PAY-03, confirmed 30 Oct). The player is told (which message, Q-20) |
+Signing modes: `correct`, `wrong-key` (also club A's key on a club B charge), `tampered-body` (amount changed after signing), `reformatted-body` (same JSON re-serialised with whitespace: the app must verify the raw bytes, not re-serialised JSON), `missing`, `malformed`.
 
-Every scenario also asserts, through the test, that `beam.assertNoRefunds()` passes, that the LINE pushes match the catalogue, and that the oracle invariants of `docs/qa/concurrency-tests.md` section 2 hold.
+### 3.4 The five scenarios and what the app must do
 
-### 3.4 What the fake does not know yet
+The catalogue is `BEAM_SCENARIOS` in `scenarios.ts`. Expected outcomes come from the spec and decisions D18 to D26.
 
-Beam's real signature scheme and headers, retry timing, charge expiry rule, event ids, API paths (Q-31). They are isolated in `WireFormat` (`beam/wire.ts`) and a future HTTP façade. When Hunter's sandbox credentials exist (open item), a contract test runs the same scenarios 1 to 4 against Beam's sandbox and the fake and compares the app's behaviour.
+| # | Scenario | Runner | App must |
+|---|---|---|---|
+| 1 | **Valid payment** | `validPayment` | Booking **confirmed**; order paid; one receipt (RCPT-01); one Booking confirmed Flex card in the player's language (LINE-04). 2xx |
+| 2 | **Bad signature** | `badSignature(mode)` for 5 modes; `signedWithOtherClubKey` | **Rejected, logged and alerted** (D24); nothing else changes (PAY-02). 4xx |
+| 3 | **Wrong amount** (1 satang less, 1 satang more, baht sent for satang, double) | `wrongAmount(variant)` | Validly signed, so it is accepted as a message but the booking is **not confirmed**, the order is **flagged for the owner**, and staff credit the wallet with a reason (D24). HTTP status undecided (Q-19) |
+| 4 | **Duplicate callback** | `duplicateCallbackSequential`, `duplicateCallbackParallel` | **Ignored with success** (D24). After all copies: the effect of one payment. Concurrency version CONC-26 |
+| 5 | **Late callback after hold** | `lateCallbackAfterHold(variant, {beforePay})` | The QR expired when the hold ended (D18). `slot-still-open`: **approved**. `slot-taken-confirmed`, `slot-held-by-other`, `solo-coach-lost` (court and coach both must be free, otherwise all of it), `closure-created`: not confirmed, **amount paid goes to the wallet**, player gets a LINE message, a receipt for the money received (accountant to confirm) (D25) |
+
+Every scenario also asserts `beam.assertNoRefunds()`, that the LINE pushes match the catalogue, and that the oracle invariants of `docs/qa/concurrency-tests.md` section 2 hold.
 
 ## 4. Fake LINE
 

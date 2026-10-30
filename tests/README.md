@@ -6,6 +6,7 @@ Owned by the QA role. Strategy: `docs/qa/test-strategy.md`. Requirement map: `do
 |---|---|---|
 | `fakes/` | Fake Beam and fake LINE, a fake clock, a locale helper. No dependency on app code | Skeleton written, type checked, smoke tested. Design in `fakes/README.md` |
 | `support/` | Helpers for concurrency tests (`parallel.ts`) | Skeleton |
+| `acceptance/` | One `test.todo` per approved F01 and F02 acceptance criterion (173), generated from `specs/features/F01*, F02*/requirements.md` on branch `spec/f01-f02-requirements`. Needs `vitest` (D30), so it is outside the tsconfig until the toolchain exists | Skeleton |
 | `unit/`, `integration/`, `concurrency/`, `rls/`, `e2e/` | The suites | Not created yet: they need approved requirements and the schema. Designs: `docs/qa/concurrency-tests.md`, `docs/qa/rls-test-plan.md` |
 
 Type check the skeleton: `tsc -p tests/tsconfig.json` (needs `typescript` and `@types/node`; DevOps will add them to the repo toolchain).

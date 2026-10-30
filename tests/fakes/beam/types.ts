@@ -1,54 +1,65 @@
 // Fake Beam: shared types.
-// The real Beam wire format is NOT in the spec (open question Q-31, needs Beam sandbox docs).
-// Everything here that mirrors Beam (paths, headers, field names) is a PLACEHOLDER behind the
-// WireFormat interface, so the real format replaces it in one file.
+// Shapes follow Beam's public docs (https://docs.beamcheckout.com, read 30 Oct 2026). What the docs state is
+// marked DOC. What they do not state is marked GUESS and is listed in docs/qa/open-questions.md Q-31.
 
-/** Money is integer satang. 500 THB = 50000. Never a float. */
+/** Money is integer satang (DOC: "smallest unit of the currency"). 500 THB = 50000. Never a float. */
 export type Satang = number;
 
-export type ChargeStatus = 'pending' | 'paid' | 'expired';
+/** DOC: PENDING, SUCCEEDED, FAILED appear in the docs. GUESS: other values and what an expired QR becomes. */
+export type ChargeStatus = 'PENDING' | 'SUCCEEDED' | 'FAILED';
 
+export interface MerchantConfig {
+  /** DOC: HTTP Basic auth, merchantId:apiKey. */
+  apiKey: string;
+  /** DOC: the webhook signing key, shown base64 encoded in Lighthouse. Each club is its own merchant. */
+  webhookKeyBase64: string;
+}
+
+/** DOC: POST /api/v1/charges, QR PromptPay charge. */
 export interface CreateChargeRequest {
-  /** Beam merchant of the club. Each club is its own merchant, so each has its own webhook secret. */
-  merchantId: string;
-  /** App side reference: the order id. Echoed back in callbacks. */
-  orderRef: string;
-  amountSatang: Satang;
-  /** How long the QR is valid. Q-02: is this the hold time? The app decides, the fake obeys. */
-  expiresInSeconds: number;
+  amount: Satang;
+  currency: 'THB';
+  paymentMethod: {
+    paymentMethodType: 'QR_PROMPT_PAY';
+    /** DOC: ISO 8601 UTC. D18: the app sets it to the end of the hold. */
+    qrPromptPay: { expiryTime: string };
+  };
+  /** DOC: the app's own reference. The app sends the order id. */
+  referenceId: string;
+  returnUrl?: string;
 }
 
 export interface BeamCharge {
-  id: string;
-  merchantId: string;
-  orderRef: string;
-  amountSatang: Satang;
-  currency: 'THB';
-  status: ChargeStatus;
-  /** Stand in for the PromptPay QR payload. */
-  qrPayload: string;
-  createdAt: string;
-  expiresAt: string;
-  paidAt?: string;
-}
-
-export type BeamEventType = 'charge.succeeded' | 'charge.expired';
-
-export interface BeamEvent {
-  /** Idempotency key. Duplicate deliveries carry the same eventId. */
-  eventId: string;
-  type: BeamEventType;
   chargeId: string;
-  orderRef: string;
-  amountSatang: Satang;
+  merchantId: string;
+  referenceId: string;
+  status: ChargeStatus;
   currency: 'THB';
-  occurredAt: string;
+  amount: Satang;
+  paymentMethod: { paymentMethodType: 'QR_PROMPT_PAY'; qrPromptPay: { expiryTime: string } };
+  /** DOC: response of a QR charge. */
+  actionRequired: 'ENCODED_IMAGE';
+  encodedImage: { expiry: string; imageBase64Encoded: string; rawData: string };
+  createdAt: string;
+  updatedAt: string;
+  /** DOC: present on a succeeded charge. */
+  transactionTime?: string;
+  failureCode?: string;
 }
+
+/** DOC: x-beam-event header carries the event name. Other event names exist; only these two are used. */
+export type BeamEventName = 'charge.succeeded' | 'charge.failed';
+
+/**
+ * The webhook body is the charge object as GET would return it (DOC). NOTE: the docs show no event id and no
+ * timestamp in the payload or headers, so duplicate detection cannot rely on an event id (Q-31).
+ */
+export type BeamWebhookBody = Omit<BeamCharge, 'encodedImage' | 'actionRequired'>;
 
 /** What the fake sends to the app's callback endpoint. */
 export interface SignedDelivery {
-  url?: string;
   headers: Record<string, string>;
+  /** The exact bytes that were signed (DOC: "exact body ... without formatting"). */
   rawBody: string;
 }
 
@@ -63,8 +74,11 @@ export type DeliveryTarget = (delivery: SignedDelivery) => Promise<DeliveryRespo
 export interface DeliveryRecord {
   at: string;
   attempt: number;
-  event: BeamEvent;
+  eventName: BeamEventName;
+  chargeId: string;
   signingMode: SigningMode;
+  /** True when the payment was reported after the QR expiry, i.e. after the hold (D18, PAY-03). */
+  afterExpiry: boolean;
   delivery: SignedDelivery;
   response?: DeliveryResponse;
   error?: string;
@@ -72,17 +86,18 @@ export interface DeliveryRecord {
 
 /** How the signature on one delivery is produced. */
 export type SigningMode =
-  | 'correct' // signed with the merchant's secret over the exact body
-  | 'wrong-secret' // signed with another secret (also: club A secret on a club B charge)
-  | 'tampered-body' // signed correctly, then the body is changed
-  | 'missing' // no signature header at all
-  | 'malformed' // header present, garbage value
-  | 'stale-timestamp'; // correct signature but a timestamp outside any replay window
+  | 'correct' // signed with the merchant's key over the exact body
+  | 'wrong-key' // signed with another key (also: club A's key on a club B charge)
+  | 'tampered-body' // signed correctly, then the body is changed (amount)
+  | 'reformatted-body' // signed correctly, then the same JSON is re-serialised with whitespace: must fail (DOC: exact body)
+  | 'missing' // no signature header
+  | 'malformed'; // header present, not base64 of a valid digest
 
 export interface WireFormat {
   readonly name: string;
-  /** Headers for a delivery, given the exact body and the secret. */
-  sign(rawBody: string, secret: string, timestampSeconds: number): Record<string, string>;
-  /** Replay window the fake uses for 'stale-timestamp'. */
-  readonly replayWindowSeconds: number;
+  /** Headers for a delivery: signature over the exact raw body, plus the event name. */
+  sign(rawBody: string, keyBase64: string, eventName: BeamEventName): Record<string, string>;
 }
+
+/** DOC: "By default, Beam attempts to deliver your webhook 10 times with exponential backoff." Intervals GUESS. */
+export const BEAM_MAX_WEBHOOK_ATTEMPTS = 10;
