@@ -16,7 +16,7 @@ Not startable until their lists exist: F10 enqueues are called by F07 (substitut
   Tests first: a duplicate dedupe key is refused; a CHECK refuses `params` with a name, phone or date of birth key; another club's rows are not reachable.
 - [x] **F10-T03** Migration 0602: `notification_pref` (reminders default on, promotions default off, A-2). IDs: LINE-05, D94. Role: BE-P · Deps T02 · Size: S
   Tests first: defaults as stated; a player writes only their own row.
-- [ ] **F10-T04** Migration 0603: `rich_menu_label` (six rows per club, tile 1 to 6) and `rich_menu` (one active row per club). IDs: LINE-02-AC1, AC2. Role: BE-P · Deps T02 · Size: S
+- [x] **F10-T04** Migration 0603: `rich_menu_label` (six rows per club, tile 1 to 6) and `rich_menu` (one active row per club). IDs: LINE-02-AC1, AC2. Role: BE-P · Deps T02 · Size: S
   Tests first: a seventh tile is refused; two active rows for one club are refused; links are not stored.
 - [ ] **F10-T05** Migration 0604: `platform.club_line_usage` support and `platform.config` rows for 70, 80 and 100. IDs: LINE-06, LINE-07-AC8. Role: BE-P · Deps FA §2.2 · Size: S
   Tests first: no club role can read or write the thresholds; the platform reader sees counts only.
