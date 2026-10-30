@@ -22,14 +22,14 @@ afterEach(async () => {
 
 const enqueue = (kind: string, key: string, sendAt = `now() + interval '1 day'`, params: object = { order_id: A }, user: string | null = PLAYER, club = A) =>
   w.withClubTx({ ...ctx(), clubId: club }, async (tx) =>
-    (await tx.query(`select app.enqueue_message($1, $2, $3::jsonb, $4, ${sendAt}) as id`, [kind, user, JSON.stringify(params), key])).rows[0].id as string | null);
+    (await tx.query(`select app.enqueue_message($1, $2, $3::jsonb, $4, ${sendAt}) as id`, [kind, user, JSON.stringify(params), key])).rows[0]!.id as string | null);
 const rowOf = async (id: string) => (await tdb.query(`select kind, status, void_reason, last_error, is_test, user_id, params from public.message_outbox where id = $1`, [id])).rows[0];
 const usage = (used: number, limit: number | null, plan = 'paid', club = A) =>
   tdb.query(
     `insert into platform.club_line_usage (club_id, month, used, message_limit, plan_kind, source) values ($1, ${MONTH}, $2, $3, $4, 'line')
      on conflict (club_id, month) do update set used = excluded.used, message_limit = excluded.message_limit, plan_kind = excluded.plan_kind`,
     [club, used, limit, plan]);
-const capState = async (club = A) => w.withClubTx({ ...ctx(), clubId: club }, async (tx) => (await tx.query(`select app.cap_state() as s`)).rows[0].s as string);
+const capState = async (club = A) => w.withClubTx({ ...ctx(), clubId: club }, async (tx) => (await tx.query(`select app.cap_state() as s`)).rows[0]!.s as string);
 
 describe('the payment port (D96, Architect review of 30 Oct)', () => {
   it('enqueue_message is registered as the fifth port with the agreed signature', async () => {
@@ -129,7 +129,7 @@ describe('the cap at queue time (LINE-07-AC1 to AC4)', () => {
     const r = (await enqueue('reminder_24h', 'reminder:b1:t:24'))!;
     const c = (await enqueue('booking_confirmed', 'confirmed:b1', 'now()'))!;
     await usage(800, 1000);
-    expect(await w.withClubTx(ctx(), async (tx) => (await tx.query(`select app.void_cap_reminders() as n`)).rows[0].n)).toBe(1);
+    expect(await w.withClubTx(ctx(), async (tx) => (await tx.query(`select app.void_cap_reminders() as n`)).rows[0]!.n)).toBe(1);
     expect(await rowOf(r)).toMatchObject({ status: 'void', void_reason: 'cap' });
     expect(await rowOf(c)).toMatchObject({ status: 'pending' });
     // The month rolls over or the owner upgrades: the voided reminder stays void, and re-queueing its key finds it.
@@ -142,7 +142,7 @@ describe('the cap at queue time (LINE-07-AC1 to AC4)', () => {
   it('below 80 percent void_cap_reminders voids nothing', async () => {
     await enqueue('reminder_24h', 'reminder:b2:t:24');
     await usage(790, 1000);
-    expect(await w.withClubTx(ctx(), async (tx) => (await tx.query(`select app.void_cap_reminders() as n`)).rows[0].n)).toBe(0);
+    expect(await w.withClubTx(ctx(), async (tx) => (await tx.query(`select app.void_cap_reminders() as n`)).rows[0]!.n)).toBe(0);
   });
 
   it('at 100 percent on a free plan a message is queued as undeliverable; on a paid plan it goes', async () => {
@@ -154,7 +154,7 @@ describe('the cap at queue time (LINE-07-AC1 to AC4)', () => {
 
   it('mark_undeliverable ends a pending row once (LINE 429, D9 path)', async () => {
     const id = (await enqueue('waitlist_offer', 'offer:e:1', 'now()'))!;
-    const mark = () => w.withClubTx(ctx(), async (tx) => (await tx.query(`select app.mark_undeliverable($1, 'cap') as ok`, [id])).rows[0].ok);
+    const mark = () => w.withClubTx(ctx(), async (tx) => (await tx.query(`select app.mark_undeliverable($1, 'cap') as ok`, [id])).rows[0]!.ok);
     expect(await mark()).toBe(true);
     expect(await mark()).toBe(false);
     expect(await rowOf(id)).toMatchObject({ status: 'undeliverable', last_error: 'cap' });
@@ -166,7 +166,7 @@ describe('void_messages', () => {
     const a = (await enqueue('reminder_24h', 'reminder:bk1:t:24'))!;
     const b = (await enqueue('reminder_2h', 'reminder:bk1:t:2'))!;
     const other = (await enqueue('reminder_2h', 'reminder:bk2:t:2'))!;
-    const n = await w.withClubTx(ctx(), async (tx) => (await tx.query(`select app.void_messages('reminder:bk1:', 'cancelled') as n`)).rows[0].n);
+    const n = await w.withClubTx(ctx(), async (tx) => (await tx.query(`select app.void_messages('reminder:bk1:', 'cancelled') as n`)).rows[0]!.n);
     expect(n).toBe(2);
     expect([(await rowOf(a)).status, (await rowOf(b)).status, (await rowOf(other)).status]).toEqual(['void', 'void', 'pending']);
     await expect(w.withClubTx(ctx(), (tx) => tx.query(`select app.void_messages('reminder:', 'bored')`))).rejects.toThrow(/void reason/);
