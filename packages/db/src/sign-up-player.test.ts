@@ -12,11 +12,18 @@ const SESSION = H('a');
 let tdb: TestDatabase;
 let db: Db;
 let statusA = 'live';
+let publishNotice = true;
 const STAFF = '99999999-0000-4000-8000-000000000001';
 
 const ctx = (club = A) => ({ clubId: club, userId: null, roles: [] as never, source: 'player_app' as const });
 const future = () => new Date(Date.now() + 3600_000).toISOString();
 
+async function publishRelease() {
+  await tdb.query(`insert into platform.legal_release (seq, published_by) values (1, $1)`, [STAFF]);
+  for (const kind of ['privacy', 'terms']) for (const lang of ['th', 'en']) {
+    await tdb.query(`insert into platform.legal_text (seq, kind, language, title, body) values (1, $1, $2, 't', 'b')`, [kind, lang]);
+  }
+}
 async function pending(token = SESSION, club = A, line = LINE, expires: string = future()) {
   await tdb.query(`insert into public.auth_session (club_id, token_hash, line_user_id, pending_display_name, pending_language, state, expires_at) values ($1, $2, $3, 'Nok on LINE', 'en', 'pending_profile', $4)`, [club, token, line, expires]);
 }
@@ -36,6 +43,7 @@ beforeEach(async () => {
   db = createDb({ connectionString: tdb.url, max: 1 });
   await tdb.query(`insert into public.club (id, slug, name_th, name_en, status) values ($1, 'a', 'ก', 'A', $3), ($2, 'b', 'ข', 'B', 'live')`, [A, B, statusA]);
   await tdb.query(`insert into platform.platform_staff (id, auth_user_id, email, display_name, role) values ($1, $1, 'admin@booq.example', 'Ada', 'platform_admin')`, [STAFF]);
+  if (publishNotice) await publishRelease();
 });
 afterEach(async () => {
   await db.end();
@@ -151,6 +159,39 @@ describe('refusals leave nothing behind', () => {
     }
     await expect(signUp()).rejects.toThrow(/sign_up:already_registered/);
     expect((await tdb.query(`select state from public.auth_session where token_hash = $1`, [SESSION])).rows[0].state).toBe('pending_profile');
+  });
+});
+
+describe('the notice version (D152)', () => {
+  it('a version that is not the current one is refused and nothing is created', async () => {
+    await pending();
+    await expect(signUp({ version: 'v0' })).rejects.toThrow(/notice_version_stale/);
+    await expect(signUp({ version: 'text-sha256:abc' })).rejects.toThrow(/notice_version_stale/);
+    expect(await user()).toBeUndefined();
+    expect((await tdb.query(`select state from public.auth_session where token_hash = $1`, [SESSION])).rows[0].state).toBe('pending_profile');
+  });
+
+  it('a newer release makes the old version stale, and the consent stores the version accepted', async () => {
+    await pending();
+    await tdb.query(`insert into platform.legal_release (seq, published_by) values (2, $1)`, [STAFF]);
+    for (const kind of ['privacy', 'terms']) for (const lang of ['th', 'en']) await tdb.query(`insert into platform.legal_text (seq, kind, language, title, body) values (2, $1, $2, 't', 'b')`, [kind, lang]);
+    await expect(signUp({ version: 'v1' })).rejects.toThrow(/notice_version_stale/);
+    const id = await signUp({ version: 'v2' });
+    expect((await tdb.query(`select notice_version from public.user_consent where user_id = $1`, [id])).rows[0].notice_version).toBe('v2');
+  });
+});
+
+describe('no notice published (D152)', () => {
+  beforeAll(() => {
+    publishNotice = false;
+  });
+  afterAll(() => {
+    publishNotice = true;
+  });
+  it('sign-up is refused', async () => {
+    await pending();
+    await expect(signUp()).rejects.toThrow(/sign_up:no_notice/);
+    expect(await user()).toBeUndefined();
   });
 });
 
