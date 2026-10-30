@@ -1,8 +1,8 @@
 # F03 Court booking, schedule and payment hold · Requirements
 
-Status: **DRAFT for approval (gate 1).** Drafted 30 Oct 2026. Nothing here is approved until a person says so. No design or code follows until then.
+Status: **Approved 30 Oct 2026** (gate 1). Recorded in `docs/decisions.md`, round 7: the F03, F11 and F12 requirements and the answers D38 to D58 were approved by the user. Revision 2 applies D39 to D52 and the hand-off IDs BOOK-06 and WAIT-01. Changes after approval go PRD, then hand-off, then this file. No design or code follows until the design gate.
 
-Feature: F03 Court booking, schedule and payment hold. Depends on: F01, F02. Requirement IDs: BOOK-01 to BOOK-05. Wave 2.
+Feature: F03 Court booking, schedule and payment hold. Depends on: F01, F02. Requirement IDs: BOOK-01 to BOOK-06, WAIT-01 (F03 shows Join waitlist; F08 owns the waitlist). Wave 2.
 
 ## Sources
 
@@ -10,7 +10,7 @@ Feature: F03 Court booking, schedule and payment hold. Depends on: F01, F02. Req
 |---|---|---|
 | PRD | `specs/product/prd-v1.2.md` | Club facts; Court booking; Payments, cancellation, credits and wallet (Checkout and payment, hold); Quality and scope (No double bookings, backup mode); Design and content rules (Layout and states); Customer app pages C4, C10, C11; LINE notifications; Key flows 0 and A |
 | HO | `specs/product/handoff-v1.2.md` | Business rules as requirements (BOOK-01 to BOOK-05, COACH-01, COACH-02); Architecture (Integrity rules); Performance; Screen inventory (Player app, booking) |
-| Decisions | `docs/decisions.md` | D6, D8, D18, D19, D25, D27, D28; round 1 (PAY-03) |
+| Decisions | `docs/decisions.md` | D6, D8, D18, D19, D25, D27, D28, D33, D38 to D52; round 1 (PAY-03). PRD change log row "Decisions 30 Oct (6)"; HO BOOK-01, BOOK-03, BOOK-05, BOOK-06, WAIT-01, LINE-05 |
 | Gaps | `docs/canvas-gaps.md` | A1, A5, C4 |
 | QA | `docs/qa/traceability.md`, `open-questions.md`, `concurrency-tests.md` (branch `qa/test-strategy`) | Q-01, Q-03, Q-04, Q-05, Q-06 and the BOOK rows; reused here |
 | F01, F02 | `specs/features/F01-platform-foundation/requirements.md`, `F02-line-login-liff/requirements.md` | Club scope, roles, Paused, guest browsing, sign in |
@@ -56,17 +56,18 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not list
 - BOOK-01-AC1. Given a request to book or hold a court, when the start time is not on the hour (18:30, 18:01), then the server refuses it, whatever the screen allowed.
 - BOOK-01-AC2. Given a request, when the booking length is anything other than 60 minutes per hour booked, then the server refuses it. The length is fixed for every club and is not a setting.
 - BOOK-01-AC3. Given the club's opening hours for that weekday (Hunter 06:00 to 24:00), when a request starts before opening or ends after closing, then the server refuses it. 23:00 to 24:00 is the last slot; 24:00 is never a start.
-- BOOK-01-AC4. Given the booking window setting (Hunter 30 days), when a request is further ahead than the window, then the server refuses it (61 days ahead is refused). The value is read from the club's setting, not typed in code.
-- BOOK-01-AC5. Given a request for a slot that has already ended, then the server refuses it. Whether the hour that has already started can be booked is Q1.
+- BOOK-01-AC4. Given the booking window setting (Hunter 30 days), when a request is further ahead than the window, then the server refuses it (61 days ahead is refused). The window runs to today plus the setting by Bangkok calendar date, so day 30 is bookable (D42). The value is read from the club's setting, not typed in code.
+- BOOK-01-AC5. Given a request for the hour that has already started (18:10, slot 18:00 to 19:00) or any earlier slot, when a player makes it, then the server refuses it: booking starts from the next full hour (D39). Staff may book the started hour for walk ins in A2 (D39). 23:00 is the last start.
 - BOOK-01-AC6. Given the schedule (C4), when a guest or player opens it, then it shows a date strip from today to the booking window and, for the chosen date, Court 1 and Court 2 in hourly slots across the opening hours (06:00 to 24:00 for Hunter).
 - BOOK-01-AC7. Given a slot, when it is taken, closed or past, then it is shown but cannot be selected. A slot someone else is paying for shows as held (BOOK-03). The states Open, Selected, Held, Taken, Closed, Past and My booking are each distinct without colour alone (PRD Layout and states: a label, icon or pattern too).
 - BOOK-01-AC8. Given a closure (F09) over a slot, when the schedule loads, then that slot shows Closed and every request for it is refused.
 - BOOK-01-AC9. Given an inactive court (Resource active = false), when the schedule loads, then it is not offered and requests for it are refused.
 - BOOK-01-AC10. Given a Draft or Testing club, when a request comes from someone who is not a tester, then it is refused (F01 PLAT-01-AC5). Given a Paused club, when a player tries to start a booking, then the server refuses it and the app shows the paused text (F01 PLAT-03-AC4).
-- BOOK-01-AC11. Given a player selects several hours, when they continue, then the hours must be consecutive on one court (PRD Court booking: "one or more consecutive hours on one court"). Non consecutive hours or two courts in one request are refused. How a multi hour selection is stored is Q2.
+- BOOK-01-AC11. Given a player selects several hours, when they continue, then the hours must be consecutive on one court (PRD Court booking). Non consecutive hours or two courts in one request are refused. A selection is one order with one booking per hour (BOOK-06, D40).
 - BOOK-01-AC12. Given the date strip, when the Bangkok date changes at midnight, then "today" changes with it and yesterday's slots are Past.
 - BOOK-01-AC13. Given the court grid and class schedule, when they load on a 4G connection inside LINE, then they appear in under 2 seconds (HO Performance). While loading, the grid shows the loading state (S-C04-Loading); on a failed request it shows the offline error with Try again (S-Error-Offline, P-0327 and P-0328), and nothing is booked or charged.
-- BOOK-01-AC14. Given a day with no open slots, when it is chosen, then the Day full state shows (S-C04-Day-full) with a Join waitlist action (Q6).
+- BOOK-01-AC14. Given a day with no open slots, or a taken slot, when it is shown, then the Day full state or a Join waitlist action shows (S-C04-Day-full; WAIT-01).
+- BOOK-01-AC16. Given the owner changes opening hours or removes or deactivates a court while bookings or holds exist on the affected hours, when they save, then the change is refused; the owner uses a closure (F09) instead (D50, HO BOOK-01).
 - BOOK-01-AC15. Given a slot shown as Open to a player, when they try to hold it and it was taken meanwhile, then the request is refused, the player is told and the grid refreshes (BOOK-04-AC4).
 
 **Meets.**
@@ -106,7 +107,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not list
 
 **Source.** HO BOOK-03. PRD Court booking ("An unpaid booking holds its slot for 15 minutes, then is released"), Checkout and payment, Backup mode, LINE notifications (Booking released). D18, D19.
 
-**Requirement.** Tapping Pay holds the slot (and the coach, if picked) for [15] minutes. The owner picks 10, 15 or 20 in Settings (15 by default in the Tennis template; the Blank template starts empty, D8). Backup mode holds for 60 (F16, other clubs).
+**Requirement.** Tapping Pay holds the slot (and the coach, if picked) for [15] minutes. The owner picks 10, 15 or 20 in Settings (15 by default in the Tennis template; the Blank template starts empty, D8). Backup mode holds for 60 (F16, other clubs); F03 only reads the hold setting and F16 sets the 60 minute backup hold (D52).
 
 **Hand-off acceptance check, kept.** Given a held slot, then other players see it as held and cannot select it; after the hold it is released and the player gets a LINE message.
 
@@ -116,17 +117,18 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not list
 - BOOK-03-AC2. Given a guest or a signed out session, when it asks for a hold, then the server refuses it. Continue and sign in create no hold (F02 AUTH-01-AC3).
 - BOOK-03-AC3. Given the hold setting, when it is stored, then only 10, 15 or 20 minutes are accepted (60 only in backup mode of a slip club, F16). The value is read from the club's setting. An empty setting (Blank template) means the club cannot yet take a payment hold, and Go live is blocked until it is set (F01 PLAT-01-AC4).
 - BOOK-03-AC4. Given a held slot, when another player or a guest views the schedule, then it shows Held and cannot be selected, with no sign of who holds it.
-- BOOK-03-AC5. Given a hold that has reached its end time without a confirmed payment, when it ends, then the booking and hold are released, the slot returns to Open, and the player gets the LINE message Booking released in their language (LINE-05, F10 sends it). Whether the message is also sent to a Beam club is a QA open point (Q7).
+- BOOK-03-AC5. Given a hold that has reached its end time without a confirmed payment, when it ends, then the booking and hold are released, the slot returns to Open, and the player gets the LINE message Booking released in their language (LINE-05, F10 sends it). It is sent to Beam clubs too, when the hold ends (D45).
 - BOOK-03-AC6. Given the hold end time passes, when anyone reads the schedule before the release job has run, then the expired hold never blocks the slot: availability is computed with the end time, not with the job (derived from BOOK-04; no slot is stuck after expiry).
 - BOOK-03-AC7. Given a payment is confirmed before the hold ends, when the payment arrives, then the booking becomes Confirmed and the hold becomes the booking. A payment reported after the hold has ended is a late payment and follows PAY-03 (F05): approved only if the slot is still open, otherwise the value goes to the wallet (D18). The Beam QR itself expires exactly when the hold ends (D18).
 - BOOK-03-AC8. Given "slot still open" for a late payment, when it is decided, then it means no other hold, no booking and no closure on that slot; for a solo class, court and coach must both be free, otherwise all of it goes to the wallet with nothing partial (D25). F03 supplies this check; F05 applies it.
 - BOOK-03-AC9. Given nothing is left to pay (credits or wallet cover it, PAY-07), when the player taps Pay, then the booking is confirmed at once in the same transaction with no QR and no visible hold, but the slot is still checked and reserved under BOOK-04.
 - BOOK-03-AC10. Given a booking made together with a package purchase, when the player pays, then the slot is held as above. A package bought alone has no hold (PAY-04, F06).
+- BOOK-03-AC17. Given staff create a booking in A2 that is awaiting payment, when it is saved, then it holds the slot for the same hold time as an online booking and is released the same way (D43).
 - BOOK-03-AC11. Given a solo class (coach picked at checkout, or booked through Classes), when the player taps Pay, then the court and the coach are held together for the same time, or neither is (PRD "A solo class reserves both or neither"). If the coach became unavailable, the hold is refused and the player picks again.
 - BOOK-03-AC12. Given a held hour, when the rest rule is checked for a coach (F07), then unpaid held hours count toward the 6 hours in a row (D19).
-- BOOK-03-AC13. Given the owner changes the hold setting, when a hold already exists, then it keeps the end time it was created with; the new value applies to holds created afterwards (derived; the spec is silent, Q8).
+- BOOK-03-AC13. Given the owner changes the hold setting, when a hold already exists, then it keeps the end time it was created with; the new value applies to holds created afterwards (D46).
 - BOOK-03-AC14. Given the countdown on the pay screen, when the hold has ended, then the screen shows Time ran out with a way to pick a slot again (S-C11-Time-ran-out), and nothing is charged.
-- BOOK-03-AC15. Given the player taps Pay twice, or on two devices, for the same slot, when the second request arrives, then the result is Q9 (QA Q-01): same hold again, or an error. Until answered, the server never creates two holds for one slot.
+- BOOK-03-AC15. Given the player taps Pay a second time, or on a second device, for the same slot, when the request arrives, then the server returns the same hold and the same Beam QR, never a second hold (D47).
 - BOOK-03-AC16. Given a Paused club, when a hold already exists at the moment of the pause, then it runs to its normal end and releases; no new holds start (F01 PLAT-03).
 
 **Meets.**
@@ -159,7 +161,7 @@ Note Gaps A2 and A5: slip screens (H-C11-PromptPay and H-C11b) are for slip club
 - BOOK-04-AC6. Given a hold or a booking that ends (released, cancelled, expired), when it frees a slot, then the slot becomes available again to the next request, and a cancelled or released row does not count against the uniqueness rule.
 - BOOK-04-AC7. Given staff create or move a booking in A1 or A2, when they save it, then the same uniqueness rule applies: a conflict on court or coach is refused and nothing changes (PRD Front desk rules: moving checks conflicts).
 - BOOK-04-AC8. Given a payment that is confirmed at the same instant a hold expires, when both run, then exactly one outcome stands: the booking is confirmed, or the hold is released and the late payment rule applies (BOOK-03-AC7). Never both, and never a confirmed booking on a slot someone else got.
-- BOOK-04-AC9. Given a closure created while a hold exists on a slot in it, when both run, then they do not both stand; what happens to that hold is Q10 (QA Q-16, F09).
+- BOOK-04-AC9. Given a closure created over a slot that is held, when it is saved, then the hold is cancelled, the slot is closed and the player is told (D48). A payment that arrives later follows PAY-03: the value goes to the wallet because the slot is closed (D25, D48).
 - BOOK-04-AC10. Given a coach on leave or over the 6 hours in a row (COACH-01), when a coach is requested at checkout, then the coach is not offered and a direct request is refused. The coach rules are F07's; the refusal is applied inside this transaction.
 - BOOK-04-AC11. Given any booking or hold, when it is created, then a query by any other club's ID never sees it and cannot collide with it (CC-1). Uniqueness is per club.
 - BOOK-04-AC12. Given 20 parallel requests for one slot, when they run (QA CONC tests), then exactly one succeeds and 19 are refused with no half created rows.
@@ -171,7 +173,7 @@ Note Gaps A2 and A5: slip screens (H-C11-PromptPay and H-C11b) are for slip club
 - Club scope: the uniqueness key includes club ID; two clubs may hold the same hour of their own courts.
 - TEXT: slot no longer available message is a P key (new key if none exists), Thai and English.
 
-**Canvas.** H-C04-Book-a-court, S-C04-Day-full; no board for the refusal message (Q11).
+**Canvas.** H-C04-Book-a-court, S-C04-Day-full; no board for the refusal message (wording proposed as new keys, D51).
 
 ---
 
@@ -191,7 +193,8 @@ Note Gaps A2 and A5: slip screens (H-C11-PromptPay and H-C11b) are for slip club
 - BOOK-05-AC4. Given two parallel requests from one player at N-1 held hours, when both run, then exactly one succeeds, because the check happens inside the booking transaction (QA CONC-28).
 - BOOK-05-AC5. Given a played or past booking, when the limit is counted, then it does not count (future hours only).
 - BOOK-05-AC6. Given the limit is changed, when it is saved, then it is a settings change and audited (PLAT-04); bookings already made are not removed.
-- BOOK-05-AC7. Given what counts toward the limit (held unpaid hours, hours paid by bundle, solo class hours, staff made bookings), and whether staff booking for a player is limited, then the answer is Q12 (QA Q-05). Until answered, only confirmed and held court hours of the player count and staff bookings are not limited.
+- BOOK-05-AC7. Given the limit is set, when it is counted, then it counts all of the player's future hours: confirmed, paid by bundle credit, solo class and unpaid held hours (D49, HO BOOK-05). Staff made bookings for the player count too.
+- BOOK-05-AC9. Given staff book for a player who is at the limit, when they save, then the booking is refused unless staff override it with a logged reason, which is written to the audit log (D49, PLAT-04). Which roles may override is Q1.
 - BOOK-05-AC8. Given the limit is set, when a player is refused, then the message uses a named variable `{hours}` and comes from a P key in both languages.
 
 **Meets.**
@@ -201,13 +204,57 @@ Note Gaps A2 and A5: slip screens (H-C11-PromptPay and H-C11b) are for slip club
 - Club scope: the limit is a club setting and the count is per player per club.
 - TEXT: the refusal text with `{hours}`; the Settings label belongs to F11.
 
-**Canvas.** H-A16-Settings ("Max future court hours each, [X] hours", dashed as TBD), H-C04-Book-a-court. No player facing board for the refusal (Q11).
+**Canvas.** H-A16-Settings ("Max future court hours each, [X] hours", dashed as TBD), H-C04-Book-a-court. No player facing board for the refusal (wording proposed as new keys, D51).
+
+---
+
+## BOOK-06 One order, one booking per hour
+
+**Source.** HO BOOK-06 (added 30 Oct 2026), D40, D41. PRD Court booking ("one or more consecutive hours").
+
+**Requirement.** A selection of several hours is one order with one booking per hour, so cancel, no show and the future hours count work hour by hour. One receipt per order. There is no separate limit on hours in one selection; BOOK-05 governs.
+
+**Hand-off acceptance check, kept.** Given a two hour selection, when the player cancels one hour, then only that hour is cancelled.
+
+**Acceptance criteria.**
+
+- BOOK-06-AC1. Given a player selects two consecutive hours on one court, when they pay, then one order is created with two bookings, one per hour, each 60 minutes (D40).
+- BOOK-06-AC2. Given a two hour order, when the player cancels one hour, then only that hour is cancelled and the other stays (hand-off check; the cancel rules are F09).
+- BOOK-06-AC3. Given a two hour order, when it is paid, then one receipt is issued for the order (RCPT-01, F13).
+- BOOK-06-AC4. Given a no show or late cancel on one hour, when staff mark it, then only that hour changes (CANCEL-04, F09).
+- BOOK-06-AC5. Given a selection of any length, when it is submitted, then no limit on its length applies except the future hours limit (D41, BOOK-05) and the opening hours (BOOK-01). All hours are held in one transaction or none (BOOK-04-AC5).
+- BOOK-06-AC6. Given each hour of the order, when the hold ends, then every hour of the order is released together, since they share one hold and one payment.
+
+**Meets.** PDPA: the order links one customer; same rules as a booking. No double booking: each hour is its own row under the uniqueness rule (BOOK-04). Club scope: order and bookings carry the club ID. TEXT: order and cancel text with `{hours}` and `{time}` variables, from P keys (F09 owns the cancel sheet).
+
+**Canvas.** H-C04-Book-a-court, H-C10-Checkout, H-C13-My-bookings, H-C13b-Cancel-sheet.
+
+---
+
+## WAIT-01 Join waitlist on a taken slot
+
+**Source.** HO WAIT-01 (added 30 Oct 2026), D44. PRD Court booking ("A taken slot offers Join waitlist"), Group classes and waitlist.
+
+**Requirement.** The court slot waitlist uses the same rules as the class waitlist (claim time, no offers within the cut off). F08 owns it; F03 shows Join waitlist on a taken slot.
+
+**Hand-off acceptance check, kept.** Given a taken slot, when the player taps Join waitlist, then they are added with a position and nothing is charged.
+
+**Acceptance criteria (F03 side).**
+
+- WAIT-01-AC1. Given a taken slot on C4, when a signed in player views it, then Join waitlist shows; a guest taps it and signs in first (F02 AUTH-01).
+- WAIT-01-AC2. Given the player taps Join waitlist, when it is saved, then they are added with a position, nothing is charged and nothing is held (G-C04-Waitlist-joined).
+- WAIT-01-AC3. Given a held slot (not yet taken), when it is viewed, then Join waitlist shows only if F08 says it does; a held slot that is released simply becomes Open. (The spec says Join waitlist is for a taken slot; held is not decided, Q2.)
+- WAIT-01-AC4. Given the offer, claim time and cut off, then F08's rules apply (claim time and no offers within the cut off are club settings; the offered slot is protected by F08's design).
+
+**Meets.** PDPA: a waitlist entry is the player's own record. No double booking: the waitlist never reserves a slot; an offer becomes a hold under BOOK-03 and BOOK-04. Club scope: per club. TEXT: waitlist joined text from P keys, Thai and English.
+
+**Canvas.** G-C04-Waitlist-joined (T-), G-C13-Waitlist-tab, S-C04-Day-full.
 
 ---
 
 ## Data covered by F03 (from HO Data model, for the design step)
 
-Booking (club ID, type court, resource, start, end, customer, coach, status, source), hold (with end time), Resource and Opening hours (F01), Closure (F09 owns). Statuses in this feature: Awaiting payment, Confirmed, Released or Cancelled. Played, No show and Cancelled by the player are F09. Booking source distinguishes online from staff (A1 colours).
+Order (one per selection, D40), Booking (club ID, type court, resource, start, end, customer, coach, status, source), hold (with end time), Resource and Opening hours (F01), Closure (F09 owns). Statuses in this feature: Awaiting payment, Confirmed, Released or Cancelled. Played, No show and Cancelled by the player are F09. Booking source distinguishes online from staff (A1 colours).
 
 ## New text keys needed (TEXT-04)
 
@@ -218,21 +265,26 @@ The content role confirms against the locale files. Likely new keys, needing bot
 
 No key is added by this draft.
 
+## Proposed new text keys (D51)
+
+The drafter proposes keys; the writers own the wording. Numbers are assigned by the i18n role from the next free P number, after `locales/copy-index.csv` exists (D31). Proposed English text only, to show intent:
+
+| Proposed key (name only) | Use | Proposed English text |
+|---|---|---|
+| slot unavailable | Hold or booking refused because the slot is gone (BOOK-04-AC4) | That time was just taken. Please pick another. |
+| selection must be consecutive | Several hours not consecutive or on two courts (BOOK-01-AC11) | Pick consecutive hours on one court. |
+| future hours limit reached | BOOK-05-AC2 | You can hold up to {hours} future court hours. |
+| hold ended | Time ran out state if no key fits (BOOK-03-AC14) | Your time ran out. Nothing was charged. |
+| booking window reached | Date beyond the window (BOOK-01-AC4) | You can book up to {days} days ahead. |
+| started hour | Hour already started (BOOK-01-AC5) | That hour has already started. Bookings start from the next full hour. |
+| closure cancelled hold | A closure cancelled the hold (BOOK-04-AC9) | The club closed that time. Nothing was charged. |
+| staff override reason | A2 override of the future hours limit (BOOK-05-AC9, F11) | Reason for allowing more hours |
+
+Existing keys are reused wherever one fits (P-0327 and P-0328 for offline, P-0442 for paused). No key is added by this draft.
+
 ## Open questions
 
-Numbered so the person approving can answer by number. QA's own numbers are given in brackets. Answered by decisions and not repeated: Beam QR expiry (D18, QA Q-02), what "in a row" means for the rest rule (D19, QA Q-09), the meaning of "slot still open" for late payments (D25, QA Q-20).
+All 14 earlier questions are answered by D39 to D52 and removed (the refusal wording is D51). Two small ones remain from the new rules:
 
-1. **The hour that has already started (BOOK-01).** At 18:10, can a player book 18:00 to 19:00? Is there a lead time? Is 23:00 the last start (QA Q-03)?
-2. **Multi hour selection storage.** The data model has one booking with a start and end, but bookings are 60 minutes. Is a two hour selection one booking or two? It decides receipts, cancel, no show, and the future hours count.
-3. **Maximum hours in one booking.** The spec does not limit the length of a multi hour selection. Is there a limit?
-4. **Booking window boundary (BOOK-01).** The date strip shows 30 days: is day 30 from today bookable, or day 31? (QA Q-04.) The AC reads the setting; the boundary day needs an answer.
-5. **Hold when a staff booking is made (A2).** Does a staff created booking awaiting payment hold the slot with the same hold time? (A1 shows "awaiting payment" as a colour.)
-6. **Court slot waitlist.** The PRD says a taken slot offers Join waitlist but there is no requirement ID, no timing and no screen rule. Do the 30 minute claim time and the 2 hour cut off apply? Which feature owns it, F03 or F08 (QA Q-06)? G-C04-Waitlist-joined and G-C13-Waitlist-tab exist on the canvas.
-7. **Booking released message for Beam clubs.** The PRD says it is sent when no slip arrives in 15 minutes. Does a Beam club also get it when the hold ends (QA Q-27d)?
-8. **Hold setting changed while holds exist.** Confirm existing holds keep their original end time (BOOK-03-AC13).
-9. **Double tap on Pay (QA Q-01).** Same hold and QR again, or an error?
-10. **A closure over a held slot (QA Q-16).** What happens to the hold and to the player when the club closes a slot that is being paid for?
-11. **Refusal messages.** No canvas board shows the slot taken message or the future hours limit message. Please supply or approve the wording as new keys.
-12. **What counts toward the future hours limit (QA Q-05, BOOK-05).** Held unpaid hours, hours paid by bundle credit, solo class hours, staff made bookings? Is staff booking for a player limited?
-13. **Opening hours changes.** If the owner changes opening hours or removes a court while bookings exist, what happens to them (handled as closures in F09, or blocked)?
-14. **Backup mode hold (60 minutes).** Stated for F16 only. Confirm F03 only needs to read the hold setting and F16 sets 60.
+1. **Who may override the future hours limit (BOOK-05-AC9).** Front desk and Owner, or Owner only? D49 says "staff" with a logged reason.
+2. **Join waitlist on a held slot (WAIT-01).** D44 says the waitlist follows the class rules and F03 shows Join waitlist on a taken slot. Does a slot that is only held (being paid for) also show it?

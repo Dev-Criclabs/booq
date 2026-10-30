@@ -1,12 +1,8 @@
 # F12 Coach portal K1 to K6 · Requirements
 
-Status: **DRAFT ID list for approval (gate 1).** Drafted 30 Oct 2026. Only the requirement IDs, their wording and one acceptance check each are proposed here (QA: the coach portal has no IDs apart from the rest rule and pricing rows, `docs/qa/traceability.md`). Nothing is approved. The IDs are **proposed**: the hand-off has none, so a person adds them to the PRD, then the hand-off.
+Status: **Approved 30 Oct 2026** (gate 1). Recorded in `docs/decisions.md`, round 7: the F03, F11 and F12 requirements and the answers D38 to D58 were approved by the user. The IDs CPORT-01 to CPORT-07 are now in the hand-off ("Club admin and coach portal requirement IDs"). Revision 2 removes the answered and parked items. Changes after approval go PRD, then hand-off, then this file.
 
 Feature: F12 Coach portal. Depends on: F07. Wave 4.
-
-## Naming
-
-The backlog gives F12 the ID prefix COACH, but COACH-01 to COACH-04 already belong to F07 (coach picker, price, solo credits). To avoid a clash this draft proposes **CPORT-nn** for the portal. Naming is Q1.
 
 ## Sources
 
@@ -14,7 +10,7 @@ The backlog gives F12 the ID prefix COACH, but COACH-01 to COACH-04 already belo
 |---|---|---|
 | PRD | `specs/product/prd-v1.2.md` | Users, roles (Coach row); Solo classes and coach rules (rest rule, pay, substitutions); Coach portal table K1 to K6; Key flows G |
 | HO | `specs/product/handoff-v1.2.md` | Screen inventory (Coach portal row); Roles; COACH-01 |
-| Decisions | `docs/decisions.md` | D1, D19, D28 |
+| Decisions | `docs/decisions.md` | D1, D19, D28, D58. HO "Club admin and coach portal requirement IDs" |
 | Gaps | `docs/canvas-gaps.md` | B3, B4 |
 
 The spec wins over the canvas. Boards are H-K1 to H-K6 (T- twins exist).
@@ -40,8 +36,8 @@ The spec wins over the canvas. Boards are H-K1 to H-K6 (T- twins exist).
 
 ## Open questions
 
-1. **Prefix.** CPORT-nn as proposed, or use COACH-nn and renumber F07's IDs?
-2. **Attendance after the fact.** Can a coach change Present or Absent after the session? Does it affect pay and the player's credit (QA Q-14)?
-3. **Coach pay numbers** are empty settings (hand-off open items); K6 shows them only after the owner sets them.
-4. **Coach message cards.** The canvas has only player cards (confirmed, reminder, waitlist). What do coach messages look like?
-5. **Canvas samples.** K1 shows four sessions but says 4.5 teaching hours; K6 and A7 disagree on who is freelance (Gaps B3, B4). Do not copy them into tests.
+1. **Attendance after the fact.** Can a coach change Present or Absent after the session? Does it affect pay and the player's credit (QA Q-14)?
+2. **Coach pay numbers** are empty settings (hand-off open items); K6 shows them only after the owner sets them.
+3. **Coach message cards.** The canvas has only player cards (confirmed, reminder, waitlist). What do coach messages look like (CPORT-07)?
+
+Note for testers: K1 shows four sessions but says 4.5 teaching hours; K6 and A7 disagree on who is freelance (Gaps B3, B4). Do not copy those samples.
