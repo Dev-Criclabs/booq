@@ -11,6 +11,7 @@ export {
   type RouteContext,
   type RouteDeclaration,
   type RouteDeps,
+  type RouteParams,
   type RouteRequest,
   type RouteResult,
   type RouteSession,

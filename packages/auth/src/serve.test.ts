@@ -168,3 +168,48 @@ describe('build check accepts serveRoutes', () => {
     expect(findUndeclaredRoutes(file('export const GET = somethingElse(table);'))).toHaveLength(1);
   });
 });
+
+describe('Idempotency-Key header', () => {
+  const idem = route({ method: 'POST', path: '/pay', public: true }, async (ctx) => ({ key: (ctx.input as { idempotencyKey?: unknown }).idempotencyKey ?? null }));
+  const h = serveRoutes([idem], deps());
+  it('arrives as input.idempotencyKey, and a value in the body or query cannot stand in for it', async () => {
+    const r = await call(h, 'POST', '/api/c/hunter/pay?idempotencyKey=fromquery', { body: { idempotencyKey: 'frombody' }, headers: { 'idempotency-key': 'key-123_ABC' } });
+    expect(await r.json()).toEqual({ key: 'key-123_ABC' });
+    const none = await call(h, 'POST', '/api/c/hunter/pay?idempotencyKey=fromquery', { body: { idempotencyKey: 'frombody' } });
+    expect(await none.json()).toEqual({ key: null });
+  });
+  it.each(['has space', 'a'.repeat(201), 'ünï'])('refuses the header value %j', async (v) => {
+    const r = await call(h, 'POST', '/api/c/hunter/pay', { body: {}, headers: { 'idempotency-key': v } });
+    expect(r.status).toBe(400);
+  });
+});
+
+describe('typed params on a refusal', () => {
+  const limited = route({ method: 'GET', path: '/limit', public: true }, async () => {
+    throw new RouteError(409, 'limit_reached', { hours: 4 });
+  });
+  const taken = route({ method: 'GET', path: '/taken', public: true }, async () => {
+    throw new RouteError(409, 'slot_unavailable', { by: 'coach' });
+  });
+  const plain = route({ method: 'GET', path: '/plain', public: true }, async () => {
+    throw new RouteError(404, 'not_found');
+  });
+  const h = serveRoutes([limited, taken, plain], deps());
+  it('are returned beside the code, so the client can pick the right text', async () => {
+    const a = await call(h, 'GET', '/api/c/hunter/limit');
+    expect([a.status, await a.json()]).toEqual([409, { code: 'limit_reached', params: { hours: 4 } }]);
+    const b = await call(h, 'GET', '/api/c/hunter/taken');
+    expect(await b.json()).toEqual({ code: 'slot_unavailable', params: { by: 'coach' } });
+  });
+  it('are absent when the route gave none: existing callers still get codes only', async () => {
+    const r = await call(h, 'GET', '/api/c/hunter/plain');
+    expect(await r.json()).toEqual({ code: 'not_found' });
+  });
+  it('only plain values are carried: strings, numbers and booleans, short', async () => {
+    const weird = route({ method: 'GET', path: '/weird', public: true }, async () => {
+      throw new RouteError(400, 'bad', { ok: true, n: 1, s: 'x', obj: { a: 1 } as never, long: 'y'.repeat(300) });
+    });
+    const r = await call(serveRoutes([weird], deps()), 'GET', '/api/c/hunter/weird');
+    expect(await r.json()).toEqual({ code: 'bad', params: { ok: true, n: 1, s: 'x' } });
+  });
+});
