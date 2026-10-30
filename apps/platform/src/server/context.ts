@@ -70,6 +70,9 @@ export const unavailableIdentity: IdentityProvider = {
   async verifyPassword() {
     throw new IdentityUnavailable();
   },
+  async verifyPasswordFor() {
+    throw new IdentityUnavailable();
+  },
   async verifyTotp() {
     throw new IdentityUnavailable();
   },
