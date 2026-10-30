@@ -46,6 +46,8 @@ jobs:
           - { name: locale audit,           cmd: "node tools/i18n/audit.mjs --no-csv" }
           - { name: hard-coded text,        cmd: "node tools/i18n/lint-hardcoded-text.mjs apps packages" }
           - { name: locale tool tests,      cmd: "node --test tools/i18n/test/*.test.mjs", ts_from: "." }
+          # Deploy guard D162 (hosted builds must not carry the fake LIFF) and the LINE parity receiver.
+          - { name: infra tests,            cmd: "node --test infra/checks/*.test.mjs infra/line-parity/handler.test.mjs" }
     env:
       TZ: ${{ matrix.tz || 'UTC' }}
       I18N_TS_FROM: ${{ matrix.ts_from }}
