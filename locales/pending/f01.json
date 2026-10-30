@@ -2,10 +2,14 @@
   "_note": "Proposed by BE-P for F01 (D51). Numbers to be assigned by Content; wording drafted, writers own it.",
   "en": {
     "L-new.club_paused": "Online booking at {clubName} is paused by BOOQ. Reason: {reason}. Existing bookings and reminders are not affected, and package and wallet expiry dates move forward by the length of the pause.",
-    "L-new.club_resumed": "Online booking at {clubName} is open again."
+    "L-new.club_resumed": "Online booking at {clubName} is open again.",
+    "L-new.owner_invite_subject": "Your invitation to set up {clubName} on BOOQ",
+    "L-new.owner_invite_body": "BOOQ has set up {clubName} for you. Open this link on the phone where you use LINE to sign in as the club owner: {link} The link works once, for you only, and stops working after a few days. If you did not expect this email, ignore it."
   },
   "th": {
     "L-new.club_paused": "BOOQ หยุดการจองออนไลน์ของ {clubName} ชั่วคราว เหตุผล: {reason} การจองที่มีอยู่และการแจ้งเตือนไม่ได้รับผลกระทบ และวันหมดอายุของแพ็กเกจและกระเป๋าเงินจะเลื่อนออกไปตามระยะเวลาที่หยุด",
-    "L-new.club_resumed": "เปิดให้จองออนไลน์ที่ {clubName} อีกครั้งแล้ว"
+    "L-new.club_resumed": "เปิดให้จองออนไลน์ที่ {clubName} อีกครั้งแล้ว",
+    "L-new.owner_invite_subject": "คำเชิญตั้งค่า {clubName} บน BOOQ",
+    "L-new.owner_invite_body": "BOOQ ตั้งค่า {clubName} ไว้ให้คุณแล้ว เปิดลิงก์นี้บนโทรศัพท์ที่ใช้ LINE เพื่อเข้าสู่ระบบในฐานะเจ้าของสโมสร: {link} ลิงก์ใช้ได้ครั้งเดียว เฉพาะคุณเท่านั้น และจะหมดอายุภายในไม่กี่วัน หากคุณไม่ได้คาดว่าจะได้รับอีเมลนี้ โปรดไม่ต้องสนใจ"
   }
 }
