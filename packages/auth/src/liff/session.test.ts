@@ -2,14 +2,14 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '../../../db/src/tx';
 import { createTestDatabase, type TestDatabase } from '../../../db/src/testing/harness';
 import { FakeClock, FakeLine, type ClubLineChannel } from '../../../../tests/fakes';
-import { createSignInService, type SignInDirectory } from './session';
+import { createSignInService } from './session';
+import { createDbDirectory } from './directory';
 import { createFakeLineVerifier, createLineVerifier } from './verify';
 import { createRedactingLogger } from './log-redaction';
 import { hashToken, parseSessionCookie, SESSION_COOKIE } from './cookie';
 
 // F02-T07 POST /auth/session (LINE-01-AC1 to AC5, AC10, AC11, AC13; AUTH-01-AC13 to AC15). Real Postgres, QA's fake LINE.
-// The directory stands in for app.club_sign_in_target and app.person_by_line_id (Architect, pending):
-// it reads the fixture rows directly, which a guest could not.
+// The directory is the real one over app.club_sign_in_target and app.person_by_line_id (migrations 0022, 0023).
 const A = '3f2b8f0e-7c1d-4a55-9d0a-1c2e3f4a5b6c';
 const B = '9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d';
 const OWNER = '11111111-1111-4111-8111-111111111111';
@@ -34,18 +34,6 @@ let server: { url: string; close(): Promise<void> };
 let logs: string[];
 let svc: ReturnType<typeof createSignInService>;
 
-const directory = (): SignInDirectory => ({
-  async clubBySlug(slug) {
-    const r = (await tdb.query(`select id, status from public.club where slug = $1`, [slug])).rows[0];
-    if (!r) return null;
-    return { clubId: r.id, status: r.status, liffId: `liff-${slug}`, loginChannelId: r.id === A ? 'loginA' : 'loginB' };
-  },
-  async personByLineId(tx, lineUserId) {
-    const club = (await tx.query(`select current_setting('app.club_id') as c`)).rows[0].c;
-    const r = (await tdb.query(`select id, active from public.app_user where club_id = $1 and line_user_id = $2 and claim_state is null`, [club, lineUserId])).rows[0];
-    return r ? { id: r.id, active: r.active } : null;
-  },
-});
 const sessions = async () => (await tdb.query('select state, user_id, line_user_id, token_hash from public.auth_session order by created_at')).rows;
 const signIn = (slug: string, idToken: string, extra: { inviteHash?: string } = {}) => svc.signIn({ slug, idToken, ...extra });
 const tokenFor = (lineId: string, club = A) => line.issueIdToken(lineId, club);
@@ -55,6 +43,7 @@ beforeEach(async () => {
   tdb = await createTestDatabase();
   server = await line.serve();
   await tdb.query(`insert into public.club (id, slug, name_th, name_en, status) values ($1,'a','ก','A','live'), ($2,'b','ข','B','live')`, [A, B]);
+  await tdb.query(`insert into public.line_connection (club_id, login_channel_id, liff_id) values ($1,'loginA','liffA'), ($2,'loginB','liffB')`, [A, B]);
   for (const [club, id, lineId, roles, active] of [
     [A, OWNER, 'UOWNER', ['owner', 'player'], true], [A, PLAYER, 'UPLAYER', ['player'], true], [A, GONE, 'UGONE', ['player'], false], [A, TESTER, 'UTESTER', ['player'], true],
   ] as const) {
@@ -72,7 +61,7 @@ beforeEach(async () => {
   svc = createSignInService({
     db,
     verifier: createLineVerifier({ baseUrl: server.url, now: () => clock.now() }),
-    directory: directory(),
+    directory: createDbDirectory(db),
     now: () => new Date(),
     sessionSeconds: 3600,
     logger: createRedactingLogger((l) => logs.push(l)),
@@ -120,7 +109,7 @@ describe('refusals create nothing (LINE-01-AC4, AC11; CC-2)', () => {
     expect(await signIn('a', 'not-a-token')).toEqual({ ok: false, status: 401, code: 'invalid_token' });
   });
   it('LINE unreachable answers offline and creates nothing', async () => {
-    const offline = createSignInService({ db, verifier: createFakeLineVerifier('unreachable'), directory: directory(), now: () => new Date(), sessionSeconds: 3600 });
+    const offline = createSignInService({ db, verifier: createFakeLineVerifier('unreachable'), directory: createDbDirectory(db), now: () => new Date(), sessionSeconds: 3600 });
     expect(await offline.signIn({ slug: 'a', idToken: 'x' })).toEqual({ ok: false, status: 503, code: 'offline' });
     expect(await sessions()).toEqual([]);
   });
