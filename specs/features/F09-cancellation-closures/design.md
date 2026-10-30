@@ -1,6 +1,6 @@
 # F09 Cancellation and closures · Design
 
-Status: **DRAFT for approval (gate 2).** Drafted 30 Oct 2026 from the approved F09 requirements (`requirements.md`, approved 30 Oct 2026, D107, D111, D118 applied). A change to anything below goes through the PRD, then the hand-off, then this file. Tasks (gate 3) follow approval.
+Status: **Approved 30 Oct 2026 (gate 2, D155).** The answers D158 are folded in. Drafted 30 Oct 2026 from the approved F09 requirements (`requirements.md`, approved 30 Oct 2026, D107, D111, D118 applied). A change to anything below goes through the PRD, then the hand-off, then this file. Tasks (gate 3) follow approval.
 
 Feature: F09 Cancellation and closures. Requirement IDs: CANCEL-01 to CANCEL-04. Depends on F03, F04, F05, F06 and F10. Wave 3.
 
@@ -29,10 +29,14 @@ F09 uses the number block 1001 to 1099 (assumption A-1: the build plan names blo
 | `1001_booking_cancel.sql` | `booking_cancel` (append-only), the `booking_state` view (derived Played, §3.3) |
 | `1002_closure.sql` | `closure`, `closure_resource`; the foreign key from `occupancy.closure_id` (FA §3.1) |
 | `1003_cancel_handlers.sql` | The registry `app.cancel_handlers (ord, handler)` for features that react to a cancel (§4.3) |
-| `1004_cancel_functions.sql` | `app.cancel_outcome`, `app.cancel_booking` and their helpers |
-| `1005_staff_marks.sql` | `app.mark_no_show`, `app.mark_late_cancel`, `app.reverse_mark` |
-| `1006_closure_functions.sql` | `app.closure_preview`, `app.create_closure`, `app.end_closure`, `app.roll_closures` |
-| `1007_grants_policies.sql` | Policies, grants, executable-by lists, the table class registry entries |
+| `1004_cancel_outcome.sql` | `app.cancel_outcome` (in time, late or full value; reads F07's `coach_was_changed` and F08's edited session flag for the free cancel) |
+| `1005_return_value.sql` | `app.return_booking_value(booking, kind)`: the credit, wallet and money returns (§4.2 step 3), also called by F08's `cancel_session` |
+| `1006_cancel_order_effects.sql` | `app.cancel_order_effects`: `restore_line`, promo and partner counts, order status |
+| `1007_cancel_booking.sql` | `app.cancel_booking` and its helpers |
+| `1008_staff_marks.sql` | `app.mark_no_show`, `app.mark_late_cancel`, `app.reverse_mark` |
+| `1009_closure_create.sql` | `app.closure_preview`, `app.create_closure` |
+| `1010_closure_end_roll.sql` | `app.end_closure`, `app.roll_closures` |
+| `1011_grants_policies.sql` | Policies, grants, executable-by lists, the table class registry entries |
 
 No settings rows: `cancel_window_hours` already exists (F01 §10, unset not allowed, Hunter 12). The no show timing setting is not added (Q1).
 
@@ -77,7 +81,7 @@ One transaction, called by the player route, the staff route and the closure. It
 
 1. loads the booking, takes the locks in FA §3.4 order, re-reads the status under the lock. Only `confirmed` can be cancelled; any other status returns the existing `booking_cancel` row for that booking (second tap, two devices, AC14) or refuses (`cancel:not_confirmed`). An `awaiting_payment` booking is not cancelled here: the player's abandon calls F03 `release_hold(booking, 'player')`, which returns reservations in full through the release handlers (AC16, F04 R7-AC6).
 2. computes the outcome (§4.1) under the locks.
-3. **In time or full value:** per line, `app.credit_return(booking, reason)` for the credit parts, `app.wallet_return` for the wallet parts and `app.wallet_credit(customer, money_satang, 'refund', ref, ...)` for the money part, each with the dedupe keys of §4.4. **Late:** `app.credit_forfeit(booking, null, null)` for a credit; nothing else is written for money. No row is written by hand.
+3. **In time or full value** (one function, `app.return_booking_value(booking, kind)`, which F08's `cancel_session` also calls for each seat of a cancelled session): per line, `app.credit_return(booking, reason)` for the credit parts, `app.wallet_return_line(order_line, reason)` (D158) for the wallet parts and `app.wallet_credit(customer, money_satang, 'refund', ref, ...)` for the money part, each with the dedupe keys of §4.4. **Late:** `app.credit_forfeit(booking, null, null)` for a credit; nothing else is written for money. No row is written by hand.
 4. sets `booking.status` to `cancelled` (in time or full) or `late_cancelled` (late); deletes the booking's `occupancy` row (court and coach together, so a solo class frees both, CC-4); `restore_line` of F04 reports the stored parts and restores the promo code use and the birthday entitlement only when the last live line of the order is cancelled (D67, AC8); the partner redemption count follows (D70); sets the order `cancelled` when every line is cancelled.
 5. inserts the `booking_cancel` row (version, outcome, returned, reason).
 6. calls every handler in `app.cancel_handlers` for the booking, in `ord` order (§4.3), and enqueues the messages with `app.enqueue_message` (§4.9). All of it commits together or not at all (AC22, PKG-01-AC6).
@@ -224,8 +228,8 @@ Boards: H-C13-My-bookings, H-C13b-Cancel-sheet, G-C13b-Late-cancel, G-C13b-Coach
 
 ## 14. Open items
 
-1. **Q1 The no show timing setting (A16).** CANCEL-04-AC9 says it is read from the club's settings and is empty until set, but no key is named in the F01 registry and the PRD gives only "waitlist and no show timing"; D118 already fixes that a no show is marked only after the slot ends. Its meaning (a delay after the end? a cut off for marking?) is not in the spec. Recommended default: build no setting and read none until the owner or the user says what it controls; the rule built is "after the slot ends". Needs a decision before any key is added to the registry.
-2. **Q2 Played derived or stored (A-2).** The requirement says a job sets Played; FA says derived. Recommended default: derived (§3.3). Orchestrator confirms.
-3. **Q3 Late cancel forfeits a wallet part (A-3).** Recommended default: forfeited with the rest; confirm.
-4. **Q4 Reversal of a late cancel (A-6).** Recommended default as written; confirm or choose that the reversal only returns the credit and leaves the booking cancelled.
-5. **Q5 F06 amendment (A-4).** F06 needs `wallet_return_line`; the F06 owner and Architect confirm.
+1. **Q1 The no show timing setting (A16). Answered, D158:** no new setting; marking opens after the slot ends. Draft text: CANCEL-04-AC9 says it is read from the club's settings and is empty until set, but no key is named in the F01 registry and the PRD gives only "waitlist and no show timing"; D118 already fixes that a no show is marked only after the slot ends. Its meaning (a delay after the end? a cut off for marking?) is not in the spec. Recommended default: build no setting and read none until the owner or the user says what it controls; the rule built is "after the slot ends". Needs a decision before any key is added to the registry.
+2. **Q2 Played derived or stored (A-2). Answered, D158:** derived. Draft text: The requirement says a job sets Played; FA says derived. Recommended default: derived (§3.3). Orchestrator confirms.
+3. **Q3 Late cancel forfeits a wallet part (A-3). Answered, D158:** forfeited with the rest. Draft text: Recommended default: forfeited with the rest; confirm.
+4. **Q4 Reversal of a late cancel (A-6). Answered, D158:** the reversal restores the booking and is refused when the slot has ended or is taken. Draft text: Recommended default as written; confirm or choose that the reversal only returns the credit and leaves the booking cancelled.
+5. **Q5 F06 amendment (A-4). Answered, D158:** F06 adds `wallet_return_line(order_line, reason)` (task F06-T04b below). Draft text: F06 needs `wallet_return_line`; the F06 owner and Architect confirm.

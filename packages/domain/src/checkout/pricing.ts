@@ -1,12 +1,15 @@
 import { createHash } from 'node:crypto';
 import { bangkokDate, bangkokTime } from '../../../time/src/index';
 import { ageOn } from '../price-group';
+import { checkCode, planDiscounts, type BirthdayInput, type CodeInput, type CodeRefusal } from './discounts';
+
+export { percentHalfUp, splitByPrice, type BirthdayInput, type CodeInput, type CodeRefusal, type CodeScope } from './discounts';
 
 // The pricing engine (F04-T08; design 4.1 to 4.3; R1, R2, R4; D22, D23, D62). A pure function: no
 // database, no clock. The route loads the club's rules, prices, the player's eligible credits and wallet
 // balance inside its transaction and passes them in, with the Bangkok date of the request (A-5).
 // Everything is integer satang; a percentage is integer basis points, rounded half up (D23).
-// Results are codes, never text. Promo and birthday discounts are added by F04-T09.
+// Results are codes, never text. Promo, referral and birthday discounts are in ./discounts (F04-T09).
 //
 // Assumptions (obvious defaults, reported with the task):
 // - With no date of birth (D12) the player is in the group whose rule has no upper age (Hunter's Adult).
@@ -83,6 +86,9 @@ export interface PricingInput {
   selection: Selection;
   credits: EligibleCredit[];
   walletBalanceSatang: number;
+  /** The one code of the order, as loaded in the club; 'not_found' when no such code exists here (AC9). */
+  code?: CodeInput | 'not_found' | null;
+  birthday?: BirthdayInput;
 }
 
 export interface QuoteLine {
@@ -95,7 +101,10 @@ export interface QuoteLine {
   coachId: string | null;
   addOnId: string | null;
   unitPriceSatang: number;
+  /** birthdayDiscountSatang + codeDiscountSatang; each hour keeps its own share (D67). */
   discountSatang: number;
+  birthdayDiscountSatang: number;
+  codeDiscountSatang: number;
   netSatang: number;
   creditPackageId: string | null;
   creditUnits: number;
@@ -106,6 +115,12 @@ export interface QuoteLine {
 
 export interface Quote {
   priceGroupId: string;
+  promoCodeId: string | null;
+  referralCodeId: string | null;
+  /** The entitlement this order uses, recorded at Pay (R5). */
+  birthdayEntitlement: 'solo_class' | null;
+  /** A code was entered and is valid but gave way to the larger birthday discount (D65); nothing of it is used. */
+  codeNotApplied: boolean;
   lines: QuoteLine[];
   subtotalSatang: number;
   discountSatang: number;
@@ -121,16 +136,10 @@ export type PricingRefusal =
   | { ok: false; code: 'selection_invalid' }
   | { ok: false; code: 'price_not_set'; hourIndex?: number }
   | { ok: false; code: 'coach_price_not_set' }
-  | { ok: false; code: 'add_on_not_for_sale'; addOnId: string };
+  | { ok: false; code: 'add_on_not_for_sale'; addOnId: string }
+  | CodeRefusal;
 
 export type PricingResult = { ok: true; quote: Quote } | PricingRefusal;
-
-/** `price * bp / 10000`, rounded half up to the satang (D23): `(price * bp + 5000) div 10000`. */
-export function percentHalfUp(priceSatang: number, basisPoints: number): number {
-  if (!Number.isSafeInteger(priceSatang) || priceSatang < 0) throw new RangeError('price must be whole satang');
-  if (!Number.isInteger(basisPoints) || basisPoints < 0 || basisPoints > 10000) throw new RangeError('basis points must be 0 to 10000');
-  return Math.floor((priceSatang * basisPoints + 5000) / 10000);
-}
 
 function groupFor(groups: PriceGroupRule[], dob: string | null, onDate: string): PriceGroupRule | null {
   const matches =
@@ -238,6 +247,8 @@ export function priceOrder(input: PricingInput): PricingResult {
       addOnId: ids.addOnId ?? null,
       unitPriceSatang: unit,
       discountSatang: 0,
+      birthdayDiscountSatang: 0,
+      codeDiscountSatang: 0,
       netSatang: unit,
     });
 
@@ -253,10 +264,30 @@ export function priceOrder(input: PricingInput): PricingResult {
     push('add_on', 0, offer.priceSatang, { addOnId });
   }
 
+  const ctx = { onDate: input.onDate, dob: input.dob };
+  let code: { input: CodeInput; inScope: boolean[] } | null = null;
+  if (input.code !== undefined && input.code !== null) {
+    const checked = checkCode(input.code, priced, ctx);
+    if (!checked.ok) return checked;
+    code = { input: input.code as CodeInput, inScope: checked.inScope };
+  }
+  const plan = planDiscounts(priced, code, input.birthday, ctx);
+  for (const [i, line] of priced.entries()) {
+    line.birthdayDiscountSatang = plan.birthday[i]!;
+    line.codeDiscountSatang = plan.code[i]!;
+    line.discountSatang = line.birthdayDiscountSatang + line.codeDiscountSatang;
+    line.netSatang = line.unitPriceSatang - line.discountSatang;
+  }
+
   const lines = allocate(priced, input, group.id, selection.coach);
   const sum = (f: (l: QuoteLine) => number) => lines.reduce((a, l) => a + f(l), 0);
+  const applied = code !== null && plan.codeApplied ? code.input : null;
   const body = {
     priceGroupId: group.id,
+    promoCodeId: applied?.source === 'promo' ? applied.id : null,
+    referralCodeId: applied?.source === 'referral' ? applied.id : null,
+    birthdayEntitlement: plan.birthdayApplied ? ('solo_class' as const) : null,
+    codeNotApplied: code !== null && !plan.codeApplied,
     lines,
     subtotalSatang: sum((l) => l.unitPriceSatang),
     discountSatang: sum((l) => l.discountSatang),

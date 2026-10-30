@@ -41,7 +41,7 @@ Migration numbers are 0301 to 0399 and rise with task order (the migrator refuse
 
 - [x] **F04-T08** `priceOrder` in `packages/domain/pricing`: lines, price group, rounding half up, allocation, `quote_hash`. No database, no clock. IDs: R1-AC1 to AC7, R2-AC1 to AC8, R4-AC1 to AC4, AC6, D22, D23, D62. Role: BE-C · Deps none · Size: M
   Tests first: the worked examples of design 9 (Adult 50000 + coach 80000 = 130000; Student 70000 + 50000 = 120000); a property test that the lines always sum to the order total and to credit + wallet + money; half-up rounding; no rule means the hour is refused.
-- [ ] **F04-T09** Promo and birthday rules in the engine: scope, add-ons excluded unless included, fixed code capped and split by price with largest remainder (the remainder rule is assumption A-6, tested against the design), minimum spend on the pre-credit total, stacking and "the larger wins, tie to the code" (assumption A-2), the referral code as the one code (PROMO-01-AC11), a code that makes the amount due zero (AC13). IDs: PROMO-01-AC2 to AC6, AC8, AC11, AC13, R5, D65, D67, D68. Role: BE-C · Deps T08 · Size: M
+- [x] **F04-T09** Promo and birthday rules in the engine: scope, add-ons excluded unless included, fixed code capped and split by price with largest remainder (the remainder rule is assumption A-6, tested against the design), minimum spend on the pre-credit total, stacking and "the larger wins, tie to the code" (assumption A-2), the referral code as the one code (PROMO-01-AC11), a code that makes the amount due zero (AC13). IDs: PROMO-01-AC2 to AC6, AC8, AC11, AC13, R5, D65, D67, D68. Role: BE-C · Deps T08 · Size: M
   Tests first: each typed refusal reason; partner code on a solo class refused; stackable code plus birthday gives both; not stackable gives the larger; fixed shares sum exactly; a 100 percent code makes money due zero.
 - [ ] **F04-T10** Money formatter (whole baht when whole, two decimals otherwise) in `packages/i18n`. IDs: R4-AC11, D69, CC-5. Role: Content · Deps none · Size: S
   Tests first: 50000 satang is "500", 50050 is "500.50", Thai and English, Gregorian dates untouched.
@@ -61,6 +61,7 @@ Migration numbers are 0301 to 0399 and rise with task order (the migrator refuse
   Receipt: calls `app.issue_receipt` through `app.payment_ports` (the F13 issue_receipt port; a fake until F13 exists), in this task (F13 design; orchestrator 30 Oct).
 - [ ] **F04-T13** `GET /orders/{id}` and the staff routes `POST /staff/orders/quote` and `/pay`. IDs: R7-AC2, ROLE-01-AC4, CC-2. Role: BE-C · Deps T12d · Size: S
   Tests first: own or staff only; the snapshot is unchanged after prices and names change; staff booking as a player pays as a player.
+  Also (moved from F03-T22, which no longer has `POST /staff/bookings`): a staff booking awaiting payment holds the slot for the hold time (D43).
 - [ ] **F04-T14** Owner setup routes `/setup/price-groups`, `/court-prices`, `/coach-tier-prices`, `/add-ons`, `/partners`, `/promo-codes`, audited, new orders only. IDs: R3-AC8, PROMO-01-AC12. Role: BE-C · Deps T05 · Size: M
   Tests first: owner only; a price in use by a held or paid order cannot be deleted; every write has an audit entry with old and new values.
 - [ ] **F04-T15** Add a coach to an existing booking: the coaching portion is priced as its own order with its own receipt (D111) and the coach is claimed on the booking through F03's `add_coach_to_booking` (F03-T29). IDs: R2-AC9, D111. Role: BE-C · Deps T12d, F03-T29, F07 (coach rules, interface) · Size: M
@@ -80,3 +81,13 @@ Migration numbers are 0301 to 0399 and rise with task order (the migrator refuse
 ## E. Sweep
 
 - [ ] **F04-T21** Acceptance sweep: this task is the tests. It closes every acceptance criterion of `requirements.md` (R1 to R8, PAY-07, PROMO-01) that has no test of its own, with a script that fails for an ID without one; no hard-coded text, no client amount, test orders excluded from reports. IDs: all F04 ACs, CC-2, CC-5, D33. Role: QA · Deps T12d, T14, T15 · Size: M
+
+## Follow-up added by F08 (gate 3 of that feature, 30 Oct 2026)
+
+- [ ] **F04-T22a** Migration 0314: `order_line.kind` gains `class_seat`, with the CHECK that a `class_seat` line names its booking and carries the same allocation columns as a court hour line. IDs: CLASS-01-AC14, AC17, R4 (F04). Role: BE-C · Deps F04-T12 (Pay) · Size: S
+  Tests first: a `class_seat` line without a booking is refused; the deferred sum invariant of 0303 holds for a seat line; existing kinds are unchanged.
+- [ ] **F04-T22b** Migration 0315: Pay calls `app.take_seat` (F08-T05b) for a `class_seat` line and prices it from credit, wallet or the class template's drop in price (null means no drop in price, D157), in the order of D22. IDs: CLASS-01-AC14, AC15, R4 (F04), D22, D157. Role: BE-C · Deps F04-T22a, F08-T05b · Size: M
+  Tests first: a seat paid by credit, then wallet, then money; a null drop in price needs credit or wallet; a group credit of the wrong audience is refused; a full session refuses the seat and nothing is used up.
+- [ ] **F04-T22c** Migration 0316: Pay accepts a waitlist offer's held booking and order as the claim instead of making a second reservation; an ended offer answers `spot_gone`. IDs: CLASS-02-AC3, AC6, WAIT-01-AC2. Role: BE-C · Deps F04-T22b, F08-T06 · Size: S
+  Tests first: claiming pays the held booking and reserves nothing twice; an expired offer answers `spot_gone` and the hold is already released; two claims for one offer give one success.
+
