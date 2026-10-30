@@ -8,4 +8,7 @@ export const tables: Fragment = {
   'public.customer_package': { class: 'D', audited: true },
   'public.package_extension': { class: 'D', audited: true },
   'public.wallet_account': { class: 'D' },               // a lock anchor only: no balance column (FA 2.3)
+  // Ledgers (F06-T02, migration 0502): append-only movements, class D
+  'public.credit_ledger': { class: 'D', audited: true },
+  'public.wallet_ledger': { class: 'D', audited: true },
 };
