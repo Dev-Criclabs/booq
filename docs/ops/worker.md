@@ -13,6 +13,8 @@ Each deployment has its own environment, so the worker's `DATABASE_URL` is the w
 | `WORKER_HOUSEKEEPING_CRON` | `*/5 * * * *` | See "Schedules" |
 | `WORKER_IMPORT_SWEEP_CRON` | `*/15 * * * *` | See "Schedules" |
 | `WORKER_HOLD_RELEASE_TICK_SECONDS` | `20` | Proposed name, for BE-P. Inside the 15 to 30 s that F03 design 6 and FA 5.4 allow |
+| `WORKER_RATE_LIMIT_SWEEP_CRON` | 5 cron fields, UTC. **No value proposed yet** | For the `rate_limit_sweep` task (BE-P), which removes the web sign-in limiter's old rows (`web.md`). Required, no default |
+| `WORKER_RATE_LIMIT_KEEP_SECONDS` | Whole seconds above 0. **No value proposed yet** | How long limiter rows are kept before the sweep removes them. Required, no default. Keep it at least as long as the longest limiter window (`WEB_SIGNIN_RATE_WINDOW_SECONDS`), so a row is never removed while it still counts; the limiter rows hold a keyed hash of the IP, not the address |
 
 ## Schedules
 

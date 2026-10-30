@@ -11,8 +11,14 @@ Proposal, 30 Oct 2026, from the Orchestrator's request about the sign-in work in
 | `WEB_MAX_BODY_BYTES` | `65536` (64 KiB) | Security proposes 64 KiB for webhook bodies (`webhook_max_body_bytes`); I reuse it for JSON routes because nothing larger is expected. Imports have their own limits (`import_max_bytes`, 2 MiB proposed) and are not this setting. Security to confirm |
 | `WEB_SIGNIN_RATE_LIMIT` | `10` | Security's `rate.auth_session_per_ip_per_min` = 10: "sign-ins are rare" |
 | `WEB_SIGNIN_RATE_WINDOW_SECONDS` | `60` | Same row; the pair means 10 attempts per IP per minute |
+| `WEB_RATE_LIMIT_KEY` | **no value in any document.** A random secret, 32 or more characters (for example `openssl rand -hex 32`) | **Secret.** The HMAC key the limiter uses so that the stored counter key is a keyed hash of the IP, not the address (see "The counter is per process" below). **Required whenever the sign-in rate limit is set.** Per environment, never shared between staging and production, set only in the web deployment (`secrets.md`). Rotating it only resets the counters, which is harmless, but do it in a quiet hour |
 
 **The rate pair is required before launch.** The code treats it as optional, and with both unset there is no limit. That is acceptable on a developer machine and not acceptable in production. Proposed rule for the launch checklist: **both must be set on the staging and production web deployments before the 7 Dec test** (it is a P4 item, like the pay-tap limit, D61), and CI strict mode should fail a deployment config check that finds only one of the pair. DevOps sets them in the hosting environment once Security approves the numbers.
+
+### Deploy environment checklist, `apps/web`
+
+Set in the hosting environment of each web deployment (staging, production), all without defaults in code:
+`DATABASE_URL`, `WEB_SESSION_SECONDS`, `WEB_MAX_BODY_BYTES`, `WEB_SIGNIN_RATE_LIMIT`, `WEB_SIGNIN_RATE_WINDOW_SECONDS`, `WEB_RATE_LIMIT_KEY`. The last three are one group: set all three or none, and all three before the 7 Dec test. The matching worker settings are in `worker.md`; the limiter's rows are removed by the worker's `rate_limit_sweep` task.
 
 ## Which client IP is read
 
