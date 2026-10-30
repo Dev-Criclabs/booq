@@ -193,16 +193,21 @@ describe('worker heartbeat (F01-T34)', () => {
     } finally {
       c.release();
     }
-    const read = async (role: string) => {
+    await tdb.query(`insert into platform.platform_staff (id, auth_user_id, email, display_name, role) values ('77777777-7777-4777-8777-777777777777', gen_random_uuid(), 'm@booq.test', 'Mali', 'onboarding_specialist')`);
+    const read = async (role: string, staff = '') => {
       const cl = await tdb.pool.connect();
       try {
-        await cl.query(`set role ${role}`);
+        await cl.query('begin');
+        await cl.query(`set local role ${role}`);
+        await cl.query(`select set_config('app.actor_platform_staff_id', $1, true)`, [staff]);
         return await cl.query('select task_name, runs from platform.worker_heartbeat');
       } finally {
+        await cl.query('rollback');
         cl.release();
       }
     };
-    expect((await read('booq_platform')).rows).toEqual([{ task_name: 'release_holds', runs: '2' }]);
+    expect((await read('booq_platform', '77777777-7777-4777-8777-777777777777')).rows).toEqual([{ task_name: 'release_holds', runs: '2' }]);
+    expect((await read('booq_platform')).rows).toEqual([]); // no staff member in the transaction, no rows
     await expect(read('booq_app')).rejects.toThrow(/permission denied/);
   });
   it('holds no club id and no free text: it cannot carry data', async () => {
