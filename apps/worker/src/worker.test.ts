@@ -16,9 +16,24 @@ beforeEach(async () => {
   tdb = await createTestDatabase();
   db = createDb({ connectionString: tdb.url, max: 2, role: 'booq_worker' });
 });
+// runner.stop() can resolve while the queue's own connections are still closing. Dropping the
+// database then terminates them mid close and the pool emits an unhandled 57P01. Wait until
+// only our test connection is left before the drop.
+async function queueConnectionsGone(): Promise<void> {
+  const end = Date.now() + 10000;
+  while (Date.now() < end) {
+    const { rows } = await tdb.query(
+      "select count(*)::int as n from pg_stat_activity where datname = current_database() and pid <> pg_backend_pid() and query like '%graphile_worker%'",
+    );
+    if (rows[0].n === 0) return;
+    await new Promise((r) => setTimeout(r, 25));
+  }
+}
+
 afterEach(async () => {
   await worker?.stop();
   worker = undefined;
+  await queueConnectionsGone();
   await db.end();
   await tdb.close();
 });
