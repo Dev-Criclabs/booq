@@ -26,4 +26,4 @@ export { createDbDirectory } from './liff/directory';
 export { createPublicConfigService, type PublicConfig, type PublicConfigResult } from './liff/public-config';
 export { createProfileService, type ProfileOptions, type ProfileResult } from './liff/profile';
 export { safeReturnPath } from './liff/return-path';
-export { serveRoutes, type ServeContext, type ServeDeps } from './serve';
+export { serveRoutes, type ServeContext, type ServeDeps, type ServeSource } from './serve';
