@@ -3,7 +3,8 @@
 // message is built, so they are never stored with it.
 
 export interface MessageHour {
-  bookingId: string;
+  /** null for a class session's own hour (a message to its coach). */
+  bookingId: string | null;
   startAt: string;
   endAt: string;
   /** The court's number or label, without the word "Court" (locales/README.md `{court}`). */
@@ -34,4 +35,6 @@ export interface MessageFacts {
   claimMinutes: number | null;
   /** The reminder kind's hours before start (app.message_kinds.hours_before). */
   hoursBefore: number | null;
+  /** The group class's name, for a message about a class session or a seat in one (F08). */
+  className: { th: string; en: string } | null;
 }
