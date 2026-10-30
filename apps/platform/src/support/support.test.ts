@@ -49,14 +49,14 @@ afterEach(async () => {
 describe('reading the setup projection', () => {
   it('shows setup only: club, hours, courts, settings, switches, with a mode', async () => {
     await tdb.query(`insert into public.opening_hours (club_id, weekday, open, close) values ($1, 1, '06:00', '24:00')`, [TEST]);
-    await tdb.query(`insert into public.club_feature (club_id, feature_key, enabled) values ($1, 'coaching', true)`, [TEST]);
+    await tdb.query(`insert into public.club_feature (club_id, feature_key, enabled) values ($1, 'coach_add_at_checkout', true)`, [TEST]);
     const r = await svc.getSetup(spec, TEST);
     if (!r.ok) throw new Error(r.code);
     expect(r.setup.mode).toBe('edit');
     expect(r.setup.club).toMatchObject({ id: TEST, slug: 'testing', status: 'testing', name_en: 'Testing' });
     expect(r.setup.hours).toHaveLength(1);
     expect(r.setup.settings).toEqual([{ key: 'hold_minutes', value: 15 }]);
-    expect(r.setup.features).toEqual([{ feature_key: 'coaching', enabled: true }]);
+    expect(r.setup.features).toEqual([{ feature_key: 'coach_add_at_checkout', enabled: true }]);
     expect(r.setup.locations).toHaveLength(1);
     expect(Object.keys(r.setup).sort()).toEqual(['club', 'features', 'hours', 'locations', 'mode', 'resources', 'settings']);
   });
@@ -206,8 +206,9 @@ describe('editing (PLAT-02-AC2 to AC5, AC7)', () => {
     expect((await svc.putSetup(spec, TEST, 'resources-hours', { resources: [{ id, active: false }] })).ok).toBe(true);
     expect((await tdb.query(`select active, lights from public.resource`)).rows).toEqual([{ active: false, lights: true }]);
 
-    expect((await svc.putSetup(spec, TEST, 'features', { features: { coaching: true, waitlist: false } })).ok).toBe(true);
-    expect((await tdb.query(`select feature_key, enabled from public.club_feature order by 1`)).rows).toEqual([{ feature_key: 'coaching', enabled: true }, { feature_key: 'waitlist', enabled: false }]);
+    expect((await svc.putSetup(spec, TEST, 'features', { features: { coach_add_at_checkout: true, backup_mode: false } })).ok).toBe(true);
+    expect(await svc.putSetup(spec, TEST, 'features', { features: { gift_vouchers: true } })).toEqual({ ok: false, code: 'invalid' }); // only the switches the spec names exist (PLAT-05-AC6)
+    expect((await tdb.query(`select feature_key, enabled from public.club_feature order by 1`)).rows).toEqual([{ feature_key: 'backup_mode', enabled: false }, { feature_key: 'coach_add_at_checkout', enabled: true }]);
 
     expect((await svc.putSetup(spec, TEST, 'plan', { plan_trial_ends_at: '2027-01-31T00:00:00Z' })).ok).toBe(true);
     const t = await tdb.query(`select id from platform.template where key = 'tennis'`);   // seeded by migration 0018

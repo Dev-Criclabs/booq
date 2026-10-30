@@ -54,4 +54,6 @@ export const tables: Fragment = {
   'app.setup_steps': { class: 'infra' },
   // owner contact changes that need a second admin (F01-T23 part b)
   'platform.owner_contact_change': { class: 'P' },
+  // the list of feature switches (F01-T25): written by migrations only
+  'app.feature_keys': { class: 'infra' },
 };

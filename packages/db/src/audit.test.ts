@@ -99,7 +99,7 @@ describe('one entry per audited change, same transaction (PLAT-04-AC1, AC2)', ()
 
   it('every audited table of migration 0002 has an entry on insert', async () => {
     await as('booq_app', owner, async (c) => {
-      await c.query(`insert into public.club_feature (club_id, feature_key, enabled) values ($1, 'coaching', true)`, [A]);
+      await c.query(`insert into public.club_feature (club_id, feature_key, enabled) values ($1, 'coach_add_at_checkout', true)`, [A]);
       await c.query(`insert into public.location (club_id, id, name) values ($1, gen_random_uuid(), 'Main')`, [A]);
       await c.query(`insert into public.opening_hours (club_id, weekday, open, close) values ($1, 1, '06:00', '24:00')`, [A]);
       await c.query(`update public.club set name_en = 'Renamed'`);
