@@ -18,3 +18,7 @@ export { findUndeclaredRoutes, isRouteFile, type SourceFile, type UndeclaredRout
 export { createRedactingLogger, redact, scrubText, REDACTED, type Logger, type LogLevel } from './liff/log-redaction';
 export { createLineVerifier, createFakeLineVerifier, type LineVerifier, type VerifyFailure, type VerifyRequest, type VerifyResult, type FakeVerifierMode, type LineVerifierOptions } from './liff/verify';
 export { hashInviteToken, newInviteToken } from './invite';
+export { clubUrl } from './liff/club-url';
+export { clearSessionCookie, clubOfToken, hashToken, newSessionToken, parseSessionCookie, serializeSessionCookie, SESSION_COOKIE } from './liff/cookie';
+export { createSignInService, type AuthenticateResult, type ClubTarget, type SignInDirectory, type SignInOptions, type SignInResult, type SignInTx } from './liff/session';
+export { createDbDirectory } from './liff/directory';
