@@ -14,6 +14,32 @@ Decisions made by the user, newest first. Each is also written into the PRD chan
 | D36 | A validly signed Beam callback with the wrong amount: record it, flag it for the owner, return a success status so Beam stops retrying (refines D24) |
 | Open | Whether a late payment that goes to the wallet gets its own receipt is with the accountant |
 
+## 30 Oct 2026, round 11 (approved as recommended)
+
+F14 and F15 requirements are approved. F15 Q10 (platform log retention) stays open and parked.
+
+| # | Decision |
+|---|---|
+| D129 | The referrer is not named to the friend (F14 Q1); the canvas wording is a canvas fix |
+| D130 | The reward uses the amount in force when the friend's booking is played; if it is empty then, no reward is paid (Q2) |
+| D131 | The friend's booking counts only if money was paid; a cancelled booking never counts and the reward waits for the next qualifying booking (Q3) |
+| D132 | The referrer is recorded at the friend's first sign in through the link, with no time limit (Q4) |
+| D133 | The birthday discount applies to the whole solo class price (Q5) |
+| D134 | The birthday entitlement resets each Bangkok calendar year (Q6) |
+| D135 | No reward cap in v1 (Q7) |
+| D136 | A friend is new when they have no earlier paid purchase (Q8) |
+| D137 | The BOOQ console second factor is an authenticator app (F15 Q1) |
+| D138 | If the owner has not signed in, P1 shows an alert and P3 offers a fresh invite bound to the owner's LINE ID (Q2) |
+| D139 | No billing in v1; trial end and billing start are dates BOOQ keeps (Q3) |
+| D140 | The club URL name is set in P2 step 1, is unique, may change in Draft or Testing and is fixed after Go live (Q4) |
+| D141 | Badminton is a sport label that uses the Blank template (Q5) |
+| D142 | BOOQ staff enter the Beam merchant ID, test and live keys and the signing key at setup; write-only (Q6) |
+| D143 | For Hunter only the rules required for booking to work must be set to go live; empty TBD values do not block it (Q7) |
+| D144 | The alert list in P1-AC5 is final for v1 (Q8) |
+| D145 | Only Tennis and Blank templates are usable in v1; Padel and Pickleball are to build (Q9) |
+| D146 | The F14 and F15 requirements are approved |
+| D147 | **Standing approval.** The user approved that future requests and questions from the sessions are settled with the orchestrator's recommendation, and that the orchestrator tells the user what it decided. Limits that still need the user: items the user parked (consent for players under 18 and its age threshold, the VAT invoice layout, retention periods, the hosting-region legal check), repository settings only the user can change, accounts and credentials, spending, and anything that cannot be undone or changes something outside the project |
+
 ## 30 Oct 2026, round 10 (approved as recommended: "approve all")
 
 Reviewer and Security findings and the open questions of the F07, F08, F09 and F13 drafts. The F07, F08, F09 and F13 requirements are approved. Not decided here and left open on purpose: consent for players under 18 and the age threshold (D10), the VAT invoice layout, and retention periods for receipts, closes and reports.
