@@ -72,4 +72,4 @@ BOOQ staff sign in to the platform console with email plus a second factor (TOTP
 - Encryption method: app level envelope encryption or Supabase Vault (Architect).
 - LINE token type (long lived or short lived, role 5 decides). The monitor is the same either way.
 - Whether Beam allows two callback secrets at once (ask Beam when the sandbox opens).
-- If the lawyer refuses Singapore and we move to self-hosted Postgres in Thailand (`plan.md` R1), Supabase Vault and Supabase Auth are lost, so choose app level envelope encryption and keep the staff auth code portable.
+- If hosting ever moves to self-hosted Postgres in Thailand (`plan.md` R1), Supabase Vault and Supabase Auth are lost, so choose app level envelope encryption and keep the staff auth code portable.

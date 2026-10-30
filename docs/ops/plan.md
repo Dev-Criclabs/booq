@@ -1,6 +1,6 @@
 # BOOQ operations plan (DevOps / SRE)
 
-Status: **updated 30 Oct 2026 for the round 2 decisions** (`docs/decisions.md`: D3 to D7). Nothing here changes a product rule. Where a choice still needs a person, it is marked **Decision**. Hunter is the first real build: there is no existing Booq core, code or database to migrate.
+Status: **updated 30 Oct 2026 for the round 2 decisions** (`docs/decisions.md`: D3 to D7). Nothing here changes a product rule. Where a choice still needs a person, it is marked **Decision**. Hunter is the first real build: there is no existing Booq core, code or database to migrate. **D16: the 7 Dec test runs on production with Hunter in Testing status. Staging is for development and QA only.**
 
 Sources: `CLAUDE.md`, PRD v1.2 (Quality and scope, Platform and LINE, LINE message costs), hand-off v1.2 (Architecture, PLAT, PDPA-01, PAY, LINE), `docs/DEVELOPMENT-PLAN.md`.
 
@@ -28,8 +28,8 @@ Dates: test with mock bookings **7 Dec 2026**, public booking **29 Dec 2026**, s
 |---|---|---|---|---|
 | **local** | Developer and Claude Code sessions | Developer machine, Supabase CLI local stack | Seed data only. Fake Beam, fake LINE | n/a |
 | **preview** | One per branch or PR, to look at a change | Hosting provider preview URL | Shared **preview** database (see below) with seed data. Fake Beam, fake LINE | Automatic on each push |
-| **staging** | Engineering and QA rehearsals. Real LINE test OA, real Beam sandbox | Own hosting project and own Supabase project | Mock bookings and fake slips only. Never real players | Automatic from `main` |
-| **production** | Hunter from 29 Dec | Own hosting project and own Supabase project | Real | Manual approval, from a tag or from `main` |
+| **staging** | Development and QA only (D16). Real LINE test OA, real Beam sandbox | Own hosting project and own Supabase project | Mock bookings and fake slips only. Never real players | Automatic from `main` |
+| **production** | The 7 Dec test (Hunter in Testing status, D16) and Hunter from 29 Dec | Own hosting project and own Supabase project | Hunter's Testing data (flagged, purged at Go live, D4), then real | Manual approval, from a tag or from `main` |
 
 Rules:
 - Staging and production are **separate Supabase projects** and separate hosting projects. No shared database, no shared keys.
@@ -38,7 +38,7 @@ Rules:
 - Staging has its own LINE provider and test OA, LIFF app and Beam sandbox merchant (`accounts.md`). A test OA must never be the production OA.
 - Environment settings that differ (URLs, keys, LIFF IDs) are listed in `infra/env/.env.example`. The values live in the hosting provider and are never committed.
 - Club status (Draft, Testing, Live, Paused, PLAT-01) is a product feature and is separate from the environment. **Testing mode (D4):** test data is flagged, test bookings use their own non-legal receipt numbers, and the flagged data is purged at Go live so Hunter's real receipts start at 000001. See section 6a for what ops does around the purge.
-- **Open, for the Orchestrator and the user:** does the 7 Dec test run on the *staging* environment, or on the *production* environment with Hunter in Testing mode? D4 reads as the second (the club itself is in Testing and is purged at Go live). My plan works for both: staging is always for engineering, and production runs Hunter in Testing mode from the day the project exists. If the 7 Dec test is on production, the production Supabase project, the production hosting and the monitoring must exist by **4 Dec**, not 21 Dec, and the Beam sandbox keys go into the club's Testing configuration, swapped for live keys at Go live. Until answered, I plan for production by 4 Dec.
+- **Settled (D16):** the 7 Dec test runs on production with Hunter in Testing status. So the production Supabase project, hosting, backups, monitoring, alerts and on call must be ready by **4 Dec**, not 21 Dec. Hunter's Beam sandbox keys and test LINE values sit in its Testing configuration and are swapped for live values at Go live (runbook 13). Staging stays for development and QA, with fake data only.
 - Database migrations are applied by CI/CD in this order: preview, staging, production. A migration reaches production only after it ran on staging. Migrations are forward only. A rollback is a new migration, or a restore (section 4).
 
 **Decision 1, hosting.** Supabase for Postgres is settled (D5). Still open for the Next.js host: **Vercel** (recommended, preview per branch is built in, paid team plan for a business product) or a container host in the same region. See `accounts.md`.
@@ -50,10 +50,10 @@ Rules:
 **Decided (D5): Supabase in Singapore (`ap-southeast-1`), with a data-processing agreement.** The Next.js functions run in the same region, so the court grid reads are one hop, which matters for the 2 second target. Supabase and Vercel do not have a Thailand region as far as I know; confirm on their region pages before creating projects.
 
 **Risk R1: cross-border transfer under PDPA.** Personal data stored in Singapore is a transfer abroad. The club is the controller and BOOQ the processor.
-- **Action for the user:** a Thai lawyer must confirm the transfer is allowed and what the contracts and privacy notice must say. Not for DevOps to decide. The privacy notice text is due before 7 Dec, so the answer is needed in time.
+- Record only: the PDPA question on storing data in Singapore has been deferred by the user, and the D5 hosting choice stands for now. Nothing in the schedule depends on an answer. The privacy notice and the processor contracts are the places it would show up.
 - Sign the **data-processing agreements** with Supabase (and the hosting provider, error tracking and any other processor that sees personal data) before real player data goes in. Keep them in the password manager.
-- **Fallback if the lawyer says no: self-hosted Postgres in Thailand.** What it would mean: a Thai data centre or cloud host, then BOOQ runs Postgres itself, with row level security as now but without Supabase's managed backups, auth and storage. We would need to replace those: own backup and PITR (for example pgBackRest or WAL-G), own storage, own auth for BOOQ staff, patching and 24/7 on call. That is real extra work and cost. Supabase self-hosting is possible, but it is a heavier thing to operate. The application should therefore avoid depending on Supabase-only features where a plain Postgres choice is as easy (the Architect decides, I will raise it). Decide by **13 Nov**, since after real data exists a move is much harder.
-- Until the lawyer answers: **no real player data** in the Singapore projects. Preview and staging hold fake data only. If production is used for the 7 Dec test with Hunter in Testing mode, only the named testers' data goes in, and the testers are told where it is stored.
+- **Fallback, if hosting ever has to change: self-hosted Postgres in Thailand.** What it would mean: a Thai data centre or cloud host, then BOOQ runs Postgres itself, with row level security as now but without Supabase's managed backups, auth and storage. We would need to replace those: own backup and PITR (for example pgBackRest or WAL-G), own storage, own auth for BOOQ staff, patching and on call. That is real extra work and cost. The application should avoid depending on Supabase-only features where a plain Postgres choice is as easy (the Architect decides). A move is easier before real data exists.
+- Preview and staging hold fake data only. Production holds Hunter's Testing data from the 7 Dec test (the owner and named BOOQ testers, D4), flagged and purged at Go live.
 - Where data is stored, and that deleted data stays in backups until they age out, goes into the privacy notice.
 
 Performance checks to run on staging before 7 Dec: court grid and class schedule at p95 under 2 s from a Thai 4G phone inside the LINE browser (QA owns the test, DevOps provides the synthetic probe in section 5).
@@ -78,7 +78,7 @@ A backup that has never been restored is not a backup.
 
 | When | What | Pass |
 |---|---|---|
-| **Before 7 Dec** (target week of 23 Nov), on staging | Restore the latest daily backup into a **new empty project**. Run the smoke checks in the runbook | Restore done in under 2 hours. Row counts match. Ledgers add up (credit and wallet balance equals sum of rows). Court and coach uniqueness rule still rejects a double booking |
+| **Before 7 Dec** (target 30 Nov to 3 Dec), on **production** into a scratch project (D16) | Restore the latest daily backup into a **new empty project**. Run the smoke checks in the runbook | Restore done in under 2 hours. Row counts match. Ledgers add up (credit and wallet balance equals sum of rows). Court and coach uniqueness rule still rejects a double booking |
 | **Before 29 Dec** (target 21 Dec), on production | Restore the nightly dump, then a point in time restore if bought, into a scratch project, never over production | Same, and the time taken is written down as the real recovery time |
 | Every quarter after | Repeat, rotate who runs it | Same |
 
@@ -126,7 +126,7 @@ Status page: not for 7 Dec. Revisit after Hunter's soft launch.
   1. Take a **named backup** of the production database just before the purge (kept 30 days) so a wrong purge can be undone.
   2. The purge job logs counts per table, no personal data.
   3. After it runs, ops checks that real tables are unchanged, test flags are gone, and the club's receipt sequence next number is 000001 (RCPT-01). The checks are written with the Architect once the schema exists.
-- Backups taken before the purge still hold test data until they age out. Test data is not personal data of real players, so this is acceptable; confirm with the lawyer if testers are real people with real LINE accounts (they are).
+- Backups taken before the purge still hold test data until they age out. Test data is not personal data of real players, so this is acceptable; the testers are real people with real LINE accounts, so the privacy notice and consent text must be final before 7 Dec (already a deadline).
 - BOOQ sees pass or fail only for testers' bookings (D4). Monitoring keeps to counts for the same reason.
 
 ### 6b. BOOQ staff sign in (D3)
@@ -159,31 +159,29 @@ Repository settings to apply by the user (cannot be done from a file): protect `
 | By | Item | Needs |
 |---|---|---|
 | 6 Nov | Accounts created (`accounts.md`), repo settings applied | User |
-| 13 Nov | Supabase staging and preview projects, hosting project, preview deploy of the first Next.js skeleton. **Lawyer's answer on the cross-border transfer (R1) and the Singapore or self-hosted decision** | Accounts, the first code, the lawyer |
-| 20 Nov | Secrets store wired for per club LINE and Beam values; LINE test OA, LIFF, Beam sandbox keys in staging | LINE and Beam accounts |
-| 27 Nov | Monitoring and alerts live on staging; restore drill 1 done | Staging running |
-| 4 Dec | Freeze for the test: backups confirmed, on call named, runbooks read | |
+| 13 Nov | Supabase staging and preview projects, hosting project, preview deploy of the first Next.js skeleton | Accounts, the first code |
+| 20 Nov | Secrets store wired for per club LINE and Beam values. **Production** Supabase and hosting projects created (D16). LINE test OA, LIFF and Beam sandbox keys in staging | LINE and Beam accounts |
+| 27 Nov | Monitoring and alerts live on **production** and staging; restore drill 1 done on production into a scratch project | Production running |
+| 4 Dec | Freeze for the test: no deploys to production except fixes the user approves | |
 | **7 Dec** | End to end test with mock bookings | |
-| 4 Dec if the 7 Dec test runs on production (section 2), else 21 Dec | Production project, monitoring, on call | Open question in section 2 |
-| 21 Dec | Restore drill 2, PITR decision applied, go live checklist, named backup then test data purge (6a) | Beam production merchant for Hunter |
+| 4 Dec | Production ready for the test: Hunter in Testing status, backups confirmed, on call named, runbooks read | |
+| 21 Dec | Restore drill 2 (after the test data exists), PITR decision applied, go live checklist, named backup then test data purge (6a) | Beam production merchant for Hunter |
 | **29 Dec** | Public booking | |
 
 The Beam production merchant and a paid LINE OA plan for Hunter are the long poles. They are the club's and the user's to arrange, so please start them first.
 
 ## 9. Decisions and open items for the user
 
-Settled: Supabase in Singapore with a data-processing agreement (D5), BOOQ staff auth (D3), one LINE provider per club (D7), one shared domain with the club in the URL (D6, domain supplied later).
+Settled: Supabase in Singapore with a data-processing agreement (D5), BOOQ staff auth (D3), one LINE provider per club (D7), one shared domain with the club in the URL (D6, domain supplied later), the 7 Dec test on production (D16).
 
 Open:
-1. **The user: a Thai lawyer confirms the PDPA cross-border transfer** (R1). If refused, switch to self-hosted Postgres in Thailand. Needed by 13 Nov.
-2. **Where does the 7 Dec test run**: staging, or production with Hunter in Testing mode (section 2)?
-3. Next.js host: Vercel (recommended) or other.
-4. Production deploy approver.
-5. Point in time recovery for production: yes or no, plus the cost.
-6. On call people and hours.
-7. The shared domain (the user supplies it later). Is the club in the path or in a subdomain? That affects the LIFF endpoint and certificates (section 10).
-8. Receipts and logo storage: ask the Architect (backup of Storage).
-9. Behaviour at the LINE message cap: product question, already open.
+1. Next.js host: Vercel (recommended) or other.
+2. Production deploy approver.
+3. Point in time recovery for production: yes or no, plus the cost.
+4. On call people and hours.
+5. The shared domain (the user supplies it later). Is the club in the path or in a subdomain? That affects the LIFF endpoint and certificates (section 10).
+6. Receipts and logo storage: ask the Architect (backup of Storage).
+7. Behaviour at the LINE message cap: product question, already open.
 
 ## 10. Domain and URLs (D6, D7)
 

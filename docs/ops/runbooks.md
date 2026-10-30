@@ -87,7 +87,7 @@ This is a product feature (PLAT-03, P3c). Ops does not pause clubs. If a club as
 Preview database: reset from seed weekly, or on request. Staging: reset before the 7 Dec test and on request, only after telling the testers. Production is never reset.
 
 ## 13. Go live: purge test data (D4)
-Product feature (F01, F13, F15). Ops steps around it. Do this with the user's go ahead, never as a side job.
+Product feature (F01, F13, F15). Ops steps around it. Do this with the user's go ahead, never as a side job. Production holds Hunter's Testing data from the 7 Dec test (D16), so this is also the end of the test.
 1. Check the P4 go live checks are all passed.
 2. Take a **named backup** of production and note its id. Keep it 30 days.
 3. Run the purge from the product feature. It removes only rows flagged as test data for this club.
