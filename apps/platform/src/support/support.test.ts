@@ -140,6 +140,15 @@ describe('editing (PLAT-02-AC2 to AC5, AC7)', () => {
     expect((await clubLog(TEST)).map((x) => x.action).sort()).toEqual(['support.session_opened', 'support.setup_changed']);
   });
 
+  it('an owner contact change after an owner invite waits for another admin: the other columns save, the contact does not', async () => {
+    await tdb.query(`update public.club set owner_line = 'U1', owner_email = 'o@example.com' where id = $1`, [TEST]);
+    await tdb.query(`insert into public.club_invite (club_id, token_hash, kind, roles, bound_line_user_id, created_by_staff, expires_at) values ($1, $2, 'owner', '{owner,player}', 'U1', $3, now() + interval '1 day')`, [TEST, 'c'.repeat(64), admin]);
+    const r = await svc.putSetup(spec, TEST, 'basics', { name_en: 'Renamed', owner_phone: '0899999999' });
+    expect(r).toMatchObject({ ok: true, changed: ['name_en'], pendingOwnerContact: expect.stringMatching(/^[0-9a-f-]{36}$/) });
+    expect(await name(TEST)).toBe('Renamed');
+    expect((await tdb.query(`select owner_phone from public.club where id = $1`, [TEST])).rows[0].owner_phone).toBeNull();
+  });
+
   it('Live with the window off: refused as look only, nothing changes, the attempt is logged', async () => {
     expect(await svc.putSetup(admin, LIVE, 'basics', { name_en: 'Nope' })).toEqual({ ok: false, code: 'look_only' });
     expect(await name(LIVE)).toBe('Live');

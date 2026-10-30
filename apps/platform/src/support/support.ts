@@ -22,7 +22,7 @@ export interface SupportSetup {
 
 export type GetSetupResult = { ok: true; setup: SupportSetup } | { ok: false; code: 'not_found' };
 export type PutSetupResult =
-  | { ok: true; changed: string[] }
+  | { ok: true; changed: string[]; pendingOwnerContact?: string }
   | { ok: false; code: 'not_found' | 'look_only' | 'invalid' | 'section_unavailable' };
 
 // The club columns the support view shows: setup and the owner contact (decision D2). Not the
@@ -65,7 +65,11 @@ async function setColumns(tx: PlatformTx, clubId: string, values: Record<string,
 interface Applied {
   changed: string[];
   detail: Record<string, unknown>;
+  /** Set when an owner contact change waits for a second admin (design 7.1). */
+  pendingOwnerContact?: string;
 }
+
+const OWNER_COLUMNS = ['owner_name', 'owner_phone', 'owner_line', 'owner_email'];
 
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -73,7 +77,23 @@ async function applySection(tx: PlatformTx, clubId: string, section: string, bod
   switch (section) {
     case 'basics': {
       const values = pick(body, BASICS);
-      return { changed: await setColumns(tx, clubId, values), detail: { section, changed: values } };
+      // The owner contact is not a plain column write: after an owner invite exists a second admin
+      // must approve it (platform.change_owner_contact decides, review T18 R5).
+      const owner = Object.fromEntries(Object.entries(values).filter(([k]) => OWNER_COLUMNS.includes(k)));
+      const other = Object.fromEntries(Object.entries(values).filter(([k]) => !OWNER_COLUMNS.includes(k)));
+      const changed = Object.keys(other).length ? await setColumns(tx, clubId, other) : [];
+      let pendingOwnerContact: string | undefined;
+      let applied = other;
+      if (Object.keys(owner).length) {
+        const r = await tx.query<{ r: { applied: boolean; request_id?: string } }>('select platform.change_owner_contact($1, $2::jsonb) as r', [clubId, JSON.stringify(owner)]);
+        if (r.rows[0]?.r.applied) {
+          changed.push(...Object.keys(owner));
+          applied = { ...other, ...owner };
+        } else {
+          pendingOwnerContact = r.rows[0]?.r.request_id;
+        }
+      }
+      return { changed, detail: { section, changed: applied }, ...(pendingOwnerContact ? { pendingOwnerContact } : {}) };
     }
     case 'plan': {
       const values = pick(body, PLAN);
@@ -242,7 +262,7 @@ export function createSupportService(deps: { db: PlatformDb }) {
     if (!(SECTIONS as readonly string[]).includes(section)) return { ok: false, code: 'invalid' };
     if (PENDING_SECTIONS.has(section)) return { ok: false, code: 'section_unavailable' };
 
-    type Outcome = { kind: 'not_found' } | { kind: 'look_only' } | { kind: 'done'; changed: string[] };
+    type Outcome = { kind: 'not_found' } | { kind: 'look_only' } | { kind: 'done'; changed: string[]; pending?: string };
     try {
       const outcome = await db.withPlatformTx({ staffId: staff.id, clubId, staffLabel: staff.display_name }, async (tx): Promise<Outcome> => {
         if (!(await seeClub(tx, clubId))) return { kind: 'not_found' };
@@ -257,11 +277,11 @@ export function createSupportService(deps: { db: PlatformDb }) {
         const applied = await applySection(tx, clubId, section, body);
         await p6(tx, 'support.setup_changed', clubId, applied.detail, sid);
         await clubNote(tx, 'support.setup_changed', clubId, { section, fields: applied.changed });
-        return { kind: 'done', changed: applied.changed };
+        return { kind: 'done', changed: applied.changed, ...(applied.pendingOwnerContact ? { pending: applied.pendingOwnerContact } : {}) };
       });
       if (outcome.kind === 'not_found') return refused(staff, clubId, 'write');
       if (outcome.kind === 'look_only') return { ok: false, code: 'look_only' };
-      return { ok: true, changed: outcome.changed };
+      return { ok: true, changed: outcome.changed, ...(outcome.pending ? { pendingOwnerContact: outcome.pending } : {}) };
     } catch (e) {
       const code = (e as { code?: string }).code ?? '';
       // Invalid input, or a value the database refuses (check, unique, foreign key, bad text).
