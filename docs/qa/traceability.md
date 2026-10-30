@@ -1,0 +1,171 @@
+# Traceability: requirement IDs to features, acceptance checks and tests
+
+Source: `specs/product/handoff-v1.2.md` (Business rules, Payments, LINE, Roles, Text and language) and `specs/product/prd-v1.2.md`. Written 30 Oct 2026.
+
+**How to read this.**
+
+- *Feature* is the backlog number from the hand-off (F01 to F16). The first feature listed owns the rule; the others touch it.
+- *Acceptance check* is copied from the hand-off. If the hand-off column is empty, the row says **GAP** and the *Proposed check* is QA's reading of the requirement text, with no new rule added. A proposed check needs approval from a person (gate 1, requirements.md) before it counts.
+- *Level*: **U** unit, **I** integration (real Postgres, fakes at the edge), **C** concurrency, **R** row level security, **E** end to end (Playwright), **S** static check or lint, **M** manual on device. Test names such as E2E-05 refer to `test-strategy.md` section 3.4.
+- *Q-nn* refers to `open-questions.md`.
+- *Status* is Red (no test yet) for every row today, because no code or approved requirements exist. It changes as tests land.
+
+Hand-off holds **52** requirement IDs. **23** have an acceptance check. **28** have none (GAP). **1** (PAY-08) is marked "Not needed for Hunter's launch" and is deferred, not a gap. Several existing checks cover only half of the requirement; those are marked **THIN**.
+
+## Summary of gaps
+
+| Kind | IDs |
+|---|---|
+| No acceptance check (28) | PKG-03, CANCEL-03, CANCEL-04, CLASS-01, CLASS-02, PROMO-01, PROMO-02, PAY-03, PAY-04, PAY-05, PAY-06, PAY-07, RCPT-01, RCPT-03, LINE-01, LINE-05, LINE-06, PLAT-01, PLAT-02, PLAT-03, PLAT-04, PLAT-05, PLAT-06, PDPA-01, TEXT-03, TEXT-04, TEXT-05, TEXT-06 |
+| Check present but thin (7) | AUTH-02 (tests only "no DOB for Adult", not "never locked" or "student asks DOB"), BOOK-05 (tests only the empty setting), PKG-02 (tests expiry, not the prices or the class pack), CANCEL-01 (tests the sheet text, not the 12 hour line or the split of value), PAY-01 (club record only), PAY-02 (no duplicate callback, no late callback), RCPT-02 (compares to canvas boards that QA cannot read from the repo) |
+| Deferred | PAY-08 (F16, other clubs) |
+| IDs the backlog uses but the hand-off never defines | **ADMIN** (F11 lists "ADMIN" as its ID, no ADMIN-nn rows exist). **COACH** for F12 (coach portal) has only the rest rule and pricing rows. Pages A0 to A17 and K1 to K6 are described in the PRD only |
+| Rules in the PRD with no ID | See the last table in this file |
+
+---
+
+## AUTH (F02)
+
+| ID | Requirement | Feature | Acceptance check (hand-off) | Level | Tests | Gap / note |
+|---|---|---|---|---|---|---|
+| AUTH-01 | Browse without signing in. LINE Login only at checkout or purchase | F02, F03 | Given a guest on C4, when they tap Continue, then LINE Login starts and they return to C10 with the slot kept | E, I | E2E-01; integration: all read routes for courts, classes, coaches, packages answer without a session; write routes answer 401 | Slot kept across login: the held slot is not a hold yet (hold starts at Pay), so "kept" means selection state. Confirm in design |
+| AUTH-02 | First sign in asks only full name, phone, PDPA consent. DOB only for student price. Never locked, correctable in Profile | F02 | Given a new player, when they pick an Adult item, then no date of birth field shows | E, I, U | E2E-02, E2E-03; unit: price group from DOB on the 18th birthday; integration: DOB update allowed any time, price group follows DOB on file | **THIN.** Proposed additions: student item shows DOB field; DOB can be edited in Profile many times; no route rejects a DOB edit. Canvas G-C17 shows it locked (canvas-gaps A9). Open: effect on held student packages (canvas-gaps C1) |
+
+## BOOK (F03)
+
+| ID | Requirement | Feature | Acceptance check (hand-off) | Level | Tests | Gap / note |
+|---|---|---|---|---|---|---|
+| BOOK-01 | 60 minutes on the hour, inside opening hours, up to [30] days ahead | F03 | A request for 18:30 or 61 days ahead is refused by the server | U, I | Table driven: 18:30, 18:01, 18:00, 06:00, 23:00, 24:00 start, 05:00, past, day 29, 30, 31, 61 ahead; refusal is by the API not only the UI; the days ahead value is read from the club setting | Boundary day 30 vs 31 (Q-04), current hour already started (Q-03), multi hour length limit unspecified |
+| BOOK-02 | Rich menu Book a court tile opens C4 | F10, F03 | Tapping the tile lands on C4, not C3 | E, M | E2E-23 (deep link URL opens C4); manual tap on device | Rich menu labels open (canvas-gaps C4) |
+| BOOK-03 | Pay holds slot and coach for [15] min (10, 15 or 20) | F03, F05 | Held slot is seen as held by others and cannot be selected; after the hold it is released and the player gets a LINE message | I, E, U | Integration: hold created with `expires_at = now + setting`; second player sees `held`; expiry job releases and pushes the message in the right language; only 10, 15, 20 accepted. E2E-07 | Double tap on Pay (Q-01); QR expiry vs hold expiry (Q-02); exact-boundary behaviour tested with the fake clock |
+| BOOK-04 | No double booking of court or coach, including during holds | F03 | Two parallel requests for the same slot: exactly one succeeds | C, I, E | `concurrency-tests.md` CONC-01 to CONC-30; E2E-08 | Rest rule and BOOK-05 are not covered by a uniqueness rule (concurrency-tests section 5) |
+| BOOK-05 | Player holds at most [TBD] future court hours | F03 | Setting left empty means no limit until the owner sets it | I, C | Empty setting: 200 future hours allowed. Fixture value N: N allowed, N+1 refused; parallel requests at N-1 allow exactly one (CONC-28) | **THIN.** The check covers only the empty case. What counts toward the limit: Q-05. The set-limit test uses a fixture value, not a default |
+
+## COACH (F07, F12)
+
+| ID | Requirement | Feature | Acceptance check (hand-off) | Level | Tests | Gap / note |
+|---|---|---|---|---|---|---|
+| COACH-01 | C10 lists only coaches who work that hour, not on leave, not booked, under 6 hours in a row | F07 | A coach on leave never appears; a 7th hour in a row never appears | U, I, C | Unit on the run length function; integration on the availability route with fixtures for leave, availability rule, existing booking, 6 and 7 in a row; solo, group and staff bookings all count; concurrency CONC-17 | Pending leave (Q-08); gap hour and held hours (Q-09); substitution (Q-10) |
+| COACH-02 | Picking a coach makes it a solo class: court ฿500 plus coach price by price group | F07, F04 | Adult with a Coach tier coach pays ฿1,300 | U, I, E | Unit: Adult ฿1,300 and Student ฿1,200 with Coach tier (PRD tables); Head Coach price is TBD so only a fixture value; E2E-05 | Student coach price is derived from the PRD package table, not from COACH-02 text |
+| COACH-03 | Solo pack credits do not apply to a coach added at court checkout | F07, F06 | Player with solo credits adds a coach on C10: full coaching price charged | U, I, E | E2E-05; integration: ledger has no `reserve` row on the solo package | Same rule after booking (Add a coach from C12): charges coaching portion only (PRD). Add a test |
+| COACH-04 | With a solo pack credit the ฿500 court is still paid by bundle hour, wallet or payment | F07, F06 | Solo booking with a credit shows the court line due | I, E | E2E-06; integration: order has coach line 0 and court line ฿500 | Order of applying bundle hour, wallet, payment: Q-15 |
+
+## PKG (F06)
+
+| ID | Requirement | Feature | Acceptance check (hand-off) | Level | Tests | Gap / note |
+|---|---|---|---|---|---|---|
+| PKG-01 | Credits and wallet are ledgers; every movement has a reason; staff entries have a note | F06 | Balance always equals the sum of its ledger rows | I, U, S | Property test: after any random sequence of operations, balance equals ledger sum; no column holds an editable balance; staff adjust without a note refused; reasons limited to reserve, return, use, forfeit, expire, adjust (credits) | Wallet reasons not enumerated in spec (booking or referral only): Q-12 |
+| PKG-02 | Bundles 10 h ฿4,500/3 months, 20 h ฿8,000/5 months, class packs 8 sessions/3 months | F06 | Expiry date = purchase date plus validity | U, I | Table: 31 Oct + 3 months, 30 Nov + 3 months, 29 Dec + 3 months across the year end, 5 months; Bangkok date, not UTC date; prices exactly 450000, 800000 satang | **THIN.** Month end arithmetic and time of expiry unspecified (Q-11). Canvas B5 has a wrong expiry sample, do not copy it |
+| PKG-03 | Expiry reminders 14 and 3 days before. Expired credits are lost unless owner extends with a reason | F06, F10 | **GAP** | I, U | Proposed: job sends the 14 day and 3 day message once each, in the player's language; at expiry an `expire` ledger row removes the remaining credits; extension needs a reason and writes audit; a pause moves the expiry forward (PLAT-03) | Does a credit used or forfeited before expiry still get a reminder? Wallet expiry is an empty setting (Q-12) |
+
+## CANCEL (F09)
+
+| ID | Requirement | Feature | Acceptance check (hand-off) | Level | Tests | Gap / note |
+|---|---|---|---|---|---|---|
+| CANCEL-01 | 12 h or more: full value back (credit to package, money to wallet). Later or no show forfeits | F09, F06 | The cancel sheet states the outcome before confirming | U, I, E | Unit at 12h 00m 00s and 11h 59m 59s on the fake clock; integration: credit-paid, wallet-paid, Beam-paid, mixed; E2E-12 | **THIN.** Cancel sheet text is the only check. Mixed payments, add ons, promo and birthday discount on cancel: Q-13. The window length is a club setting (12 h), read from settings |
+| CANCEL-02 | Value never returns as cash; wallet cannot be withdrawn | F09, F05, F06 | No cash refund action exists anywhere | S, I | Route inventory test: no route, button, admin action or Beam call refunds money; fake Beam `refund()` throws if called; no wallet withdrawal route | PRD "Option A" text says "Refunds go back by PromptPay": contradicts this rule (canvas-gaps A3). The tests follow CANCEL-02 |
+| CANCEL-03 | Club closure cancels affected bookings with full credit back and a LINE message | F09, F10, F11 | **GAP** | I, E | Proposed: closure preview lists affected bookings; confirm cancels each; each gets full value back regardless of the 12 hour line; one LINE message each in the right language; blocked slots disappear from booking and coach availability (PRD) | Closure vs bookings in a hold; vs a group session; repeat closures: Q-16 |
+| CANCEL-04 | No check in. Confirmed booking counts as played when the slot ends. Staff mark no show or late cancel in A2 with a reason, can reverse | F09, F11 | **GAP** | I, E | Proposed: status flips to played at slot end on the fake clock; mark no show needs a reason and an audit row; reversal restores state; no check in route or page exists (also E2E-24) | What reversal does to credit, wallet and coach pay: Q-14. Canvas A01 and C12 still show check in leftovers (canvas-gaps A1) |
+
+## CLASS (F08)
+
+| ID | Requirement | Feature | Acceptance check (hand-off) | Level | Tests | Gap / note |
+|---|---|---|---|---|---|---|
+| CLASS-01 | Group classes 60 min, 4 to 6 players default. Students see Student classes only, adults Adult only | F08 | **GAP** | I, E | Proposed: session cannot exceed max; below min alert; 61 minute template refused; Student account never sees or books an Adult session and the reverse (server side, not only filtered in the UI) | Canvas B1 and B2 have contradictory sample sessions, do not use them as fixtures |
+| CLASS-02 | Waitlist: first in line gets a LINE offer, [30] minutes to claim. No offers within [2] hours of start | F08, F10 | **GAP** | U, I, C, E | Proposed: position order; offer expires at 30 min and passes on; no offer when start is under 2 h away; claim by two people at once, one wins (CONC-22); E2E-13 | Spot protection during the offer (Q-07); court slot waitlist has no ID and no timing rule (Q-06) |
+
+## PROMO (F04, F14)
+
+| ID | Requirement | Feature | Acceptance check (hand-off) | Level | Tests | Gap / note |
+|---|---|---|---|---|---|---|
+| PROMO-01 | One promo code per order. Owner decides per code if it stacks with the birthday discount | F04 | **GAP** | U, I, C | Proposed: second code refused; stackable code with birthday applies both, non stackable applies one (which one is Q-13); caps: total, per customer, first time only, minimum spend; parallel redemption at the cap (CONC-23) | Birthday discount value is TBD (fixture only). Rounding: Q-17. Partner codes on solo classes are parked (canvas-gaps A4) |
+| PROMO-02 | Referral reward lands in referrer's wallet after friend's first paid booking is played. Self referral blocked by LINE ID and phone | F14 | **GAP** | I, E | Proposed: no reward at payment; reward at slot end; reward once only; self referral by same LINE ID and by same phone both refused; reward and friend discount amounts are TBD so fixture values | What "paid" means when credits paid it, and if the booking is cancelled or no show: Q-18 |
+
+## PAY (F04, F05, F15, F16)
+
+| ID | Requirement | Feature | Acceptance check (hand-off) | Level | Tests | Gap / note |
+|---|---|---|---|---|---|---|
+| PAY-01 | Each club picks Beam or slip checking in P2 step 5 | F15, F05 | Hunter's club record says Beam; C11 shows the Beam screen | I, E | Club A (Beam) shows Beam screen with no slip upload; Club B (slip) shows slip screen (F16, deferred, skeleton only); switching changes no screen code | **THIN.** Only the club record is checked. Add: Hunter has no slip routes reachable |
+| PAY-02 | Beam QR for exact amount on Pay; confirm only on Beam's verified callback | F05 | A callback with a bad signature or wrong amount changes nothing | U, I, C | Fake Beam scenarios 1 to 5: `validPayment`, `badSignature`, `wrongAmount`, `duplicateCallback`, `lateCallback` (see `tests/fakes/README.md`). "Changes nothing" is asserted on order, booking, ledgers, receipts, LINE pushes and audit | **THIN.** No rule for duplicates or for what the player sees after a wrong amount; real money may have moved (Q-19). Beam signature scheme not in the spec (Q-31) |
+| PAY-03 | Beam payment after the hold: approve if slot still open, else value to wallet | F05, F03, F06 | **GAP** (rule confirmed 30 Oct) | I, C, E | Fake Beam `lateCallback` variants: slot open (approved), slot taken by confirmed booking (wallet), slot held by another player (wallet), coach lost on a solo class (wallet, nothing partial), closure created meanwhile. Wallet credit equals the amount paid; message sent; E2E-09 | "Still open", solo partial case, message, receipt for a wallet credit: Q-20 |
+| PAY-04 | Package alone: nothing held, QR valid [15] min, then order cancelled, nothing charged | F05, F06 | **GAP** | I, E | Proposed: no hold row; QR expiry; job cancels the order; no ledger rows; no receipt; E2E-10 | Is the 15 the hold setting (10/15/20)? A payment after cancel: Q-21 |
+| PAY-05 | Refunds never go back as cash. Wallet or credit only | F06, F09 | **GAP** | S, I | Same tests as CANCEL-02 | Duplicate of CANCEL-02; the PRD Option A paragraph disagrees |
+| PAY-06 | Front desk takes cash in A2 with a reason code | F11 | **GAP** | I, E | Proposed: cash without a reason code refused; Accountant and Player cannot; audit entry; receipt issued; E2E-14 | The list of reason codes is not in the spec (Q-22) |
+| PAY-07 | Nothing left to pay confirms at once with no QR | F04 | **GAP** | I, E | Proposed: credits cover, wallet covers, 100% promo covers: no Beam charge created, booking confirmed in the same request, LINE card sent; E2E-04 | Receipt when the amount paid is zero (Q-25) |
+| PAY-08 | Slip checking option (other clubs) | F16 | Not needed for Hunter's launch | (U, I) | **Deferred.** Skeleton only; no tests until F16 is scheduled | Slip provider not chosen (canvas-gaps C6). Removed: everyday slip review queue |
+## RCPT (F13)
+
+| ID | Requirement | Feature | Acceptance check (hand-off) | Level | Tests | Gap / note |
+|---|---|---|---|---|---|---|
+| RCPT-01 | Receipt numbered per club in an unbroken sequence (HTC-2027-000001). Void needs owner and reason; numbers never reused | F13 | **GAP** | U, I, C | Proposed: first receipt of a club; numbers consecutive under 20 parallel confirmations (CONC-21); a failed confirmation leaves no gap; void keeps the number and marks the reason; Accountant and Front desk cannot void; two clubs have independent sequences; reprint marked as a copy (PRD) | Whether the sequence resets each year, and test mode numbers: Q-23, Q-25 |
+| RCPT-02 | Receipt content: legal name, tax ID, head office, address, customer, items, discounts, method, total. Non VAT by default, VAT switch | F13 | Both PDF receipts match R-Receipt-TH and R-Receipt-EN | I, E | Parse PDF text: name stays Thai on both, tax ID 0135569018041, branch, address present; non VAT by default; VAT switch changes the document; visual compare to the two boards | **THIN.** The canvas boards are not in the repo, so there is nothing to compare against. Needs exported images or a text list from Product. Canvas B9 notes address placeholders that are now real |
+| RCPT-03 | Daily close totals each payment method for matching against the bank | F13 | **GAP** | I | Proposed: totals by method (Beam, cash, credit, wallet?) for a Bangkok day; late payments and voids; day boundary at Bangkok midnight | Which methods are listed and the day boundary: Q-26 |
+
+## LINE (F10, F02)
+
+| ID | Requirement | Feature | Acceptance check (hand-off) | Level | Tests | Gap / note |
+|---|---|---|---|---|---|---|
+| LINE-01 | Inside LINE, LIFF login is silent. In a browser, tap Log in with LINE once. Sign in prompts adding the OA | F02 | **GAP** | E, M | Proposed: fake LIFF `isInClient=true` logs in without a click; `false` shows the button once; friend prompt shown when `friendFlag=false`; real device checks | Behaviour when the player declines adding the OA (push will fail): Q-27 |
+| LINE-02 | Rich menu has 6 tiles, each a deep link to its own page | F10 | Each tile opens its page directly | I, E, M | Fake LINE records rich menu: 6 areas, 6 distinct deep links, tile 1 is C4; E2E-23; manual tap | Labels (canvas-gaps A6, C4) |
+| LINE-03 | Push messages from the club's OA in the player's language, fixed wording in code, templates fill club name, logo, rules | F10 | No message editor in the admin | I, S, E | Each message type is sent with the OA token of the player's own club; language equals profile language; text comes from locale keys; no route or page for editing messages (E2E-24) | Language source when none is set (Q-27) |
+| LINE-04 | Booking confirmed Flex card sent the moment a booking confirms with details and two buttons | F10 | Matches L-Msg-Confirmed | I, E, M | Fake LINE Flex capture: has court or class, date, time, coach if any, amount paid, receipt number, View booking and Add to calendar actions; sent once; also for credit-only bookings; M: visual check on device | Canvas board not in the repo, so the visual match is manual. For credit only bookings, what "receipt number" is: Q-25 |
+| LINE-05 | Other messages: reminders 24 h and 2 h, booking released, cancellation result, club closed slot, coach changed, waitlist offer, package expiring, birthday, referral reward, coach session changes, leave decision, class below minimum | F10 + owning feature | **GAP** | I | Proposed: one test per message type: trigger, recipient, language, time, sent once; "Slip needs re upload" is in the PRD message table but not in LINE-05 (F16 only) | Bookings made less than 24 h or 2 h before start: Q-27 |
+| LINE-06 | P1 shows LINE messages used this month per club against its plan, and alerts when the Messaging API token fails | F15, F10 | **GAP** | I, E | Proposed: counter per club equals pushes recorded by the fake; resets on the first of the month Bangkok time; fake token failure raises an alert in P1; counter is a count, not message content | Behaviour at the monthly cap is undecided (canvas-gaps C3). Counter must not expose player data (RLS plan) |
+
+## PLAT (F01, F15, F11)
+
+| ID | Requirement | Feature | Acceptance check (hand-off) | Level | Tests | Gap / note |
+|---|---|---|---|---|---|---|
+| PLAT-01 | Status Draft, Testing, Live, Paused. Go live needs every P4 check passed | F01, F15 | **GAP** | I, E | Proposed: allowed transitions only; Go live refused with any P4 check failing and lists what is missing and who owes it; E2E-18 | The P4 check list itself is not specified in the hand-off; Blank template needs one product and every rule set (PRD P5) |
+| PLAT-02 | Support view shows setup only. Draft and Testing editable; Live look only unless owner turns on Allow BOOQ to make changes for 24 hours | F15, F01 | **GAP** | R, I, E | Proposed: support view returns no player, booking, payment, slip, receipt, wallet or report data (RLS plan, section 5); edit allowed in Draft and Testing; Live read only; switch expires at 24 h on the fake clock; every visit logged in P6 and in the club's audit log | See Q-29 (what "setup only" includes), Q-30 (audit visibility) |
+| PLAT-03 | Pausing stops new booking and buying, keeps existing bookings and reminders, moves package and wallet expiry forward by the pause length, shows a banner | F15, F01, F06 | **GAP** | I, E | Proposed: new booking/buying refused by the server while paused; existing bookings valid; reminders still sent; expiry dates move by exactly the pause length; only a platform admin can pause, with a reason, specialist cannot; owner gets a LINE message; E2E-19 | Pause length when a pause is shorter than a day; credits that expire during the pause |
+| PLAT-04 | Every change to a booking, balance, price or setting writes an audit entry; every platform action also writes P6 | F01 | **GAP** | I, S | Proposed: for every mutating route a test asserts the audit row (actor, time, record, old, new, reason). Route inventory test fails when a mutating route has no audit assertion | Reason is required for some changes only (staff adjustments), not all |
+| PLAT-05 | Feature switches per club, one codebase. Templates Tennis (Hunter), Padel, Pickleball, Blank | F01, F15 | **GAP** | I | Proposed: club with a switch off cannot reach the feature on the server; Blank template has no products; Tennis template loads Hunter defaults without the TBD values | Hunter defaults template carries "the final offer and rules" (PRD): needs the list |
+| PLAT-06 | CSV import of players, packages and balances in A0; Export club data in P3 | F11, F15 | **GAP** | I, R | Proposed: import validates, rejects bad rows with a report, writes ledger rows with a reason and an audit entry, is scoped to the club; export contains only that club | Export "in P3" is a platform console page, which would let BOOQ staff pull player data: Q-28. Import of balances writes ledger rows or a single number? (PKG-01 says ledger) |
+
+## PDPA (cross cutting)
+
+| ID | Requirement | Feature | Acceptance check (hand-off) | Level | Tests | Gap / note |
+|---|---|---|---|---|---|---|
+| PDPA-01 | Club is controller, BOOQ processor. Consent at first sign in, copy or delete on request, slips and staff notes staff only, daily backups | F01, F02, F11 | **GAP** | I, R, E, M | Proposed: consent stored with time and notice version; copy of my data returns only the requester's rows; delete request handled; players cannot read staff notes or slips (RLS plan); backup restore drill | Deleting vs unbroken receipts and ledgers: Q-24. Backups are DevOps; QA witnesses one restore |
+
+## TEXT (cross cutting, Content/i18n owns the tooling)
+
+| ID | Requirement | Feature | Acceptance check (hand-off) | Level | Tests | Gap / note |
+|---|---|---|---|---|---|---|
+| TEXT-01 | Every user facing text comes from the locale files by key | All | A search of the code finds no hard coded user facing text | S | Lint with a planted violation fixture that must fail | Needs the lint from Content/i18n; allow list for technical strings |
+| TEXT-02 | Keys match the writers' spreadsheets; one key can serve several screens | All | copy-index.csv lists every key in use | S | Every key used in code is in the index; every index key exists in `en.json` (and `th.json` unless `X-`) | **`copy-index.csv` does not exist in the repo yet** (canvas-gaps D). Test cannot run until it does |
+| TEXT-03 | Sample values become named variables such as {amount} in both files | All | **GAP** | S, U | Proposed: no string contains a sample date, time, price or name; each key has the same variable names in both files; locale helper fails on a missing variable | **Today no string has a variable** (canvas-gaps D). This suite will be fully red until the TEXT-03 pass lands |
+| TEXT-04 | Developers never change wording of an existing key | All | **GAP** | S | Proposed: CI diffs existing key values against the base branch; any change fails unless it comes from a writers' import commit; new keys exist in both languages | Writers' import must be an allowed path, labelled in the commit |
+| TEXT-05 | Platform console English only. Everything else Thai and English | F15, All | **GAP** | S, E | Proposed: `X-` keys are the only keys allowed to be missing from `th.json`; platform console renders with no Thai | |
+| TEXT-06 | Layouts survive the longest string; buttons never wrap; content scrolls | F02 to F15 | **GAP** | E | Proposed: Playwright longest string pass at 375 px and 1280 px (see test-strategy 3.4) | Thai and English both; "longest" is computed per key from the files |
+
+---
+
+## Rules in the PRD with no requirement ID
+
+These are rules the tests need but nothing numbers. Suggest the spec drafter gives them IDs when writing requirements.md.
+
+| Rule | Where | Feature | Proposed test level |
+|---|---|---|---|
+| Court price ฿500 an hour, flat; solo = coach + court; package prices and per hour savings | PRD Pricing and packages | F04, F06 | U, I |
+| Student packages only for customers under 18; Student switches to Adult on the 18th birthday | PRD Credits and wallet | F06 | U, I |
+| Credit reserved at booking, returned 12 h or more ahead, used when the session starts, forfeited on late cancel or no show | PRD Credits and wallet | F06, F09 | U, I |
+| Wallet spent first at checkout; cannot be withdrawn | PRD Credits and wallet | F06 | I (order: Q-15) |
+| Court slot waitlist ("Join waitlist" on a taken slot) | PRD Court booking, C4 | F08 or F03 | I (Q-06) |
+| Add a coach after booking (from C12) charges coaching portion only | PRD Court booking | F07 | I |
+| Substitutions: only available coaches listed, customer may cancel for full credit regardless of 12 hours, price unchanged | PRD Solo classes | F07, F12 | I |
+| Coach pay: counts delivered or no show sessions; not within-policy cancels; payout report | PRD Coach rates | F12, F13 | I |
+| Below minimum alert and cancel session with full credit back | PRD Group classes | F08 | I |
+| Moving a booking (A1 drag) checks court, coach and rest rule and messages the customer | PRD Front desk rules | F11 | I, E |
+| Roles: what each role can and cannot do | Hand-off Roles | all | I (role matrix) |
+| Reports: cash by type, revenue vs sales, value owed, occupancy, no show rate, partner performance, payouts, all export CSV | PRD Front desk rules | F13, F11 | I (needs an acceptance check per report from Product) |
+| Birthday discount: one package and one solo class, once each per year, LINE on the first day of the month | PRD Promotions | F14 | U, I |
+| Court grid states distinct without colour alone: open, selected, held, taken, closed, past, my booking | PRD Layout and states | F03 | E |
+| Court grid and class schedule load under 2 seconds on 4G | Hand-off Performance | F03, F08 | E, M |
+| App never shows the club's location or address; receipts do | PRD Content | all | E |
+| Thai dates use the international year | PRD Content | all | S, U |
+| Removed, never build: check in, gift vouchers, message editor, slip review queue | CLAUDE.md | all | E2E-24 |
+| Test mode with mock bookings for 7 Dec | PRD Quality | F15 | see Q-23 |
+| Accessibility: WCAG AA contrast, 44 px tap targets | PRD Layout | F02 to F15 | E (axe checks, target size) |
+| Daily backups | PRD Quality | DevOps | M (restore drill) |
