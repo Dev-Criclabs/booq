@@ -13,16 +13,18 @@ Depends on F01 tasks: T03 to T07 (database, context, tenant suite), T10 and T11 
 
 ## A. Data and session
 
-- [ ] **F02-T01** Migration 0101: player columns on `app_user`, unique `(club_id, line_user_id)`, phone index, `duplicate_phone_flags` view. IDs: AUTH-02-AC28, LINE-01-AC14, CC-1. Role: BE-P · Deps F01-T12 · Size: S
+- [x] **F02-T01** Migration 0101: player columns on `app_user`, unique `(club_id, line_user_id)`, phone index, `duplicate_phone_flags` view. IDs: AUTH-02-AC28, LINE-01-AC14, CC-1. Role: BE-P · Deps F01-T12 · Size: S
   Tests first: the same person at two clubs has two rows; unique on club and LINE id; a shared phone is allowed and flagged on both records.
-- [ ] **F02-T02** Migration 0102: `auth_session` (hash only), pending state with a 30 minute life, housekeeping purge. IDs: LINE-01-AC13, AUTH-02-AC3. Role: BE-P · Deps T01, F01-T34 · Size: S
+  - Built (Architect): `0101_player_profile.sql`. Columns on `app_user` (full_name, phone, phone_normalized, date_of_birth, language, level, line_friend, line_friend_checked_at) with CHECKs; level codes `new`, `beginner`, `intermediate`, `advanced` (labels are copy); the unique `(club_id, line_user_id)` was already in 0003; phone index not unique; view `duplicate_phone_flags` (owner and front desk); `app_user_names` now carries `full_name`; a person may update only their profile columns; the friend state is written by `app.set_line_friend(line_user_id, friend)` (definer, club from the context) instead of an update right for the webhook, a small change from the design's `SECURITY INVOKER` handler.
+- [x] **F02-T02** Migration 0102: `auth_session` (hash only), pending state with a 30 minute life, housekeeping purge. IDs: LINE-01-AC13, AUTH-02-AC3. Role: BE-P · Deps T01, F01-T34 · Size: S
   Tests first: the table never holds a token; an expired pending row is purged; a revoked session is refused at once.
-- [ ] **F02-T03** Log redaction for `idToken`, `access_token`, `Authorization`, with a test that scans captured logs. IDs: LINE-01-AC13. Role: BE-P · Size: S
+  - Built (Architect): `0102_auth_session.sql`. Hash only (CHECK: sha-256 hex), no table privilege for any app role; `app.create_session`, `app.touch_session` (refuses revoked, expired, other club or deactivated person), `app.revoke_session` for `booq_app`; deactivating a person revokes their sessions in the same transaction; `app.purge_expired_sessions()` for the worker per club. Expiry is passed by the caller (platform config, no code default). The sessions of a test account are test data (flag follows the person).
+- [x] **F02-T03** Log redaction for `idToken`, `access_token`, `Authorization`, with a test that scans captured logs. IDs: LINE-01-AC13. Role: BE-P · Size: S
   Tests first: a request carrying a token produces no log line containing it.
 
 ## B. Verifying and signing in
 
-- [ ] **F02-T04** LINE verify client with an interface, a real and a fake (valid, wrong audience, expired, bad signature, unreachable). IDs: LINE-01-AC4, AC11, CC-2. Role: BE-P · Deps QA fake LINE · Size: M
+- [x] **F02-T04** LINE verify client with an interface, a real and a fake (valid, wrong audience, expired, bad signature, unreachable). IDs: LINE-01-AC4, AC11, CC-2. Role: BE-P · Deps QA fake LINE · Size: M
   Tests first: a token for club A's channel is refused at club B; an offline response creates nothing and returns the offline code.
 - [ ] **F02-T05** Club resolver and status gate: slug to club, `clubUrl()` for every deep link, 404 for unknown or not visible, Draft and Testing only for testers. IDs: AUTH-01-AC13 to AC15, BOOK-02-AC3. Role: BE-P · Deps F01-T28 · Size: M
   Tests first: unknown slug 404; Draft and Testing 404 for guests and non-testers; a link for club A never signs in to club B; slug and session club mismatch is 404.
@@ -32,11 +34,13 @@ Depends on F01 tasks: T03 to T07 (database, context, tenant suite), T10 and T11 
   Review amendment: D103 (review F01-4). Guests read only named public columns through views or routes; never a whole setup table. Extra tests: a test lists the exact columns a guest can read and fails when one is added; a guest cannot read owner contact, merchant ids or tax details.
 - [ ] **F02-T07** `POST /auth/session` for an existing player: verify, find by club and LINE id, create the session cookie (`__Host-`, httpOnly, Secure, SameSite Lax), roles read per request, inactive account refused. IDs: LINE-01-AC1 to AC5, AC10. Role: BE-P · Deps T02, T04, T05 · Size: M
   Tests first: a valid token for an active user returns `active`; a deactivated user gets `account_inactive`; roles removed take effect on the next request; the token is not stored.
-- [ ] **F02-T08** Name and phone validation module (`packages/domain/phone.ts` and name rules from design A-12) with a single place to change. IDs: AUTH-02-AC2, AC28. Role: BE-P · Size: S
+- [x] **F02-T08** Name and phone validation module (`packages/domain/phone.ts` and name rules from design A-12) with a single place to change. IDs: AUTH-02-AC2, AC28. Role: BE-P · Size: S
   Tests first: Thai mobile formats normalise to E.164; spaces and dashes stripped; invalid values return codes, never text.
 - [ ] **F02-T09** Pending sign-up and `POST /auth/profile`: create `app_user`, role Player, consent row with notice version and language, audit entries, phone duplicate flag, session upgrade. IDs: AUTH-02-AC1 to AC8, AC28. Role: BE-P · Deps T07, T08, F01-T12 · Size: M
   Tests first: no consent creates nothing; consent creates the record, role, consent row and audit in one transaction; a returning player never reaches this step; only three fields are accepted.
-- [ ] **F02-T09b** Claim request on a phone match: if the typed normalised phone matches exactly one unclaimed imported record, insert a `claim_request` in the profile transaction; the person continues as a new player. IDs: AUTH-02-AC28, PLAT-06-AC7, decision D105, SR-05. Role: BE-P · Deps T09, F01-T31b · Size: S
+- [x] **F02-T09b** Claim request on a phone match: if the typed normalised phone matches exactly one unclaimed imported record, insert a `claim_request` in the profile transaction; the person continues as a new player. IDs: AUTH-02-AC28, PLAT-06-AC7, decision D105, SR-05. Role: BE-P · Deps T09, F01-T31b · Size: S
+  - Database side built (Architect): `0103_claims.sql`. `app_user.claim_state` (`unclaimed` for an import, `merged` after a claim) and `merged_into`, CHECKs (a person has a LINE id unless they are an import; an unclaimed import has none). `claim_request` (open / confirmed / rejected; staff read it, nobody else). `app.request_claim(claimant, typed name, typed phone, normalised phone)`: the claimant must be the signed-in ordinary player; exactly one unclaimed import with that phone makes one open request; none or several make nothing; returns nothing, so C2 learns nothing. The route calls it in the profile transaction after inserting the person and their `player` role.
+  - Phone convention: the route passes `phone_normalized` as digits only, Thai numbers as `66…` without the plus (what `normalizePhone` returns with the `+` removed), the same form the import stores; see F02 design 7.1. `claim_state` is a column added by 0103 beside the null LINE id, because a person with no LINE id must also be told apart from a merged record.
   Tests first: a second person typing the same phone sees no balance and no imported field; C2 never mentions a found record; no match or more than one creates nothing.
 - [ ] **F02-T10** Invite redemption in the sign-in path (owner, staff, coach, tester), including the first profile step. IDs: LINE-01-AC10; F01 ROLE-01-AC1. Role: BE-P · Deps T09, F01-T14, F01-T28 · Size: M
   Tests first: a valid invite adds the roles and (for a tester) `club_tester`; a used or expired invite is refused; a person with no role signs in as a player.
@@ -48,7 +52,7 @@ Depends on F01 tasks: T03 to T07 (database, context, tenant suite), T10 and T11 
 
 ## C. Price group and profile
 
-- [ ] **F02-T13** `price_group_for(dob, on_date)` and the Student-item eligibility check used by F04 and F06. IDs: AUTH-02-AC10 to AC14, AC17. Role: BE-P · Size: S
+- [x] **F02-T13** `price_group_for(dob, on_date)` and the Student-item eligibility check used by F04 and F06. IDs: AUTH-02-AC10 to AC14, AC17. Role: BE-P · Size: S
   Tests first: no date of birth gives Adult; 17 years 364 days is Student, the 18th birthday in Bangkok switches to Adult; a Student item with no date of birth returns the ask code; 18 or older is refused for a Student item.
 - [ ] **F02-T14** `PUT /me/profile`: name, phone, date of birth (not future), level, language; never locked; audited. IDs: AUTH-02-AC15 to AC23, AC29. Role: BE-P · Deps T08, F01-T10 · Size: M
   Tests first: unlimited changes; future date refused; an adult adds a date of birth with no price effect; a bought Student package stays valid (assertion contract with F06); each change has an audit entry with old and new.

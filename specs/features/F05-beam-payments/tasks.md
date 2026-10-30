@@ -1,0 +1,63 @@
+# F05 Beam payments (QR), late payments and cash · Tasks
+
+Status: **DRAFT for a quick check (gate 3), revised 30 Oct 2026 after the Reviewer's check (`docs/review/gate3-f04-f05.md`).** F05-T01 and T02 were built before gate 3 on the Orchestrator's instruction; the Reviewer has not yet reviewed those migrations (0401, 0402). Drafted 30 Oct 2026 by the Architect role from the approved design (`design.md`, approved 30 Oct 2026). Rules for every task (CLAUDE.md): one task per run; tests from the acceptance criteria first; type checks before ticking; the commit message starts with the requirement IDs. The design lists 13 guesses about Beam (3.3, G1 to G13); the Playground checks are tasks G, and the build never depends on a guess that has not been checked or is not handled both ways.
+
+Roles: **BE-C**, **FE-P**, **FE-A**, **DevOps** (accounts and keys), **Arch**, **QA**.
+
+Depends on: F01 T09 (connections and secrets), T18, T34 (worker); F03 T13, T14 (`confirm_booking`, `reclaim_order`); F04 T04 and T11 (orders, Pay); F06 (wallet and package ledgers; interface plus fake until then); F13 (receipt; interface plus fake). Migration numbers 0401 to 0499, one task per file, rising with task order: T01 0401 and 0402, T04 0403, T05a 0404, T05b 0405, T05c 0406, T06 0407, T07 0408, T03b 0409. (The design's 0404 policies were written with the tables in T01/T02. `package_qr_minutes` is registered once, by F01's Tennis template settings; 0409 holds only the platform config rows.)
+
+## A. Tables
+
+## A. Tables
+
+- [x] **F05-T01** Migrations 0401 and 0402: `payment`, `payment_event` (append-only, no body stored), `owner_flag`, with the unique keys, the cash reason CHECKs and the partial unique "one pending Beam charge per order". IDs: PAY-02-AC1, AC3, PAY-06-AC1, AC2, PAY-05, decisions D72, D76. Role: Arch · Deps F04-T03, F01-T26 · Size: M
+  Tests first: a second pending Beam payment for an order is refused and a new one after `failed` is allowed; cash needs a reason code and `other` a note; a duplicate `(club, gateway, charge, event)` is refused; `payment_event` cannot be updated or deleted; no personal column.
+  - Built (Architect): `0401_payment.sql` and `0402_payment_event.sql`. `payment` (Beam needs gateway and key set, cash needs reason code, taker and a note for `other`; one pending Beam charge per order; unique charge id; a Beam charge must equal the order's frozen money due; identity never changes, a final payment stays final, never deleted; no refund state), `payment_event` (append-only, body only as a hash, dedupe on charge and event; outcome list added by the Architect: applied, applied_late, wallet_late, wallet_duplicate, wallet_cancelled, wallet_wrong_amount, mismatch, unknown_charge, ignored, duplicate, bad_signature, lookup_failed), `owner_flag` (one open per payment and kind). `app.order_needs_payment` now also false after a succeeded cash payment. Test flags and purge order set. Writes come only from the F05-T05 functions; the app roles hold no write right.
+- [x] **F05-T02** Policies and grants for the three tables, written with them in 0401 and 0402; registry, tenant and blind suites extended. IDs: CC-1, PLAT-02-AC1, PDPA-01-AC1. Role: Arch · Deps T01, F01-T09 · Size: S
+  Tests first: club A cannot read club B's payments; `booq_platform` has no privilege on any payment table; the accountant reads payments (no contact details exist in them).
+  - Built (Architect), written with the tables: policies and grants of 0401 and 0402. A player reads the payment of their own order only; owner, front desk and accountant read the club's payments and the event log; flags are the owner's; the worker reads in the club's context; BOOQ staff have no privilege on any of the three tables (tested). The Beam secrets remain readable only through `app.read_secret` (F01-T09).
+- [ ] **F05-T03b** Migration 0409: platform config rows with no value so they show as missing: `qr_expiry_margin_seconds`, the reconcile settings (`beam_reconcile_interval_seconds`, `beam_reconcile_age_seconds`). IDs: PAY-02-AC2, decisions D73, D80. Role: Arch · Deps F01-T16 · Size: S
+  Tests first: the keys exist with a null value; a null value is reported as "not configured" by `platform.club_progress`; no number is in code.
+
+## B. Adapter and money movements
+
+- [ ] **F05-T03** `packages/payments`: the gateway interface (create charge, get charge, nothing that refunds), the Beam adapter (Basic auth, `x-beam-idempotency-key`, `expiryTime`), key set chosen from the club status, the fake for tests. IDs: PAY-01-AC4, AC9, AC10, PAY-05, PAY-02-AC2, decisions D32, D80. Role: BE-C · Deps F01-T09 · Size: M
+  Tests first: a Testing club uses the test set and a Live club the live set, never crossed; the interface has no refund or credit method and the double fails if one is attempted (AC10); no route can confirm a booking without a signed callback or a signed lookup (AC9); `expiryTime` is the hold end minus the configured margin; with the margin unset Pay refuses with `payment_unavailable` and raises the P1 alert; keys never reach a log.
+- [ ] **F05-T04a** Migration 0403: `app.start_payment(order)` (definer): inserts the `pending` payment of a priced order for exactly its money due, or returns the existing pending one (second tap, D47); the new release reason `payment_unavailable` with an F05 release handler that raises the P1 alert and the owner flag and sends no "Booking released" message. IDs: PAY-02-AC1 to AC3, PAY-01-AC7, decisions D47, D72, D75. Role: Arch · Deps T01, F04-T04 · Size: S
+  Tests first: a second call returns the same payment; after `failed` a new payment is created in the same hold; an unpriced order and a zero money order get none; releasing for `payment_unavailable` restores credit, wallet and code and sends no message.
+- [ ] **F05-T04b** `startPayment` in code: charge creation after the Pay commit, storing the charge id, QR and expiry, `payment_unavailable` when keys are missing or Beam fails. IDs: PAY-02-AC1 to AC3, PAY-01-AC7, PAY-01-AC1, decisions D47, D72, D75. Role: BE-C · Deps T03, T04a, F04-T12d · Size: M
+  Tests first: second tap creates no second charge; a failed charge then a tap creates a new payment in the same hold; Beam down releases the hold and restores credit, wallet and code; the QR is for the exact amount and has no slip upload.
+- [ ] **F05-T05a** Migration 0404: `app.apply_payment`, part (a): success while the hold runs (`confirm_booking`, order `paid`, package orders call `grant_package`, receipt) and success after the hold with the slot open (`reclaim_order`, `reapply_order_entitlements`, credits and wallet re-reserved). IDs: PAY-02-AC4, AC7, PAY-03-AC7, decisions D18, D25. Role: Arch · Deps T01, F03-T13, F03-T14, F04-T19, F06 (interface), F13 (interface) · Size: M
+  Tests first: a payment and a hold expiring at the same instant give one outcome; a repeated callback repeats nothing; the reclaim uses the original amounts, no repricing.
+- [ ] **F05-T05b** Migration 0405: `app.apply_payment`, part (b): late payment to the wallet with its own receipt (slot taken, held or closed; solo class needs both free; credits, wallet or code cannot be re-applied), in one transaction with the `late_payment:{payment}` dedupe key. IDs: PAY-03-AC1 to AC5, decisions D25, D37, D48. Role: Arch · Deps T05a · Size: M
+  Tests first: slot open reclaims; slot taken, held or closed goes to the wallet with its own receipt and a message; a late payment after a closure that cancelled the hold goes to the wallet; two late payments for one slot cannot both be approved.
+- [ ] **F05-T05c** Migration 0406: `app.apply_payment`, part (c): a second success for a paid order, a success for a cancelled order or package order, a Paused club, a deleted account, and a Beam success on a payment that cash already cancelled (the guard that accepts it). IDs: PAY-03, PAY-04-AC7, decisions D74, D107, D109. Role: Arch · Deps T05b, T07 · Size: S
+  Tests first: each row of the design 5.4 table; the second amount goes to the wallet as `duplicate_payment` with its own receipt; a Paused club never confirms from a late payment; a Beam success after cash took the order goes to the wallet.
+- [ ] **F05-T06** Migration 0407: `app.credit_wrong_amount` and the owner flag: staff credit the full amount received, own receipt, flag resolves. IDs: PAY-02-AC6, decisions D24, D77, D79. Role: Arch · Deps T05a · Size: S
+  Tests first: under and over payments are credited in full; front desk and owner only; the flag opens on a mismatch and resolves.
+- [ ] **F05-T07** Migration 0408: cash at the front desk (`app.take_cash`): reason code and note, cancels a pending Beam payment of the order, confirms through `confirm_booking`, receipt, audit. IDs: PAY-06, decision D56. Role: Arch · Deps T05a · Size: S
+  Tests first: reason code and note rules; only front desk and owner; allowed for packages; audited; a receipt; a later cancel returns to the wallet; the pending Beam payment is cancelled.
+
+## C. Callback, reconcile, jobs
+
+- [ ] **F05-T08a** `POST /api/webhooks/beam/{token}`, part (a): token to club and key set, constant-time HMAC over the raw body, dedupe on charge and event, `ignored` for the inactive set. IDs: PAY-02-AC5, AC10, AC13, decisions D24, D32. Role: BE-C · Deps T03, T01 · Size: S
+  Tests first: a bad signature answers 401, changes nothing and alerts; a replayed old callback does nothing; a callback on the inactive key set is recorded `ignored` and answers 200; parallel duplicates give one record.
+- [ ] **F05-T08b** Webhook, part (b): decide from `GET /charges/{id}`, the amount and reference check, the wrong amount flag, `apply_payment`. IDs: PAY-02-AC4, AC6, AC11, AC12, decisions D36, D73. Role: BE-C · Deps T08a, T05a, T06 · Size: M
+  Tests first: a wrong amount (under and over) opens a flag and answers 200; another club's charge never matches; a callback for an order created before a Pause is still processed.
+- [ ] **F05-T08c** Webhook, part (c): response codes and alerts (unknown charge 200 plus alert, Beam unreachable 500 so Beam retries) and `platform.club_health` rows (counts and kinds only). IDs: PAY-02-AC9, AC14, AC15, PAY-01-AC7, decisions D71, D75. Role: BE-C · Deps T08b · Size: S
+  Tests first: an unknown charge answers 200 and alerts; Beam down answers 500; bad signature, failed key check, unreachable Beam and unknown charge each add a row with no order or player data.
+- [ ] **F05-T09** Worker tasks `beam_reconcile`, `package_order_expiry`, and the `qr_image` clean-up. IDs: PAY-02-AC15, PAY-04-AC1 to AC7, decisions D73, D74. Role: BE-C · Deps T08b, F01-T34 · Size: M
+  Tests first: reconcile confirms only when status, amount and reference all match, audited as by lookup; a package-only order is cancelled at the end of its QR time with no ledger rows and a payment after that goes to the wallet with a receipt; final payments lose their image.
+
+## D. Setup and screens
+
+- [ ] **F05-T10** Platform routes: payment setup (merchant ids, key sets write-only, webhook tokens shown once), test connection (pass or fail), the key swap check before Go live. IDs: PAY-01-AC3, AC5, AC6, AC8, decisions D26, D32. Role: BE-P · Deps F01-T09 platform grants, T03 · Size: M
+  Tests first: write-only keys; the test returns pass or fail only; Go live refused until the swap check passes; every change in P6.
+- [ ] **F05-T11** C11 payment screen from the hi-fi boards (QR, countdown, save QR, checking, failed, expired) and the owner flag banner. IDs: PAY-01-AC1, AC2, PAY-02-AC6, TEXT-06. Role: FE-P · Deps T04b, T06 · Size: M
+  Tests first: a Playwright test per state written from the ACs; the QR shows the exact amount, a countdown and no slip upload; the longest Thai string does not clip a button.
+
+## E. Setup task and sweep
+
+- [ ] **F05-T12** Setup task, covered by no requirement: G1 to G13 against the Beam Playground (DevOps account and keys, the user's action), recorded in `design.md` 3.3. IDs: design 3.3 (setup, like F02-T00). Role: DevOps · Deps account · Size: S
+  Done when: every guess has a result recorded in the design or a decision to handle both outcomes, and the fake Beam matches what Beam really returned.
+- [ ] **F05-T13** Acceptance sweep: this task is the tests. It closes every acceptance criterion of `requirements.md` (PAY-01 to PAY-06) that has no test of its own, with a script that fails for an ID without one; no hard-coded text, keys never in logs. IDs: all F05 ACs, CC-2, CC-3, CC-5. Role: QA · Deps T08c, T09 · Size: M

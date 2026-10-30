@@ -23,8 +23,8 @@ describe("F10 LINE-02", () => {
   test.todo("F10/LINE-02-AC8 Given the menu is uploaded, when it fails, then P2 shows the failure (a Test step) and the club stays in ...");
   // Given the rich menu, when it is built, then it is one image with Thai and English labels together, rendered on the server from the owner's six labels, and one menu serves every player (D92).
   test.todo("F10/LINE-02-AC9 Given the rich menu, when it is built, then it is one image with Thai and English labels together, ...");
-  // Given the owner changes a label after Go live, when it is saved, then the menu is rebuilt for the club and the change is audited (PLAT-04).
-  test.todo("F10/LINE-02-AC10 Given the owner changes a label after Go live, when it is saved, then the menu is rebuilt for the club and ...");
+  // Given the owner edits a tile label after Go live, when it is saved in Settings (A16), then the image is rendered again for the club and the change is audited (D114, PLAT-04). Six label keys are needed (D54): new keys in both files, listed for the writers.
+  test.todo("F10/LINE-02-AC10 Given the owner edits a tile label after Go live, when it is saved in Settings (A16), then the image is ...");
 });
 
 describe("F10 LINE-03", () => {
@@ -44,7 +44,7 @@ describe("F10 LINE-03", () => {
   test.todo("F10/LINE-03-AC7 Given the same event, when the job runs twice or a retry happens, then the player gets the message once ...");
   // Given a club in Testing, when a message is sent, then it goes through the club's real Official Account to the testers and counts toward the monthly cap (D32); it is flagged test in the log and excluded from reports (D33).
   test.todo("F10/LINE-03-AC8 Given a club in Testing, when a message is sent, then it goes through the club's real Official Account to ...");
-  // Given a club's Messaging API token fails, when a send is tried, then the send fails safely, nothing else breaks, the failure shows in P1 and the owner is told (D75, LINE-06).
+  // Given a club's Messaging API token fails, when a send is tried, then the send fails safely, nothing else breaks, BOOQ sees an alert in P1 and the owner sees a banner in the club admin (D114, LINE-06). The owner is not told through LINE, because the message would go through the failed Official Account.
   test.todo("F10/LINE-03-AC9 Given a club's Messaging API token fails, when a send is tried, then the send fails safely, nothing else ...");
   // Given a message goes to staff or a coach, when it is sent, then it is sent in their language: staff and coaches have a language field that defaults to their LINE app language (D95).
   test.todo("F10/LINE-03-AC10 Given a message goes to staff or a coach, when it is sent, then it is sent in their language: staff and ...");
@@ -100,10 +100,12 @@ describe("F10 LINE-05", () => {
   test.todo("F10/LINE-05-AC12 Given a class is below its minimum a set time before start, when the time arrives, then front desk gets ...");
   // Given a late payment (PAY-03) or a wrong amount (F05), when it is handled, then the player gets a message saying what happened to the money. The messages that have no board use the writers' wording on the Booking confirmed card style in v1 (D91).
   test.todo("F10/LINE-05-AC13 Given a late payment (PAY-03) or a wrong amount (F05), when it is handled, then the player gets a message ...");
-  // Given the owner's pause or a failed key check or a cap level, when it happens, then the owner gets a message (PLAT-03-AC1, D75, LINE-07-AC4).
-  test.todo("F10/LINE-05-AC14 Given the owner's pause or a failed key check or a cap level, when it happens, then the owner gets a ...");
+  // Given the owner's pause or a cap level, when it happens, then the owner gets a message (PLAT-03-AC1, LINE-07-AC4). A failed key check or token failure is a banner and a P1 alert, not a LINE message (D114, D75).
+  test.todo("F10/LINE-05-AC14 Given the owner's pause or a cap level, when it happens, then the owner gets a message (PLAT-03-AC1, ...");
   // Given a booking made less than 24 hours or 2 hours before start, when it is confirmed, then the reminders already past are skipped (D96).
   test.todo("F10/LINE-05-AC15 Given a booking made less than 24 hours or 2 hours before start, when it is confirmed, then the reminders ...");
+  // Given the reminder hours (24 and 2) and the package expiry days (14 and 3), when text or settings use them, then the numbers are variables in the text and settings in code, never typed in a key (D116).
+  test.todo("F10/LINE-05-AC16 Given the reminder hours (24 and 2) and the package expiry days (14 and 3), when text or settings use ...");
 });
 
 describe("F10 LINE-06", () => {
@@ -113,7 +115,7 @@ describe("F10 LINE-06", () => {
   test.todo("F10/LINE-06-AC2 Given the usage, when it is read, then it comes from LINE's own count for the club's Official Account (PRD ...");
   // Given the month changes at Bangkok midnight on the first, when it does, then the counter starts again.
   test.todo("F10/LINE-06-AC3 Given the month changes at Bangkok midnight on the first, when it does, then the counter starts again.");
-  // Given a club's Messaging API token fails (a send or a health check fails), when it is detected, then P1 shows an alert for that club and the owner is told (D75).
+  // Given a club's Messaging API token fails (a send or a health check fails), when it is detected, then P1 shows an alert for that club and the owner sees a banner in the club admin (D114).
   test.todo("F10/LINE-06-AC4 Given a club's Messaging API token fails (a send or a health check fails), when it is detected, then P1 ...");
   // Given P1, when BOOQ staff look at a club, then they see counts and health only, never message content or recipients (PLAT-02, CC-3).
   test.todo("F10/LINE-06-AC5 Given P1, when BOOQ staff look at a club, then they see counts and health only, never message content or ...");

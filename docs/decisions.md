@@ -14,6 +14,14 @@ Decisions made by the user, newest first. Each is also written into the PRD chan
 | D36 | A validly signed Beam callback with the wrong amount: record it, flag it for the owner, return a success status so Beam stops retrying (refines D24) |
 | Open | Whether a late payment that goes to the wallet gets its own receipt is with the accountant |
 
+## 30 Oct 2026, round 12 (orchestrator, standing approval D147)
+
+| # | Decision |
+|---|---|
+| D148 | BOOQ staff password sign in (Supabase Auth, needs the anon key) goes through the separate `apps/staff-invite` app (F01-T17b), so `apps/platform` holds neither the anon key nor the service-role key and SR-06 stays as written. `apps/platform` keeps the sign in rules behind an interface; the Supabase adapter is built in T17b. Security should confirm this reading of SR-06 when its chat is next answered by the user |
+| D149 | `booq_app` may read `line_channel_secret` (SR-03 deviation) because the LINE webhook route in `apps/web` verifies `x-line-signature` with it. `line_channel_token` and `line_login_secret` stay worker only. Key creation and placing `SECRETS_PUBLIC_KEY` / `SECRETS_PRIVATE_KEY` in environments is a DevOps plus user action (`docs/ops/secrets.md`); key rotation procedure is still open |
+| D151 | Owner invite binding (replaces the binding part of D122; Architect proposal `docs/architecture/proposal-owner-binding.md`, default without the optional one-time code): the invite is created unbound and emailed only to `club.owner_email`; the first LINE user who redeems it takes the owner role and the invite binds to them; later only that LINE user can open it. Verified by `owner_verified` (typed phone equals `club.owner_phone`); a mismatch needs a second platform admin (`confirm_owner_verified`) before Go live. `club.owner_line` stays a contact detail. Taken on the orchestrator's recommendation under the user's standing approval (D147) |
+
 ## 30 Oct 2026, round 11 (approved as recommended)
 
 F14 and F15 requirements are approved. F15 Q10 (platform log retention) stays open and parked.

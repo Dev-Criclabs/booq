@@ -67,8 +67,8 @@ describe("F06 PKG-03", () => {
   test.todo("F06/PKG-03-AC5 Given an owner extends a package, when they save it, then a written reason is required, the new expiry ...");
   // Given an extension, when the reminder dates of the new expiry arrive, then reminders follow the new date; earlier reminders already sent are not repeated.
   test.todo("F06/PKG-03-AC6 Given an extension, when the reminder dates of the new expiry arrive, then reminders follow the new date; ...");
-  // Given a club is resumed after a pause, when the pause ends, then every package expiry date moves forward by the exact length of the pause, and the expiry then runs to 23:59 Asia/Bangkok on the resulting day, including for a pause shorter than a day (PLAT-03, D20, D90). Each move is one ledger or extension record with the reason "pause".
-  test.todo("F06/PKG-03-AC7 Given a club is resumed after a pause, when the pause ends, then every package expiry date moves forward ...");
+  // Given a club is resumed after a pause, when the pause ends, then every package expiry date, and the wallet balance expiry when the club has set one, moves forward by the exact length of the pause, and the expiry then runs to 23:59 Asia/Bangkok on the resulting day, including for a pause shorter than a day (PLAT-03, D20, D90). Each move is one ledger or extension record with the reason "pause".
+  test.todo("F06/PKG-03-AC7 Given a club is resumed after a pause, when the pause ends, then every package expiry date, and the wallet ...");
   // Given credit reserved for a future booking before the package reaches its expiry date, when the date arrives, then the credit stays valid for that session (D85) and is used when the session starts.
   test.todo("F06/PKG-03-AC8 Given credit reserved for a future booking before the package reaches its expiry date, when the date ...");
   // Given a booking made with a credit reserved before expiry, when it is cancelled after the package expiry date, then the credit is lost and not returned (D85). A new booking can never reserve a credit of an expired package.
@@ -136,4 +136,8 @@ describe("F06 R3", () => {
   test.todo("F06/R3-AC7 Given a package bought together with a booking whose payment arrives late so the booking cannot be ...");
   // Given the owner sells a package, when it is a Student product, then the buyer must be under 18 (PKG-02-AC6).
   test.todo("F06/R3-AC8 Given the owner sells a package, when it is a Student product, then the buyer must be under 18 (PKG-02-AC6).");
+  // Given a payment arrives after a package order was cancelled (a package bought alone whose QR time ended), when it is reported, then the value goes to the wallet with the reason `late_payment` and its own receipt (D74, D78, PAY-04, F05 PAY-04-AC5); no package is created.
+  test.todo("F06/R3-AC9 Given a payment arrives after a package order was cancelled (a package bought alone whose QR time ended), ...");
+  // Given the reminder days (14 and 3), the cancel window and the hold time, when text or settings use them, then the numbers are variables in the text and settings in code, never typed in a key (D116).
+  test.todo("F06/R3-AC10 Given the reminder days (14 and 3), the cancel window and the hold time, when text or settings use them, ...");
 });
