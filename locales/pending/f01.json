@@ -19,7 +19,9 @@
     "A-new.import_expired": "This import has expired. Upload the file again.",
     "A-new.import_not_configured": "Import is not set up yet. Please contact BOOQ.",
     "L-new.owner_invite_subject": "Your invitation to set up {clubName} on BOOQ",
-    "L-new.owner_invite_body": "BOOQ has set up {clubName} for you. Open this link on the phone where you use LINE to sign in as the club owner: {link} The link works once, for you only, and stops working after a few days. If you did not expect this email, ignore it."
+    "L-new.owner_invite_body": "BOOQ has set up {clubName} for you. Open this link on the phone where you use LINE to sign in as the club owner: {link} The link works once, for you only, and stops working after a few days. If you did not expect this email, ignore it.",
+    "A-new.export_expired": "This export has expired. Start a new export to get a fresh download link.",
+    "A-new.export_failed": "The export could not be prepared. Please start it again."
   },
   "th": {
     "L-new.club_paused": "BOOQ หยุดการจองออนไลน์ของ {clubName} ชั่วคราว เหตุผล: {reason} การจองที่มีอยู่และการแจ้งเตือนไม่ได้รับผลกระทบ และวันหมดอายุของแพ็กเกจและกระเป๋าเงินจะเลื่อนออกไปตามระยะเวลาที่หยุด",
@@ -40,6 +42,8 @@
     "A-new.import_expired": "การนำเข้านี้หมดอายุแล้ว กรุณาอัปโหลดไฟล์อีกครั้ง",
     "A-new.import_not_configured": "ยังไม่ได้ตั้งค่าการนำเข้า กรุณาติดต่อ BOOQ",
     "L-new.owner_invite_subject": "คำเชิญตั้งค่า {clubName} บน BOOQ",
-    "L-new.owner_invite_body": "BOOQ ตั้งค่า {clubName} ไว้ให้คุณแล้ว เปิดลิงก์นี้บนโทรศัพท์ที่ใช้ LINE เพื่อเข้าสู่ระบบในฐานะเจ้าของสโมสร: {link} ลิงก์ใช้ได้ครั้งเดียว เฉพาะคุณเท่านั้น และจะหมดอายุภายในไม่กี่วัน หากคุณไม่ได้คาดว่าจะได้รับอีเมลนี้ โปรดไม่ต้องสนใจ"
+    "L-new.owner_invite_body": "BOOQ ตั้งค่า {clubName} ไว้ให้คุณแล้ว เปิดลิงก์นี้บนโทรศัพท์ที่ใช้ LINE เพื่อเข้าสู่ระบบในฐานะเจ้าของสโมสร: {link} ลิงก์ใช้ได้ครั้งเดียว เฉพาะคุณเท่านั้น และจะหมดอายุภายในไม่กี่วัน หากคุณไม่ได้คาดว่าจะได้รับอีเมลนี้ โปรดไม่ต้องสนใจ",
+    "A-new.export_expired": "การส่งออกนี้หมดอายุแล้ว กรุณาเริ่มการส่งออกใหม่เพื่อรับลิงก์ดาวน์โหลดใหม่",
+    "A-new.export_failed": "เตรียมไฟล์ส่งออกไม่สำเร็จ กรุณาเริ่มใหม่อีกครั้ง"
   }
 }
