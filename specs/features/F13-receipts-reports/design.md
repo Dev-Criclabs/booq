@@ -1,6 +1,6 @@
 # F13 Receipts, reports and daily close · Design
 
-Status: **DRAFT for approval (gate 2).** Drafted 30 Oct 2026 from the approved F13 requirements (`requirements.md`, approved 30 Oct 2026, decisions D106, D112, D119 applied; Q4 VAT layout and Q12 retention are parked). The Architect reviews it. A change to anything below goes through the PRD, then the hand-off, then this file. Tasks (gate 3) follow approval.
+Status: **Approved 30 Oct 2026 (gate 2, D153).** Drafted 30 Oct 2026 from the approved F13 requirements (`requirements.md`, approved 30 Oct 2026, decisions D106, D112, D119 applied; Q4 VAT layout and Q12 retention are parked). The Architect's review findings of 30 Oct 2026 are folded in. A change to anything below goes through the PRD, then the hand-off, then this file. Tasks (gate 3) follow approval.
 
 Feature: F13 Receipts, reports and daily close. Requirement IDs: RCPT-01, RCPT-02, RCPT-03 and the local rules R1 to R5 of the requirements. Depends on F05. Wave 3.
 
@@ -71,7 +71,7 @@ A real receipt takes `series = Bangkok year of issue` from `app.now()` (FA §7),
 - **In one transaction**, with the counter lock taken **last** in the lock order of FA §3.4: build the snapshot from the order, its lines and payments; take the series (real or test, §3.2); `insert into receipt_counter ... on conflict (club_id, series) do update set last_no = receipt_counter.last_no + 1 returning last_no`; insert the receipt. A rollback undoes both, so a failed confirmation leaves no gap and a confirmed one always has its number (RCPT-01-AC2, AC3).
 - **Idempotent:** if the unique key already holds a receipt for the order (or the payment for a wallet credit), return its id and write nothing; a repeated callback changes nothing.
 - **Callers (the events of R4):** `apply_payment` after `applied` and `applied_late` (kind `order`), after a wallet outcome (kind `wallet_credit`, D37, D74, D79, D112), and after a staff wrong amount credit; F04's zero money confirm (D64, no payment id); F05's cash route; `grant_package` orders as part of the same paid order. A refund to the wallet on a cancel or closure calls nothing (D119).
-- **Refusals:** an order of another club, an order with no confirmed payment and not zero money, or a missing `club.receipt_prefix` raises (`receipt:prefix_missing`), which rolls the payment back rather than issue a number with no prefix; Go live is blocked on the prefix so this does not occur in Live (D106).
+- **Refusals:** an order of another club, an order with no confirmed payment and not zero money, or a missing `club.receipt_prefix` **for the real series** raises (`receipt:prefix_missing`), which rolls the payment back rather than issue a number with no prefix. The test series (a club in Testing) uses the `TEST` prefix and needs no club prefix, so a Testing club without one never fails here (Architect review of 30 Oct); Go live is blocked on the prefix so the raise does not occur in Live (D106).
 
 ### 4.2 Money by method (FA §2.4)
 

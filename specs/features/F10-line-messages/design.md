@@ -1,6 +1,6 @@
 # F10 LINE messages and rich menu · Design
 
-Status: **DRAFT for approval (gate 2).** Drafted 30 Oct 2026 from the approved F10 requirements (`requirements.md`, approved 30 Oct 2026, decisions D91 to D99, D114, D116 and the Reviewer's findings applied). The Architect reviews it. A change to anything below goes through the PRD, then the hand-off, then this file. Tasks (gate 3) follow approval.
+Status: **Approved 30 Oct 2026 (gate 2, D153).** Drafted 30 Oct 2026 from the approved F10 requirements (`requirements.md`, approved 30 Oct 2026, decisions D91 to D99, D114, D116 and the Reviewer's findings applied). The Architect's review findings of 30 Oct 2026 are folded in. A change to anything below goes through the PRD, then the hand-off, then this file. Tasks (gate 3) follow approval.
 
 Feature: F10 LINE messages and rich menu. Requirement IDs: LINE-02 to LINE-07 (LINE-01 is F02). Depends on F03. Wave 2.
 
@@ -40,7 +40,7 @@ F10 uses the number block 0601 to 0699 (assumption A-1; the build plan names blo
 | `0604_line_usage.sql` | `platform.club_line_usage` and sync support (FA §5.6), `platform.config` rows for 70, 80 and 100 |
 | `0605_functions.sql` | `app.enqueue_message`, `app.void_messages`, `app.cap_state`, `app.mark_undeliverable` |
 | `0606_grants_policies.sql` | Policies and grants; the sender role and the platform reader |
-| `0607_settings_keys.sql` | Registry row `reminder_hours` (list, Tennis template 24 and 2, D116); the cap thresholds are in `platform.config` from 0604 |
+| `0607_settings_keys.sql` | Registry row `reminder_hours` in `app.setting_keys`, the entry in `packages/domain/src/club/settings-registry.ts` (a test keeps them equal), and a migration row putting `reminder_hours [24, 2]` in the Tennis template (clubs created before it do not get it, fine before launch); the cap thresholds are in `platform.config` from 0604 |
 
 ### 4.1 Tables
 
@@ -58,7 +58,7 @@ F10 uses the number block 0601 to 0699 (assumption A-1; the build plan names blo
 
 ### 5.1 Enqueue (the only way a message is created)
 
-`app.enqueue_message(kind, user, params, dedupe_key, send_at)` inserts one outbox row in the caller's transaction. Business code never calls LINE. Idempotent by `unique (club_id, dedupe_key)`. Reminder rows are created only when the cap state is below `reminders_stopped` and the hour has not already passed (D96); every row is `is_test` from the club's status trigger (D4, D32).
+`app.enqueue_message(kind text, user uuid, params jsonb, dedupe_key text, send_at timestamptz) returns uuid` inserts one outbox row in the caller's transaction and returns its id (a repeat of the dedupe key returns the existing id). It is also registered as a **fifth payment port**, `enqueue_message`, in `app.payment_ports` by migration 0605, so that `app.apply_payment` enqueues `booking_confirmed` and `late_payment` and a missing sender fails closed like the other ports (Architect review of 30 Oct; the Architect adds the step to `apply_payment` once this signature is confirmed). F06's expiry reminders do not use the port: they call a hook that F06-T14 replaces after this migration exists. A CHECK on `message_outbox.params` refuses keys named like personal fields (name, phone, date of birth), the way the platform audit detail does, so the rule is enforced, not promised. Business code never calls LINE. Idempotent by `unique (club_id, dedupe_key)`. Reminder rows are created only when the cap state is below `reminders_stopped` and the hour has not already passed (D96); every row is `is_test` from the club's status trigger (D4, D32).
 
 ### 5.2 Sender
 
@@ -85,7 +85,7 @@ The language is read at send time from the recipient row, not stored on the outb
 | `kind` | Recipient | Enqueued by (feature, event) | `send_at` | `dedupe_key` | Send time precondition | Switch | Cap |
 |---|---|---|---|---|---|---|---|
 | `booking_confirmed` | Player | F03 `confirm_booking`, F04 PAY-07, F05 late approval | now | `confirmed:{order_id}` | order confirmed | none | A |
-| `booking_released` | Player | F03 `release_hold` handler (Beam clubs too, D45) | now | `released:{order_id}` | still released | none | A |
+| `booking_released` | Player | F03 `release_hold` handler (Beam clubs too, D45), **not for the reason `payment_unavailable`** (a failed key check or unreachable Beam is a screen error in F05, not a release to tell the player about) | now | `released:{order_id}` (a second release of the same order after a reclaim is dropped by the unique key; accepted, rare and harmless) | still released | none | A |
 | `reminder_24h`, `reminder_2h` | Player | F03 confirm and move, hours from setting `reminder_hours` (D116) | start minus N h | `reminder:{booking_id}:{start_at}:{N}` | booking still confirmed at that start | reminders | R |
 | `cancellation_result` | Player | F09 cancel | now | `cancel:{booking_id}:{version}` | none | none | A |
 | `club_closed_slot` | Player | F09 closure | now | `closure:{closure_id}:{booking_id}` | none | none | A |
