@@ -659,6 +659,7 @@ export interface PublicOrders {
   birthday_entitlement: boolean | null;
   quote_hash: string | null;
   priced_at: string | null;
+  kind: string;
 }
 
 export interface PublicOwnerFlag {
