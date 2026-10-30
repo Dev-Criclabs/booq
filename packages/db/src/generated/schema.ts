@@ -6,6 +6,12 @@ export interface AppCoachRulesHook {
   handler: unknown;
 }
 
+export interface AppPauseHandlers {
+  handler_key: string;
+  handler: unknown;
+  created_at: string;
+}
+
 export interface AppReleaseHandlers {
   name: string;
   handler: unknown;
@@ -485,6 +491,7 @@ export interface PublicUserStaffNote {
 
 export interface Tables {
   'app.coach_rules_hook': AppCoachRulesHook;
+  'app.pause_handlers': AppPauseHandlers;
   'app.release_handlers': AppReleaseHandlers;
   'app.test_tables': AppTestTables;
   'audit.registry': AuditRegistry;
