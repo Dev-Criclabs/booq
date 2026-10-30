@@ -3,6 +3,27 @@
 Decisions made by the user, newest first. Each is also written into the PRD change log or hand-off where it changes a rule
 (`CLAUDE.md`: rule changes start in the PRD, then the hand-off, then the feature specs).
 
+## 30 Oct 2026, round 4 (approved as recommended)
+
+F01 and F02 requirements were approved by the user on 30 Oct 2026 (branch `spec/f01-f02-requirements`).
+
+| # | Decision |
+|---|---|
+| D18 | The Beam QR expires exactly when the hold ends. A "late payment" (PAY-03) is a payment Beam reports after that |
+| D19 | Rest rule: "in a row" means back-to-back hours; a free hour in between resets the count. Unpaid held hours count. A group class counts until it is cancelled |
+| D20 | Expiry: calendar months from the purchase date, ending 23:59 Asia/Bangkok on that day; if the day does not exist, the last day of the month. Same for pause extensions |
+| D21 | Cancel 12+ hours ahead on a mixed payment: package credit returns to the package; money paid (Beam or cash) goes to the wallet; wallet use returns to the wallet; add-ons return with the booking; a used promo code or birthday entitlement is restored. Late cancel or no show forfeits |
+| D22 | Order of use at checkout: package credit, then wallet, then money (Beam or cash). PRD wording "wallet is spent first" is clarified to "before money" |
+| D23 | Money rounding: half up to the satang. A code applies to items in its scope; add-ons are excluded unless the code says so |
+| D24 | Beam callbacks: bad signature is rejected, logged and alerted. A validly signed callback with the wrong amount does not confirm the booking, is flagged for the owner, and staff credit the wallet with a reason. A duplicate callback is ignored with success |
+| D25 | Late payment "slot still open" = no other hold, booking or closure. A solo class needs court and coach both free, otherwise all of it goes to the wallet. The player gets a LINE message. A receipt is issued for money received (accountant to confirm) |
+| D26 | Test payments use Beam sandbox only. No in-app "simulate payment" |
+| D27 | BOOQ "setup only" view = courts and hours, products and pricing (with add-ons), LINE, payment connections, settings. Not staff, coaches, closures or promo codes. Paused clubs are look-only unless the owner allows changes. A request for another club's record returns 404. Stored secrets are write-only (last 4 characters shown) |
+| D28 | The audit log and the credit and wallet ledgers are append-only |
+| D29 | The package-expiring message keeps sending at 80% of the LINE cap (LINE-07) |
+| D30 | Test tools accepted: Vitest, Playwright, a real Postgres in tests, a controllable clock |
+| D31 | `locales/copy-index.csv` is generated from the canvas by the i18n role (read only) |
+
 ## 30 Oct 2026, round 3
 
 | # | Decision |
