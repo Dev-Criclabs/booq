@@ -25,7 +25,7 @@ describe("F12 CPORT-04", () => {
 });
 
 describe("F12 CPORT-05", () => {
-  // Given a session that has ended, when the coach marks a player Absent, then it is saved, audited, and counts for pay as a no show
+  // Given a session that has ended, when the coach marks a player Absent, then it is saved, audited, and counts for pay as a no show; it is a hint shown to staff and does not by itself mark the player's no show or forfeit, which staff decide in A2 (D118)
   test.todo("F12/CPORT-05 Given a session that has ended, when the coach marks a player Absent, then it is saved, audited, and ...");
 });
 
@@ -35,6 +35,6 @@ describe("F12 CPORT-06", () => {
 });
 
 describe("F12 CPORT-07", () => {
-  // Given a player books a solo class with a coach, then that coach gets one LINE message in their language
-  test.todo("F12/CPORT-07 Given a player books a solo class with a coach, then that coach gets one LINE message in their language");
+  // Given a player books a solo class with a coach, then that coach gets one LINE message in their language, taken from the coach's language field, which defaults to their LINE app language (D95); the message uses the writers' wording on the Booking confirmed card style (D91)
+  test.todo("F12/CPORT-07 Given a player books a solo class with a coach, then that coach gets one LINE message in their language, ...");
 });

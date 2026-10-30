@@ -6,20 +6,20 @@ Features with no approved requirements on this branch yet (F14, F15, F16) have n
 
 | Feature | Criteria | Groups (requirement ID, count) |
 |---|---|---|
-| F01-platform-foundation | 119 | ROLE-01 (6), ROLE-02 (6), ROLE (6), PLAT-01 (10), PLAT-02 (13), PLAT-03 (11), PLAT-04 (11), PLAT-05 (15), PLAT-06 (18), PLAT-07 (11), PDPA-01 (12) |
-| F02-line-login-liff | 58 | AUTH-01 (15), LINE-01 (14), AUTH-02 (29) |
+| F01-platform-foundation | 130 | ROLE-01 (8), ROLE-02 (8), ROLE (6), PLAT-01 (12), PLAT-02 (14), PLAT-03 (12), PLAT-04 (12), PLAT-05 (16), PLAT-06 (18), PLAT-07 (12), PDPA-01 (12) |
+| F02-line-login-liff | 62 | AUTH-01 (16), LINE-01 (14), AUTH-02 (32) |
 | F03-court-booking | 70 | BOOK-01 (16), BOOK-02 (5), BOOK-03 (18), BOOK-04 (12), BOOK-05 (9), BOOK-06 (6), WAIT-01 (4) |
 | F04-checkout-pricing | 76 | R1 (7), R2 (9), R3 (8), R4 (11), PAY-07 (6), PROMO-01 (14), R5 (6), R6 (4), R7 (6), R8 (5) |
 | F05-beam-payments | 54 | PAY-01 (10), PAY-02 (17), PAY-03 (8), PAY-04 (7), PAY-05 (5), PAY-06 (7) |
-| F06-packages-credit-wallet | 58 | PKG-01 (12), PKG-02 (10), PKG-03 (10), R1 (10), R2 (8), R3 (8) |
+| F06-packages-credit-wallet | 60 | PKG-01 (12), PKG-02 (10), PKG-03 (10), R1 (10), R2 (8), R3 (10) |
 | F07-solo-classes-coach | 68 | COACH-01 (12), COACH-02 (9), COACH-03 (5), COACH-04 (4), R1 (8), R2 (7), R3 (7), R4 (7), R5 (6), R6 (3) |
 | F08-group-classes-waitlist | 39 | CLASS-01 (18), CLASS-02 (16), WAIT-01 (5) |
 | F09-cancellation-closures | 58 | CANCEL-01 (23), CANCEL-02 (6), CANCEL-03 (17), CANCEL-04 (12) |
-| F10-line-messages | 62 | LINE-02 (10), LINE-03 (11), LINE-04 (9), LINE-05 (15), LINE-06 (7), LINE-07 (10) |
+| F10-line-messages | 63 | LINE-02 (10), LINE-03 (11), LINE-04 (9), LINE-05 (16), LINE-06 (7), LINE-07 (10) |
 | F11-club-admin | 17 | ADMIN-01 (1), ADMIN-02 (1), ADMIN-03 (1), ADMIN-04 (1), ADMIN-05 (1), ADMIN-06 (1), ADMIN-07 (1), ADMIN-08 (1), ADMIN-09 (1), ADMIN-10 (1), ADMIN-11 (1), ADMIN-12 (1), ADMIN-13 (1), ADMIN-14 (1), ADMIN-15 (1), ADMIN-16 (1), ADMIN-17 (1) |
 | F12-coach-portal | 7 | CPORT-01 (1), CPORT-02 (1), CPORT-03 (1), CPORT-04 (1), CPORT-05 (1), CPORT-06 (1), CPORT-07 (1) |
 | F13-receipts-reports | 68 | RCPT-01 (17), RCPT-02 (14), RCPT-03 (10), R1 (5), R2 (12), R3 (10) |
-| **Total** | **754** | |
+| **Total** | **772** | |
 
 ## Hand-off ID inventory
 
@@ -33,8 +33,8 @@ Features with no approved requirements on this branch yet (F14, F15, F16) have n
 | TEXT-04 | no | 0 | GAP: no check and no criteria |
 | TEXT-05 | no | 0 | GAP: no check and no criteria |
 | TEXT-06 | no | 0 | GAP: no check and no criteria |
-| AUTH-01 | yes | 15 (F02) | Criteria approved |
-| AUTH-02 | yes | 29 (F02) | Criteria approved |
+| AUTH-01 | yes | 16 (F02) | Criteria approved |
+| AUTH-02 | yes | 32 (F02) | Criteria approved |
 | BOOK-01 | yes | 16 (F03) | Criteria approved |
 | BOOK-02 | yes | 5 (F03) | Criteria approved |
 | BOOK-03 | yes | 18 (F03) | Criteria approved |
@@ -72,18 +72,18 @@ Features with no approved requirements on this branch yet (F14, F15, F16) have n
 | LINE-02 | yes | 10 (F10) | Criteria approved |
 | LINE-03 | yes | 11 (F10) | Criteria approved |
 | LINE-04 | yes | 9 (F10) | Criteria approved |
-| LINE-05 | no | 15 (F10) | Criteria approved |
+| LINE-05 | no | 16 (F10) | Criteria approved |
 | LINE-06 | no | 7 (F10) | Criteria approved |
 | LINE-07 | yes | 10 (F10) | Criteria approved |
-| PLAT-01 | no | 10 (F01) | Criteria approved |
-| PLAT-02 | no | 13 (F01) | Criteria approved |
-| PLAT-03 | no | 11 (F01) | Criteria approved |
-| PLAT-04 | no | 11 (F01) | Criteria approved |
-| PLAT-05 | no | 15 (F01) | Criteria approved |
+| PLAT-01 | no | 12 (F01) | Criteria approved |
+| PLAT-02 | no | 14 (F01) | Criteria approved |
+| PLAT-03 | no | 12 (F01) | Criteria approved |
+| PLAT-04 | no | 12 (F01) | Criteria approved |
+| PLAT-05 | no | 16 (F01) | Criteria approved |
 | PLAT-06 | no | 18 (F01) | Criteria approved |
-| ROLE-01 | yes | 6 (F01) | Criteria approved |
-| ROLE-02 | yes | 6 (F01) | Criteria approved |
-| PLAT-07 | yes | 11 (F01) | Criteria approved |
+| ROLE-01 | yes | 8 (F01) | Criteria approved |
+| ROLE-02 | yes | 8 (F01) | Criteria approved |
+| PLAT-07 | yes | 12 (F01) | Criteria approved |
 | PDPA-01 | no | 12 (F01) | Criteria approved |
 | ADMIN-01 | yes | 1 (F11) | Criteria approved |
 | ADMIN-02 | yes | 1 (F11) | Criteria approved |

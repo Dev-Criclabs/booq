@@ -30,7 +30,8 @@ function render(featureDir: string, criteria: Criterion[], existing: string): st
     body.push(`describe(${JSON.stringify(`${featureDir.slice(0, 3)} ${g}`)}, () => {`);
     for (const c of items) {
       // MERGE: if the existing file already has a real test for this ID (not a todo), keep the file as is for that line.
-      const real = new RegExp(`test(?:\\.[a-z]+)?\\(\\s*['"\`]${c.id.replace(/[/.-]/g, '\\$&')} `).test(existing) && !existing.includes(`test.todo(${JSON.stringify(title(c))})`);
+      // a real test is test(...) / test.each(...) with the ID first; a test.todo is always regenerated from the spec text
+      const real = new RegExp(`test(?:\\.(?!todo)[a-z]+)?\\(\\s*['"\`]${c.id.replace(/[/.-]/g, '\\$&')} `).test(existing);
       body.push(`  // ${c.text.replace(/\s+/g, ' ').trim()}`);
       body.push(real ? `  // (real test exists elsewhere in this file or was written by a build task: ${c.id})` : `  test.todo(${JSON.stringify(title(c))});`);
     }
