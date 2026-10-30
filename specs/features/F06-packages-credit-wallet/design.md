@@ -34,15 +34,15 @@ F06 uses the number block 0501 to 0599.
 | `0502_ledgers.sql` | `credit_ledger` and `wallet_ledger` as FA §2.3; append-only triggers, revoke, deferred balance checks |
 | `0503_balance_views.sql` | `wallet_balance`, `package_balance`, `package_status` views |
 | `0504_wallet_functions.sql` | The wallet functions of §4.1 |
-| `0511_credit_functions.sql` | The credit functions of §4.2 (written in two parts, 0511 and 0513) |
-| `0512_package_functions.sql` | `grant_package`, expiry arithmetic, `extend_package`, `extend_for_pause`, `wallet_expire` (§4.4, §4.7) |
-| `0513_credit_functions_b.sql` | `credit_use`, `credit_forfeit`, `credit_reverse_forfeit`, `credit_adjust`, `credit_expire` (§4.2) |
-| `0505_release_handler.sql` | `app.release_handlers` registration (F03 §4.5) for F06 |
-| `0506_jobs_support.sql` | Sweep queries as functions; dedupe indexes |
-| `0507_grants_policies.sql` | Policies and grants for the tables, views and functions above |
-| `0508_settings_keys.sql` | Registry rows: `wallet_expiry_days` (unset allowed), `package_expiry_reminder_days` (list, Tennis template 14 and 3, D116) |
-| `0510_payment_ports.sql` | Registers the three F06 ports in `app.payment_ports` (§4.9): `reserve_credit_and_wallet`, `grant_package`, `credit_wallet`; `wallet_ledger.payment_id` column |
+| `0505_credit_functions.sql` | The credit functions of §4.2 (written in two parts, 0505 and 0506) |
+| `0506_credit_functions_b.sql` | `credit_use`, `credit_forfeit`, `credit_reverse_forfeit`, `credit_adjust`, `credit_expire` (§4.2) |
+| `0507_package_functions.sql` | `grant_package`, expiry arithmetic, `extend_package`, `extend_for_pause`, `wallet_expire` (§4.4, §4.7) |
+| `0508_release_handler.sql` | `app.release_handlers` registration (F03 §4.5) for F06 |
 | `0509_claim_handler.sql` | The reason `import_transfer` added to both ledger CHECKs; `app.f06_claim_transfer(club, imported, claimant)` registered in `app.claim_handlers` as `wallet_transfer`; the inert guard (§4.8) |
+| `0510_payment_ports.sql` | Registers the three F06 ports in `app.payment_ports` (§4.9): `reserve_credit_and_wallet`, `grant_package`, `credit_wallet`; `wallet_ledger.payment_id` column |
+| `0511_jobs_support.sql` | Sweep queries as functions; dedupe indexes |
+| `0512_grants_policies.sql` | Policies and grants for the tables, views and functions above |
+| `0513_settings_keys.sql` | Registry rows: `wallet_expiry_days` (unset allowed), `package_expiry_reminder_days` (list, Tennis template 14 and 3, D116) |
 
 A merged migration is never edited; a fix is a new migration (build plan).
 
@@ -88,7 +88,7 @@ All run `SECURITY DEFINER` with a fixed search path, take `club_id` from `app.cl
 
 ### 4.3 Reserve at Pay and reverse at release
 
-F04's Pay transaction calls `credit_reserve` and `wallet_spend` for each line's allocation (F04 §4.3). `app.release_handlers` gets F06's handler `app.f06_release(order, reason)`, registered in migration 0505, which calls `credit_return` for every reservation of the order and `wallet_return` for every spend row, in id order. The handler is idempotent through the `dedupe_key`s. `app.restore_order_entitlements` (F04) calls the same functions on a cancel.
+F04's Pay transaction calls `credit_reserve` and `wallet_spend` for each line's allocation (F04 §4.3). `app.release_handlers` gets F06's handler `app.f06_release(order, reason)`, registered in migration 0508, which calls `credit_return` for every reservation of the order and `wallet_return` for every spend row, in id order. The handler is idempotent through the `dedupe_key`s. `app.restore_order_entitlements` (F04) calls the same functions on a cancel.
 
 ### 4.4 Granting a package (R3, PKG-02)
 
