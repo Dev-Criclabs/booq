@@ -123,7 +123,8 @@ when Step 4 contracts exist, so they have something to build against.
 
 ## 4. Open questions found in the design
 
-These come straight from dashed or TBD fields and conflicts in the canvas. The Spec Owner takes them first.
+The authoritative register is `PRODUCT-SPEC.md` section 12 (Q-1 to Q-17, plus design defects D-1 to D-10).
+The short list below was the first pass and is kept for context. See `HANDOFF.md` for state and kickoff prompts.
 
 | # | Question | Where it shows up | Blocks |
 |---|---|---|---|
