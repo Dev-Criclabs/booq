@@ -78,9 +78,11 @@ describe('table class registry check', () => {
 
   it("the club table itself ('self' scope) needs forced RLS but no club_id", async () => {
     const db = await prod();
-    await db.query('create table public.club (id uuid primary key); alter table public.club enable row level security; alter table public.club force row level security');
-    const reg: Registry = { ...(await collectRegistry()), 'public.club': { class: 'S', scope: 'self' } };
+    const reg = await collectRegistry();
+    expect(reg['public.club']).toMatchObject({ class: 'S', scope: 'self' });
     expect((await checkTableClasses(db.pool, reg)).problems).toEqual([]);
+    await db.query('alter table public.club no force row level security');
+    expect((await checkTableClasses(db.pool, reg)).problems.map((p) => p.kind)).toEqual(['no-force-rls']);
   });
 
   it('fails a personal-data column in a setup table, unless that column is allowed', async () => {
