@@ -814,6 +814,7 @@ export interface PublicOrders {
   birthday_entitlement: boolean | null;
   quote_hash: string | null;
   priced_at: string | null;
+  zero_money_receipt_id: string | null;
   kind: string;
 }
 
