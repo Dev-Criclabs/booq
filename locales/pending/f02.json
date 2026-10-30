@@ -1,0 +1,19 @@
+{
+  "_note": "Proposed by FE-P for F02 (D81). Numbers to be assigned by Content; wording drafted, writers own it. Reused existing keys: P-0001 to P-0009 (C1), P-0327 and P-0328 (offline).",
+  "en": {
+    "P-new.language": "Language",
+    "P-new.lang_th": "ไทย",
+    "P-new.lang_en": "EN",
+    "P-new.sign_in_failed": "We could not sign you in with LINE. Nothing was booked or charged.",
+    "P-new.account_inactive": "This account is no longer active at this club. Please contact the club.",
+    "P-new.page_not_found": "This page is not available."
+  },
+  "th": {
+    "P-new.language": "ภาษา",
+    "P-new.lang_th": "ไทย",
+    "P-new.lang_en": "EN",
+    "P-new.sign_in_failed": "เข้าสู่ระบบด้วย LINE ไม่สำเร็จ ยังไม่มีการจองหรือเรียกเก็บเงิน",
+    "P-new.account_inactive": "บัญชีนี้ไม่ได้ใช้งานที่สนามนี้แล้ว กรุณาติดต่อสนาม",
+    "P-new.page_not_found": "ไม่พบหน้านี้"
+  }
+}
