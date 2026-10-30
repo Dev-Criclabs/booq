@@ -12,7 +12,8 @@ import type { WebConfig } from './context';
 // lines, so they do not collide. The sign-in routes are in context.ts because they share the
 // session services with the resolver.
 //
-//   F03 booking:  add   (m) => bookingRoutes({ db: m.db, now: m.now })   below, import it above.
+//   F03 booking:  add   (m) => publicScheduleRoutes({ db: m.db, clubBySlug: m.clubBySlug })   below, import it above
+//   (and the signed-in booking routes of the same file with the deps they declare).
 //
 // serveRoutes checks the whole table when it is built: every entry declared, no path twice.
 
@@ -20,6 +21,8 @@ export interface MountContext {
   db: Db;
   now(): Date;
   config: WebConfig;
+  /** The club behind a path slug (for public routes that run before any session), or null. */
+  clubBySlug(slug: string): Promise<{ clubId: string } | null>;
 }
 export type Mount = (m: MountContext) => Route<unknown>[];
 

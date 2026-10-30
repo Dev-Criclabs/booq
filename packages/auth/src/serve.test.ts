@@ -25,6 +25,7 @@ const table = [
     throw new RouteError(410, 'expired');
   }),
 ];
+const withHeaders = (r: ReturnType<typeof route<unknown>>, headers: Record<string, string>) => ({ ...r, headers });
 const handler = (d = deps()) => serveRoutes(table, d);
 const call = (h: ReturnType<typeof handler>, method: string, url: string, init: { body?: unknown; headers?: Record<string, string>; raw?: string } = {}) => {
   const u = new URL(url, 'https://app.example');
@@ -104,6 +105,29 @@ describe('serveRoutes', () => {
     const r = await call(handler(), 'POST', '/api/c/hunter/echo/1', { raw: '{"__proto__":{"polluted":true},"a":1}' });
     expect(((await r.json()) as { input: Record<string, unknown> }).input['a']).toBe(1);
     expect(({} as Record<string, unknown>)['polluted']).toBeUndefined();
+  });
+});
+
+describe('headers a route asks for', () => {
+  const cached = withHeaders(route({ method: 'GET', path: '/schedule', public: true }, async () => 'grid'), { 'Cache-Control': 'no-store', 'X-Route': 'schedule' });
+  const evil = withHeaders(route({ method: 'GET', path: '/evil', public: true }, async () => 'x'), { 'Set-Cookie': 'a=b', 'Content-Type': 'text/html', 'X-Content-Type-Options': 'sniff', 'X-Ok': '1' });
+  const h = serveRoutes([cached, evil], deps());
+  it('are set on the answer, for an ok result and for a refusal', async () => {
+    const r = await call(h, 'GET', '/api/c/hunter/schedule');
+    expect(r.headers.get('cache-control')).toBe('no-store');
+    expect(r.headers.get('x-route')).toBe('schedule');
+  });
+  it('can not replace the content type, the sniffing guard or set a cookie', async () => {
+    const r = await call(h, 'GET', '/api/c/hunter/evil');
+    expect(r.headers.get('set-cookie')).toBeNull();
+    expect(r.headers.get('content-type')).toContain('application/json');
+    expect(r.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(r.headers.get('x-ok')).toBe('1');
+  });
+  it('a refusal from the route still carries them', async () => {
+    const bad = withHeaders(route({ method: 'GET', path: '/gone', public: true }, async () => { throw new RouteError(410, 'expired'); }), { 'X-Route': 'gone' });
+    const r = await call(serveRoutes([bad], deps()), 'GET', '/api/c/hunter/gone');
+    expect([r.status, r.headers.get('x-route')]).toEqual([410, 'gone']);
   });
 });
 
