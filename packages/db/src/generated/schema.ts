@@ -58,7 +58,6 @@ export interface AppSetupSteps {
 export interface AppTemplateHandlers {
   kind: string;
   handler: unknown;
-  created_at: string;
 }
 
 export interface AppTestTables {
@@ -341,6 +340,7 @@ export interface PublicClub {
   allow_booq_changes_set_at: string | null;
   created_at: string;
   created_by_staff: string | null;
+  template_applied_at: string | null;
 }
 
 export interface PublicClubFeature {

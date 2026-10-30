@@ -25,7 +25,7 @@ beforeEach(async () => {
   admin = await staff('admin@booq.example', 'platform_admin', '99999999-0000-4000-8000-000000000001', 'Ada Admin');
   spec = await staff('spec@booq.example', 'onboarding_specialist', '99999999-0000-4000-8000-000000000002', 'Sam Specialist');
   other = await staff('other@booq.example', 'onboarding_specialist', '99999999-0000-4000-8000-000000000003', 'Olu Other');
-  templateId = (await tdb.query(`select id from platform.template where key = 'tennis'`)).rows[0].id;   // seeded by migration 0018
+  templateId = (await tdb.query(`select id from platform.template where key = 'tennis'`)).rows[0].id;
   pdb = createPlatformDb({ connectionString: tdb.url, max: 1 });
   svc = createClubService({ db: pdb });
 });
@@ -58,6 +58,17 @@ describe('creating a club (PLAT-01-AC1)', () => {
     expect((await p6()).filter((x) => x.action === 'club.created')).toMatchObject([{ name: 'Sam Specialist', club_id: r.id, detail: { slug: 'new-club' } }]);
     const a = await tdb.query(`select actor_type, actor_label from public.audit_entry where club_id = $1 and action = 'insert' and record_type = 'club'`, [r.id]);
     expect(a.rows).toEqual([{ actor_type: 'platform_staff', actor_label: 'Sam Specialist' }]);
+  });
+
+  it('starting from Tennis copies its rules and hours into the club; Padel (to build) and an unknown template are refused', async () => {
+    const r = await create(spec, valid({ template_id: templateId }));
+    if (!r.ok) throw new Error(r.code);
+    expect((await tdb.query(`select value from public.club_setting where club_id = $1 and key = 'hold_minutes'`, [r.id])).rows).toEqual([{ value: 15 }]);
+    expect((await tdb.query(`select count(*)::int as n from public.opening_hours where club_id = $1`, [r.id])).rows[0].n).toBe(7);
+    expect((await p6()).filter((x) => x.action === 'club.template_applied')).toMatchObject([{ name: 'Sam Specialist', club_id: r.id, detail: { template: 'tennis' } }]);
+    const padel = (await tdb.query(`select id from platform.template where key = 'padel'`)).rows[0].id;
+    expect(await create(spec, valid({ slug: 'other', template_id: padel }))).toEqual({ ok: false, code: 'invalid' });
+    expect((await tdb.query(`select count(*)::int as n from public.club where slug = 'other'`)).rows[0].n).toBe(0);
   });
 
   it('a club always starts as Draft: status and the window cannot be sent', async () => {

@@ -17,6 +17,7 @@ export const permissions: PermissionFragment = {
   'import.run': ['owner'],
   'export.run': ['owner'],
   'datarequest.handle': ['front_desk', 'owner'],
+  'datarequest.own': ['player', 'owner'],
   'customer.contact.read': ['front_desk', 'owner'],
   'customer.names.read': ['front_desk', 'accountant', 'owner'],
 };

@@ -45,9 +45,8 @@ export const tables: Fragment = {
   // audit (F01-T10)
   'audit.registry': { class: 'infra' },
   'app.test_tables': { class: 'infra' },
-  'app.template_handlers': { class: 'infra' },
   'app.anonymise_handlers': { class: 'infra' },          // F01-T33 (0019)
-  'app.deletion_impact_handlers': { class: 'infra' },   // F01-T24 (0018)   // F01-T26
+  'app.deletion_impact_handlers': { class: 'infra' },   // F01-T33 (0019)
   'public.audit_entry': { class: 'D' },
   'public.audit_erasure': { class: 'D' },
   // pause and resume (F01-T22): work to run when a club resumes; written only by migrations
@@ -58,4 +57,6 @@ export const tables: Fragment = {
   'platform.owner_contact_change': { class: 'P' },
   // the list of feature switches (F01-T25): written by migrations only
   'app.feature_keys': { class: 'infra' },
+  // what to copy when a template is applied, for features that own the tables (F01-T24): written by migrations only
+  'app.template_handlers': { class: 'infra' },
 };

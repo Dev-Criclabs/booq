@@ -91,11 +91,11 @@ describe('support sessions, launch checks, exports, templates, config', () => {
   });
 
   it('templates carry a to_build flag and unique items; config keys are unique', async () => {
-    const t = await tdb.query(`insert into platform.template (key, name, to_build) values ('padel_x', 'Padel X', true) returning id, to_build`);
+    const t = await tdb.query(`insert into platform.template (key, name, to_build) values ('squash', 'Squash', true) returning id, to_build`);
     expect(t.rows[0].to_build).toBe(true);
-    const d = await tdb.query(`insert into platform.template (key, name) values ('tennis_x', 'Tennis X') returning to_build`);
+    const d = await tdb.query(`insert into platform.template (key, name) values ('badminton', 'Badminton') returning to_build`);
     expect(d.rows[0].to_build).toBe(false);
-    await expect(tdb.query(`insert into platform.template (key, name) values ('tennis_x', 'Again')`)).rejects.toThrow(/duplicate key/i);
+    await expect(tdb.query(`insert into platform.template (key, name) values ('badminton', 'Again')`)).rejects.toThrow(/duplicate key/i);
     await tdb.query(`insert into platform.template_item (template_id, kind, key, value) values ($1, 'setting', 'hold_minutes', '15')`, [t.rows[0].id]);
     await expect(tdb.query(`insert into platform.template_item (template_id, kind, key, value) values ($1, 'setting', 'hold_minutes', '20')`, [t.rows[0].id])).rejects.toThrow(/duplicate key/i);
     await tdb.query(`insert into platform.config (key, value) values ('support_window_hours', '24')`);
