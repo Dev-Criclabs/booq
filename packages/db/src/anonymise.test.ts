@@ -198,3 +198,25 @@ describe('anonymise_user (PDPA-01-AC6, AC7)', () => {
     }
   });
 });
+
+// D164 (interim): anonymising a person leaves issued receipts and their voids unchanged. A receipt is a tax record kept under legal
+// obligation, so the customer name snapshot stays on it. How long receipts are kept is decided later; nothing here purges them (F13-T01).
+describe('receipts are kept when a person is anonymised (D164)', () => {
+  it('receipt and receipt_void are byte for byte the same after the erasure, and the person row is anonymised', async () => {
+    const o = (await tdb.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'online') returning id`, [A, VICTIM])).rows[0].id as string;
+    const r = (
+      await tdb.query(
+        `insert into public.receipt (club_id, order_id, kind, series, seq_no, number, vat_flag, customer_id, customer_name_snapshot, lines, total_satang)
+         values ($1,$2,'sale','2026',1,'HTC-2026-000001',false,$3,$4,'{"items":[]}'::jsonb,50000) returning id`,
+        [A, o, VICTIM, NAME],
+      )
+    ).rows[0].id as string;
+    await tdb.query(`insert into public.receipt_void (club_id, receipt_id, reason, voided_by) values ($1,$2,'typo',$3)`, [A, r, OWNER]);
+    const snap = async () => JSON.stringify([(await tdb.query(`select * from public.receipt order by id`)).rows, (await tdb.query(`select * from public.receipt_void order by id`)).rows]);
+    const before = await snap();
+    await anonymise();
+    expect(await snap()).toBe(before);
+    expect(before).toContain(NAME);
+    expect((await tdb.query(`select anonymised_at is not null as a from public.app_user where id = $1`, [VICTIM])).rows[0].a).toBe(true);
+  });
+});
