@@ -16,6 +16,8 @@ import { createOwnerService, type InviteMailer } from '../owner/owner';
 import { ownerRoutes } from '../owner/routes';
 import { createTesterService } from '../testers/testers';
 import { testerRoutes } from '../testers/routes';
+import { adminRoutes } from '../admin/routes';
+import { createAdminService } from '../admin/admin';
 import { supportRoutes } from '../support/routes';
 import { createSupportService } from '../support/support';
 import type { Connections } from '../connections/connections';
@@ -122,6 +124,7 @@ export function createPlatformTable(parts: PlatformParts): PlatformSource {
       }),
       ...ownerRoutes({ owner: createOwnerService({ db, mailer: parts.mailer ?? mailerNotConnected, baseUrl: config.appBaseUrl }) }),
       ...testerRoutes({ testers: createTesterService({ db, baseUrl: config.appBaseUrl }) }),
+      ...adminRoutes({ admin: createAdminService({ db }) }),
       ...supportRoutes({ support: createSupportService({ db, ...(parts.connections ? { connections: parts.connections } : {}) }) }),
       ...(config.healthToken ? healthRoutes({ health: createHealthService({ db, token: config.healthToken }) }) : []),
       ...(parts.extraRoutes ?? []),

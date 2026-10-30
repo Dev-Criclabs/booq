@@ -71,7 +71,10 @@ export async function readJsonBody(request: Request, maxBytes: number): Promise<
   return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : fail(400, 'bad_input');
 }
 
-/** The caller, as the proxy in front reports it: `x-real-ip`, else the first `x-forwarded-for` entry. Only as trustworthy as that proxy. */
+/** The caller, as the proxy in front reports it: the leftmost `x-forwarded-for` entry, else `x-real-ip`. Only as trustworthy as that proxy. */
 export function callerOf(request: Request): string {
-  return request.headers.get('x-real-ip') ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  // The leftmost x-forwarded-for entry is the address the host documents as trustworthy (DevOps, docs/ops/web.md);
+  // x-real-ip is only a fallback, since it is not confirmed.
+  const forwarded = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
+  return forwarded || request.headers.get('x-real-ip') || 'unknown';
 }

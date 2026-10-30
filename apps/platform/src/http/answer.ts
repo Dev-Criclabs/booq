@@ -20,6 +20,8 @@ const STATUS: Record<string, number> = {
   blocked: 409,
   look_only: 409,
   not_available: 409,
+  not_testing: 409,
+  not_recorded: 400,
   section_unavailable: 409,
   owner_contact_missing: 409,
   not_redeemed: 409,

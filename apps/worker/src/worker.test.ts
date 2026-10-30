@@ -16,25 +16,28 @@ beforeEach(async () => {
   tdb = await createTestDatabase();
   db = createDb({ connectionString: tdb.url, max: 2, role: 'booq_worker' });
 });
-// runner.stop() can resolve while the queue's own connections are still closing. Dropping the
-// database then terminates them mid close and the pool emits an unhandled 57P01. Wait until
-// only our test connection is left before the drop.
-async function queueConnectionsGone(): Promise<void> {
-  const end = Date.now() + 10000;
+// Dropping the database terminates any connection still open, and a pool that sees that emits an
+// unhandled 57P01. So teardown is ordered: stop the runner and wait for its promise (done inside
+// stop()), end our own pool, then wait until no connection but the test's own is left on the
+// database (whatever it last ran), and only then drop it. A leftover connection fails the test
+// instead of being killed mid close.
+async function noOtherConnections(): Promise<void> {
+  const end = Date.now() + 15000;
+  let left = -1;
   while (Date.now() < end) {
-    const { rows } = await tdb.query(
-      "select count(*)::int as n from pg_stat_activity where datname = current_database() and pid <> pg_backend_pid() and (query ilike '%graphile_worker%' or query ilike 'listen%')",
-    );
-    if (rows[0].n === 0) return;
+    const { rows } = await tdb.query('select count(*)::int as n from pg_stat_activity where datname = current_database() and pid <> pg_backend_pid()');
+    left = rows[0].n;
+    if (left === 0) return;
     await new Promise((r) => setTimeout(r, 25));
   }
+  throw new Error(`${left} connection(s) still open on the test database at teardown`);
 }
 
 afterEach(async () => {
   await worker?.stop();
   worker = undefined;
-  await queueConnectionsGone();
   await db.end();
+  await noOtherConnections();
   await tdb.close();
 });
 
