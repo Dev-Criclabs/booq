@@ -41,6 +41,8 @@ export interface TestDatabase {
   seedCoach(club: string, id: string): Promise<void>;
   /** Makes a class session (F08, migrations 0901 and 0902) of `club` on `resource`: its own owner, coach and template are created, nothing is claimed in occupancy. Returns the session id; every class_seat booking names one (0903). */
   seedClassSession(club: string, resource: string, start?: string): Promise<string>;
+  /** A closure row to hang occupancy closure slots on (F09, migration 1002); returns its id. */
+  seedClosure(club: string): Promise<string>;
   close(): Promise<void>;
 }
 
@@ -159,6 +161,14 @@ function wrap(name: string): TestDatabase {
       } finally {
         c.release();
       }
+    },
+    async seedClosure(club) {
+      const r = await pool.query(
+        `insert into public.closure (club_id, reason, range_start, range_end, created_by)
+         values ($1, 'test closure', '2000-01-01T00:00:00Z', '2000-01-02T00:00:00Z', '00000000-0000-4000-8000-00000000c105') returning id`,
+        [club],
+      );
+      return r.rows[0].id as string;
     },
     async seedNotice() {
       if ((await pool.query('select 1 from platform.legal_release')).rowCount) return;

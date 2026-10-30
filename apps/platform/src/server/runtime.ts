@@ -11,7 +11,7 @@ export function platformSource(): PlatformSource {
   if (built) return built;
   const { databaseUrl, ...config } = readPlatformConfig(process.env);
   const db = createPlatformDb({ connectionString: databaseUrl });
-  const identity = config.staffInvite ? createStaffIdentityClient({ ...config.staffInvite, now: () => systemClock.now() }) : unavailableIdentity;
-  built = createPlatformTable({ db, clock: systemClock, identity, config });
+  const client = config.staffInvite ? createStaffIdentityClient({ url: config.staffInvite.url, signingSecret: config.staffInvite.signingSecret, now: () => systemClock.now() }) : null;
+  built = createPlatformTable({ db, clock: systemClock, identity: client ?? unavailableIdentity, ...(client ? { enrolment: client } : {}), config });
   return built;
 }

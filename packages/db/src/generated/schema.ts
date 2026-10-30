@@ -43,6 +43,12 @@ export interface AppLaunchProducers {
   task: string;
 }
 
+export interface AppMessageKinds {
+  kind: string;
+  cap_class: string;
+  switch_key: string | null;
+}
+
 export interface AppMoveHandlers {
   name: string;
   handler: unknown;
@@ -224,6 +230,16 @@ export interface PlatformStaffAssignment {
   staff_id: string;
   club_id: string;
   assigned_at: string;
+}
+
+export interface PlatformStaffEnrolment {
+  token_hash: string;
+  staff_id: string;
+  purpose: string;
+  created_by: string;
+  created_at: string;
+  expires_at: string;
+  used_at: string | null;
 }
 
 export interface PlatformSupportSession {
@@ -471,6 +487,28 @@ export interface PublicClassTemplate {
   created_by: string;
   created_at: string;
   ended_on: string | null;
+  is_test: boolean;
+}
+
+export interface PublicClosure {
+  club_id: string;
+  id: string;
+  reason: string;
+  range_start: string;
+  range_end: string;
+  repeat_rule: unknown | null;
+  status: string;
+  created_by: string;
+  created_at: string;
+  ended_by: string | null;
+  ended_at: string | null;
+  is_test: boolean;
+}
+
+export interface PublicClosureResource {
+  club_id: string;
+  closure_id: string;
+  resource_id: string;
   is_test: boolean;
 }
 
@@ -1066,6 +1104,43 @@ export interface PublicRateLimitHit {
   hits: number;
 }
 
+export interface PublicReceipt {
+  club_id: string;
+  id: string;
+  order_id: string;
+  payment_id: string | null;
+  kind: string;
+  series: string;
+  seq_no: number;
+  number: string;
+  status: string;
+  issued_at: string;
+  vat_flag: boolean;
+  customer_id: string | null;
+  customer_name_snapshot: string | null;
+  lines: unknown;
+  total_satang: number;
+  is_test: boolean;
+  created_at: string;
+}
+
+export interface PublicReceiptCounter {
+  club_id: string;
+  series: string;
+  last_no: number;
+  is_test: boolean;
+}
+
+export interface PublicReceiptVoid {
+  club_id: string;
+  id: string;
+  receipt_id: string;
+  reason: string;
+  voided_by: string;
+  voided_at: string;
+  is_test: boolean;
+}
+
 export interface PublicResource {
   club_id: string;
   id: string;
@@ -1153,6 +1228,7 @@ export interface Tables {
   'app.deletion_impact_handlers': AppDeletionImpactHandlers;
   'app.feature_keys': AppFeatureKeys;
   'app.launch_producers': AppLaunchProducers;
+  'app.message_kinds': AppMessageKinds;
   'app.move_handlers': AppMoveHandlers;
   'app.pause_handlers': AppPauseHandlers;
   'app.payment_ports': AppPaymentPorts;
@@ -1177,6 +1253,7 @@ export interface Tables {
   'platform.owner_contact_change': PlatformOwnerContactChange;
   'platform.platform_staff': PlatformPlatformStaff;
   'platform.staff_assignment': PlatformStaffAssignment;
+  'platform.staff_enrolment': PlatformStaffEnrolment;
   'platform.support_session': PlatformSupportSession;
   'platform.template': PlatformTemplate;
   'platform.template_item': PlatformTemplateItem;
@@ -1194,6 +1271,8 @@ export interface Tables {
   'public.claim_request': PublicClaimRequest;
   'public.class_session': PublicClassSession;
   'public.class_template': PublicClassTemplate;
+  'public.closure': PublicClosure;
+  'public.closure_resource': PublicClosureResource;
   'public.club': PublicClub;
   'public.club_feature': PublicClubFeature;
   'public.club_invite': PublicClubInvite;
@@ -1241,6 +1320,9 @@ export interface Tables {
   'public.promo_code': PublicPromoCode;
   'public.promo_redemption': PublicPromoRedemption;
   'public.rate_limit_hit': PublicRateLimitHit;
+  'public.receipt': PublicReceipt;
+  'public.receipt_counter': PublicReceiptCounter;
+  'public.receipt_void': PublicReceiptVoid;
   'public.resource': PublicResource;
   'public.rich_menu': PublicRichMenu;
   'public.rich_menu_label': PublicRichMenuLabel;

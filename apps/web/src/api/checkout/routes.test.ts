@@ -37,9 +37,12 @@ const sources: QuoteSources = {
   walletBalance: async () => wallet,
 };
 
+// The quote never starts a payment.
+const noPayments = { privateKey: () => '', gateway: () => { throw new Error('no payment in a quote'); }, alerts: { p1: () => undefined }, now: () => new Date() };
+
 let tdb: TestDatabase;
 let db: Db;
-const quote = () => checkoutRoutes({ db, clubBySlug: async (s) => (SLUGS[s] ? { clubId: SLUGS[s]! } : null), sources }).find((r) => r.def.path === '/checkout/quote')!;
+const quote = () => checkoutRoutes({ db, clubBySlug: async (s) => (SLUGS[s] ? { clubId: SLUGS[s]! } : null), sources, payments: noPayments }).find((r) => r.def.path === '/checkout/quote')!;
 const me = { clubId: A, userId: ME, roles: ['player' as const] };
 const ask = (body: unknown, session: typeof me | null = me, input: Record<string, unknown> = { slug: 'club-a' }) =>
   quote().handle({ session, input: { ...input, ...(body as object) }, body }, deps);
@@ -172,7 +175,7 @@ describe('POST /checkout/quote', () => {
 });
 
 describe('POST /checkout/quote with the club reads (0315, 0316)', () => {
-  const real = () => checkoutRoutes({ db, clubBySlug: async (s) => (SLUGS[s] ? { clubId: SLUGS[s]! } : null), sources: { ...quoteSources, coach: sources.coach } }).find((r) => r.def.path === '/checkout/quote')!;
+  const real = () => checkoutRoutes({ db, clubBySlug: async (s) => (SLUGS[s] ? { clubId: SLUGS[s]! } : null), sources: { ...quoteSources, coach: sources.coach }, payments: noPayments }).find((r) => r.def.path === '/checkout/quote')!;
   const askReal = (b: unknown, session = me) => real().handle({ session, input: { slug: 'club-a' }, body: b }, deps);
   const addCode = (club: string, code: string, extra: { active?: boolean; totalCap?: number } = {}) =>
     tdb.query(

@@ -78,7 +78,7 @@ describe('count_live_occupancy (D50)', () => {
     const o = await book(18);
     await book(19);
     await run(owner, (tx) => tx.query(`select app.release_hold($1, 'staff')`, [o]));
-    await tdb.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id) values ($1,'closure',$2,$3,$4,'confirmed',gen_random_uuid())`, [A, COURT1, wed(20), wed(22)]);
+    await tdb.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id) values ($1,'closure',$2,$3,$4,'confirmed',$5)`, [A, COURT1, wed(20), wed(22), await tdb.seedClosure(A)]);
     expect(await count(owner, COURT1)).toBe(1); // only the 19:00 hold
     await tdb.setNow('2026-12-01T03:16:00Z'); // the 19:00 hold has ended
     expect(await count(owner, COURT1)).toBe(0);
@@ -133,7 +133,7 @@ describe('opening hours change (BOOK-01-AC16)', () => {
   });
 
   it('a closure does not block', async () => {
-    await tdb.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id) values ($1,'closure',$2,$3,$4,'confirmed',gen_random_uuid())`, [A, COURT1, wed(21), wed(22)]);
+    await tdb.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id) values ($1,'closure',$2,$3,$4,'confirmed',$5)`, [A, COURT1, wed(21), wed(22), await tdb.seedClosure(A)]);
     expect(await hoursChange(owner, 3, '06:00', '12:00')).toEqual({ ok: true });
   });
 

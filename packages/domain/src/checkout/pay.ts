@@ -47,6 +47,10 @@ export interface PlacedOrder {
   holdExpiresAt: string | null;
   /** A second tap found the caller's live hold for the same selection (D47): nothing new was made. */
   reused: boolean;
+  /** Nothing was left to pay: confirmed in this transaction, no hold and no charge (PAY-07). */
+  confirmed: boolean;
+  /** The receipt of a zero money order (D64); null otherwise. */
+  receiptId: string | null;
 }
 
 /** The locale key that labels each kind of line on C10, C12 and the receipt (copy-index: H-C10-Checkout). */
@@ -112,7 +116,7 @@ export async function placeOrder(tx: Tx, customerId: string, choice: QuoteReques
   if (claim.reused === true) {
     // The caller's live hold for this selection: drop the order just made and return that one (D47).
     await tx.query('rollback to savepoint place_order');
-    return { orderId: claim.order_id, bookingIds: claim.booking_ids, holdExpiresAt: claim.hold_expires_at, reused: true };
+    return { orderId: claim.order_id, bookingIds: claim.booking_ids, holdExpiresAt: isoOrNull(claim.hold_expires_at), reused: true, confirmed: false, receiptId: null };
   }
   await tx.query('release savepoint place_order');
   // booking_ids are in start order, the same order as the quote's hours.
@@ -141,8 +145,16 @@ export async function placeOrder(tx: Tx, customerId: string, choice: QuoteReques
     ),
   ]);
   if (!(await sources.reserveCreditAndWallet(tx, orderId))) throw new CheckoutError('credit_unavailable');
-  return { orderId, bookingIds: claim.booking_ids, holdExpiresAt: claim.hold_expires_at, reused: false };
+  if (quote.moneySatang === 0) {
+    // F04-T12d (PAY-07, D64): reserve_court confirmed the bookings in the claim; the order is paid, its receipt
+    // issued in the same series and the Booking confirmed card enqueued, all in this transaction.
+    const done = await tx.query<{ receipt: string }>('select app.complete_zero_money_order($1) as receipt', [orderId]);
+    return { orderId, bookingIds: claim.booking_ids, holdExpiresAt: null, reused: false, confirmed: true, receiptId: done.rows[0]!.receipt };
+  }
+  return { orderId, bookingIds: claim.booking_ids, holdExpiresAt: isoOrNull(claim.hold_expires_at), reused: false, confirmed: false, receiptId: null };
 }
+
+const isoOrNull = (v: string | Date | null): string | null => (v === null ? null : new Date(v).toISOString());
 
 /** The caller's live hold for exactly this selection, if any (D47). The Pay route asks it before repricing. */
 export async function findLiveHold(tx: Tx, choice: QuoteRequest): Promise<PlacedOrder | null> {
@@ -162,7 +174,7 @@ async function liveHold(tx: Tx, courtId: string, coachId: string | null, starts:
       limit 1`,
     [courtId, coachId, starts],
   )).rows[0];
-  return r ? { orderId: r.order_id, bookingIds: r.booking_ids, holdExpiresAt: new Date(r.hold_expires_at).toISOString(), reused: true } : null;
+  return r ? { orderId: r.order_id, bookingIds: r.booking_ids, holdExpiresAt: new Date(r.hold_expires_at).toISOString(), reused: true, confirmed: false, receiptId: null } : null;
 }
 
 // The refusals of count_promo_use ('promo:<code>') and use_birthday_entitlement ('birthday:<code>'), P0001.

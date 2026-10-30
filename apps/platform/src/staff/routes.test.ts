@@ -18,21 +18,24 @@ beforeEach(async () => {
     sent.push({ path: new URL(url).pathname, body: JSON.parse(init.body) });
     return new Response(JSON.stringify(answerWith.json), { status: answerWith.status });
   }) as unknown as typeof fetch;
-  h = await createHarness(() => staffRoutes({ staff: createStaffInviteClient({ url: 'https://invite.internal', signingSecret: 's'.repeat(40), fetch: fake, now: () => NOW, endSessionsFor: async (id) => void ended.push(id) }) }));
+  h = await createHarness(() => staffRoutes({ staff: createStaffInviteClient({ url: 'https://invite.internal', signingSecret: 's'.repeat(40), fetch: fake, now: () => NOW, endSessionsFor: async (id) => void ended.push(id) }), consoleBaseUrl: 'https://console.example/' }));
 });
 afterEach(async () => h.close());
 
 describe('staff management', () => {
   it('an admin invites; the actor and the freshness of their second factor go to the other app', async () => {
-    answerWith = { status: 200, json: { staffId: 'new-staff' } };
+    answerWith = { status: 200, json: { staffId: 'new-staff', enrolmentToken: 'TOKEN-for-the-new-teammate' } };
     const r = await h.call('POST', '/staff', { body: { email: 'n@booq.example', displayName: 'New', role: 'onboarding_specialist' }, as: 'admin' });
-    expect([r.status, r.body]).toEqual([200, { staffId: 'new-staff' }]);
+    expect([r.status, r.body]).toEqual([200, { staffId: 'new-staff', enrolmentLink: 'https://console.example/enrol#TOKEN-for-the-new-teammate' }]);
     expect(sent[0]).toEqual({ path: '/invite', body: { actorStaffId: h.ids.admin, stepUpFresh: true, email: 'n@booq.example', displayName: 'New', role: 'onboarding_specialist' } });
     await h.call('POST', '/staff', { body: { email: 'n@booq.example', displayName: 'New', role: 'onboarding_specialist' }, as: 'admin', fresh: false });
     expect(sent[1]!.body['stepUpFresh']).toBe(false);
   });
-  it('reset and deactivate name the teammate and end that teammate\'s console sessions', async () => {
-    expect((await h.call('POST', `/staff/${h.ids.spec}/reset-factor`, { body: {}, as: 'admin' })).status).toBe(200);
+  it('reset and deactivate name the teammate and end that teammate\'s console sessions; a reset answers with a new enrolment link', async () => {
+    answerWith = { status: 200, json: { ok: true, enrolmentToken: 'RESET-token-for-the-teammate' } };
+    const reset = await h.call('POST', `/staff/${h.ids.spec}/reset-factor`, { body: {}, as: 'admin' });
+    expect([reset.status, reset.body]).toEqual([200, { enrolmentLink: 'https://console.example/enrol#RESET-token-for-the-teammate' }]);
+    answerWith = { status: 200, json: { ok: true } };
     expect((await h.call('POST', `/staff/${h.ids.spec}/deactivate`, { body: {}, as: 'admin' })).status).toBe(200);
     expect(sent.map((s) => s.path)).toEqual(['/reset-factor', '/deactivate']);
     expect(ended).toEqual([h.ids.spec, h.ids.spec]);
@@ -55,7 +58,7 @@ describe('staff management', () => {
     expect(sent).toEqual([]);
   });
   it('without the other app configured these answer 503 not_configured', async () => {
-    const bare = await createHarness(() => staffRoutes({ staff: null }));
+    const bare = await createHarness(() => staffRoutes({ staff: null, consoleBaseUrl: '' }));
     try {
       expect((await bare.call('POST', `/staff/${bare.ids.spec}/deactivate`, { body: {}, as: 'admin' })).body).toEqual({ code: 'not_configured' });
     } finally {

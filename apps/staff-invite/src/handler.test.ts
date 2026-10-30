@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { signInternalCall } from '@booq/auth';
 import { createPlatformDb, type PlatformDb } from '@booq/db';
@@ -25,6 +26,8 @@ const fake: SupabaseAdmin = {
   async resetFactors(authUserId) { calls.push(`reset:${authUserId}`); if (failNext === 'reset') throw new Error('provider down'); },
   async banUser(authUserId) { calls.push(`ban:${authUserId}`); if (failNext === 'ban') throw new Error('provider down'); },
   async deleteUser(authUserId) { calls.push(`delete:${authUserId}`); },
+  async setPassword(authUserId, password) { calls.push(`password:${authUserId}`); return password.length < 8 ? 'weak' : 'ok'; },
+  async removeUnverifiedFactors(authUserId) { calls.push(`clean:${authUserId}`); },
   async emailOf(authUserId) { calls.push(`email:${authUserId}`); return authUserId === '99999999-0000-4000-8000-000000000001' ? 'admin@booq.example' : null; },
 };
 const ADA = '99999999-0000-4000-8000-000000000001';
@@ -35,10 +38,15 @@ const fakeIdentity: SupabaseIdentity = {
     if (identityDown) throw new Error('provider down');
     return email === 'admin@booq.example' && password === 'pw-ada' ? { authUserId: ADA, state: 'first-step-state' } : null;
   },
+  async startEnrolment(email, password) {
+    calls.push(`enrol:${email}`);
+    if (identityDown) throw new Error('provider down');
+    return email === 'admin@booq.example' && password.length >= 8 ? { authUserId: ADA, state: 'enrol-state', secret: 'SECRETBASE32', uri: 'otpauth://totp/BOOQ:admin' } : null;
+  },
   async verifyCode(authUserId, state, code) {
     calls.push(`code:${authUserId}`);
     if (identityDown) throw new Error('provider down');
-    return authUserId === ADA && state === 'first-step-state' && code === '123456';
+    return authUserId === ADA && (state === 'first-step-state' || state === 'enrol-state') && code === '123456';
   },
 };
 const staff = async (email: string, role: string, auth: string, name: string) =>
@@ -55,6 +63,7 @@ beforeEach(async () => {
   admin = await staff('admin@booq.example', 'platform_admin', '99999999-0000-4000-8000-000000000001', 'Ada Admin');
   admin2 = await staff('admin2@booq.example', 'platform_admin', '99999999-0000-4000-8000-000000000004', 'Bo Admin');
   spec = await staff('spec@booq.example', 'onboarding_specialist', '99999999-0000-4000-8000-000000000002', 'Sam Specialist');
+  await tdb.query(`insert into platform.config (key, value) values ('console_enrolment_ttl_hours', '24')`);
   pdb = createPlatformDb({ connectionString: tdb.url, max: 2 });
   calls = [];
   failNext = null;
@@ -105,12 +114,16 @@ describe('invite', () => {
   it('asks the provider to invite, records the new staff member, and writes P6 with the role and not the email', async () => {
     const r = await call('/invite', { ...body, actorStaffId: admin });
     expect(r.status).toBe(200);
-    const j = (await r.json()) as { staffId: string };
+    const j = (await r.json()) as { staffId: string; enrolmentToken: string };
     expect((await tdb.query(`select email, display_name, role, active, auth_user_id from platform.platform_staff where id = $1`, [j.staffId])).rows[0]).toMatchObject({ email: 'new@booq.example', display_name: 'New Person', role: 'onboarding_specialist', active: true });
     expect(calls).toEqual(['invite:new@booq.example']);
     const log = await p6();
-    expect(log).toEqual([{ action: 'staff.invited', name: 'Ada Admin', target_id: j.staffId, detail: { role: 'onboarding_specialist' } }]);
+    expect([...log].sort((a, b) => a.action.localeCompare(b.action))).toEqual([
+      { action: 'staff.enrolment_issued', name: 'Ada Admin', target_id: j.staffId, detail: { purpose: 'invite' } },
+      { action: 'staff.invited', name: 'Ada Admin', target_id: j.staffId, detail: { role: 'onboarding_specialist' } },
+    ]);
     expect(JSON.stringify(log)).not.toContain('new@booq.example');
+    expect(JSON.stringify(log)).not.toContain(j.enrolmentToken);
   });
   it('validates the body: an email, a name, a role of the two; extra fields are refused', async () => {
     for (const bad of [{ email: 'nope' }, { displayName: '' }, { role: 'owner' }, { extra: 1 }]) {
@@ -140,7 +153,11 @@ describe('reset the second factor (D123)', () => {
     const r = await call('/reset-factor', { actorStaffId: admin, stepUpFresh: true, targetStaffId: spec });
     expect(r.status).toBe(200);
     expect(calls).toEqual(['reset:99999999-0000-4000-8000-000000000002']);
-    expect(await p6()).toEqual([{ action: 'staff.factor_reset', name: 'Ada Admin', target_id: spec, detail: { target_name: 'Sam Specialist' } }]);
+    // Both events are written in one transaction, so their order is not fixed.
+    expect((await p6()).sort((a, b) => a.action.localeCompare(b.action))).toEqual([
+      { action: 'staff.enrolment_issued', name: 'Ada Admin', target_id: spec, detail: { purpose: 'reset' } },
+      { action: 'staff.factor_reset', name: 'Ada Admin', target_id: spec, detail: { target_name: 'Sam Specialist' } },
+    ]);
   });
   it('the same admin resetting their own factor is refused (409 same_person) and nothing is called or logged as done', async () => {
     const r = await call('/reset-factor', { actorStaffId: admin, stepUpFresh: true, targetStaffId: admin });
@@ -238,5 +255,55 @@ describe('sign-in routes (D148, D160, D161)', () => {
       const r = await call(path, body);
       expect([r.status, await r.json()]).toEqual([502, { code: 'provider_failed' }]);
     }
+  });
+});
+
+describe('first-factor enrolment (F01-T17c; D123, D148)', () => {
+  const sha = (t: string) => createHash('sha256').update(t).digest('hex');
+  const invited = async () => {
+    const r = await call('/invite', { actorStaffId: admin, stepUpFresh: true, email: 'new@booq.example', displayName: 'New Person', role: 'onboarding_specialist' });
+    return (await r.json()) as { staffId: string; enrolmentToken: string };
+  };
+  it('an invite returns a token once; only its hash is stored, and the link lives for the configured hours', async () => {
+    const j = await invited();
+    expect(j.enrolmentToken.length).toBeGreaterThanOrEqual(40);
+    const rows = (await tdb.query(`select token_hash, staff_id, purpose, expires_at, used_at from platform.staff_enrolment`)).rows;
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ token_hash: sha(j.enrolmentToken), staff_id: j.staffId, purpose: 'invite', used_at: null });
+    expect(JSON.stringify(rows)).not.toContain(j.enrolmentToken);
+  });
+  it('a reset returns a new token for the teammate and replaces an earlier unused one', async () => {
+    const first = await call('/reset-factor', { actorStaffId: admin, stepUpFresh: true, targetStaffId: spec });
+    const second = await call('/reset-factor', { actorStaffId: admin2, stepUpFresh: true, targetStaffId: spec });
+    const a = ((await first.json()) as { enrolmentToken: string }).enrolmentToken;
+    const b = ((await second.json()) as { enrolmentToken: string }).enrolmentToken;
+    expect(a).not.toBe(b);
+    expect((await tdb.query(`select token_hash, purpose from platform.staff_enrolment`)).rows).toEqual([{ token_hash: sha(b), purpose: 'reset' }]);
+  });
+  it('without the setting for the life of a link an invite or a reset is 503 not_configured and nothing reaches the provider', async () => {
+    await tdb.query(`delete from platform.config where key = 'console_enrolment_ttl_hours'`);
+    expect((await call('/invite', { actorStaffId: admin, stepUpFresh: true, email: 'new@booq.example', displayName: 'N', role: 'onboarding_specialist' })).status).toBe(503);
+    expect(await (await call('/reset-factor', { actorStaffId: admin, stepUpFresh: true, targetStaffId: spec })).json()).toEqual({ code: 'not_configured' });
+    expect(calls).toEqual([]);
+  });
+  it('enrol-start clears half-made authenticators, sets the password, and gives the secret for the QR code with the state', async () => {
+    const r = await call('/identity/enrol-start', { authUserId: ADA, password: 'a-long-enough-password' });
+    expect([r.status, await r.json()]).toEqual([200, { state: 'enrol-state', secret: 'SECRETBASE32', uri: 'otpauth://totp/BOOQ:admin' }]);
+    expect(calls).toEqual([`email:${ADA}`, `clean:${ADA}`, `password:${ADA}`, 'enrol:admin@booq.example']);
+  });
+  it('a password the project refuses is 400 weak_password and no authenticator is started', async () => {
+    const r = await call('/identity/enrol-start', { authUserId: ADA, password: 'short' });
+    expect([r.status, await r.json()]).toEqual([400, { code: 'weak_password' }]);
+    expect(calls).not.toContain('enrol:admin@booq.example');
+  });
+  it('an unknown person is 404, a bad body 400, an outage 502, and a wrong signature 401', async () => {
+    expect((await call('/identity/enrol-start', { authUserId: '99999999-0000-4000-8000-0000000000aa', password: 'a-long-enough-password' })).status).toBe(404);
+    expect((await call('/identity/enrol-start', { authUserId: ADA, password: 'x', extra: 1 })).status).toBe(400);
+    identityDown = true;
+    expect((await call('/identity/enrol-start', { authUserId: ADA, password: 'a-long-enough-password' })).status).toBe(502);
+    expect((await call('/identity/enrol-start', { authUserId: ADA, password: 'a-long-enough-password' }, { secret: 'other' })).status).toBe(401);
+  });
+  it('the code of the authenticator is confirmed with the same totp route', async () => {
+    expect(await (await call('/identity/totp', { authUserId: ADA, state: 'enrol-state', code: '123456' })).json()).toEqual({ ok: true });
   });
 });
