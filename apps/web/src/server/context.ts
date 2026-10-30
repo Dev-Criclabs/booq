@@ -52,13 +52,17 @@ export function createWebTable(parts: WebParts): { table: Route<unknown>[]; deps
   const { db, verifier, now, config } = parts;
   const directory = createDbDirectory(db);
   const signIn = createSignInService({ db, verifier, directory, now, sessionSeconds: config.sessionSeconds });
+  const clubBySlug = async (slug: string) => {
+    const club = await directory.clubBySlug(slug);
+    return club ? { clubId: club.clubId } : null;
+  };
   const claims = createClaimService();
   const profile = createProfileService({ db, directory, signIn, requestClaim: (tx, input) => claims.requestFromProfile(tx, input) });
   const publicConfig = createPublicConfigService({ db, directory });
 
   const table: Route<unknown>[] = [
     ...authRoutes({ signIn, profile, publicConfig }),
-    ...[...mounts, ...(parts.extraMounts ?? [])].flatMap((mount) => mount({ db, now, config })),
+    ...[...mounts, ...(parts.extraMounts ?? [])].flatMap((mount) => mount({ db, now, config, clubBySlug })),
   ];
 
   return {

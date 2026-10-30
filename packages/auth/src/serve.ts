@@ -20,6 +20,15 @@ export interface ServeContext {
   params: Promise<{ slug: string; path?: string[] | undefined }>;
 }
 
+/** A route may add headers but not take over these: the body is JSON, never sniffed, and only a Reply sets a cookie. */
+const RESERVED = new Set(['content-type', 'content-length', 'x-content-type-options', 'set-cookie', 'transfer-encoding']);
+
+function withRouteHeaders(res: Response, extra: Readonly<Record<string, string>> | undefined): Response {
+  if (!extra) return res;
+  for (const [k, v] of Object.entries(extra)) if (!RESERVED.has(k.toLowerCase())) res.headers.set(k, v);
+  return res;
+}
+
 const BODY_METHODS = new Set(['POST', 'PUT', 'PATCH']);
 const HEADERS = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
 
@@ -112,30 +121,33 @@ function serveNow(table: readonly Route<unknown>[], deps: ServeDeps): (request: 
         }
       }
       if (!found) return pathMatched ? fail(405, 'method_not_allowed') : fail(404, 'not_found');
-
-      let body: Record<string, unknown> = {};
-      if (BODY_METHODS.has(method)) {
-        const read = await readBody(request);
-        if (read instanceof Response) return read;
-        body = read;
-      }
-      const cookie = request.headers.get('cookie') ?? undefined;
-      const session = await deps.resolveSession(slug, cookie);
-      if (session === 'not_found') return fail(404, 'not_found');
-
-      const query: Record<string, string> = {};
-      for (const [k, v] of new URL(request.url).searchParams) query[k] = v;
-      const input = { ...query, ...body, ...found.params, slug };
-
-      const result: RouteResult<unknown> = await found.route.handle({ session, input, cookie, body: BODY_METHODS.has(method) ? body : undefined }, deps.routeDeps);
-      if (!result.ok) return fail(result.status, result.code);
-      if (result.body instanceof Reply) {
-        const { status = 200, setCookie } = result.body.options;
-        return json(status, result.body.body, setCookie ? { 'set-cookie': setCookie } : {});
-      }
-      return json(200, result.body);
+      return withRouteHeaders(await answer(request, found, method, slug), found.route.headers);
     } catch {
       return fail(500, 'internal');
     }
   };
+
+  async function answer(request: Request, found: { route: Route<unknown>; params: Record<string, string> }, method: string, slug: string): Promise<Response> {
+    let body: Record<string, unknown> = {};
+    if (BODY_METHODS.has(method)) {
+      const read = await readBody(request);
+      if (read instanceof Response) return read;
+      body = read;
+    }
+    const cookie = request.headers.get('cookie') ?? undefined;
+    const session = await deps.resolveSession(slug, cookie);
+    if (session === 'not_found') return fail(404, 'not_found');
+
+    const query: Record<string, string> = {};
+    for (const [k, v] of new URL(request.url).searchParams) query[k] = v;
+    const input = { ...query, ...body, ...found.params, slug };
+
+    const result: RouteResult<unknown> = await found.route.handle({ session, input, cookie, body: BODY_METHODS.has(method) ? body : undefined }, deps.routeDeps);
+    if (!result.ok) return fail(result.status, result.code);
+    if (result.body instanceof Reply) {
+      const { status = 200, setCookie } = result.body.options;
+      return json(status, result.body.body, setCookie ? { 'set-cookie': setCookie } : {});
+    }
+    return json(200, result.body);
+  }
 }
