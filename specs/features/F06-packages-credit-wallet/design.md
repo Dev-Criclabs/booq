@@ -16,6 +16,7 @@ Shared decisions are in `docs/architecture/foundation.md`, cited as **FA §n**; 
 | R1 (reserve, use, return, forfeit) | §4.2; §4.3 |
 | R2 (wallet funding and use) | §4.1; §4.3 |
 | R3 (buying a package) | §4.4; §5 |
+| Imported balances and claims (PLAT-06-AC3, AC7; D13, D105) | §4.8 |
 | CC-1 to CC-6 | §10 |
 
 ## 2. What this design does not build
@@ -36,6 +37,7 @@ F06 uses the number block 0501 to 0599.
 | `0506_jobs_support.sql` | Sweep queries as functions; dedupe indexes |
 | `0507_grants_policies.sql` | Policies and grants for the tables, views and functions above |
 | `0508_settings_keys.sql` | Registry rows: `wallet_expiry_days` (unset allowed), `package_expiry_reminder_days` (list, Tennis template 14 and 3, D116) |
+| `0509_claim_handler.sql` | The reason `import_transfer` added to both ledger CHECKs; `app.f06_claim_transfer(club, imported, claimant)` registered in `app.claim_handlers` as `wallet_transfer`; the inert guard (§4.8) |
 
 A merged migration is never edited; a fix is a new migration (build plan).
 
@@ -105,6 +107,20 @@ At `grant_package`, `extend_package` and pause, F06 enqueues outbox rows `packag
 - **`app.extend_for_pause(club, pause_id, length)`** (called by F01 resume in the same transaction, PLAT-03): for every package of the club with `expires_at >= pause start`, adds the exact pause length to `expires_at` then sets the time to 23:59:59.999 of the resulting Bangkok day (D90, PKG-03-AC7), one `package_extension` (`kind pause`) per package, and the same for the wallet expiry when set. A pause shorter than a day moves expiry by the exact length and then runs to 23:59 (D90).
 - **Wallet expiry (D89):** `wallet_expiry_days` is unset by default (never expires). When first set, the settings route warns staff and records the date; `app.wallet_expire(customer)` is called by a sweep only for clubs with the setting, writing an `expire` wallet row for the remainder of balances older than the setting by the FIFO rule of Q1 below. With the setting empty the function refuses to run.
 
+### 4.8 Imported balances and the claim transfer (decisions D13, D105; migration 0103 on `main`)
+
+`0103_claims.sql` (F01 and F02) makes an imported player an `app_user` with no LINE id and `claim_state = 'unclaimed'`, and runs the handlers in `app.claim_handlers` inside `app.claim_confirm`, each called as `handler(club, imported, claimant)` in one transaction with the merge. F06 registers one handler.
+
+- **Imported rows are inert until confirmation.** The CSV import writes ledger rows with reason `import` (credit: `change` signed; wallet: `change_satang` positive) for the imported user and creates `customer_package` rows for them (F01 PLAT-06). Every F06 function that spends, reserves or lists value for a customer (`wallet_spend`, `credit_reserve`, `eligible_credits`, `wallet_adjust` and `credit_adjust` when it would reduce) first requires `app_user.claim_state is null` and `active`; an `unclaimed` or `merged` user is refused with the typed code `customer_not_claimed`. So staff booking at the desk for an unclaimed record, or a stray call, can never use an imported balance. Nobody can sign in as an unclaimed user (no LINE id), and the claimant never sees the imported balance before confirmation (C2 says nothing, F02 AUTH-02-AC30).
+- **Handler `wallet_transfer`: `app.f06_claim_transfer(club, imported, claimant)`** runs when the front desk confirms. In the caller's transaction it locks the two `wallet_account` anchors and the imported user's packages in id order (lock order of §4), then writes **paired append-only rows**, never an edit:
+  1. Wallet: if the imported balance `b` is greater than zero, one `import_transfer` row of `-b` on the imported user and one of `+b` on the claimant, same `order_id` null, `dedupe_key = 'claim_wallet:{imported}:{claimant}'` and `'claim_wallet_in:{...}'`.
+  2. Packages: for each imported package with credits left `r`, one `import_transfer` credit row of `-r` on the old package and a new `customer_package` for the claimant with the same product snapshot, `credits_total = r` and the **same `expires_at`** (no extension, D88), plus one `import_transfer` credit row of `+r` on the new package; `dedupe_key = 'claim_pkg:{old_package}:{claimant}'`. A package with no credits left is not copied.
+  3. The audit entry names the staff member who confirmed (F01 audit via `claim_request`) and lists the amounts moved.
+  The handler is idempotent through the `dedupe_key`s, so a retried confirm cannot transfer twice. It runs only for the pair confirmed; a rival claimant's request is rejected by `claim_confirm` before the handler (F01).
+- **Reason `import_transfer` is new.** D78 lists the wallet reasons and the hand-off lists the credit reasons without it. Migration 0509 adds it to both CHECKs, and the PRD then the hand-off must name it (rule changes start in the PRD, CLAUDE.md rule 5). Until they do, this design treats the addition as a proposal; the orchestrator confirms (item A-9 in §13).
+- **Balances stay derived.** The imported user's balance returns to zero after the transfer, the claimant's rises by the same amount; `wallet_balance` and `package_balance` need no change. The sum of both users' `import` and `import_transfer` rows equals the amount imported (PKG-01-AC1 property test).
+- **After the merge** the imported record is `merged` and inactive; its ledger rows remain as history for the club's accounts (F01 audit).
+
 ## 5. API routes
 
 Conventions as FA §9: typed codes, no text, 404 for out of reach; amounts in satang. The routes read; writes go through the functions.
@@ -171,7 +187,7 @@ Row policies follow FA §4.3. Every club person also holds the Player role (D115
 
 ## 11. Tests (written first at the build step)
 
-Property: after any random sequence of reserve, return, use, forfeit, expire, adjust and import, balance equals the ledger sum and never goes negative (PKG-01-AC1, AC7). Concurrency: two spends of the last ฿100; two reserves of the last credit; 20 parallel grants of one order (PKG-01-AC8). Append-only: `UPDATE` and `DELETE` as each role fail (AC5). Expiry table (PKG-02-AC2, AC3). Student credit after 18 (AC5; D84). Reserve before expiry then cancel after expiry loses the credit (D85). Pause moves package and wallet expiry, including under a day (D90). Reminders once per N, voided and rebuilt on extension (PKG-03). Late payment on a package order goes to the wallet with a receipt (R3-AC9). Route inventory: no withdraw or refund route (CANCEL-02).
+Property: after any random sequence of reserve, return, use, forfeit, expire, adjust and import, balance equals the ledger sum and never goes negative (PKG-01-AC1, AC7). Concurrency: two spends of the last ฿100; two reserves of the last credit; 20 parallel grants of one order (PKG-01-AC8). Append-only: `UPDATE` and `DELETE` as each role fail (AC5). Expiry table (PKG-02-AC2, AC3). Student credit after 18 (AC5; D84). Reserve before expiry then cancel after expiry loses the credit (D85). Pause moves package and wallet expiry, including under a day (D90). Reminders once per N, voided and rebuilt on extension (PKG-03). Late payment on a package order goes to the wallet with a receipt (R3-AC9). Route inventory: no withdraw or refund route (CANCEL-02). Claim transfer (§4.8): an imported balance cannot be spent, reserved or listed while the record is unclaimed (`customer_not_claimed`); confirming a claim writes paired `import_transfer` rows so the imported user ends at zero and the claimant gains exactly the amount, packages keep their expiry, and a repeated confirm transfers once; the sum of `import` and `import_transfer` rows equals the amount imported.
 
 ## 12. Text keys and canvas boards
 
@@ -193,6 +209,9 @@ Recommended defaults, each marked so the orchestrator can confirm or amend them 
 | A-6 | `eligible_credits` returns a package even when it is a Student credit held by an adult, for Student items only | D84 |
 | A-7 | A closure return after expiry returns the credit and lists the package for the owner to extend (D118); F06 does not extend automatically | D118 |
 | A-8 | Staff cash package sales use F05's cash function and call `grant_package` after the receipt is issued | F05 PAY-06 |
+| A-9 | The new ledger reason `import_transfer` (credit and wallet) is added by migration 0509 and recorded in the PRD and hand-off first | Orchestrator request; D78 and the hand-off enumerate reasons |
+| A-10 | Value imported for an unclaimed player counts as owed to customers in the value owed report (it is a liability of the club), shown on its own line until claimed | D57; the report is F13's, to confirm |
+| A-11 | A claimed package keeps its original expiry; the owner may extend it afterwards (D88) | D13, D88 |
 
 ## 14. Open items
 
