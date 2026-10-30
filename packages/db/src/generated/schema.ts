@@ -38,6 +38,12 @@ export interface AppSetupSteps {
   created_at: string;
 }
 
+export interface AppTemplateHandlers {
+  kind: string;
+  handler: unknown;
+  created_at: string;
+}
+
 export interface AppTestTables {
   table_schema: string;
   table_name: string;
@@ -728,6 +734,7 @@ export interface Tables {
   'app.pause_handlers': AppPauseHandlers;
   'app.release_handlers': AppReleaseHandlers;
   'app.setup_steps': AppSetupSteps;
+  'app.template_handlers': AppTemplateHandlers;
   'app.test_tables': AppTestTables;
   'audit.registry': AuditRegistry;
   'platform.audit_log': PlatformAuditLog;
