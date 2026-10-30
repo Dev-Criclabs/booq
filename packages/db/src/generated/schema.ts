@@ -558,6 +558,19 @@ export interface PublicOrders {
   priced_at: string | null;
 }
 
+export interface PublicOwnerFlag {
+  club_id: string;
+  id: string;
+  kind: string;
+  payment_id: string | null;
+  status: string;
+  created_at: string;
+  resolved_by: string | null;
+  resolved_at: string | null;
+  note: string | null;
+  is_test: boolean;
+}
+
 export interface PublicOwnerNotice {
   club_id: string;
   id: string;
@@ -577,6 +590,28 @@ export interface PublicPartner {
   contact: string | null;
 }
 
+export interface PublicPayment {
+  club_id: string;
+  id: string;
+  order_id: string;
+  method: string;
+  status: string;
+  environment: string | null;
+  gateway: string | null;
+  gateway_charge_id: string | null;
+  amount_satang: number;
+  qr_image: string | null;
+  qr_expires_at: string | null;
+  failure_code: string | null;
+  outcome: string | null;
+  cash_reason_code: string | null;
+  cash_reason_note: string | null;
+  taken_by: string | null;
+  confirmed_at: string | null;
+  is_test: boolean;
+  created_at: string;
+}
+
 export interface PublicPaymentConnection {
   club_id: string;
   merchant_id_test: string | null;
@@ -585,6 +620,23 @@ export interface PublicPaymentConnection {
   webhook_token_hash_live: string | null;
   secret_last4: unknown;
   tested_at: string | null;
+}
+
+export interface PublicPaymentEvent {
+  club_id: string;
+  id: string;
+  gateway: string;
+  gateway_charge_id: string;
+  event_type: string;
+  received_at: string;
+  body_hash: string;
+  signature_ok: boolean;
+  looked_up_status: string | null;
+  looked_up_amount_satang: number | null;
+  looked_up_reference: string | null;
+  outcome: string;
+  payment_id: string | null;
+  is_test: boolean;
 }
 
 export interface PublicPriceGroup {
@@ -714,9 +766,12 @@ export interface Tables {
   'public.opening_hours': PublicOpeningHours;
   'public.order_line': PublicOrderLine;
   'public.orders': PublicOrders;
+  'public.owner_flag': PublicOwnerFlag;
   'public.owner_notice': PublicOwnerNotice;
   'public.partner': PublicPartner;
+  'public.payment': PublicPayment;
   'public.payment_connection': PublicPaymentConnection;
+  'public.payment_event': PublicPaymentEvent;
   'public.price_group': PublicPriceGroup;
   'public.promo_code': PublicPromoCode;
   'public.promo_redemption': PublicPromoRedemption;
