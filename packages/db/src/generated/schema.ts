@@ -47,6 +47,10 @@ export interface AppReleaseHandlers {
   ord: number;
 }
 
+export interface AppSettingKeys {
+  setting_key: string;
+}
+
 export interface AppSetupSteps {
   step_key: string;
   position: number;
@@ -754,6 +758,7 @@ export interface Tables {
   'app.move_handlers': AppMoveHandlers;
   'app.pause_handlers': AppPauseHandlers;
   'app.release_handlers': AppReleaseHandlers;
+  'app.setting_keys': AppSettingKeys;
   'app.setup_steps': AppSetupSteps;
   'app.template_handlers': AppTemplateHandlers;
   'app.test_tables': AppTestTables;
