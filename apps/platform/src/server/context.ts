@@ -4,6 +4,12 @@ import { authRoutes } from '../auth/routes';
 import { createRateLimiter, type RateLimiter } from '@booq/auth';
 import type { PlatformDb } from '@booq/db';
 import type { Clock } from '@booq/time';
+import { bangkokDate } from '@booq/time';
+import { createClubService } from '../clubs/clubs';
+import { clubRoutes } from '../clubs/routes';
+import { createPauseService, type OwnerNotifier } from '../pause/pause';
+import { createStatusService } from '../status/status';
+import { createUsageService } from '../usage/usage';
 import type { PlatformRoute, PlatformSource } from '../http/server';
 
 // The platform console's composition root (F01-T17, T18; D148): wires the database role
@@ -49,11 +55,19 @@ export const unavailableIdentity: IdentityProvider = {
   },
 };
 
+/** The owner's LINE message goes through F10's outbox, which does not exist yet: the notice fails, is counted in P6, and the change stands. */
+export const outboxNotConnected: OwnerNotifier = {
+  async notifyOwner() {
+    throw new Error('owner notice outbox is not connected (F10)');
+  },
+};
+
 export interface PlatformParts {
   db: PlatformDb;
   clock: Clock;
   identity: IdentityProvider;
   config: PlatformConfig;
+  notifier?: OwnerNotifier;
   /** Extra route groups, for tests and for the parts added next. */
   extraRoutes?: readonly PlatformRoute[];
 }
@@ -70,7 +84,16 @@ export function createPlatformTable(parts: PlatformParts): PlatformSource {
   });
   const limiter: RateLimiter | undefined = config.signInRateLimit ? createRateLimiter({ ...config.signInRateLimit, now: () => clock.now() }) : undefined;
   return {
-    table: [...authRoutes({ auth }), ...(parts.extraRoutes ?? [])],
+    table: [
+      ...authRoutes({ auth }),
+      ...clubRoutes({
+        clubs: createClubService({ db }),
+        status: createStatusService({ db }),
+        pause: createPauseService({ db, notifier: parts.notifier ?? outboxNotConnected }),
+        usage: createUsageService({ db, today: () => bangkokDate(clock.now()) }),
+      }),
+      ...(parts.extraRoutes ?? []),
+    ],
     deps: {
       authenticate: (cookie) => auth.authenticate(cookie),
       maxBodyBytes: config.maxBodyBytes,
