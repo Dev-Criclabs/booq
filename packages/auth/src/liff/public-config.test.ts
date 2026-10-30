@@ -63,14 +63,12 @@ describe('what a guest can read (D103)', () => {
       expect(seen, table).toBe(0);
     }
   });
-  // FINDING (D103, F02-T06), reported to the orchestrator for the Architect: booq_app holds column select on the
-  // owner's contact and tax columns of public.club, and policy club_read (using true) applies to a guest context
-  // too, so a guest can `select owner_phone, tax_id from public.club`. This test states the rule. It is marked
-  // `fails` so the gate stays green until the database is fixed; when it is, vitest reports this test as failing
-  // and the `.fails` must become a plain `it`.
-  it.fails('a guest cannot read the owner’s contact or tax details of the club row', async () => {
-    const rows = (await db.withClubTx(guest(A), (tx) => tx.query('select * from public.club'))).rows as Record<string, unknown>[];
-    const leaked = Object.keys(rows[0] ?? {}).filter((c) => /owner|tax|billing/i.test(c));
-    expect(leaked).toEqual([]);
+  // D103, F02-T06: a guest cannot read the owner's contact or tax details of the club row. Fixed by the Architect in
+  // migration 0026 (booq_app selects only the public columns of public.club; business columns are in public.club_business).
+  it('a guest cannot read the owner’s contact or tax details of the club row', async () => {
+    await expect(db.withClubTx(guest(A), (tx) => tx.query('select owner_phone, tax_id from public.club'))).rejects.toThrow(/permission denied/);
+    await expect(db.withClubTx(guest(A), (tx) => tx.query('select * from public.club'))).rejects.toThrow(/permission denied/);
+    const business = await db.withClubTx(guest(A), (tx) => tx.query('select * from public.club_business')).then((r) => r.rows.length, () => 0);
+    expect(business).toBe(0);
   });
 });
