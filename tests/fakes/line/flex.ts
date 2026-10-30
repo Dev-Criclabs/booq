@@ -55,13 +55,14 @@ export function allText(m: LineMessageObject): string[] {
  * 'mixed' means texts from both languages are in one push, which is a bug (LINE-03).
  */
 export function detectLanguage(messages: LineMessageObject[]): Lang | 'mixed' | 'none' {
-  const texts = messages.flatMap(allText).filter((s) => /[A-Za-z\u0E00-\u0E7F]/.test(s));
+  // Only texts with letters count: Latin letters or Thai letters. A baht sign, digits and punctuation are not language.
+  const texts = messages.flatMap(allText).filter((s) => /[A-Za-z]/.test(s) || containsThai(s));
   if (texts.length === 0) return 'none';
   let th = 0;
   let en = 0;
   for (const s of texts) {
-    const inTh = findKeyFor('th', s) !== undefined;
-    const inEn = findKeyFor('en', s) !== undefined;
+    const inTh = findKeyFor('th', s, { ignoreBareVariables: true }) !== undefined;
+    const inEn = findKeyFor('en', s, { ignoreBareVariables: true }) !== undefined;
     if (inTh && !inEn) th++;
     else if (inEn && !inTh) en++;
   }
