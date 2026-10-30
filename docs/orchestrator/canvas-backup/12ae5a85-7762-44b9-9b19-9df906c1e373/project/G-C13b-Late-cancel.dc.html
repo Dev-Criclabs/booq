@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Late cancel sheet</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=Cormorant+Garamond:wght@500&amp;family=Noto+Sans+Thai:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="--g:#F1F3EC;--cd:#FFFFFF;--ink:#1D241F;--hd:#24392B;--mu:#58635B;--ln:rgba(29,36,31,.12);--dk:#4E6B54;--od:#FFFFFF;--odm:rgba(255,255,255,.88);--ac:#F3D98E;--oac:#24392B;--aci:#FBEFC4;--sel:#3F5E46;--tn:#DDEADB;--tni:#3F5E46;--ht:#F5ECCB;--tk:#E3E7DE;--sh:rgba(36,57,43,.08); width: 375px; height: 812px; box-sizing: border-box; background: var(--g); font-family: 'DM Sans', ui-sans-serif, system-ui, 'Noto Sans Thai', sans-serif; color: var(--ink); display: flex; flex-direction: column; overflow: hidden; position: relative">
+<div style="padding: 22px 16px; display: flex; flex-direction: column; gap: 14px"><span style="font-size: 30px; font-weight: 500; letter-spacing: -0.03em; color: var(--hd)">My bookings</span><div style="height: 64px; border-radius: 14px; background: var(--cd)"></div><div style="height: 200px; border-radius: 18px; background: var(--cd)"></div><div style="height: 140px; border-radius: 18px; background: var(--cd)"></div></div><div style="position: absolute; inset: 0; background: rgba(29,36,31,.45)"></div><div style="position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 14px; padding: 10px 20px 28px; background: var(--cd); border-radius: 26px 26px 0 0"><span style="align-self: center; width: 40px; height: 5px; border-radius: 3px; background: var(--ln)"></span><div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 22px; font-weight: 600; letter-spacing: -0.02em; color: var(--hd)">Cancel this booking?</span><span style="font-size: 14px; color: var(--mu)">Court 2 · Sat 9 Jan 2027 · 18:00 to 19:00</span></div><div style="display: flex; gap: 10px; padding: 12px 14px; border-radius: 14px; background: #F3E1DC; color: #7A3E33; font-size: 13px; line-height: 1.45"><b style="font-weight: 600">Less than 12 hours away.</b> The ฿500 you paid will be forfeited and nothing comes back to your wallet.</div><button style="width: 100%; height: 56px; border: 0; border-radius: 999px; background: var(--hd); color: #FFFFFF; font-family: inherit; font-size: 16px; font-weight: 600">Keep booking</button><button style="width: 100%; height: 48px; border: 0; background: none; color: #9A4E3E; font-family: inherit; font-size: 15px; font-weight: 600">Cancel anyway</button></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":375,"height":812}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

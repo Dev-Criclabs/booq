@@ -28,13 +28,13 @@ describe('withClubTx sets the audit context (PLAT-04-AC1)', () => {
   const ctx = { clubId: A, userId: USER, roles: ['owner'], requestId: 'req-9' };
   it('actor, label, source, reason and request id reach the entry', async () => {
     await db.withClubTx({ ...ctx, source: 'admin', actorLabel: 'Nok', reason: 'new price list' }, (tx) =>
-      tx.query(`insert into public.club_setting (club_id, key, value) values ($1, 'k', '1')`, [A]),
+      tx.query(`insert into public.club_setting (club_id, key, value) values ($1, 'package_qr_minutes', '1')`, [A]),
     );
     expect(await last()).toMatchObject({ actor_type: 'club_user', actor_user_id: USER, actor_label: 'Nok', source: 'admin', reason: 'new price list', request_id: 'req-9' });
   });
 
   it('a club user with no source cannot change audited data (the change rolls back)', async () => {
-    await expect(db.withClubTx(ctx, (tx) => tx.query(`insert into public.club_setting (club_id, key, value) values ($1, 'k', '1')`, [A]))).rejects.toThrow(/source/);
+    await expect(db.withClubTx(ctx, (tx) => tx.query(`insert into public.club_setting (club_id, key, value) values ($1, 'package_qr_minutes', '1')`, [A]))).rejects.toThrow(/source/);
     expect((await tdb.query('select count(*)::int as n from public.club_setting')).rows[0].n).toBe(0);
   });
 
@@ -77,7 +77,7 @@ describe('a platform edit names the BOOQ staff member (PLAT-04-AC4)', () => {
       await c.query('begin');
       await c.query('set local role booq_platform');
       for (const [k, v] of Object.entries({ 'app.club_id': A, ...settings })) await c.query('select set_config($1, $2, true)', [k, v]);
-      await c.query(`insert into public.club_setting (club_id, key, value) values ($1, 'k', '1')`, [A]);
+      await c.query(`insert into public.club_setting (club_id, key, value) values ($1, 'package_qr_minutes', '1')`, [A]);
       await c.query('commit');
     } catch (e) {
       await c.query('rollback');

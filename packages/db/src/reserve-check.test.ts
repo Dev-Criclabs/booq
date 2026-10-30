@@ -270,6 +270,8 @@ describe('app.hold_minutes (F03-T05, D52)', () => {
   });
 
   it('unset reads as null; 12 is refused', async () => {
+    // The table now refuses a hold time of 12 itself (migration 0041); drop that check to prove the reader refuses a bad stored value too.
+    await tdb.query(`alter table public.club_setting drop constraint club_setting_hold_minutes`);
     await tdb.query(`update public.club_setting set value = '12' where club_id = $1 and key = 'hold_minutes'`, [A]);
     await expect(read()).rejects.toThrow(/hold_minutes/);
     await tdb.query(`delete from public.club_setting where club_id = $1 and key = 'hold_minutes'`, [A]);

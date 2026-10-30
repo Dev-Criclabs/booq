@@ -8,5 +8,8 @@
     "@booq/db": "workspace:*",
     "graphile-worker": "^0.18.0",
     "@booq/domain": "workspace:*"
+  },
+  "scripts": {
+    "start": "vite-node src/main.ts"
   }
 }

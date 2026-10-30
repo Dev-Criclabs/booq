@@ -59,4 +59,6 @@ export const tables: Fragment = {
   'app.feature_keys': { class: 'infra' },
   // what to copy when a template is applied, for features that own the tables (F01-T24): written by migrations only
   'app.template_handlers': { class: 'infra' },
+  // the club settings that can exist (F01-T08): written by migrations only
+  'app.setting_keys': { class: 'infra' },
 };

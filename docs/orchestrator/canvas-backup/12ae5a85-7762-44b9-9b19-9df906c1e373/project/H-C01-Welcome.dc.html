@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Welcome and LINE sign-in</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=Cormorant+Garamond:wght@500&amp;family=Noto+Sans+Thai:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="--g:#F1F3EC;--cd:#FFFFFF;--ink:#1D241F;--hd:#24392B;--mu:#58635B;--ln:rgba(29,36,31,.12);--dk:#4E6B54;--od:#FFFFFF;--odm:rgba(255,255,255,.88);--ac:#F3D98E;--oac:#24392B;--aci:#FBEFC4;--sel:#3F5E46;--tn:#DDEADB;--tni:#3F5E46;--sh:rgba(36,57,43,.08); width: 375px; height: 812px; box-sizing: border-box; background: var(--dk); font-family: 'DM Sans', ui-sans-serif, system-ui, 'Noto Sans Thai', sans-serif; color: var(--ink); display: flex; flex-direction: column; overflow: hidden">
+<div style="position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--od); overflow: hidden">
+<div style="position: absolute; left: 48px; right: 48px; top: 40px; bottom: -40px; border: 1.5px solid rgba(255,255,255,.14); border-radius: 6px"></div>
+<div style="position: absolute; left: 96px; right: 96px; top: 40px; bottom: -40px; border-left: 1.5px solid rgba(255,255,255,.14); border-right: 1.5px solid rgba(255,255,255,.14)"></div>
+<div style="position: absolute; left: 48px; right: 48px; top: 190px; border-top: 1.5px solid rgba(255,255,255,.14)"></div>
+<div style="position: absolute; left: 50%; top: 190px; bottom: -40px; border-left: 1.5px solid rgba(255,255,255,.14)"></div>
+<div style="position: relative; display: flex; justify-content: flex-end; width: 100%; box-sizing: border-box; padding: 0 20px; margin-bottom: auto; margin-top: 16px"><button style="height: 34px; padding: 0 14px; border: 1px solid rgba(255,255,255,.4); border-radius: 999px; background: none; color: var(--od); font-family: inherit; font-size: 13px; font-weight: 500">ไทย | EN</button></div>
+<span style="position: relative; font-family: 'Cormorant Garamond', serif; font-weight: 500; font-size: 52px; letter-spacing: 0.12em; line-height: 1">HUNTER</span>
+<span style="position: relative; margin-bottom: auto; font-family: 'Cormorant Garamond', serif; font-weight: 500; font-size: 15px; letter-spacing: 0.42em">TENNIS CLUB</span>
+</div>
+<div style="flex: none; display: flex; flex-direction: column; gap: 16px; padding: 28px 24px 30px; background: var(--g); border-radius: 28px 28px 0 0">
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 28px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.15; color: var(--hd)">Sign in to book</span><span style="font-size: 16px; line-height: 1.5; color: var(--mu)">Court 2 · Sat 9 Jan · 18:00 to 19:00. Sign in once with LINE to pay. Browsing never needs a sign in.</span></div>
+<label style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--cd); border-radius: 14px; font-size: 14px; line-height: 1.4"><input type="checkbox" checked="" style="width: 20px; height: 20px; flex: none; accent-color: #3F5E46">Add Hunter Tennis Club as a LINE friend for booking updates</label>
+<button style="height: 54px; border: 0; border-radius: 999px; background: #06C755; color: #FFFFFF; font-family: inherit; font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" rx="6" fill="#FFFFFF"></rect><path d="M12 5.5c-4 0-7 2.5-7 5.6 0 2.8 2.4 5.1 5.7 5.5l-.4 1.9c-.1.4.3.6.6.4l2.6-1.9c3-.5 5.5-2.8 5.5-5.9 0-3.1-3-5.6-7-5.6z" fill="#06C755"></path></svg>Log in with LINE</button>
+<button style="height: 40px; border: 0; background: none; color: var(--mu); font-family: inherit; font-size: 15px; font-weight: 500">Keep browsing</button>
+<span style="font-size: 12px; line-height: 1.5; color: var(--mu); text-align: center">By continuing you agree to the <a href="#" style="color: var(--sel); font-weight: 600">terms</a> and <a href="#" style="color: var(--sel); font-weight: 600">privacy notice</a>.</span>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":375,"height":812}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
