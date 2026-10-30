@@ -11,7 +11,7 @@ name: CI
 #
 # A placeholder that is missing is a notice. Set the repository variable CI_STRICT=true
 # (Settings, Variables) once F01-T05 and F01-T36 land, and a missing one fails the build.
-# CI uses no secrets. Tests use the fakes under tests/fakes (fake Beam, fake LINE) and no network.
+# Third party actions are pinned to commit SHAs (SR-23); Dependabot proposes updates weekly. CI uses no secrets. Tests use the fakes under tests/fakes (fake Beam, fake LINE) and no network.
 
 on:
   pull_request:
@@ -50,9 +50,9 @@ jobs:
       TZ: ${{ matrix.tz || 'UTC' }}
       I18N_TS_FROM: ${{ matrix.ts_from }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4        # version comes from "packageManager" in package.json
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4        # version comes from "packageManager" in package.json
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -68,10 +68,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .nvmrc
       - run: node tools/i18n/check-wording.mjs "origin/${{ github.base_ref }}"
@@ -86,9 +86,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -127,7 +127,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - id: find
         run: |
           dir=""
@@ -136,16 +136,16 @@ jobs:
           elif [ "${CI_STRICT:-}" = "true" ]; then echo "::error::No supabase/config.toml and CI_STRICT is true."; exit 1
           else echo "::notice::No supabase/config.toml yet. Database tests skipped."; fi
       - if: steps.find.outputs.dir
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - if: steps.find.outputs.dir
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .nvmrc
           cache: pnpm
       - if: steps.find.outputs.dir
         run: pnpm install --frozen-lockfile
       - if: steps.find.outputs.dir
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3
         with:
           version: latest      # pin to the version the Architect develops with once chosen
       - name: Start the local stack (applies every migration from scratch)
@@ -174,16 +174,49 @@ jobs:
         if: always() && steps.find.outputs.dir
         run: supabase stop --workdir "${{ steps.find.outputs.dir }}" --no-backup
 
+  # SR-23: the pipeline must not go green while the security suites are absent.
+  # Required, by path (QA test layout, docs/qa/test-strategy.md): the tenant and platform-blind suites in
+  # tests/rls, the concurrency suite in tests/concurrency, and the banned-pattern lint (it runs in "lint").
+  # Missing is a notice until CI_STRICT=true, which should be on before F01-T36 closes.
+  security-suites:
+    name: security suites present
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: |
+          rc=0
+          for d in tests/rls tests/concurrency; do
+            if ls "$d"/*.test.ts "$d"/*.spec.ts >/dev/null 2>&1; then echo "$d has test files."
+            elif [ "${CI_STRICT:-}" = "true" ]; then echo "::error::$d has no test files and CI_STRICT is true."; rc=1
+            else echo "::notice::$d has no test files yet."; fi
+          done
+          [ -f tools/lint/banned-patterns.mjs ] || { echo "::error::tools/lint/banned-patterns.mjs is missing."; rc=1; }
+          exit $rc
+
+  # Report only, never blocks. A person reviews high and critical findings weekly (WEB-8).
+  audit:
+    name: dependency audit (report)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+      - run: pnpm audit --prod --audit-level high || echo "::warning::pnpm audit reported findings. Review them (non-blocking)."
+
   # One status to require in branch protection.
   ci-ok:
     name: CI result
     if: always()
-    needs: [checks, wording, rules, db]
+    needs: [checks, wording, rules, db, security-suites]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - run: |
-          echo "checks=${{ needs.checks.result }} wording=${{ needs.wording.result }} rules=${{ needs.rules.result }} db=${{ needs.db.result }}"
-          case "${{ needs.checks.result }} ${{ needs.wording.result }} ${{ needs.rules.result }} ${{ needs.db.result }}" in
+          echo "checks=${{ needs.checks.result }} wording=${{ needs.wording.result }} rules=${{ needs.rules.result }} db=${{ needs.db.result }} suites=${{ needs.security-suites.result }}"
+          case "${{ needs.checks.result }} ${{ needs.wording.result }} ${{ needs.rules.result }} ${{ needs.db.result }} ${{ needs.security-suites.result }}" in
             *failure*|*cancelled*) exit 1 ;;
           esac
