@@ -3,6 +3,13 @@
 Decisions made by the user, newest first. Each is also written into the PRD change log or hand-off where it changes a rule
 (`CLAUDE.md`: rule changes start in the PRD, then the hand-off, then the feature specs).
 
+## 30 Oct 2026, round 3
+
+| # | Decision |
+|---|---|
+| D16 | The 7 Dec test runs on **production** with Hunter in Testing status (test data flagged, purged at Go live). Staging is for development and QA only |
+| D5 (update) | The Thai-lawyer check on hosting is **deferred by the user**. Do not raise it with the user until they bring it up. The hosting choice in D5 stands for now |
+
 ## 30 Oct 2026, round 2 (foundation, from the F01/F02/architect/DevOps questions)
 
 | # | Decision | Feature specs affected |
