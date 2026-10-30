@@ -88,8 +88,8 @@ describe('the club list (P1)', () => {
   it('lists the clubs the staff member can see, each with one number', async () => {
     await usage(CLUB, '2026-10-30', 'bookings_confirmed', 4);
     await usage(OTHER, '2026-10-29', 'bookings_confirmed', 2);
-    expect(await svc.portfolio(admin)).toEqual(expect.arrayContaining([{ clubId: CLUB, bookingsConfirmed30d: 4 }, { clubId: OTHER, bookingsConfirmed30d: 2 }]));
-    expect(await svc.portfolio(spec)).toEqual([{ clubId: CLUB, bookingsConfirmed30d: 4 }]);
+    expect(await svc.portfolio(admin)).toEqual(expect.arrayContaining([{ clubId: CLUB, nameTh: 'ก', nameEn: 'A', status: 'live', bookingsConfirmed30d: 4 }, { clubId: OTHER, nameTh: 'ข', nameEn: 'B', status: 'live', bookingsConfirmed30d: 2 }]));
+    expect(await svc.portfolio(spec)).toEqual([{ clubId: CLUB, nameTh: 'ก', nameEn: 'A', status: 'live', bookingsConfirmed30d: 4 }]);
     expect(await svc.portfolio(loner)).toEqual([]);
   });
 });
