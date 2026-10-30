@@ -42,7 +42,7 @@ Depends on: F01 T03 to T07 (database, context, tenant suite), T08 (settings), T1
   Tests first: slot open reclaims and confirms; slot taken, held or closed raises `slot_unavailable`; a solo class with the coach busy raises it and leaves nothing partial.
 - [x] **F03-T15** `app.move_booking` (staff): in-place update, conflicts re-checked by the constraints, coach rules, customer message enqueued. IDs: BOOK-04-AC7. Role: BE-B · Deps T08 · Size: M
   Tests first: a move onto a taken slot or a busy coach is refused and nothing changes; a successful move enqueues one message.
-- [ ] **F03-T16** Opening hours and court change guard `app.count_live_occupancy`, called by the F01 `PUT /hours` and `PUT /resources/{id}` routes. IDs: decision D50. Role: BE-B · Deps T08, F01-T08 · Size: S
+- [x] **F03-T16** Opening hours and court change guard `app.count_live_occupancy`, called by the F01 `PUT /hours` and `PUT /resources/{id}` routes. IDs: decision D50. Role: BE-B · Deps T08, F01-T08 · Size: S
   Tests first: shortening hours or deactivating a court over a live booking is refused with the closure hint; with no bookings it succeeds.
 
 ## B. Views, policies, jobs
