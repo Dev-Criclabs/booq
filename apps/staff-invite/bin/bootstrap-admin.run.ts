@@ -1,12 +1,13 @@
 import { createOwnerTransactor } from '@booq/db';
-import { bootstrapFirstAdmin } from '../src/bootstrap-admin';
+import { bootstrapFirstAdmin, reissueFirstAdminLink } from '../src/bootstrap-admin';
 import { createSupabaseAdmin } from '../src/supabase-admin';
 
-// `pnpm run bootstrap:admin -- --email <email> --name <name> --ttl-hours <hours>` (D163). Run once by DevOps when a
+// `pnpm run bootstrap:admin -- --email <email> --name <name> --ttl-hours <hours>` (D163), or, while no admin has ever
+// enrolled, `pnpm run bootstrap:admin -- --reissue --ttl-hours <hours>` for a fresh link for the same first admin. Run once by DevOps when a
 // deployment has no admin yet, from a machine that holds the database owner's connection and the provider's admin
 // credentials. Nothing has a default. It prints the enrolment link (and nothing else) to standard output, once; messages
 // go to standard error. Exit codes: 0 done, 2 a missing or bad setting, 3 an active admin already exists, 4 the email is
-// already a teammate, 5 the identity provider failed.
+// already a teammate, 5 the identity provider failed, 6 there is no first admin who still has to enrol (--reissue).
 const REQUIRED_ENV = ['BOOTSTRAP_DATABASE_URL', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'PLATFORM_BASE_URL'] as const;
 
 function arg(name: string): string | undefined {
@@ -20,15 +21,26 @@ const fail = (code: number, message: string): never => {
 
 const missingEnv = REQUIRED_ENV.filter((n) => !process.env[n]);
 if (missingEnv.length) fail(2, `settings missing: ${missingEnv.join(', ')}`);
+const reissue = process.argv.includes('--reissue');
 const email = arg('email');
 const name = arg('name');
 const ttl = arg('ttl-hours');
-if (!email || !name || !ttl) fail(2, 'usage: --email <email> --name <name> --ttl-hours <hours> (all three are required; no default is shipped)');
+if (reissue) {
+  if (!ttl || email || name) fail(2, 'usage: --reissue --ttl-hours <hours> (nothing else; the first admin already exists)');
+} else if (!email || !name || !ttl) fail(2, 'usage: --email <email> --name <name> --ttl-hours <hours> (all three are required; no default is shipped)');
 if (!/^[0-9]+(\.[0-9]+)?$/.test(ttl!)) fail(2, '--ttl-hours must be a number above zero');
 
 const db = createOwnerTransactor(process.env['BOOTSTRAP_DATABASE_URL']!);
 
 try {
+  if (reissue) {
+    const r = await reissueFirstAdminLink({ db }, { ttlHours: Number(ttl), consoleBaseUrl: process.env['PLATFORM_BASE_URL']! });
+    if (r.ok) {
+      process.stderr.write(`bootstrap-admin: the old link is void; the new one below works once and expires at ${r.expiresAt}.\n`);
+      process.stdout.write(`${r.enrolmentLink}\n`);
+    } else if (r.code === 'bad_input') fail(2, 'the link life or PLATFORM_BASE_URL is not valid');
+    else fail(6, 'no first admin is waiting to enrol (one has enrolled, or none was bootstrapped); nothing was changed');
+  } else {
   const result = await bootstrapFirstAdmin(
     { db, admin: createSupabaseAdmin({ url: process.env['SUPABASE_URL']!, serviceRoleKey: process.env['SUPABASE_SERVICE_ROLE_KEY']! }) },
     { email: email!, displayName: name!, ttlHours: Number(ttl), consoleBaseUrl: process.env['PLATFORM_BASE_URL']! },
@@ -40,6 +52,7 @@ try {
     const codes = { bad_input: [2, 'the email, name, link life or PLATFORM_BASE_URL is not valid'], admin_exists: [3, 'an active admin already exists; nothing was changed'], email_taken: [4, 'this email is already a teammate; nothing was changed'], provider_failed: [5, 'the identity provider could not create the user; nothing was changed'] } as const;
     const [exit, message] = codes[result.code];
     fail(exit, message);
+  }
   }
 } catch {
   fail(1, 'failed before finishing; nothing was kept (the provider user, if one was made, was removed)');

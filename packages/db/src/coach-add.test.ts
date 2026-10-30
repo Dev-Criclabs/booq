@@ -199,6 +199,28 @@ describe('app.add_coach_to_booking', () => {
   });
 });
 
+describe('court lock (FA 3.4 step 3c, migration 0810)', () => {
+  const advisory = (tx: { query: (sql: string) => Promise<{ rows: Array<{ n: number }> }> }) =>
+    tx.query(`select count(*)::int as n from pg_locks where locktype = 'advisory' and pid = pg_backend_pid()`).then((r) => r.rows[0]!.n);
+
+  it('adding a coach and releasing the add each take the court lock before the occupancy write', async () => {
+    const b = await courtBooking(10);
+    const order = await addOrder();
+    const before = await db.withClubTx(player(), async (tx) => {
+      const n0 = await advisory(tx as never);
+      await tx.query(`select app.add_coach_to_booking($1, $2, $3)`, [b, COACH, order]);
+      return [n0, await advisory(tx as never)];
+    });
+    expect(before[1]! - before[0]!).toBe(1);   // the coach is a row lock; the court is the one advisory lock
+    const rel = await db.withClubTx(player(), async (tx) => {
+      const n0 = await advisory(tx as never);
+      await tx.query(`select app.release_coach_add($1, 'player')`, [order]);
+      return (await advisory(tx as never)) - n0;
+    });
+    expect(rel).toBeGreaterThanOrEqual(1);
+  });
+});
+
 describe('payment, release and expiry of the add order (D111, CC-4)', () => {
   const asWorker = <T>(sql: string, params: unknown[] = []) => dbw.withClubTx({ clubId: A, userId: null, roles: [], source: 'job' }, async (tx) => (await tx.query(sql, params)).rows as T[]);
 
