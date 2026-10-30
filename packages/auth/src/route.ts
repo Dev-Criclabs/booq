@@ -30,13 +30,20 @@ export interface RouteSession {
 export interface RouteRequest {
   session: RouteSession | null;
   input: unknown;
+  /** The raw Cookie header, for the routes that sign in and out (F02). */
+  cookie?: string | undefined;
 }
 
 export interface RouteDeps {
   hasFeature(clubId: string, featureKey: string): Promise<boolean>;
 }
 
-export type RouteContext = RouteSession & { input: unknown };
+export type RouteContext = RouteSession & { input: unknown; cookie?: string | undefined };
+
+/** A handler returns this to set a status or a cookie along with the body. The transport unwraps it. */
+export class Reply<T> {
+  constructor(readonly body: T, readonly options: { status?: number; setCookie?: string } = {}) {}
+}
 
 export type RouteResult<T> =
   | { ok: true; status: 200; body: T }
@@ -88,7 +95,7 @@ export function route<T>(def: RouteDeclaration, handler: (ctx: RouteContext) => 
         if (!(await deps.hasFeature(session.clubId, def.feature))) return { ok: false, status: 403, code: 'feature_disabled' };
       }
       try {
-        const ctx = { ...(session as RouteSession), input: req.input };
+        const ctx = { ...(session as RouteSession), input: req.input, cookie: req.cookie };
         return { ok: true, status: 200, body: await handler(ctx) };
       } catch (e) {
         if (e instanceof RouteError) return { ok: false, status: e.status, code: e.code };
