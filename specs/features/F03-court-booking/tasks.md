@@ -87,6 +87,9 @@ Depends on: F01 T03 to T07 (database, context, tenant suite), T08 (settings), T1
 
 F04 calls `reserve_court` from its Pay route and builds the order lines on the `orders` shell. F05 calls `confirm_booking` and `reclaim_order`. F06 registers its release handler. F07 registers `coach_rules_check`. F08 registers the waitlist advance handler and owns the Join waitlist screens. F09 calls `release_hold` for closures. F10 supplies the outbox behind the released and moved messages.
 
+- [ ] **F03-T29** Migration 0222 or the next free `02xx` number: `app.add_coach_to_booking(booking, coach)` (definer): claims the coach on an existing confirmed court booking under the same exclusion constraint, turns the booking into a solo class, runs the coach rules hook, and refuses with `slot_unavailable by coach` when the coach is busy. IDs: BOOK-04-AC2, AC3, R2-AC9 (F04), decision D111. Role: Arch · Deps F03-T02, T09 · Size: S
+  Tests first: a busy coach refuses and the booking is unchanged; a free coach is claimed and the occupancy row now holds court and coach; a second coach on the same hour is refused by the database; another club's booking is not found; only the booking's owner or staff may add a coach.
+
 ## Order and size
 
 T01 to T06 first (data and release), then T07 to T14 in sequence (the claim), T15 and T16 in parallel, then B, C and D in parallel, then E. About 28 tasks.
