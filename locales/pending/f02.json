@@ -1,5 +1,5 @@
 {
-  "_note": "Proposed by BE-P for F02 (D51). Numbers to be assigned by Content; wording drafted, writers own it. Offline uses the existing P-0327 and P-0328. Error codes from the server map to these keys in the client: invalid_token and offline-free failures -> signin_failed.",
+  "_note": "Proposed by BE-P for F02 (D51). Numbers to be assigned by Content; wording drafted, writers own it. Offline uses the existing P-0327 and P-0328. Error codes from the server map to these keys in the client: invalid_token and offline-free failures -> signin_failed. FE-P adds the language toggle labels and the not-found line; the client maps sign-in refusals to signin_failed and signin_account_inactive.",
   "en": {
     "P-new.signin_failed": "We could not sign you in with LINE. Please try again.",
     "P-new.signin_account_inactive": "This account is not active. Please contact the club.",

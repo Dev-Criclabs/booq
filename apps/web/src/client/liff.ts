@@ -12,6 +12,8 @@ export interface LiffPort {
   getIDToken(): string | null;
   /** The LINE app language, such as `th` or `en-US` (design 6.7). */
   getLanguage(): string;
+  /** The LINE display name from the ID token, for the C2 greeting only (AUTH-02-AC7); never the full name (LINE-01-AC12). */
+  getDisplayName(): string | null;
 }
 
 /** What a test or a local run puts on `window.__BOOQ_LIFF_FAKE__` (only read when the build allows it). */
@@ -20,6 +22,7 @@ export interface LiffFakeState {
   loggedIn: boolean;
   idToken: string | null;
   language: string;
+  displayName?: string | null;
   /** `init` fails as LINE being unreachable. */
   offline?: boolean;
 }
@@ -41,6 +44,7 @@ export function fakeLiff(state: LiffFakeState, go: (url: string) => void, store?
     },
     getIDToken: () => (state.loggedIn || store?.getItem(FAKE_LOGGED_IN) === '1' ? state.idToken : null),
     getLanguage: () => state.language,
+    getDisplayName: () => state.displayName ?? null,
   };
 }
 
