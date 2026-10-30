@@ -441,6 +441,31 @@ export interface PublicClaimRequest {
   handled_at: string | null;
 }
 
+export interface PublicClassSession {
+  club_id: string;
+  id: string;
+  template_id: string;
+  start_at: string;
+  end_at: string;
+  name_th: string;
+  name_en: string;
+  audience: string;
+  level: string | null;
+  coach_id: string;
+  resource_id: string;
+  min_players: number;
+  max_players: number;
+  drop_in_price_satang: number | null;
+  status: string;
+  attention_reason: string | null;
+  cancel_reason: string | null;
+  edited: boolean;
+  cancelled_by: string | null;
+  cancelled_at: string | null;
+  is_test: boolean;
+  created_at: string;
+}
+
 export interface PublicClassTemplate {
   club_id: string;
   id: string;
@@ -1242,6 +1267,7 @@ export interface Tables {
   'public.booking_cancel': PublicBookingCancel;
   'public.booking_coach_add': PublicBookingCoachAdd;
   'public.claim_request': PublicClaimRequest;
+  'public.class_session': PublicClassSession;
   'public.class_template': PublicClassTemplate;
   'public.closure': PublicClosure;
   'public.closure_resource': PublicClosureResource;
