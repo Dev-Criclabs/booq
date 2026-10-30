@@ -53,6 +53,7 @@ beforeEach(async () => {
   tdb = await createTestDatabase();
   await tdb.setNow('2026-12-01T03:00:00Z');
   await tdb.query(`insert into public.club (id, slug, name_th, name_en, status) values ($1,'club-a','ก','A','live'), ($2,'club-b','ข','B','live')`, [A, B]);
+  await tdb.seedCoach(A, COACH);   // a solo class needs a coach row (F07, migration 0801)
   await tdb.query(`insert into public.location (club_id, id, name) values ($1,$2,'Main'), ($3,$4,'Main')`, [A, LOC, B, LOC_B]);
   await tdb.query(`insert into public.resource (club_id, id, location_id, name, sport, active) values ($1,$2,$3,'1','tennis',true), ($1,$4,$3,'2','tennis',true), ($1,$5,$3,'3','tennis',false), ($6,$7,$8,'1','tennis',true)`, [A, COURT1, LOC, COURT2, COURT3, B, COURT_B, LOC_B]);
   for (const club of [A, B]) {
@@ -172,6 +173,7 @@ describe('coach rules on a move (design 4.3)', () => {
   beforeEach(async () => {
     await tdb.query(`create function public.t_rules(p_club uuid, p_coach uuid, p_resource uuid, p_starts timestamptz[]) returns void language plpgsql as $$ begin if p_starts[1] = '${H(22)}'::timestamptz then perform app.refuse('rest_rule'); end if; end $$`);
     await tdb.query(`select app.register_coach_rules('public.t_rules'::regproc)`);
+    await tdb.query('delete from app.coach_rules_move_hook');   // F07 registers its own move handler (0803): this test uses a stand-in
   });
 
   it('a solo class is checked by the coach rules at the new time', async () => {

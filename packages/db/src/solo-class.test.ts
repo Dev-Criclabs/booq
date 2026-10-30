@@ -49,6 +49,8 @@ beforeEach(async () => {
   tdb = await createTestDatabase();
   await tdb.setNow('2026-12-01T03:00:00Z');
   await tdb.query(`insert into public.club (id, slug, name_th, name_en, status) values ($1,'club-a','ก','A','live')`, [A]);
+  await tdb.seedCoach(A, COACH);   // a solo class needs a coach row (F07, migration 0801)
+  await tdb.seedCoach(A, COACH2);   // a solo class needs a coach row (F07, migration 0801)
   await tdb.query(`insert into public.location (club_id, id, name) values ($1,$2,'Main')`, [A, LOC]);
   await tdb.query(`insert into public.resource (club_id, id, location_id, name, sport) values ($1,$2,$3,'1','tennis'), ($1,$4,$3,'2','tennis')`, [A, COURT1, LOC, COURT2]);
   for (let d = 1; d <= 7; d += 1) await tdb.query(`insert into public.opening_hours (club_id, weekday, open, close) values ($1,$2,'06:00','24:00')`, [A, d]);
@@ -60,7 +62,11 @@ afterEach(async () => {
   await tdb.close();
 });
 
-describe('until F07 registers the check (assumption A-8)', () => {
+describe('with no rules registered (assumption A-8; F07 registers its own in migration 0803)', () => {
+  beforeEach(async () => {
+    await tdb.query('delete from app.coach_rules_hook');
+    await tdb.query('delete from app.coach_rules_move_hook');
+  });
   it('a coach request is refused and leaves nothing', async () => {
     expect(await reserve(uid(1), await newOrder(uid(1)), COURT1, [H(18)], COACH)).toEqual({ ok: false, code: 'coach_rules_not_installed', detail: undefined });
     expect(await count('booking')).toBe(0);

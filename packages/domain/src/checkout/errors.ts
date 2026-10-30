@@ -9,6 +9,7 @@ export const CHECKOUT_TEXT_KEYS = {
   selection_invalid: 'P-new.not_on_the_hour',
   price_not_set: 'P-new.price_not_set',
   coach_price_not_set: 'P-new.coach_price_not_set',
+  coach_at_checkout_disabled: 'P-new.coach_at_checkout_disabled',
   add_on_not_for_sale: 'P-new.add_on_not_for_sale',
   code_not_valid: 'P-new.code_not_valid',
   code_expired: 'P-new.code_expired',
@@ -18,6 +19,9 @@ export const CHECKOUT_TEXT_KEYS = {
   code_first_booking_only: 'P-new.code_first_booking_only',
   code_used_up: 'P-new.code_used_up',
   code_not_for_solo_class: 'P-new.code_not_for_solo_class',
+  one_code_per_order: 'P-new.one_code_per_order',
+  birthday_not_available: 'P-new.birthday_not_available',
+  credit_unavailable: 'P-new.credit_unavailable',
 } as const;
 
 export type CheckoutErrorCode = keyof typeof CHECKOUT_TEXT_KEYS;

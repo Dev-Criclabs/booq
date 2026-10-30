@@ -34,6 +34,9 @@ export interface QuoteSources {
   eligibleCredits(tx: Tx, customerId: string): Promise<EligibleCredit[]>;
   /** F06: the wallet balance in satang, from the ledger. */
   walletBalance(tx: Tx, customerId: string): Promise<number>;
+  /** F06 port reserve_credit_and_wallet (F06-T09): reserve every credit and wallet part of the order's lines, all
+   *  or nothing. False means something is no longer there (used up, expired, wallet short) and nothing was written. */
+  reserveCreditAndWallet(tx: Tx, orderId: string): Promise<boolean>;
 }
 
 export interface QuoteView extends Quote {
@@ -43,7 +46,8 @@ export interface QuoteView extends Quote {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CODE = /^[A-Z0-9][A-Z0-9_-]{0,63}$/;
-// Input sanity only, not a booking rule: F03's reserve_court applies the club's hour limits at Pay.
+// These two only guard the size of a request. They are not club rules or settings: the club's own hour
+// limits are applied by F03's reserve_court at Pay.
 const MAX_HOURS = 24;
 const MAX_ADD_ONS = 50;
 
@@ -120,6 +124,13 @@ export async function quoteFor(tx: Tx, customerId: string, req: QuoteRequest, so
   const terms = await sources.clubTerms(tx);
 
   let coach: PricingInput['selection']['coach'] = null;
+  if (req.coachId !== null && req.coachSource === 'checkout') {
+    // A coach picked on C10 needs the club's switch; a solo class through Classes does not (F01 feature keys).
+    const on = one(await tx.query<{ enabled: boolean }>(
+      `select enabled from public.club_feature where club_id = app.club_id() and feature_key = 'coach_add_at_checkout'`,
+    ));
+    if (!on?.enabled) throw new CheckoutError('coach_at_checkout_disabled');
+  }
   if (req.coachId !== null) {
     const found = await sources.coach(tx, req.coachId);
     if (!found) throw new CheckoutError('coach_price_not_set');
@@ -154,11 +165,20 @@ export async function quoteFor(tx: Tx, customerId: string, req: QuoteRequest, so
 }
 
 /** The ports until F06, F07 and F14 exist: no credits, an empty wallet, no coach, no referral codes. */
-export const pendingFeatureSources: Pick<QuoteSources, 'referralCode' | 'coach' | 'eligibleCredits' | 'walletBalance'> = {
+export const pendingFeatureSources: Pick<QuoteSources, 'referralCode' | 'coach' | 'eligibleCredits' | 'walletBalance' | 'reserveCreditAndWallet'> = {
   referralCode: async () => null,
   coach: async () => null,
   eligibleCredits: async () => [],
   walletBalance: async () => 0,
+  // Nothing to reserve when no line uses credit or wallet; otherwise F06's port (0511), which must exist.
+  reserveCreditAndWallet: async (tx, orderId) => {
+    const used = (await tx.query<{ n: string }>(
+      `select count(*) as n from public.order_line where club_id = app.club_id() and order_id = $1 and (credit_units > 0 or wallet_satang > 0)`,
+      [orderId],
+    )).rows[0];
+    if (Number(used?.n ?? 0) === 0) return true;
+    return (await tx.query<{ ok: boolean }>('select app.port_reserve_credit_and_wallet($1) as ok', [orderId])).rows[0]?.ok === true;
+  },
 };
 
 interface PromoRow {

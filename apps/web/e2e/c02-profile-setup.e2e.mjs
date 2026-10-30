@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import { join } from 'node:path';
-import { chromium, openPage, SHOTS, startApp } from './harness.mjs';
+import { chromium, CLUB, openPage, SHOTS, startApp } from './harness.mjs';
 
 const NEXT = '/c/hunter/checkout?court=2&date=2027-01-09&from=18:00&to=19:00';
 const setup = (base, next = NEXT) => `${base}/c/hunter/profile-setup?next=${encodeURIComponent(next)}`;
@@ -22,7 +22,7 @@ after(async () => {
 
 describe('C2 Profile setup (F02-T20)', () => {
   it('AUTH-02-AC6: a new player goes from sign in to C2 and on to payment with the slot kept', async () => {
-    const { page, context, calls } = await openPage(browser, { liff, lang: 'en', session: { status: 200, body: { state: 'needs_profile' } } });
+    const { page, context, calls } = await openPage(browser, { liff, lang: 'en', session: { status: 200, body: { state: 'pending_profile' } } });
     await page.goto(`${app.base}/c/hunter/sign-in?next=${encodeURIComponent(NEXT)}`);
     await page.getByTestId('continue').waitFor();
     assert.equal(await page.locator('h1').innerText(), 'Hi, ploy.s');
@@ -40,6 +40,32 @@ describe('C2 Profile setup (F02-T20)', () => {
     assert.deepEqual(Object.keys(body).sort(), ['consent', 'fullName', 'language', 'noticeVersion', 'phone']);
     assert.equal(body.consent, true);
     assert.equal(body.language, 'en');
+    assert.equal(body.noticeVersion, 'v1', 'the consent is for the current release from the config (D152)');
+    await context.close();
+  });
+
+  it('D152: a release published while on C2 asks for consent again, then signs up for the new version', async () => {
+    const { page, context, calls } = await openPage(browser, {
+      liff,
+      lang: 'en',
+      profile: (all) => (all.filter((c) => c.path.endsWith('/auth/profile')).length === 1 ? { status: 409, body: { code: 'notice_version_stale' } } : { status: 200, body: { state: 'active' } }),
+    });
+    // The new release is published once the first sign-up attempt has gone out.
+    await page.route('**/api/c/hunter/public/config', (r) => r.fulfill({ status: 200, json: { ...CLUB, noticeVersion: calls.some((c) => c.path.endsWith('/auth/profile')) ? 'v2' : 'v1' } }));
+    await page.goto(setup(app.base));
+    await page.locator('input[name=fullName]').fill('Ploy Srisuk');
+    await page.locator('input[name=phone]').fill('0812345678');
+    await page.locator('input[name=consent]').check();
+    await page.getByTestId('continue').click();
+    await page.getByTestId('form-error').waitFor();
+    assert.match(await page.getByTestId('form-error').innerText(), /changed/);
+    assert.equal(await page.locator('input[name=consent]').isChecked(), false, 'consent is asked again');
+    assert.equal(await page.locator('input[name=fullName]').inputValue(), 'Ploy Srisuk', 'the typed details stay');
+    await page.locator('input[name=consent]').check();
+    await page.getByTestId('continue').click();
+    await page.waitForURL((u) => u.pathname === '/c/hunter/checkout');
+    const sent = calls.filter((c) => c.path.endsWith('/auth/profile')).map((c) => JSON.parse(c.body).noticeVersion);
+    assert.deepEqual(sent, ['v1', 'v2']);
     await context.close();
   });
 

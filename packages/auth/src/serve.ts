@@ -97,7 +97,8 @@ function serveNow(table: readonly Route<unknown>[], deps: ServeDeps): (request: 
     }
     if (deps.rateLimit?.routes.includes(`${found.route.def.method} ${found.route.def.path}`)) {
       const caller = callerOf(request);
-      const hit = deps.rateLimit.limiter.hit(`${found.route.def.method} ${found.route.def.path}|${slug}|${caller}`);
+      const route = `${found.route.def.method} ${found.route.def.path}`;
+      const hit = await deps.rateLimit.limiter.hit(`${route}|${slug}|${caller}`, { route, slug, caller });
       if (!hit.allowed) return json(429, { code: 'rate_limited' }, { 'retry-after': String(hit.retryAfterSeconds) });
     }
     const cookie = request.headers.get('cookie') ?? undefined;

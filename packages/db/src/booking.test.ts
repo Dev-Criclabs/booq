@@ -20,6 +20,7 @@ let tdb: TestDatabase;
 beforeEach(async () => {
   tdb = await createTestDatabase();
   await tdb.query(`insert into public.club (id, slug, name_th, name_en) values ($1,'club-a','ก','A'), ($2,'club-b','ข','B')`, [A, B]);
+  await tdb.seedCoach(A, 'e0e0e0e0-0000-4000-8000-000000000009');   // a solo class needs a coach row (F07, migration 0801)
   await tdb.query(`insert into public.location (club_id, id, name) values ($1,$2,'Main'), ($3,$4,'Main')`, [A, LOC_A, B, LOC_B]);
   await tdb.query(
     `insert into public.resource (club_id, id, location_id, name, sport) values ($1,$2,$3,'1','tennis'), ($4,$5,$6,'1','tennis')`,
