@@ -2,7 +2,7 @@
 
 Reviewer: Architect role, 30 Oct 2026. Against SR-02, SR-03, SR-06, D27, F01 design 3.2 and 6.3, FA 4.4 and 8.2.
 
-## Verdict: approve. Merge it. One follow-up of mine after it lands (item 1).
+## Verdict: approve. Merge it. (It has been merged.)
 
 The ten class P tables are the ones the design lists, with the right keys and CHECKs; nothing is granted to `booq_platform`, `booq_app`, `booq_worker` or the public roles, so the default is no access and T18 writes the grants and policies in one place. The two foreign keys 0002 left open are closed. P6 `audit_log` is append-only (row and truncate guards). `app.bump_usage` is a definer function with a fixed search path, takes no club argument, fails with no club context, and cannot be run by `booq_platform`. `platform.test.ts` has 19 tests covering this. I read the migration and the test titles; I did not run the branch, and it has not been tried with 0006 (test mode) merged in. CI on `main` after the merge is the check for that.
 
@@ -21,7 +21,7 @@ The ten class P tables are the ones the design lists, with the right keys and CH
 
 1. **`app.bump_usage(metric, by)` in the `app` schema, no club argument.** Confirmed. Correct place (the app roles have no usage on `platform`).
 2. **Returns false when the club is not Live or Paused.** Confirmed (test activity is not counted, FA 2.6, D33).
-3. **Policy `club_owner_role_read` on `club` for `booq_owner`, own club only.** Confirmed as the better design, and it clashes with mine. My 0006 (already on `main`) has `club_definer_read ... using (true)`, and permissive policies are ORed, so both together leave the wide one in force. **Follow-up (mine):** once 0004 is on `main` I add a small migration that drops `club_definer_read`, so only the own-club policy remains, and I change my `test-mode` tests to set the club context the way production does. Nothing for you to change.
+3. **Policy `club_owner_role_read` on `club` for `booq_owner`, own club only.** Confirmed, and it can stay beside mine. My 0006 (on `main`) has a wider `club_definer_read ... using (true)`; permissive policies are ORed, so the wide one decides. *Update (Architect, after thinking it through):* I am **keeping the wide one and not adding a migration to drop it.** The trigger `app.set_is_test()` reads the club status for the row's own club under `booq_owner`; with only the narrow policy it would find no club whenever the context is missing (a job, a fixture, a migration) and would silently set `is_test = false`, which is the dangerous direction (a test row that survives Go live). `booq_owner` is NOLOGIN and runs only our own definer functions, which take the club from the context (SR-07). Nothing for platform lane 1 to change.
 4. **`export_request.status` = requested, running, done, failed.** Confirmed. T31 may add columns (link, row counts) in its own migration.
 5. **No grants or RLS for `booq_platform` yet (T18).** Confirmed. T18 must also say whether the class P tables get `enable row level security` as a second layer. Recommended default: yes, enabled with explicit policies for `booq_platform`, so a future wrong grant still returns no rows.
 6. **One word change to `harness.ts`: `app.test_clock` granted to `booq_owner`.** Confirmed, needed because `bump_usage` runs as `booq_owner` and `app.now()` reads the table in test databases. The merged line (the version that also lists `booq_audit` and `booq_anonymiser`) is the right one. Test-only; production `app.now()` is plain `now()`.
