@@ -17,6 +17,14 @@ export async function completeSetup(db: Querier, club: string): Promise<void> {
   await db.query(`insert into public.opening_hours (club_id, weekday, open, close) values ($1, 1, '06:00', '24:00')`, [club]);
   await db.query(`insert into public.line_connection (club_id, tested_at) values ($1, app.now())`, [club]);
   await db.query(`insert into public.payment_connection (club_id, tested_at) values ($1, app.now())`, [club]);
+  // The platform-wide privacy notice (D152, migration 0048): one published release is enough for every club.
+  if ((await db.query(`select 1 from platform.legal_release`)).rows.length === 0) {
+    const st = (await db.query(`insert into platform.platform_staff (auth_user_id, email, display_name, role) values (gen_random_uuid(), 'legal-' || gen_random_uuid()::text || '@booq.example', 'Legal', 'platform_admin') returning id`)).rows[0]?.['id'];
+    await db.query(`insert into platform.legal_release (seq, published_by) values (1, $1)`, [st]);
+    for (const kind of ['privacy', 'terms']) for (const lang of ['th', 'en']) {
+      await db.query(`insert into platform.legal_text (seq, kind, language, title, body) values (1, $1, $2, 't', 'b')`, [kind, lang]);
+    }
+  }
 }
 
 export async function requiredLaunchKeys(db: Querier): Promise<string[]> {

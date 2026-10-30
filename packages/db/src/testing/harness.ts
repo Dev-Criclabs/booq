@@ -35,6 +35,8 @@ export interface TestDatabase {
   setNow(at: Date | string): Promise<void>;
   advance(interval: string): Promise<void>;
   clearNow(): Promise<void>;
+  /** Publishes a placeholder privacy and terms release v1 (D152), so sign-up has a current notice version. */
+  seedNotice(): Promise<void>;
   close(): Promise<void>;
 }
 
@@ -112,6 +114,14 @@ function wrap(name: string): TestDatabase {
     },
     async clearNow() {
       await pool.query('update app.test_clock set now_override = null');
+    },
+    async seedNotice() {
+      if ((await pool.query('select 1 from platform.legal_release')).rowCount) return;
+      const st = (await pool.query(`insert into platform.platform_staff (auth_user_id, email, display_name, role) values (gen_random_uuid(), 'notice-' || gen_random_uuid()::text || '@booq.example', 'Notice', 'platform_admin') returning id`)).rows[0].id;
+      await pool.query('insert into platform.legal_release (seq, published_by) values (1, $1)', [st]);
+      for (const kind of ['privacy', 'terms']) for (const lang of ['th', 'en']) {
+        await pool.query(`insert into platform.legal_text (seq, kind, language, title, body) values (1, $1, $2, 't', 'b')`, [kind, lang]);
+      }
     },
     async close() {
       await pool.end();
