@@ -15,6 +15,7 @@ Build from the spec. Do not "fix" a gap by guessing; if the right answer is not 
 | A5 | Fixed numbers in player copy | Hold time (10/15/20, default 15), cancellation window (12 h), waitlist claim time (30 min), no offers within 2 h are club settings (BOOK-03, CANCEL-01, CLASS-02) | "No slip within 15 minutes", "12 hours or more", "30 minutes" hard-coded in C9c, C10P, C11, C16, G- boards. Must become named variables in the locale files |
 | A6 | Rich menu tile names | Thai terms are คลาสเดี่ยว, คลาสกลุ่ม, รายชื่อรอ, วอลเล็ต, เครดิต | L-Rich-menu uses เรียนเดี่ยว and เรียนกลุ่ม |
 | A7 | Club address toggle | The app never shows the club's address, location, area or district (design rules) | A0 step 6 has a "Show the club address in the app" toggle; PRD step 6 also lists "whether the address shows in the app (off for Hunter)". The PRD contradicts itself; treat the toggle as not built until the user decides |
+| A9 | Date of birth shown as locked | Never locked; the player can correct it in Profile | G-C17 Personal details ("To change it, ask the front desk") |
 | A8 | Design-system tokens file | Palette D "Sage garden", DM Sans, Noto Sans Thai, Cormorant Garamond for the HUNTER wordmark only | `project/ds/booq/tokens.json` in the canvas uses Jost, Kanit, EB Garamond, cream cards and small radii. Ignore that file; use the PRD palette table |
 
 ## B. Sample-data errors in the canvas (do not copy into code or tests)
@@ -32,18 +33,24 @@ Build from the spec. Do not "fix" a gap by guessing; if the right answer is not 
 | B9 | Receipt note says address and branch are placeholders, but the receipt shows the real ones (they are now settled: HTC, head office, 1128/1 ... 12130) |
 | B10 | Admin page count is stated as 14 in one PRD change-log row and 15 in the body. The IDs to build are in the hand-off screen inventory |
 
-## C. Spec gaps (need a decision from the user)
+## C. Spec gaps
 
+Settled on 30 Oct 2026 (also recorded in the PRD change log and hand-off)
+- **PAY-03.** A Beam payment that arrives after the hold ended is approved if the slot is still open, otherwise the value goes to the wallet.
+- **Receipt address.** The PDF receipt keeps the registered address; the app never shows it.
+- **Stack.** Next.js with the LIFF SDK, Postgres (Supabase) with row-level security by club ID, server jobs.
+- **Date of birth.** Never locked. A player can correct it in Profile. The canvas G-C17 Personal details board shows it locked ("ask the front desk"), which is now a canvas bug (add to section A). Student pricing follows the date of birth on file.
+
+Still open
 | # | Question | Notes |
 |---|---|---|
-| C1 | PAY-03: Beam payment arrives after the hold ended. Approve if the slot is still open, else wallet? | Hand-off: "assumed from the late slip rule, to confirm". PRD late-slip rule covers only "approve if the slot is still open" |
-| C2 | Does the PDF receipt keep the club address while the app hides it? | PRD open question; hand-off RCPT-02 says the receipt shows the registered address |
-| C3 | Is the date of birth locked after entry? | Canvas designer suggestion only |
-| C4 | Does "value still owed to customers" in reports include wallet balances? | Canvas note says the earlier spec counted package credit only |
-| C5 | Behaviour at a club's LINE monthly message cap | LINE-06 covers display and token alerts only |
-| C6 | Rich menu: A0 offers three editable labels, the image has six tiles | LINE-02 says six tiles, each a deep link |
-| C7 | Which slip-check provider for F16 (Thunder, EasySlip, SlipOK) | Not needed for Hunter launch |
-| C8 | Platform: self sign-up, whether BOOQ bills clubs through the platform, branches per club, web address per club | Not needed for Hunter launch |
+| C1 | What happens to an already-bought Student package or credit if a corrected date of birth makes the player an Adult (or the reverse)? | Follows from the DOB decision; not in the PRD. Decide before F06 design |
+| C2 | Does "value still owed to customers" in reports include wallet balances? | Canvas note says the earlier spec counted package credit only |
+| C3 | Behaviour at a club's LINE monthly message cap | Undecided. LINE-06 covers display and token alerts only. Not blocking early features |
+| C4 | Rich menu: A0 offers three editable labels, the image has six tiles | LINE-02 says six tiles, each a deep link |
+| C5 | A0 "Show the club address in the app" toggle | PRD contradicts itself (see A7) |
+| C6 | Which slip-check provider for F16 (Thunder, EasySlip, SlipOK) | Not needed for Hunter launch |
+| C7 | Platform: self sign-up, BOOQ billing through the platform, branches per club, web address per club | Not needed for Hunter launch |
 
 ## D. Locale files
 

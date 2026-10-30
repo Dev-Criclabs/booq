@@ -88,14 +88,12 @@ QA and Content start on day one. A role whose feature is not yet approved at gat
 The hand-off says build these as empty club settings: add-on prices, Head Coach price, referral reward, friend discount, birthday discount,
 max future court hours (BOOK-05, empty means no limit), class-below-minimum alert time, wallet balance expiry, coach pay numbers.
 
-Still needing a decision from the user (they affect the code, see `docs/canvas-gaps.md` for detail)
-1. **PAY-03.** Late Beam payment after the hold ends: approve if the slot is still open, else put the value in the wallet. Assumed, not confirmed. The PRD also says late payments are approved if the slot is open, which agrees for the first half only.
-2. **Receipt address.** The app hides the club address but receipts legally show it. Keep it on the PDF receipt only? (PRD open question)
-3. **Stack.** The PRD suggests Next.js + LIFF SDK, Postgres (Supabase) with row-level security, server jobs. It is not a requirement. Confirm we use it.
-4. **Date of birth lock.** The canvas locks DOB for players after entry (designer suggestion). Not in the PRD.
-5. **"Owed to customers" in reports.** Whether wallet balances count with unused package credit.
-6. **LINE monthly cap.** What happens when a club hits its plan's message limit (LINE-06 only shows usage and alerts).
-7. **Beam facts** (needed for F05, not for code design): Hunter's Beam merchant account, sandbox credentials and confirmed fees; the club's LINE OA plan (free plan's 300 messages will not cover Hunter).
+Settled 30 Oct 2026: PAY-03 (late Beam payment: approve if the slot is open, else wallet), the PDF receipt keeps the registered address,
+the PRD's suggested stack is adopted, and the date of birth is never locked.
+
+Still open (details in `docs/canvas-gaps.md`, section C): effect of a corrected date of birth on already-held student packages;
+whether "owed to customers" includes wallets; behaviour at a club's LINE message cap (undecided, not blocking); rich menu labels; the A0 address toggle.
+Not code questions but needed for F05: Hunter's Beam merchant account, sandbox credentials and fees; the club's paid LINE OA plan.
 
 ## 5. Kickoff prompts for sub-chats
 
@@ -115,7 +113,6 @@ Role blocks (each is appended to the preamble):
 
 ## 6. Next actions
 
-1. User confirms the stack (section 4, item 3) and answers PAY-03 and the receipt-address question, or says to proceed with the stated assumptions.
-2. Orchestrator starts: Spec drafter (F01, F02), Architect/data, Content/i18n, DevOps, QA harness.
-3. A person approves F01 and F02 requirements, then design.
-4. Waves 1 and 2 start building; Orchestrator re-cuts waves with the user against the 7 Dec date.
+1. Orchestrator starts: Spec drafter (F01, F02), Architect/data, Content/i18n, DevOps, QA harness.
+2. A person approves F01 and F02 requirements, then design.
+3. Waves 1 and 2 start building; Orchestrator re-cuts waves with the user against the 7 Dec date.

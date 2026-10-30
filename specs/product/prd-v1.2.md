@@ -8,6 +8,7 @@ Version 1.2 folds every design decision made so far into the spec. This doc is t
 
 | Version | Area              | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 |---------|-------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1.2     | Decisions 30 Oct | Late Beam payment (after the hold ends) is approved if the slot is still open, otherwise the value goes to the wallet (PAY-03 confirmed). The registered address stays on both PDF receipts while the app never shows it. The stack in this doc is adopted. Date of birth is not locked: a player can correct it in Profile. Club LINE message cap behaviour is still undecided |
 | 1.2     | Thai and business | Thai versions of every remaining screen: 53 player app screens and states, 20 club admin screens and 6 coach portal screens (Steps 4.3 to 4.5). Terms aligned to คลาสเดี่ยว, คลาสกลุ่ม and รายชื่อรอ. Legal name now บริษัท ทีที รีครีเอชั่น จำกัด on receipts and Settings, Thai only. Clickable flows checked end to end                                                                                                                                                         |
 | 1.2     | Checkout          | Solo pack credits don't cover a coach added at court checkout. The player pays the full price there. Credits apply only through Classes, then Solo classes                                                                                                                                                                                                                                                                                                          |
 | 1.2     | Booking           | A3 Check-in removed from the spec, wireframes, hi-fi, sitemap, flows and the F3 prototype. No check in nav item, no late flag setting, no Checked in status. Bookings count as played when the slot ends, and staff mark no shows from booking detail. Referral rewards land after the friend's first booking is played. The coach picked at checkout is held with the court during the payment hold                                                                |
@@ -75,7 +76,7 @@ Hunter Tennis Club needs its own booking platform, live for public booking on 29
 
 - Flat court rate of ฿500 per hour.
 
-- Adult is 18 or older. Student is under 18, worked out from the date of birth, and switches to adult pricing on the 18th birthday.
+- Adult is 18 or older. Student is under 18, worked out from the date of birth, and switches to adult pricing on the 18th birthday. The player can correct their date of birth in Profile at any time (30 Oct 2026).
 
 - Every rule is an admin setting, not hard coded. Anything marked TBD is a setting the club fills in later, so designs show it as an editable value.
 
@@ -675,11 +676,11 @@ Sources: [Thunder price comparison](https://thunder.in.th/blog/cheapest-slip-ver
 
 The first two come from the v1.2 pricing. Settled items are ticked at the end.
 
-- [ ] If a late slip arrives and the slot is already taken, does the value go to the wallet? (assumed yes)
+- [x] If a late payment (slip or Beam) arrives and the slot is already taken, the value goes to the wallet (confirmed 30 Oct 2026)
 
 - [x] Solo pack credits cover coaching only. The player pays the ฿500 court fee at every booking, adult and student (confirmed).
 
-- [ ] The app hides the club's address, but receipts legally show the business address. Keep it on the PDF receipt only?
+- [x] The app hides the club's address, but receipts legally show the business address. Settled 30 Oct 2026: keep it on the PDF receipt only
 
 - [ ] Add on prices (racket, balls as a set of 3, towel, water) are still TBD.
 
