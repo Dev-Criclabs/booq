@@ -14,6 +14,13 @@ Decisions made by the user, newest first. Each is also written into the PRD chan
 | D36 | A validly signed Beam callback with the wrong amount: record it, flag it for the owner, return a success status so Beam stops retrying (refines D24) |
 | Open | Whether a late payment that goes to the wallet gets its own receipt is with the accountant |
 
+## 30 Oct 2026, round 6
+
+| # | Decision |
+|---|---|
+| D37 | A late payment that goes to the wallet gets its own receipt for the money received (closes D25's "accountant to confirm" and QA Q-20) |
+| Parked | Naming is parked by the user, to be revisited. Do not raise it until the user does |
+
 ## 30 Oct 2026, round 4 (approved as recommended)
 
 F01 and F02 requirements were approved by the user on 30 Oct 2026 (branch `spec/f01-f02-requirements`).
