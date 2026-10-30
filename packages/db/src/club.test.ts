@@ -108,7 +108,7 @@ describe('opening hours, locations, resources (CC-1, CC-4)', () => {
 
 describe('features and settings (PLAT-05, CC-1)', () => {
   it('club A cannot read, update, delete or insert for club B', async () => {
-    await tdb.query(`insert into public.club_feature (club_id, feature_key, enabled) values ($1, 'coaching', true), ($2, 'coaching', false)`, [A, B]);
+    await tdb.query(`insert into public.club_feature (club_id, feature_key, enabled) values ($1, 'coach_add_at_checkout', true), ($2, 'coach_add_at_checkout', false)`, [A, B]);
     await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1, 'k', '1'), ($2, 'k', '2')`, [A, B]);
     for (const table of ['club_feature', 'club_setting']) {
       const r = await db.withClubTx(ctx(A), (tx) => tx.query(`select club_id from public.${table}`));
