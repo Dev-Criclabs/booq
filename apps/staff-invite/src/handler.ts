@@ -9,6 +9,12 @@ import type { PlatformDb } from '@booq/db';
 //   POST /invite        { actorStaffId, stepUpFresh, email, displayName, role }
 //   POST /reset-factor  { actorStaffId, stepUpFresh, targetStaffId }     by another platform admin (D123)
 //   POST /deactivate    { actorStaffId, stepUpFresh, targetStaffId }
+//   POST /identity/password      { email, password }              -> { authUserId, state? }   (D148, D160)
+//   POST /identity/password-for  { authUserId, password }         -> { authUserId, state? }   (D161: a step-up)
+//   POST /identity/totp          { authUserId, state, code }      -> { ok: true }
+// The identity routes are for sign-in, which happens before any staff member is known: they carry no actor, only the
+// signature of apps/platform. `state` is the provider's first-step token, opaque to everyone but this app; apps/platform
+// keeps it sealed on the server under the challenge id and sends it back with the code. Wrong credentials are 401.
 //
 // `stepUpFresh` is the platform app's word that the actor passed the second factor recently (SR-16); the request is
 // signed, so only that app can say it. The actor must be an active platform admin in the database. Answers are codes.
@@ -20,12 +26,23 @@ export interface SupabaseAdmin {
   resetFactors(authUserId: string): Promise<void>;
   /** Stops the person signing in and ends their provider sessions. */
   banUser(authUserId: string): Promise<void>;
+  /** The email of an auth user, for a step-up that knows the person only by their auth user id. Null when there is none. */
+  emailOf(authUserId: string): Promise<string | null>;
   /** Removes a user created by an invite whose record could not be saved. */
   deleteUser(authUserId: string): Promise<void>;
 }
 
+/** The provider's sign-in side (the anon key lives only behind this). */
+export interface SupabaseIdentity {
+  /** Email and password. Null when wrong. `state` is present when the person has an enrolled authenticator. */
+  passwordGrant(email: string, password: string): Promise<{ authUserId: string; state?: string } | null>;
+  /** Checks the code from the authenticator against the state of the password step. False when it is wrong. */
+  verifyCode(authUserId: string, state: string, code: string): Promise<boolean>;
+}
+
 export interface StaffInviteDeps {
   admin: SupabaseAdmin;
+  identity: SupabaseIdentity;
   db: PlatformDb;
   /** Shared with apps/platform only. */
   signingSecret: string;
@@ -46,7 +63,7 @@ const code = (status: number, c: string) => reply(status, { code: c });
 interface Staff { id: string; auth_user_id: string; display_name: string; role: string; active: boolean }
 
 export function createStaffInviteHandler(deps: StaffInviteDeps): (request: Request) => Promise<Response> {
-  const { db, admin } = deps;
+  const { db, admin, identity } = deps;
   const staffById = (id: string): Promise<Staff | null> =>
     db.withPlatformTx({ staffId: null }, async (tx) => (await tx.query<Staff>('select id, auth_user_id, display_name, role, active from platform.staff_by_id($1)', [id])).rows[0] ?? null);
   const as = (a: Staff) => ({ staffId: a.id, staffLabel: a.display_name });
@@ -124,12 +141,39 @@ export function createStaffInviteHandler(deps: StaffInviteDeps): (request: Reque
     return reply(200, { ok: true });
   }
 
+  const text = (v: unknown, max: number): v is string => typeof v === 'string' && v !== '' && v.length <= max;
+
+  // Sign-in routes. Failures that mean "these are not the right credentials" are one answer; a provider that cannot
+  // be reached is another, so the console can tell a wrong password from an outage.
+  async function identityRoute(path: string, b: Record<string, unknown>): Promise<Response> {
+    const only = (...keys: string[]) => Object.keys(b).every((k) => keys.includes(k));
+    try {
+      if (path === '/identity/password') {
+        if (!only('email', 'password') || !text(b['email'], 254) || !text(b['password'], 1000)) return code(400, 'bad_input');
+        const r = await identity.passwordGrant(b['email'].trim(), b['password']);
+        return r ? reply(200, r) : code(401, 'invalid_credentials');
+      }
+      if (path === '/identity/password-for') {
+        if (!only('authUserId', 'password') || !text(b['authUserId'], 64) || !UUID.test(b['authUserId']) || !text(b['password'], 1000)) return code(400, 'bad_input');
+        const email = await admin.emailOf(b['authUserId']);
+        if (!email) return code(401, 'invalid_credentials');
+        const r = await identity.passwordGrant(email, b['password']);
+        return r && r.authUserId === b['authUserId'] ? reply(200, r) : code(401, 'invalid_credentials');
+      }
+      if (!only('authUserId', 'state', 'code') || !text(b['authUserId'], 64) || !UUID.test(b['authUserId']) || !text(b['state'], 8000) || !text(b['code'], 32)) return code(400, 'bad_input');
+      return (await identity.verifyCode(b['authUserId'], b['state'], b['code'])) ? reply(200, { ok: true }) : code(401, 'bad_code');
+    } catch {
+      return code(502, 'provider_failed');
+    }
+  }
+  const IDENTITY_PATHS = ['/identity/password', '/identity/password-for', '/identity/totp'];
+
   return async (request) => {
     try {
       const path = new URL(request.url).pathname;
       const routes: Record<string, (a: Staff, b: Record<string, unknown>) => Promise<Response>> = { '/invite': invite, '/reset-factor': resetFactor, '/deactivate': deactivate };
       const handle = routes[path];
-      if (!handle) return code(404, 'not_found');
+      if (!handle && !IDENTITY_PATHS.includes(path)) return code(404, 'not_found');
       if (request.method !== 'POST') return code(405, 'method_not_allowed');
       const raw = await request.text();
       if (new TextEncoder().encode(raw).length > deps.maxBodyBytes) return code(413, 'payload_too_large');
@@ -143,6 +187,7 @@ export function createStaffInviteHandler(deps: StaffInviteDeps): (request: Reque
       }
       if (body === null || typeof body !== 'object' || Array.isArray(body)) return code(400, 'bad_input');
       const b = body as Record<string, unknown>;
+      if (!handle) return await identityRoute(path, b);
       if (typeof b['actorStaffId'] !== 'string' || !UUID.test(b['actorStaffId']) || typeof b['stepUpFresh'] !== 'boolean') return code(400, 'bad_input');
       const actor = await staffById(b['actorStaffId']);
       if (!actor || !actor.active || actor.role !== 'platform_admin') return code(403, 'forbidden');

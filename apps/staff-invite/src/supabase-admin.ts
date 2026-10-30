@@ -40,6 +40,10 @@ export function createSupabaseAdmin(options: SupabaseAdminOptions): SupabaseAdmi
     async banUser(authUserId) {
       await call('PUT', `/admin/users/${id(authUserId)}`, { ban_duration: BAN_FOR_GOOD });
     },
+    async emailOf(authUserId) {
+      const u = (await call('GET', `/admin/users/${id(authUserId)}`)) as { email?: unknown } | null;
+      return typeof u?.email === 'string' && u.email !== '' ? u.email : null;
+    },
     async deleteUser(authUserId) {
       await call('DELETE', `/admin/users/${id(authUserId)}`);
     },

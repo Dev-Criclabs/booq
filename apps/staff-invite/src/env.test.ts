@@ -5,6 +5,7 @@ import { staffInviteFromEnv } from './env';
 const FULL = {
   SUPABASE_URL: 'https://proj.example',
   SUPABASE_SERVICE_ROLE_KEY: 'k',
+  SUPABASE_ANON_KEY: 'a',
   STAFF_INVITE_SIGNING_SECRET: 's',
   PLATFORM_DATABASE_URL: 'postgres://u:p@localhost:5432/db',
   STAFF_INVITE_MAX_SKEW_SECONDS: '30',
@@ -12,7 +13,7 @@ const FULL = {
 };
 describe('staffInviteFromEnv', () => {
   it('names every missing setting and starts nothing', () => {
-    expect(() => staffInviteFromEnv({})).toThrow(/SUPABASE_URL.*SUPABASE_SERVICE_ROLE_KEY.*STAFF_INVITE_SIGNING_SECRET/);
+    expect(() => staffInviteFromEnv({})).toThrow(/SUPABASE_URL.*SUPABASE_SERVICE_ROLE_KEY.*SUPABASE_ANON_KEY.*STAFF_INVITE_SIGNING_SECRET/);
     const { STAFF_INVITE_SIGNING_SECRET: _omit, ...rest } = FULL;
     expect(() => staffInviteFromEnv(rest)).toThrow(/STAFF_INVITE_SIGNING_SECRET/);
   });
