@@ -64,6 +64,20 @@ export function createSupabaseIdentity(options: SupabaseIdentityOptions): Supaba
       // A person with no enrolled authenticator has no second step to take: they sign in no further.
       return { authUserId: userId, ...(factor ? { state: encode({ u: userId, t: j.access_token, f: factor.id as string }) } : {}) };
     },
+    async startEnrolment(email, password) {
+      const r = await call('POST', '/token?grant_type=password', { body: { email, password } });
+      if (r.status === 400 || r.status === 401 || r.status === 422) return null;
+      if (r.status !== 200) throw new Error(`identity provider answered ${r.status} for the password grant`);
+      const j = r.json as { access_token?: unknown; user?: { id?: unknown } } | null;
+      const userId = j?.user?.id;
+      if (typeof j?.access_token !== 'string' || typeof userId !== 'string') throw new Error('identity provider gave no session');
+      const f = await call('POST', '/factors', { bearer: j.access_token, body: { factor_type: 'totp', friendly_name: 'BOOQ console', issuer: 'BOOQ' } });
+      const factor = f.json as { id?: unknown; totp?: { secret?: unknown; uri?: unknown } } | null;
+      if (f.status !== 200 || typeof factor?.id !== 'string' || typeof factor.totp?.secret !== 'string' || typeof factor.totp.uri !== 'string') {
+        throw new Error(`identity provider answered ${f.status} for the factor enrolment`);
+      }
+      return { authUserId: userId, state: encode({ u: userId, t: j.access_token, f: factor.id }), secret: factor.totp.secret, uri: factor.totp.uri };
+    },
     async verifyCode(authUserId, state, code) {
       const s = decode(state);
       if (!s || s.u !== authUserId) return false;
