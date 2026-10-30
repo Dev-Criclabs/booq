@@ -1,8 +1,8 @@
 # BOOQ foundation architecture (proposal)
 
-Status: **DRAFT, revision 2, for approval by a person. Nothing here is approved.** Author role: Architect / data. Branch `architect/foundation`. 30 Oct 2026.
+Status: **DRAFT, revision 3, for approval by a person. Nothing here is approved.** Author role: Architect / data. Branch `architect/foundation`. 30 Oct 2026.
 
-Revision 2 applies the decisions in `docs/decisions.md` (decisions D1 to D15 and round 2b). Those numbers are the decisions log's. This document's own recommendations are numbered R1 to R16 to avoid a clash. Answered questions are listed in section 10.1 and removed from review; the open ones carry a recommendation in section 10.2 so they can be approved in bulk.
+Revision 2 applies the decisions in `docs/decisions.md` (decisions D1 to D15 and round 2b). Those numbers are the decisions log's. This document's own recommendations are numbered R1 to R16 to avoid a clash. Revision 3 adds the LINE message cap (LINE-07, decision D17) to sections 2.2, 4.4, 5.3 and 5.4 and the tests in 5.6, and notes decision D16 (the 7 Dec test runs on production) in section 2.6. Answered questions are listed in section 10.1 and removed from review; the open ones carry a recommendation in section 10.2 so they can be approved in bulk.
 
 This is the shared design every feature relies on. It is not a feature `design.md`. F01's `design.md` comes after F01's requirements are approved, and it will cite this file.
 
@@ -82,7 +82,7 @@ Every table is classified **S** (setup: BOOQ staff may see it in the support vie
 | `resource` | S | unique `(club_id, id)`; fk location | sport, type, lights, max players, active |
 | `opening_hours` | S | pk `(club_id, weekday)`; open `time`, close `time` (close may be `24:00`) | Spec keys hours by club; a second location would need `location_id` (C7) |
 | `price_group`, `court_price_rule`, `coach_tier`, `coach_tier_price`, `package_product`, `add_on` | S | unique `(club_id, id)` | Price snapshots go into order lines, so later edits never change history |
-| `line_connection`, `payment_connection` | S | pk `club_id` | Channel and LIFF ids, OA id; Beam merchant id and mode (sandbox/live). No secrets here |
+| `line_connection`, `payment_connection` | S | pk `club_id` | Channel and LIFF ids, OA id, `line_plan_kind` (`free` or `paid`, set in P2 step 4; Q31); Beam merchant id and mode (sandbox/live). No secrets here |
 | `club_secret` | S, write-only | pk `(club_id, kind)` | LINE tokens, Beam keys and webhook secrets, encrypted; platform role can INSERT/UPDATE but never SELECT (§4.4) |
 | `app_user` | D | unique `(club_id, line_user_id)`; unique `(club_id, id)` | Player, coach, staff in one table. A person at two clubs has two rows. Phone is typed, never verified by code in v1 (decision D11), stored normalised; index `(club_id, phone_normalized)` is not unique, and clubs with duplicate phones are flagged for referral abuse by a query, not a stored flag. Date of birth may be null: no date of birth means Adult prices (D12) |
 | `app_user_role` | D | pk `(club_id, user_id, role)`; role in player/coach/front_desk/accountant/owner | Roles are a set (decision D1): a coach can also play, an owner can also coach. Permissions are the union of the roles. At least one role per active user |
@@ -108,6 +108,8 @@ Every table is classified **S** (setup: BOOQ staff may see it in the support vie
 | `platform.platform_staff`, `platform.staff_assignment`, `platform.support_session` | P | | BOOQ team accounts and who may open which club |
 | `platform.audit_log` | P | | The P6 log (§8) |
 | `platform.club_usage_daily` | P | pk `(club_id, day)` | Aggregate counts only: bookings created, LINE messages sent. No row ids |
+| `platform.club_line_usage` | P | pk `(club_id, month)`; `month` is a `date` (first day) | Used, limit, state, source, synced_at. Counts only, no message content (§5.6). Read by `booq_platform` and, through RLS `club_id = app.club_id()`, by `booq_app` for the club admin banner |
+| `platform.config` | P | pk `key` | Platform-wide values such as the LINE cap thresholds 70, 80 and 100. Seeded as data, changed only by a platform admin, every change in P6 |
 | `platform.club_health` | P | pk `(club_id, check)` | LINE token ok/failed, last callback time |
 | `platform.template`, `platform.template_item` | P | | P5 templates (Hunter defaults, Padel, Pickleball, Blank) |
 | `platform.launch_check` | P | | P4 results; no tenant data |
@@ -199,6 +201,7 @@ The increment and the receipt insert share a transaction, so a rollback undoes b
 
 - While a club is Testing, the testers are the owner and named BOOQ testers. A BOOQ tester acts through an ordinary club account in the player app, invited for the purpose, never through the platform console, and the invitation is logged in P6. BOOQ sees pass or fail only (`platform.launch_check`), never the test bookings.
 - A `BEFORE INSERT` trigger sets `is_test = (club.status = 'testing')` on: `app_user` (tester player accounts, Q29), `booking`, `occupancy`, `orders`, `order_line`, `payment`, `payment_event`, `customer_package`, `package_extension`, `credit_ledger`, `wallet_account`, `wallet_ledger`, `receipt`, `audit_entry`, `message_outbox`, `waitlist_entry`, `referral`, `promo_redemption`, `idempotency_key`.
+- The 7 Dec test runs on **production** with Hunter in Testing (decision D16); staging is for development and QA only. So the trigger-set `is_test` flag and the guarded purge are not optional extras, and test LINE messages are real pushes that count against the club's quota (§5.6).
 - Testing uses Beam sandbox keys (`payment_connection.mode`). A test receipt takes its number from the `test` series in `receipt_counter`; a CHECK ties `is_test` to that series, so a test row can never take a real number and a real row can never take a test one.
 - `go_live_purge(club_id)` is a `SECURITY DEFINER` function owned by a dedicated role. It runs only as part of the Go live transition (P4 checks passed), only while the status is `testing`, and deletes `is_test` rows in dependency order in one transaction. The append-only triggers on the ledgers and `audit_entry` allow a `DELETE` only when the purge function has set a transaction-local flag and the row is `is_test`. It writes one non-test audit entry with row counts per table, and one P6 entry.
 - CI tests: the purge removes only `is_test` rows; it refuses to run when the status is not `testing`; real rows survive; a non-test ledger row still cannot be deleted, even inside the purge; a club that never tested purges nothing; after the purge the first real receipt is number 000001.
@@ -442,7 +445,7 @@ The spec: BOOQ staff never see "players, bookings, payments, slips, receipts, wa
 4. **RLS on the S tables for the platform role**, from the support session: a staff member may touch club X only if they are a platform admin, or an onboarding specialist assigned to X. A specialist can take an assigned club through Draft, Testing and Live; **only a platform admin can pause or resume** a club (decision D15), which the pause function checks by role, not by policy alone. Writes are allowed only when `club.status in ('draft','testing')` or `club.allow_booq_changes_until > now()` (PLAT-02). Look-only otherwise.
 5. **No "log in as".** The support view is a fixed set of routes with fixed projections over S tables. There is no code path that mints a club-user session for BOOQ staff.
 6. **Secrets are write-only.** LINE tokens, Beam keys and webhook secrets sit in `club_secret`. `booq_platform` can `INSERT/UPDATE` them but not `SELECT`. "Test connection" runs server-side and returns pass/fail only.
-7. **Aggregates, not rows, for P1.** P1 shows "bookings in the last 30 days" and "LINE messages used this month". These come from `platform.club_usage_daily` (counts only), incremented by the single `platform.bump_usage()` SECURITY DEFINER function with a fixed search path. The platform role cannot count rows in `booking`. Decision D2 allows aggregate counts (bookings in the last 30 days per club) and the owner's contact details, and nothing finer: no per-player or per-booking breakdown, and no count cut by something that identifies a person.
+7. **Aggregates, not rows, for P1.** P1 shows "bookings in the last 30 days" and "LINE messages used this month". These come from `platform.club_usage_daily` (counts only), incremented by the single `platform.bump_usage()` SECURITY DEFINER function with a fixed search path. The platform role cannot count rows in `booking`. Decision D2 allows aggregate counts (bookings in the last 30 days per club) and the owner's contact details, and nothing finer: no per-player or per-booking breakdown, and no count cut by something that identifies a person. P1's LINE usage field (§5.6) is the same kind of figure: used, limit, percent and state per club.
 8. **Tests prove it** (§4.5).
 
 Support-access modes (PLAT-02): Draft/Testing = edit; Live = look only; the owner's "Allow BOOQ to make changes" sets `club.allow_booq_changes_until = now() + 24h` and the policy lets writes through until then. It expires by itself (no job needed; it is a time predicate).
@@ -488,7 +491,7 @@ All LINE pushes go through `message_outbox` (transactional outbox). The business
 - `unique (club_id, dedupe_key)` makes enqueue idempotent. Example: `reminder_24h:{booking_id}:{start_at}`.
 - The sender resolves the player's language at send time, builds the text from `locales/*` (text and Flex cards both), and calls LINE with an `X-Line-Retry-Key` (a stable UUID per outbox row) so a retry after a timeout cannot double-send.
 - Preconditions are evaluated at send time: a cancelled or moved booking voids pending reminders; a package with no credits left skips the expiry reminder.
-- A sent message increments `platform.club_usage_daily` (LINE-06). A token failure writes `platform.club_health`. The behaviour at a club's monthly cap is undecided (C3); the sender counts and reports but does not invent a cap rule.
+- A sent message increments `platform.club_usage_daily` (LINE-06). A token failure writes `platform.club_health`. The behaviour at a club's monthly cap is decided (LINE-07, decision D17) and described in §5.6; the sender asks the cap state before every send.
 - **Not a friend** (decision D9): a player who has not added the club's LINE account must never block checkout. A push to such a user is rejected by LINE (exact response to confirm in the F10 design). The sender marks the outbox row `undeliverable`, does not retry it, does not count it as used, and the app shows the confirmation on screen with a prompt to add the account. Friend status is kept current from the follow and unfollow events of each club's LINE webhook, which uses the same raw-body HMAC pattern as §6 with the channel secret.
 - Messages for events the spec lists but has no message for (for example "your late payment went to your wallet", §6.5) need new locale keys; they are flagged to the writers, not written in code.
 
@@ -507,6 +510,7 @@ All LINE pushes go through `message_outbox` (transactional outbox). The business
 | `beam_reconcile` | Sweep | `payment.status = 'pending'` older than the hold, newer than 24 h | Ask Beam for charge status; feed the same processing function as the callback (§6) | Same as callback | every 5 min |
 | `class_below_minimum` | Per session at `start - alert_time` | Session count `< min` | Outbox to front desk | `(session_id, 'below_min')` | Inert while the alert time setting is unset |
 | `birthday_discount_message` | Monthly | `date_of_birth` month = Bangkok current month | Outbox "birthday discount" | `(user_id, year)` | 1st of month (time of day: Q22) |
+| `line_usage_sync` | Sweep, per club | LINE's quota and consumption figures (§5.6) | Update `platform.club_line_usage`; recompute state; on a rise to 70% raise the P1 alert and the club admin banner; at 100% on a paid plan tell the owner once for the month | `(club_id, month)` row; owner message `dedupe_key` per month | every 10 min |
 | `housekeeping` | Daily | Old `idempotency_key`, dead outbox rows | Purge | n/a | daily |
 
 Not a job: pause (PLAT-03) is one transaction that shifts every package `expires_at` by the pause length through `extend_package()` (with a `package_extension` row each), and rewrites pending expiry-reminder outbox rows.
@@ -517,6 +521,29 @@ Rules for reminders created late: a booking made less than 24 h before start get
 
 - A heartbeat row per task type; P1 health alerts when hold-release lag passes a threshold or a task has dead jobs. Payload is counts, not data.
 - Time is injectable: application code reads `clock.now()` and SQL reads `app.now()` (which is `now()` in production). In test databases only, `app.now()` honours a setting so tests can say "it is now 11:59 on the hold". This is how the timing acceptance tests (BOOK-03, CANCEL-01, PKG-03) run without sleeping. The override is impossible in production because the setting that enables it is absent from production roles.
+
+### 5.6 LINE message cap (LINE-07, decision D17)
+
+**Rule** (platform-wide thresholds, from `platform.config`): at 70% of the club's monthly limit, an alert in P1 and a banner in the club admin. At 80%, stop sending the 24 h and 2 h reminders; every other message keeps going (booking confirmed, booking released, cancellation result, waitlist offer, club closed this slot, coach changed, package expiring, birthday discount, referral reward). Skipped reminders are never sent later. At 100% on a paid plan, keep sending everything and tell the owner that LINE bills the club for extra messages. At 100% on the free plan, LINE blocks sending: the app shows the confirmation in My bookings and on the confirmation screen, and a waitlist offer that cannot be sent passes to the next person. Bookings and payments are never blocked by the cap.
+
+**Usage store.** `platform.club_line_usage (club_id, month, used, limit, plan_kind, state, source, synced_at)`.
+- `state` is derived: `normal`, `alert` (70% and over), `reminders_stopped` (80% and over), `over_limit` (100% and over). It is computed from `used / limit` and the thresholds in `platform.config`, never stored as an editable fact elsewhere.
+- `source` is `line` or `own_count`.
+- **Where the numbers come from.** The recommendation is to read LINE's own figures, the monthly quota (limit, or none) and the month's consumption endpoints of the Messaging API, using each club's token. I believe both exist but have not confirmed their exact paths, what they count, how fresh they are, or which time zone the month boundary uses; the F10 design must confirm (Q31). `line_usage_sync` runs about every 10 minutes per club.
+- **Between syncs and as fallback.** `used_estimate = consumption at last sync + messages our outbox has sent since`. If LINE's endpoints fail or do not exist as assumed, the store falls back to our own count (`source = 'own_count'`, a Bangkok calendar month), and a `club_health` alert says so. The sender still counts every send into `platform.club_usage_daily` (LINE-06).
+- The plan limit and free-versus-paid come from LINE's quota response where it gives them, else from `line_connection.line_plan_kind`.
+
+**How the sender obeys it.**
+1. **At queue time.** When a booking confirms or moves, reminder outbox rows are created only if the state is below `reminders_stopped`. At 80% the confirmation is sent and no reminder is queued (LINE-07's acceptance check).
+2. **At send time.** A due reminder is re-checked: if the state is `reminders_stopped` or worse, the row is voided with reason `cap`. It is not revived when the state later drops or the month rolls over. Pending reminders never wait for later.
+3. **Other messages** always go, except on a free plan at `over_limit`.
+4. **Free plan at 100%.** The sender marks the row `undeliverable` with reason `cap` (the same path as a player who is not a friend, §5.3), the app shows the confirmation on screen, and `waitlist_advance` skips the entry: it releases the offer hold, marks the entry `passed_unsendable` and offers the slot to the next person. A send that LINE rejects for quota reasons takes the same path, whatever the stored state says.
+5. **Paid plan at 100%.** Everything keeps sending. One owner message per month (outbox `dedupe_key` `cap_paid_over:{month}`), plus the banner. This message and the banner texts need new locale keys for the writers; none are written here.
+6. Bookings, payments and Beam callbacks do not read the cap state at all.
+
+**P1 and the banner.** P1 gets a LINE usage field per club: used, limit, percent and state, with an alert badge at `alert` and above (the LINE-06 "messages used this month" figure uses the same row). The club admin banner reads its own club's row through the RLS policy above, so it needs no platform credential. Both are counts and states only; message content never leaves the club's data.
+
+**Tests (from LINE-07).** Use the fake LINE with a settable quota and consumption: (a) at 69% nothing changes; (b) at 70% the P1 alert and banner appear; (c) at 80% a booking confirms, the confirmation is sent and no reminder row exists; (d) a reminder queued at 79% and due at 80% is voided and never sent after a month rollover; (e) at 80% a waitlist offer, a cancellation result and a package-expiring message still go; (f) at 100% on a paid plan everything sends and the owner is told once; (g) at 100% on the free plan the confirmation shows in the app, the push is not attempted, and an unsendable waitlist offer passes to the next entry; (h) bookings and Beam callbacks succeed in every state; (i) LINE's endpoints failing falls back to the own count and raises a health alert.
 
 ## 6. Beam callback handling (PAY-02, PAY-03, PAY-07)
 
@@ -741,10 +768,13 @@ Other decisions this revision applies: D8 template defaults (§2.1), D9 a player
 | Q28 | Who reads the audit log; BOOQ sign-in logging | Owner only (A17). Log BOOQ staff sign-ins and failures in P6 | Product | F01 |
 | Q29 | New (from D4): which accounts the Go live purge removes | Tester player accounts and their data are purged; owner, staff and coach accounts, which come from invitations and setup, are kept | Product | F15 |
 
+| Q30 | Package-expiring message at 80% (decision D17 asks to confirm) | Keep it, as decided: it is rare and carries money value. It is the first to drop if the cap needs more headroom | Product | F10 |
+| Q31 | LINE quota and consumption endpoints: exact behaviour, what they count, freshness, the month boundary's time zone, and how to tell free from paid | Read LINE's figures and fall back to our own count (§5.6); DevOps checks against a real club account. Set `line_plan_kind` in P2 step 4 until confirmed | DevOps | F10 |
+
 ### 10.3 Open and not decidable here
 
 - Consent for players under 18 (decision D10, skipped): undecided; needs a Thai legal check before the consent text is final.
-- Behaviour at a club's monthly LINE message cap (gap C3): undecided. The sender counts messages and reports usage, and builds no cap rule.
+- The LINE message cap is decided (LINE-07, D17) and designed in §5.6; gap C3 in `docs/canvas-gaps.md` is now closed and that file should say so.
 - From `docs/canvas-gaps.md`: C2 (are wallets in "owed to customers"), C4 and C5 (rich menu labels, address toggle), C7 (branches per club).
 - The domain name (D6) and Hunter's Beam merchant account and LINE plan (set up by the club).
 
