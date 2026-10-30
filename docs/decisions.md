@@ -19,6 +19,7 @@ Decisions made by the user, newest first. Each is also written into the PRD chan
 | # | Decision |
 |---|---|
 | D148 | BOOQ staff password sign in (Supabase Auth, needs the anon key) goes through the separate `apps/staff-invite` app (F01-T17b), so `apps/platform` holds neither the anon key nor the service-role key and SR-06 stays as written. `apps/platform` keeps the sign in rules behind an interface; the Supabase adapter is built in T17b. Security should confirm this reading of SR-06 when its chat is next answered by the user |
+| D149 | `booq_app` may read `line_channel_secret` (SR-03 deviation) because the LINE webhook route in `apps/web` verifies `x-line-signature` with it. `line_channel_token` and `line_login_secret` stay worker only. Key creation and placing `SECRETS_PUBLIC_KEY` / `SECRETS_PRIVATE_KEY` in environments is a DevOps plus user action (`docs/ops/secrets.md`); key rotation procedure is still open |
 
 ## 30 Oct 2026, round 11 (approved as recommended)
 
