@@ -6,8 +6,8 @@ import { moveStaffBooking, releaseStaffHold } from './staff';
 
 // F03-T22 (move and release): PUT /staff/bookings/{id}/move and POST /staff/bookings/{id}/release
 // (BOOK-04-AC7; decisions D43, D60; design 4.3, 4.5, 5.3). The move is app.move_booking, so the exclusion
-// constraints refuse a conflict and nothing changes. In a Paused club front desk is refused and the owner
-// may still move and release existing bookings (D60).
+// constraints refuse a conflict and nothing changes. In a Paused club owner and front desk may still move
+// and release existing bookings (D107); new holds stay refused for everyone (D60).
 const A = '3f2b8f0e-7c1d-4a55-9d0a-1c2e3f4a5b6c';
 const B = '9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d';
 const LOC = 'aaaaaaaa-0000-4000-8000-000000000001';
@@ -88,11 +88,11 @@ describe('moveStaffBooking (PUT /staff/bookings/{id}/move)', () => {
     await expect(as(desk, (tx) => moveStaffBooking(tx, who(desk), other.id, { courtId: COURT2, start: '2026-12-02T20:00:00+07:00' }))).rejects.toEqual(new BookingError('not_found'));
   });
 
-  it('in a Paused club front desk is refused and the owner can move (D60)', async () => {
+  it('in a Paused club front desk and the owner can still move (D107)', async () => {
     const { id } = await reserve(18, { confirm: true });
     await pause();
-    await expect(as(desk, (tx) => moveStaffBooking(tx, who(desk), id, { courtId: COURT2, start: '2026-12-02T20:00:00+07:00' }))).rejects.toEqual(new BookingError('club_paused'));
-    expect(await as(owner, (tx) => moveStaffBooking(tx, who(owner), id, { courtId: COURT2, start: '2026-12-02T20:00:00+07:00' }))).toMatchObject({ court: { id: COURT2 } });
+    expect(await as(desk, (tx) => moveStaffBooking(tx, who(desk), id, { courtId: COURT2, start: '2026-12-02T20:00:00+07:00' }))).toMatchObject({ court: { id: COURT2 } });
+    expect(await as(owner, (tx) => moveStaffBooking(tx, who(owner), id, { courtId: COURT1, start: '2026-12-02T21:00:00+07:00' }))).toMatchObject({ court: { id: COURT1 } });
   });
 });
 
@@ -116,11 +116,11 @@ describe('releaseStaffHold (POST /staff/bookings/{id}/release)', () => {
     expect((await row(id)).status).toBe('awaiting_payment');
   });
 
-  it('in a Paused club front desk is refused and the owner can release (D60)', async () => {
-    const { id } = await reserve(18);
+  it('in a Paused club front desk and the owner can still release (D107)', async () => {
+    const a = await reserve(18);
+    const b = await reserve(19, { customer: P2 });
     await pause();
-    await expect(as(desk, (tx) => releaseStaffHold(tx, who(desk), id))).rejects.toEqual(new BookingError('club_paused'));
-    expect((await row(id)).status).toBe('awaiting_payment');
-    expect(await as(owner, (tx) => releaseStaffHold(tx, who(owner), id))).toMatchObject({ status: 'released' });
+    expect(await as(desk, (tx) => releaseStaffHold(tx, who(desk), a.id))).toMatchObject({ status: 'released' });
+    expect(await as(owner, (tx) => releaseStaffHold(tx, who(owner), b.id))).toMatchObject({ status: 'released' });
   });
 });

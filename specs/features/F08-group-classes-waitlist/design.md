@@ -40,11 +40,13 @@ F08 uses the number block 0901 to 0999 (assumption A-1; the proposal `docs/propo
 | `0902_class_session.sql` | `class_session`, unique `(club_id, template_id, start_at)`, statuses |
 | `0903_seat_link.sql` | `booking.class_session_id`, `booking.waitlist_entry_id`, the partial unique index for one live seat per player and session, the CHECK tying `type = 'class_seat'` to a session |
 | `0904_waitlist.sql` | `waitlist_entry`, `waitlist_seq`, indexes, the one live entry per player and subject |
-| `0905_class_functions.sql` | `app.class_visible`, `app.generate_sessions`, `app.check_template`, `app.take_seat`, `app.cancel_session`, `app.edit_session` |
-| `0906_waitlist_functions.sql` | `app.join_waitlist`, `app.leave_waitlist`, `app.waitlist_advance`, `app.offer_hold`, `app.decline_offer`, `app.offer_expire`, `app.waitlist_pass_on`, the trigger that marks an entry claimed when its booking confirms |
-| `0907_release_handler.sql` | `app.f08_release` registered in `app.release_handlers` with `ord` 50 |
-| `0908_public_views.sql` | `public_class_state` (counts only), `waitlist_position` view |
-| `0909_grants_policies.sql` | Policies and grants for the tables, views and functions above |
+| `0905_class_functions.sql` | `app.class_visible`, `app.generate_sessions`, `app.check_template` |
+| `0906_take_seat.sql` | `app.take_seat` |
+| `0907_class_cancel_edit.sql` | `app.cancel_session`, `app.edit_session` |
+| `0908_waitlist_functions.sql` | `app.join_waitlist`, `app.leave_waitlist`, `app.waitlist_advance`, `app.offer_hold`, `app.decline_offer`, `app.offer_expire`, `app.waitlist_pass_on`, the trigger that marks an entry claimed when its booking confirms |
+| `0909_release_handler.sql` | `app.f08_release` registered in `app.release_handlers` with `ord` 50, and `app.f08_cancel` registered in F09's `app.cancel_handlers` with `ord` 30 |
+| `0910_public_views.sql` | `public_class_state` (counts only), `waitlist_position` view |
+| `0911_grants_policies.sql` | Policies and grants for the tables, views and functions above |
 
 Every table is registered in `packages/db/table-classes.ts` (class D), `app.test_tables` (F01 §7.6) and the audit registry (FA §8.1). There are no new settings keys: `group_min_players`, `group_max_players`, `below_min_alert_minutes`, `waitlist_claim_minutes` and `waitlist_no_offer_hours` are in the registry already (F01 0041, `settings-registry.ts`); `booking_window_days` and `hold_minutes` are F03's.
 
@@ -149,7 +151,7 @@ The claim is the normal Pay of F04 on the held booking, not a second reservation
 - Money is due: the F05 Beam QR is created for the order, valid until `hold_expires_at`; `apply_payment` confirms it. A payment after the offer end follows the late payment rules of F05 (PAY-03), and the release handler has already advanced the list.
 - **Court slot offers** (CLASS-02-AC6): the hold is the booking, so the claim is a booking under BOOK-03 and BOOK-04 with the same constraints.
 
-A trigger in migration 0906 sets the entry `claimed` when a booking with `waitlist_entry_id` becomes `confirmed`. The claim route answers `spot_gone` if the offer has ended and the hold is released. Two players cannot both claim: each offer is a distinct held booking counted under the session lock, so the last seat is offered once (§4.5).
+A trigger in migration 0908 sets the entry `claimed` when a booking with `waitlist_entry_id` becomes `confirmed`. The claim route answers `spot_gone` if the offer has ended and the hold is released. Two players cannot both claim: each offer is a distinct held booking counted under the session lock, so the last seat is offered once (§4.5).
 
 ### 4.12 Closures and ending entries (CLASS-02-AC11, D48)
 

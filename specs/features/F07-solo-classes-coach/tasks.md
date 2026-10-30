@@ -6,9 +6,9 @@ Roles: **BE-B** back end booking, **BE-C** back end commerce, **FE-P** front end
 
 Depends on: F01 (people, roles, settings registry with `rest_cap_hours`, route wrapper T13, blind suite T18, worker T34); F03 (`app.reserve_court`, `app.coach_rules_check` hook in 0213, `app.release_handlers`, `occupancy` exclusion constraints, `move_booking`); F04 (price lines, `coach_tier`, `coach_tier_price`, Pay); F06 (credit eligibility); F09 (`cancel_handlers`, the free cancel after a coach change); F10 (`app.enqueue_message`, until then the no op hook). Migration numbers 0801 to 0808, one task per file, rising in task order (T01 0801, T02 0802, T03 0803, T04 0804, T05 0805, T06 0806, T07 0807, T08 0808; the design's table lists the same files).
 
-**Overlap to resolve first.** F03-T29 already lists a migration for `app.add_coach_to_booking(booking, coach)`. F07's design defines `app.add_coach_to_booking(booking, coach, order)` with the add order and a release handler (T06). Recommended default: F03-T29 is dropped and F07-T06 owns the function; if F03-T29 has been built, T06 replaces it with `create or replace` in its own migration. The orchestrator decides.
+**Overlap to resolve first.** F03-T29 already lists a migration for `app.add_coach_to_booking(booking, coach)`. F07's design defines `app.add_coach_to_booking(booking, coach, order)` with the add order and a release handler (T06). Decided by the orchestrator (30 Oct 2026): F03-T29 is dropped (never built) and F07-T06 owns the function.
 
-**Cross-feature tasks (named here, owned by other lists, listed for the orchestrator):** F03-T31 (`app.move_booking` calls `coach_rules_check_move`), F07-T03 supplies the second handler; F09's free cancel for a substituted coach (F09-T04). Not startable until the rest of F07 exists: F13-T10 and F12 read `coach_pay` (T02).
+**Cross-feature tasks (named here, owned by other lists, listed for the orchestrator), with their approval and dependency order:** F03-T31 (0227) before T09; F10-T06 before T10; F09-T04 (it reads `coach_was_changed`) after T07; T18 after F09-T04. The tasks are: F03-T31 (`app.move_booking` calls `coach_rules_check_move`), F07-T03 supplies the second handler; F09's free cancel for a substituted coach (F09-T04). Not startable until the rest of F07 exists: F13-T10 and F12 read `coach_pay` (T02).
 
 ## A. Tables and rules
 
@@ -22,8 +22,8 @@ Depends on: F01 (people, roles, settings registry with `rest_cap_hours`, route w
   Tests first: the public view exposes only the fields of a published, consenting coach and never leave, notes or pay; no court open shows `no_court_open`; the same court is kept across two hours of one selection.
 - [ ] **F07-T05** Migration 0805: `app.save_coach`, `app.set_coach_active` (refuses with future sessions), `app.publish_coach_profile` (needs the consent record), `app.set_coach_price_override`, `app.set_availability`, `app.request_leave`, `app.decide_leave`. IDs: COACH-02, R2-AC1 to AC7, D120. Role: BE-B · Deps T03 · Size: M
   Tests first: only the owner saves, publishes, deactivates and decides leave; a coach edits only their own availability and leave; a pending leave is still offered; a decline changes nothing; each change writes an audit row.
-- [ ] **F07-T06** Migration 0806: `booking_coach_add`, `app.add_coach_to_booking(booking, coach, order)`, release handler `app.f07_release` registered at `ord` 35. IDs: COACH-03, R6-AC1 to AC3, BOOK-04-AC2, AC3, D111. Role: BE-B · Deps T03, F03 (hold, release handlers), F04 Pay · Size: M
-  Tests first: a busy coach refuses and the booking is unchanged; a free coach is claimed on the existing occupancy row; a second coach on the same hour is refused by the database; an unpaid add order released frees the coach again; staff may add in a Paused club.
+- [ ] **F07-T06** Migration 0806: `booking_coach_add`, `app.add_coach_to_booking(booking, coach, order)`, release handler `app.f07_release` registered at `ord` 35. IDs: COACH-03, R5-AC1, R5-AC2, R6-AC1 to AC3, BOOK-04-AC2, AC3, D111. Role: BE-B · Deps T03, F03 (hold, release handlers), F04 Pay · Size: M
+  Tests first: a solo class stores coach and court together and the database refuses one without the other (R5-AC1); a two hour selection is one order with one solo booking per hour and the rest rule is checked every hour (R5-AC2); a busy coach refuses and the booking is unchanged; a free coach is claimed on the existing occupancy row; a second coach on the same hour is refused by the database; an unpaid add order released frees the coach again; staff may add in a Paused club.
 - [ ] **F07-T07** Migration 0807: `coach_substitution` (append only), `coach_flagged_session` view, `app.substitute_coach` (owner), `app.coach_was_changed`, the no op `app.coach_message_hook`. IDs: R4-AC1 to AC7, COACH-03. Role: BE-B · Deps T03, T06 · Size: M
   Tests first: the new coach passes `coach_check` including the rest rule; the old coach is freed in the same transaction; the customer's cost does not change; a flagged session lists solo and group sessions of a coach on leave; `coach_was_changed` is true for the F09 free cancel; a rejected substitute changes nothing.
 - [ ] **F07-T08** Migration 0808: policies and grants, the coach and Accountant column limits, table class, audit and test table registry entries. IDs: CC-1, CC-3, PDPA-01. Role: BE-B · Deps T01 to T07 · Size: S
@@ -33,8 +33,8 @@ Depends on: F01 (people, roles, settings registry with `rest_cap_hours`, route w
 
 - [ ] **F07-T09** Wiring test for F03-T31: `app.move_booking` uses `app.coach_rules_check_move` so a moved booking ignores its own row (design A-3). IDs: COACH-01-AC11, R3. Role: QA · Deps T03, F03-T31 · Size: S
   Tests first: moving a six hour run by one hour does not count its own row twice; a move that breaks the rest rule is refused.
-- [ ] **F07-T10** F10 follow-up: replace `app.coach_message_hook` with `app.enqueue_message` for `coach_changed` and `session_change` once F10-T06 is merged. IDs: R4-AC5, LINE-05. Role: BE-B · Deps T07, F10-T06 · Size: S
-  Tests first: a substitution enqueues one message for the customer and one for each coach, once, by dedupe key.
+- [ ] **F07-T10** F10 follow-up: replace `app.coach_message_hook` with `app.enqueue_message` for `coach_changed` and `session_change` once F10-T06 is merged. IDs: R4-AC5, R5-AC4, LINE-05. Role: BE-B · Deps T07, F10-T06 · Size: S
+  Tests first: a substitution enqueues one message for the customer and one for each coach, once, by dedupe key; the confirmed card names coach and court and the coach gets New session (R5-AC4).
 
 ## C. Routes
 
@@ -42,8 +42,8 @@ Depends on: F01 (people, roles, settings registry with `rest_cap_hours`, route w
   Tests first: a guest sees public fields only; a hidden coach is refused by the API as well as the screen; typed codes `coach_unavailable`, `rest_rule` (with `hours`).
 - [ ] **F07-T12** Owner and coach routes: coaches, pay, price overrides, availability, leave, flagged sessions, substitutes, substitute. IDs: COACH-02, R2, R4, CC-2. Role: BE-B · Deps T05, T07, F01-T13 · Size: M
   Tests first: front desk cannot substitute, decide leave or read pay; a coach cannot read another coach's leave; the pay route returns nulls for unset values.
-- [ ] **F07-T13** Checkout inputs: F04's quote and Pay accept the coach and `coach_source` and take the tier price, the override and the tier from F07 (F04's quote and Pay already take the coach; F07 only supplies the override table and `coach_check`); F07 supplies `coach_check` and the tier. IDs: COACH-02-AC1 to AC9, COACH-03-AC1 to AC5, COACH-04-AC1 to AC4. Role: BE-C · Deps T03, T04, F04 Pay, F06 credit eligibility · Size: M
-  Tests first: the price for a Student and an Adult group; an override replaces the tier price for one group; a solo credit covers the coaching line only and the court is paid separately (COACH-04); a held coach hour is refused at Pay.
+- [ ] **F07-T13** Checkout inputs: F04's quote and Pay accept the coach and `coach_source` and take the tier price, the override and the tier from F07 (F04's quote and Pay already take the coach; F07 only supplies the override table and `coach_check`); F07 supplies `coach_check` and the tier. IDs: COACH-02-AC1 to AC9, COACH-03-AC1 to AC5, COACH-04-AC1 to AC4, R5-AC3, R5-AC6, F06 R1-AC10. Role: BE-C · Deps T03, T04, F04 Pay, F06 credit eligibility · Size: M
+  Tests first: the price for a Student and an Adult group; an override replaces the tier price for one group; a solo credit covers the coaching line only and the court is paid separately (COACH-04); a held coach hour is refused at Pay; future solo hours count toward the booking limit (R5-AC3, D49); a price change after booking keeps the booked price (R5-AC6, D120); a solo credit covers the coaching line only (F06 R1-AC10, which closes that F06 criterion).
 
 ## D. Screens
 
@@ -65,5 +65,6 @@ Depends on: F01 (people, roles, settings registry with `rest_cap_hours`, route w
 - [ ] **F07-T20** Concurrency and no double booking suite: court and coach claimed together or not at all, a loser on the coach leaves nothing on the court, substitution with two coaches locked in id order, add coach racing a staff booking. IDs: COACH-01, COACH-03, R3, R4, BOOK-04, CC-4. Role: QA · Deps T06, T07 · Size: M
   Tests first: the suite is the task (20 parallel requests per case).
 - [ ] **F07-T21** Acceptance sweep: every acceptance criterion of COACH-01 to COACH-04 and R1 to R6 has a named test; walk the F07 boards; file gaps with the ID. IDs: COACH-01 to COACH-04, R1 to R6. Role: QA · Deps all · Size: M
-  Tests first: a table of criteria to tests with none empty.
+  Tests first: a table of criteria to tests with none empty. R5-AC5 (Played at the end of the slot, K5 attendance) is closed by F09-T01 (Played is derived) and the F12 K5 task; the sweep lists those tests against it.
+
 Order: T01, T02, T03, T04, T05, T06, T07, T08 (migration order), T19 early, then T09, T10, T11, T12, T13, the screens, then E. About 21 tasks, each under a day. F13-T10 and F12 wait for T02.
