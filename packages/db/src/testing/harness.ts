@@ -24,6 +24,7 @@ create table if not exists app.test_clock (
 insert into app.test_clock (id) values (true) on conflict do nothing;
 create or replace function app.now() returns timestamptz
 language sql stable as $$ select coalesce((select now_override from app.test_clock), now()) $$;
+grant select on app.test_clock to booq_app, booq_worker, booq_platform;
 `;
 
 export interface TestDatabase {
@@ -54,7 +55,24 @@ function urlFor(name: string): string {
 let admin: pg.Pool | undefined;
 function adminPool(): pg.Pool {
   admin ??= new pg.Pool({ connectionString: adminUrl(), max: 4 });
+  admin.on('error', () => undefined);
   return admin;
+}
+
+// Hosted Supabase ships the REST roles anon and authenticated; migration 0001 must lock
+// them out. A plain test cluster has neither, so the harness creates them first.
+const ROLES_LOCK = 7_244_003;
+async function ensureSupabaseRoles(): Promise<void> {
+  const c = await adminPool().connect();
+  try {
+    await c.query('select pg_advisory_lock($1)', [ROLES_LOCK]);
+    for (const r of ['anon', 'authenticated']) {
+      await c.query(`do $$ begin if not exists (select 1 from pg_roles where rolname = '${r}') then create role ${r} nologin; end if; end $$`);
+    }
+  } finally {
+    await c.query('select pg_advisory_unlock($1)', [ROLES_LOCK]).catch(() => undefined);
+    c.release();
+  }
 }
 
 async function createDatabase(name: string, template?: string): Promise<void> {
@@ -64,6 +82,9 @@ async function createDatabase(name: string, template?: string): Promise<void> {
 
 function wrap(name: string): TestDatabase {
   const pool = new pg.Pool({ connectionString: urlFor(name), max: 10 });
+  // Dropping the database with FORCE can kill a connection that is still closing; that is
+  // expected at teardown and must not surface as an unhandled error.
+  pool.on('error', () => undefined);
   return {
     name,
     url: urlFor(name),
@@ -100,6 +121,7 @@ let templateName: Promise<string> | undefined;
 function ensureTemplate(): Promise<string> {
   templateName ??= (async () => {
     const name = `booq_tpl_${migrationsFingerprint()}`;
+    await ensureSupabaseRoles();
     const lock = await adminPool().connect();
     try {
       await lock.query('select pg_advisory_lock($1)', [TEMPLATE_LOCK]);
@@ -141,4 +163,12 @@ export async function createScratchDatabase(): Promise<TestDatabase> {
   const name = newName();
   await createDatabase(name);
   return wrap(name);
+}
+
+/** Built from the migrations only, with no test clock: what production looks like. */
+export async function createProductionDatabase(): Promise<TestDatabase> {
+  await ensureSupabaseRoles();
+  const db = await createScratchDatabase();
+  await applyMigrations(db.pool, MIGRATIONS_DIR);
+  return db;
 }
