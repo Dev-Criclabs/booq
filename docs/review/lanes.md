@@ -4,7 +4,7 @@ Written 30 Oct 2026 by the Reviewer. Use it to spot a pull request outside its l
 
 **Sources.** `docs/DEVELOPMENT-PLAN.md` section 3 (roles, "Owns", "Must not"); the F01 and F02 task lists (`Role:` on every task: Arch, BE-P, FE-P, DevOps, QA, Content; F03 adds BE-B); `CLAUDE.md` ("Never edit the wording of an existing key", rule changes order); `docs/decisions.md`. Where the plan names a role but not a folder, the folder is taken from where that role's branch already works (`spec/f01-f02-requirements`, `architect/foundation`, `qa/test-strategy`, `devops/foundation`, `i18n/text-variables`) and is marked *observed*.
 
-**Status of the folder map.** `docs/architecture/build-plan.md` section 3 on `architect/foundation` proposes a finer folder ownership table. That plan is a **draft for approval** (its section 7), so this file treats it as *proposed* and lists every place where it goes beyond the development plan in section 4 below. Until the user approves it, the lanes in section 1 are the ones the Reviewer enforces; the proposed extras are marked **(proposed)** and are Questions, not Blocks.
+**Status of the folder map.** `docs/architecture/build-plan.md` section 3 proposed a finer folder ownership table. The user approved the build plan on 30 Oct 2026 (decision D81, on `main`): the ordered merge, `packages/contract`, registries as fragments, `locales/pending/`, and the wave and lane plan. The lanes in section 1 therefore include those approved extras; they are still marked *(from build plan)* because the development plan itself does not name them. Section 4 lists the places where the approved build plan goes beyond the development plan or `CLAUDE.md` and still needs a one-line update in those source documents.
 
 ## 1. Lane table
 
@@ -19,12 +19,12 @@ Written 30 Oct 2026 by the Reviewer. Use it to spot a pull request outside its l
 | `specs/features/F##-*/design.md` | routes | - (flags gaps) | own | - | - | - | - | - | - | - | - | - | review notes in own folder | - |
 | `specs/features/F##-*/tasks.md` | routes | - | own; a task's tick is edited only by the PR that does the task | tick own task | tick own task | tick own task | tick own task | tick own task | tick own task | tick own task | tick own task | tick own task | - | - |
 | `docs/architecture/**` | - | - | own | - | - | - | - | - | - | - | - | - | - | - |
-| `packages/db/**` (migrations, RLS, functions, registries, `withClubTx`) | - | - | own | E booking functions, own migration block *(proposed)* | E commerce functions, own migration block *(proposed)* | E for F01/F02 tasks that name BE-P (for example T09 reads/writes via the Architect's modules) | - | - | - | - | - | - | - | - |
+| `packages/db/**` (migrations, RLS, functions, registries, `withClubTx`) | - | - | own | E booking functions, own migration block *(build plan, D81)* | E commerce functions, own migration block *(build plan, D81)* | E for F01/F02 tasks that name BE-P (for example T09 reads/writes via the Architect's modules) | - | - | - | - | - | - | - | - |
 | `packages/auth/**`, `apps/platform/**` (API side), `packages/line/**`, `apps/worker/**` | - | - | - | - | - | own | - | - | - | - | - | - | - | - |
 | `packages/domain/booking/**`, F03/F07/F08/F09 rules, availability, holds, rest rule, waitlist, cancellation, closures | - | - | - | own | - | - | - | - | - | - | - | - | - | - |
 | `packages/domain/pricing/**`, `packages/payments/**`, ledgers (credit, wallet), promo, referral, Beam integration | - | - | - | - | own | - | - | - | - | - | - | - | - | - |
 | `packages/time/**`, `packages/domain/phone.ts` and other shared pure helpers named in an F01 or F02 task | - | - | own for `time`; BE-P for helpers its tasks name | - | - | E per task | - | - | - | - | - | - | - | - |
-| `packages/contract/**` *(proposed, does not exist yet)* | - | - | - | E own routes | E own routes | E own routes | review | review | review | - | - | - | - | - |
+| `packages/contract/**` *(build plan, D81)* | - | - | - | E own routes | E own routes | E own routes | review | review | review | - | - | - | - | - |
 | `apps/web/**` player route group, player screens (C1 to C17, S-, G-) | - | - | - | - | - | - | own | - | - | - | - | - | - | - |
 | `apps/web/**` admin and coach route groups (A0 to A17, K1 to K6) | - | - | - | - | - | - | - | own | - | - | - | - | - | - |
 | `apps/platform/**` screens (P1 to P6), `packages/ui/**` (Palette D tokens, shared components) | - | - | - | - | - | API routes only | - | consume only | own | - | - | - | - | - |
@@ -76,7 +76,7 @@ Each task names one `Role:`. A task is **in lane** when the files it creates bel
 
 | Task | Named role | Files it creates | Lane check |
 |---|---|---|---|
-| F01-T01 repo scaffold (done on `architect/foundation`) | Arch | `apps/*`, `packages/*`, `tools/lint`, root config | In lane for Arch (root config). Created apps and packages are empty placeholders. Question: the scaffold exists before the user approved the build plan's "Building does not start until the user says so" (build plan s.7, item 5) |
+| F01-T01 repo scaffold (done on `architect/foundation`) | Arch | `apps/*`, `packages/*`, `tools/lint`, root config | In lane for Arch (root config). Created apps and packages are empty placeholders. The scaffold predates D81; the Reviewer reviews it with the Wave 0 merges |
 | F01-T02, T03, T04, T05, T06, T09, T10, T11, T12, T15, T16, T18, T20, T24, T26, T27, T27b | Arch | `packages/db/**`, `packages/testing/**` | In lane |
 | F01-T07 tenant isolation suite | QA/Arch | a generic suite driven by the table registry | Splits two lanes. The suite lives under `tests/rls` (QA) and reads the registry from `packages/db` (Arch). A PR for it may touch both only if it adds no other change to the Arch file |
 | F01-T08, T13, T14, T17, T19, T21, T22, T23, T25, T28, T30 to T35 | BE-P | `packages/auth`, `apps/platform` API, `packages/domain/...` helpers, `apps/worker` | In lane. T08 (settings registry) writes registries under `packages/db/registry/` per the build plan fragment rule: Architect owns the index, BE-P owns its own fragment |
@@ -84,14 +84,14 @@ Each task names one `Role:`. A task is **in lane** when the files it creates bel
 | F01-T36 static checks wired | DevOps/Arch | `.github/**`, `tools/lint/**` | Arch for `tools/lint`; DevOps for `.github`. One PR may not mix them without both owners' approval |
 | F01-T37, F02-T24, F02-T25 acceptance sweeps | QA | `tests/**`, `docs/qa/**` | In lane. Closing gaps by editing product code is not in lane (QA files bugs) |
 | F02-T00 LIFF set up with a real LINE account | DevOps with the user | design note in `specs/features/F02-.../design.md` section 3.3 | The only place a non-Architect is asked to write in a `design.md`. Treat as a recorded result by the Architect, not a DevOps edit; Question to the Orchestrator |
-| F02-T01, T02, T03, T04, T05 to T17 | BE-P | `packages/db` migrations 0101 to 0199, `packages/auth`, `packages/line` | Migrations 0101 and up are written by BE-P under the **proposed** per-feature number block, while the plan gives migrations to the Architect. Question (section 4, item 2) |
+| F02-T01, T02, T03, T04, T05 to T17 | BE-P | `packages/db` migrations 0101 to 0199, `packages/auth`, `packages/line` | Migrations 0101 and up are written by BE-P under the per-feature number block approved in D81, while the plan gives migrations to the Architect. approved by D81 (section 4, item 2) |
 | F02-T13 `price_group_for` and the Student check | BE-P | `packages/domain/...` | Used by F04 and F06 (BE-C). Owner: BE-P; BE-C consumes it and does not copy it |
 | F02-T18 to T23 | FE-P | `apps/web/**` player group, `packages/i18n` consumers | In lane. A new key goes through the Content flow, not into `locales/*.json` directly |
 | F03 tasks (BE-B) | BE-B | `packages/domain/booking`, migrations 0201 to 0299 | In lane; migrations are the same Question as above |
 
 ## 4. Where the draft build plan goes beyond the development plan
 
-These are not Blocks today. Each needs a decision before the Reviewer enforces it. Raised in `docs/review/spec-consistency.md`.
+Approved by D81, so they are lanes the Reviewer enforces. The development plan and `CLAUDE.md` have not been updated to match (raised as M-1 and M-2 in `docs/review/spec-consistency.md`). Where `CLAUDE.md` and the approved build plan disagree, the Reviewer follows `CLAUDE.md` for the rule and the build plan for the folder, and asks the Orchestrator to align the text.
 
 | # | Proposed in `docs/architecture/build-plan.md` | Development plan or `CLAUDE.md` says | Effect on lanes |
 |---|---|---|---|

@@ -2,7 +2,7 @@
 
 Role: Reviewer (`docs/DEVELOPMENT-PLAN.md` section 3, role 13). The Reviewer approves or blocks with reasons. It never merges, never writes product code and never opens a pull request. It edits only `docs/review/**`.
 
-Written 30 Oct 2026 from `CLAUDE.md`, the PRD and hand-off v1.2, and decisions D1 to D80 (`docs/decisions.md`). Where this list and a source disagree, the source wins and this list is the bug. If the spec is silent on something a PR does, the review item is a **question**, never a guess.
+Written 30 Oct 2026 from `CLAUDE.md`, the PRD and hand-off v1.2, and decisions D1 to D99 (`docs/decisions.md`; the brief named D1 to D80, and D81 to D99 added the approved build plan, F04 and F05 designs and the F06 and F10 answers). Where this list and a source disagree, the source wins and this list is the bug. If the spec is silent on something a PR does, the review item is a **question**, never a guess.
 
 ## How to use it
 
@@ -143,7 +143,7 @@ Block means the PR cannot merge. Question means the author or the Orchestrator m
 | 9.1 | **No hard-coded user-facing text** in screens, LINE messages, Flex cards, PDF receipts or error messages. Run `node tools/i18n/lint-hardcoded-text.mjs` (on the `i18n/text-variables` branch) and read the diff for strings the lint may miss (template literals, `aria-label`, `title`, `alt`, `placeholder`, enum values shown to people, error `message` fields). Error responses carry codes; the front end maps codes to keys | TEXT-01 |
 | 9.2 | Keys come from `locales/copy-index.csv`, looked up by screen. One key serves several screens; text is never copied into a new key | CLAUDE.md; TEXT-02 |
 | 9.3 | **The existing wording of a key is unchanged.** Diff `locales/*.json` for edited values of existing keys (`git diff` on lines that are not additions). Any edit of an existing key's wording by a non-Content role is a Block | TEXT-04 |
-| 9.4 | New text has a new key in both `en.json` and `th.json`, with the same prefix and numbering rules (P, A, K, L, X), and is listed in the task for the writers. Check the repo's agreed place for new keys (see `docs/review/spec-consistency.md`, finding on `locales/pending`) | TEXT-04; D51 |
+| 9.4 | New text has a new key in both `en.json` and `th.json`, with the same prefix and numbering rules (P, A, K, L, X), and is listed in the task for the writers. D81 approves `locales/pending/<feature>.json` for feature roles while `CLAUDE.md` still says to add both locale files; accept either until the Orchestrator aligns them (spec-consistency M-2) | TEXT-04; D51 |
 | 9.5 | **Variables are identical across en and th**: every `{name}` in the English value appears in the Thai value of the same key, with no extra or missing name, and no sample values (names, dates, times, prices, counts) are left in the text | TEXT-03 |
 | 9.6 | The platform console (X keys) is English only. Player app, club admin, coach portal, LINE messages and receipts have both languages | TEXT-05 |
 | 9.7 | LINE Flex cards and PDF receipts read the same locale files; no text inside templates | CLAUDE.md |
