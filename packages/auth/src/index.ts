@@ -23,3 +23,5 @@ export { clearSessionCookie, clubOfToken, hashToken, newSessionToken, parseSessi
 export { createSignInService, type AuthenticateResult, type ClubTarget, type SignInDirectory, type SignInOptions, type SignInResult, type SignInTx } from './liff/session';
 export { createDbDirectory } from './liff/directory';
 export { createPublicConfigService, type PublicConfig, type PublicConfigResult } from './liff/public-config';
+export { createProfileService, type ProfileOptions, type ProfileResult } from './liff/profile';
+export { safeReturnPath } from './liff/return-path';

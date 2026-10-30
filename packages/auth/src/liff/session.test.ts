@@ -170,3 +170,122 @@ describe('later requests (AUTH-01-AC13, AC14; LINE-01-AC10)', () => {
     expect(await svc.authenticate({ slug: 'a', cookieHeader: cookie })).toEqual({ ok: false, status: 401, code: 'unauthenticated' });
   });
 });
+
+// F02-T10 invite redemption in the sign-in path (LINE-01-AC10; ROLE-01-AC1; SR-01, D122).
+describe('invites at sign in', () => {
+  const INV = 'a'.repeat(64);
+  const invite = (kind: 'staff' | 'coach' | 'tester' | 'owner', hash = INV, opts: { roles?: string[]; bound?: string; expired?: boolean } = {}) =>
+    tdb.query(
+      `insert into public.club_invite (club_id, token_hash, kind, roles, bound_line_user_id, created_by_user, created_at, expires_at)
+       values ($1,$2,$3,$4,$5,$6, now() - interval '2 days', ${opts.expired ? "now() - interval '1 day'" : "now() + interval '1 day'"})`,
+      [A, hash, kind, opts.roles ?? (kind === 'staff' ? ['front_desk', 'player'] : kind === 'coach' ? ['coach', 'player'] : kind === 'owner' ? ['owner', 'player'] : ['player']), opts.bound ?? null, OWNER],
+    );
+  const rolesOf = async (user: string) => (await tdb.query(`select role from public.app_user_role where user_id = $1 order by role`, [user])).rows.map((r) => r.role as string);
+
+  it('a valid staff invite adds its roles to an existing player and is used once', async () => {
+    await invite('staff');
+    const r = await signIn('a', tokenFor('UPLAYER'), { inviteHash: INV });
+    expect(r).toMatchObject({ ok: true, state: 'active', invite: 'redeemed' });
+    expect(await rolesOf(PLAYER)).toEqual(['front_desk', 'player']);
+    expect((await tdb.query(`select used_by_user from public.club_invite`)).rows[0].used_by_user).toBe(PLAYER);
+  });
+  it('a coach invite adds the coach role', async () => {
+    await invite('coach');
+    await signIn('a', tokenFor('UPLAYER'), { inviteHash: INV });
+    expect(await rolesOf(PLAYER)).toEqual(['coach', 'player']);
+  });
+  it('a tester invite adds a tester row and no role beyond player', async () => {
+    await invite('tester');
+    expect(await signIn('a', tokenFor('UPLAYER'), { inviteHash: INV })).toMatchObject({ ok: true, invite: 'redeemed' });
+    expect(await rolesOf(PLAYER)).toEqual(['player']);
+    expect((await tdb.query(`select count(*)::int n from public.club_tester where user_id = $1`, [PLAYER])).rows[0].n).toBe(1);
+  });
+  it('a used invite adds nothing the second time; the person still signs in as a player', async () => {
+    await invite('staff');
+    await signIn('a', tokenFor('UPLAYER'), { inviteHash: INV });
+    const again = await signIn('a', tokenFor('UTESTER'), { inviteHash: INV });
+    expect(again).toMatchObject({ ok: true, state: 'active', invite: 'invalid' });
+    expect(await rolesOf(TESTER)).toEqual(['player']);
+  });
+  it('an expired invite adds nothing', async () => {
+    await invite('staff', INV, { expired: true });
+    expect(await signIn('a', tokenFor('UPLAYER'), { inviteHash: INV })).toMatchObject({ ok: true, invite: 'invalid' });
+    expect(await rolesOf(PLAYER)).toEqual(['player']);
+  });
+  it('an unknown link adds nothing and the answer is the same as for a used one', async () => {
+    expect(await signIn('a', tokenFor('UPLAYER'), { inviteHash: 'f'.repeat(64) })).toMatchObject({ ok: true, invite: 'invalid' });
+  });
+  it('an invite bound to another LINE id is refused (D122) and stays unused', async () => {
+    await invite('staff', INV, { bound: 'USOMEONEELSE' });
+    expect(await signIn('a', tokenFor('UPLAYER'), { inviteHash: INV })).toMatchObject({ ok: true, invite: 'invalid' });
+    expect(await rolesOf(PLAYER)).toEqual(['player']);
+    expect((await tdb.query(`select used_at from public.club_invite`)).rows[0].used_at).toBeNull();
+  });
+  it('two people opening one link at once: exactly one wins', async () => {
+    await invite('staff');
+    const [a, b] = await Promise.all([signIn('a', tokenFor('UPLAYER'), { inviteHash: INV }), signIn('a', tokenFor('UTESTER'), { inviteHash: INV })]);
+    const outcomes = [a, b].map((r) => (r.ok ? r.invite : 'refused')).sort();
+    expect(outcomes).toEqual(['invalid', 'redeemed']);
+    expect((await tdb.query(`select count(*)::int n from public.app_user_role where role = 'front_desk'`)).rows[0].n).toBe(1);
+  });
+  it('the bound owner’s return visit only opens the club; nothing new is granted', async () => {
+    await tdb.query(`update public.club set status = 'draft' where id = $1`, [A]);
+    const first = await signIn('a', tokenFor('UOWNER'));
+    expect(first).toMatchObject({ ok: true, state: 'active' });
+    expect(first.ok && first.invite).toBeFalsy();
+    expect(await rolesOf(OWNER)).toEqual(['owner', 'player']);
+  });
+  it('no invite means no invite field in the answer', async () => {
+    const r = await signIn('a', tokenFor('UPLAYER'));
+    expect(r.ok && r.invite).toBeUndefined();
+  });
+});
+
+// F02-T12 logout and revocation (ROLE-02-AC4 club side; AUTH-02-AC5).
+describe('logout and revocation', () => {
+  const login = async (lineId: string) => {
+    const r = await signIn('a', tokenFor(lineId));
+    if (!r.ok) throw new Error('sign in failed');
+    return r.setCookie.split(';')[0]!;
+  };
+  it('logout revokes the session and clears the cookie', async () => {
+    const cookie = await login('UPLAYER');
+    const out = await svc.logout({ slug: 'a', cookieHeader: cookie });
+    expect(out).toMatchObject({ ok: true });
+    expect(out.ok && out.setCookie).toContain('Max-Age=0');
+    expect(await svc.authenticate({ slug: 'a', cookieHeader: cookie })).toEqual({ ok: false, status: 401, code: 'unauthenticated' });
+    expect((await sessions()).map((s) => s.state)).toEqual(['revoked']);
+  });
+  it('a second logout, or one without a cookie, is fine and still clears the cookie', async () => {
+    const cookie = await login('UPLAYER');
+    await svc.logout({ slug: 'a', cookieHeader: cookie });
+    expect(await svc.logout({ slug: 'a', cookieHeader: cookie })).toMatchObject({ ok: true });
+    expect(await svc.logout({ slug: 'a', cookieHeader: undefined })).toMatchObject({ ok: true });
+  });
+  it('logout only touches its own session: another device of the same person stays signed in', async () => {
+    const phone = await login('UPLAYER');
+    const laptop = await login('UPLAYER');
+    await svc.logout({ slug: 'a', cookieHeader: phone });
+    expect(await svc.authenticate({ slug: 'a', cookieHeader: laptop })).toMatchObject({ ok: true, state: 'active' });
+  });
+  it('another club’s address does not revoke, and says not found', async () => {
+    const cookie = await login('UPLAYER');
+    expect(await svc.logout({ slug: 'b', cookieHeader: cookie })).toEqual({ ok: false, status: 404, code: 'not_found' });
+    expect(await svc.authenticate({ slug: 'a', cookieHeader: cookie })).toMatchObject({ ok: true });
+  });
+  it('deactivating a person ends all their sessions at once', async () => {
+    const one = await login('UPLAYER');
+    const two = await login('UPLAYER');
+    await tdb.query(`update public.app_user set active = false where id = $1`, [PLAYER]);
+    for (const c of [one, two]) expect(await svc.authenticate({ slug: 'a', cookieHeader: c })).toEqual({ ok: false, status: 401, code: 'unauthenticated' });
+    expect((await sessions()).every((s) => s.state === 'revoked')).toBe(true);
+    expect(await signIn('a', tokenFor('UPLAYER'))).toEqual({ ok: false, status: 403, code: 'account_inactive' });
+  });
+  it('a role taken away shows on the next request without signing out', async () => {
+    const cookie = await login('UTESTER');
+    await tdb.query(`insert into public.app_user_role (club_id, user_id, role) values ($1,$2,'accountant')`, [A, TESTER]);
+    expect(await svc.authenticate({ slug: 'a', cookieHeader: cookie })).toMatchObject({ roles: ['accountant', 'player'] });
+    await tdb.query(`delete from public.app_user_role where user_id = $1 and role = 'accountant'`, [TESTER]);
+    expect(await svc.authenticate({ slug: 'a', cookieHeader: cookie })).toMatchObject({ ok: true, roles: ['player'] });
+  });
+});
