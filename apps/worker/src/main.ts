@@ -2,6 +2,8 @@ import { createDb } from '@booq/db';
 import { listClubIds } from './club-list';
 import { buildCrontab, readWorkerConfig } from './config';
 import { IMPORT_STAGING_DISPATCH, IMPORT_STAGING_SWEEP, importStagingDispatch, sweepImportStaging } from './tasks/import-staging';
+import { runHoldRelease } from './tasks/hold-release';
+import { startTicker } from './ticker';
 import { startWorker } from './worker';
 
 // The worker process (F01-T34). Settings come from the environment (see config.ts); there are
@@ -18,11 +20,19 @@ const worker = await startWorker({
   crontab: buildCrontab(config),
 });
 
+// hold_release runs on its own timer: cron cannot go below a minute, and a late tick blocks nobody
+// (BOOK-03-AC6). A failed tick is already counted in the heartbeat; the loop carries on.
+const holdRelease = startTicker({
+  everyMs: config.holdReleaseTickSeconds * 1000,
+  run: () => runHoldRelease(db),
+  onError: () => undefined,
+});
+
 let stopping = false;
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, () => {
     if (stopping) return;
     stopping = true;
-    void worker.stop().then(() => db.end()).then(() => process.exit(0));
+    void holdRelease.stop().then(() => worker.stop()).then(() => db.end()).then(() => process.exit(0));
   });
 }

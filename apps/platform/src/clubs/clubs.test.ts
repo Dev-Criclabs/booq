@@ -113,7 +113,7 @@ describe('progress (P3, PLAT-01-AC2, AC9)', () => {
       ['basics', false, 'booq'], ['plan', false, 'booq'], ['courts_hours', false, 'booq'], ['line', false, 'booq'], ['payments', false, 'booq'],
     ]);
     expect(p.progress.launch).toHaveLength(10);
-    expect(p.progress.launch.every((l) => l.result === 'missing')).toBe(true);
+    expect(p.progress.launch.every((l) => l.result === (l.item === 'no_open_launch_failure' ? 'pass' : 'pending'))).toBe(true);
   });
 
   it('an unknown or malformed club id and an unknown staff member answer not_found', async () => {

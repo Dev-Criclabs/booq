@@ -95,7 +95,7 @@ describe('what the route refuses (PLAT-01-AC2, AC3, AC9)', () => {
     expect(await change(spec, 'live')).toEqual({
       ok: false,
       code: 'blocked',
-      missing: [{ item: keys[1], owed_by: 'booq', result: 'fail' }, { item: keys[2], owed_by: 'booq', result: 'pending' }],
+      missing: [{ item: keys[1], owed_by: 'booq', result: 'pending' }, { item: keys[2], owed_by: 'booq', result: 'pending' }],
     });
     expect(await status()).toBe('testing');
   });

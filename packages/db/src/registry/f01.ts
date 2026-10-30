@@ -54,6 +54,7 @@ export const tables: Fragment = {
   'app.pause_handlers': { class: 'infra' },
   // setup steps that block Draft to Testing (F01-T23): registered by migrations only
   'app.setup_steps': { class: 'infra' },
+  'app.launch_producers': { class: 'infra' },
   // owner contact changes that need a second admin (F01-T23 part b)
   'platform.owner_contact_change': { class: 'P' },
   // the list of feature switches (F01-T25): written by migrations only

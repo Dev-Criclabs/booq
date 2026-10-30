@@ -58,9 +58,9 @@ Depends on: F01 T03 to T07 (database, context, tenant suite), T08 (settings), T1
 
 ## C. Routes
 
-- [ ] **F03-T20** Public routes `GET /courts`, `/schedule/days`, `/schedule` with `no-store`. IDs: BOOK-01-AC6, AC14, BOOK-02-AC1, AC2, AC5. Role: BE-B · Deps T17 · Size: M
+- [x] **F03-T20** Public routes `GET /courts`, `/schedule/days`, `/schedule` with `no-store`. IDs: BOOK-01-AC6, AC14, BOOK-02-AC1, AC2, AC5. Role: BE-B · Deps T17 · Size: M
   Tests first: guest access works; the response has the seven states (the client adds Selected), `mine` only for a signed in player, `waitlist` flag; a full day reports Day full.
-- [ ] **F03-T21** Player routes `GET /bookings/{id}` and `POST /bookings/{id}/release`. IDs: BOOK-03-AC14, ROLE-AC4. Role: BE-B · Deps T06, T13 · Size: S
+- [x] **F03-T21** Player routes `GET /bookings/{id}` and `POST /bookings/{id}/release`. IDs: BOOK-03-AC14, ROLE-AC4. Role: BE-B · Deps T06, T13 · Size: S
   Tests first: another player's booking is 404; releasing a confirmed booking is refused.
 - [ ] **F03-T22** Staff routes `POST /staff/bookings`, `PUT /staff/bookings/{id}/move`, `POST /staff/bookings/{id}/release`, with permissions and the Paused rule (owner may still manage existing bookings). IDs: BOOK-04-AC7, decisions D43, D60. Role: BE-B · Deps T10, T15 · Size: M
   Tests first: front desk and owner only; a staff booking awaiting payment holds for the hold time; in a Paused club front desk is refused and the owner can move and release.

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from './tx';
 import { createPlatformDb, type PlatformDb } from './platform-tx';
 import { createTestDatabase, type TestDatabase } from './testing/harness';
+import { completeSetup, recordLaunchChecks } from './setup-fixture';
 
 // F01-T23 part b / migration 0035: the owner invite (SR-01, D122), owner_verified, and the
 // second-admin rule for owner contact changes (review T18 R5; design 7.1; ROLE-02-AC8).
@@ -185,14 +186,13 @@ describe('redemption (SR-01, D122, ROLE-02-AC8)', () => {
   });
 
   it('Go live is refused while the owner is unverified, even with every other check passed (SR-01)', async () => {
+    await completeSetup(tdb, CLUB);
+    await recordLaunchChecks(tdb, CLUB);
     await invite(adminA);
     await redeem(HASH1, OWNER_LINE, '0999999999');
-    const keys = (await tdb.query(`select value from platform.config where key = 'required_launch_checks'`)).rows[0].value.map((x: { key: string }) => x.key) as string[];
-    for (const k of keys.filter((k) => k !== 'owner_signed_in' && k !== 'owner_verified')) {
-      await tdb.query(`insert into platform.launch_check (club_id, check_key, result) values ($1, $2, 'pass')`, [CLUB, k]);
-    }
     const b = await tdb.query(`select app.status_blockers($1, 'testing', 'live') as b`, [CLUB]);
-    expect(b.rows[0].b).toEqual([{ item: 'owner_verified', owed_by: 'booq', result: 'fail' }]);
+    // the unverified owner is an open failure too, so no_open_launch_failure waits with it
+    expect(b.rows[0].b).toEqual([{ item: 'owner_verified', owed_by: 'booq', result: 'fail' }, { item: 'no_open_launch_failure', owed_by: 'booq', result: 'pending' }]);
   });
 });
 
