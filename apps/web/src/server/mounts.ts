@@ -7,7 +7,7 @@ import { dataRequestRoutes } from '../api/data-request/routes';
 import { profileRoutes } from '../api/profile/routes';
 import { staffRoutes } from '../api/staff/routes';
 import { dobHistoryRoutes } from '../api/dob-history/routes';
-import { lineFriendRoutes } from '../api/line-friend/routes';
+import { lineFriendRoutes } from '../api/line/friend/routes';
 import { importRoutes } from '../api/import/routes';
 import type { WebConfig } from './context';
 

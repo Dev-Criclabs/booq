@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from './tx';
 import { createTestDatabase, type TestDatabase } from './testing/harness';
 
-// F01-T14 / migration 0048: roles and staff (ROLE-01-AC1, AC5, AC6, AC7; design 5.1). The owner assigns roles, creates
+// F01-T14 / migration 0050: roles and staff (ROLE-01-AC1, AC5, AC6, AC7; design 5.1). The owner assigns roles, creates
 // staff and coach invites and deactivates people; everything goes through definer functions that check the owner role
 // from the context, never from an argument.
 const A = '3f2b8f0e-7c1d-4a55-9d0a-1c2e3f4a5b6c';

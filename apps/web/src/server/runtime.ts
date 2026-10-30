@@ -1,7 +1,7 @@
 import { createDb } from '@booq/db';
 import { createLineVerifier, type ServeSource, type WebhookSource } from '@booq/auth';
 import { loadDecryptKey } from '@booq/secrets';
-import { lineWebhookRoute } from '../api/line-webhook/webhook';
+import { lineWebhookRoute } from '../api/line/webhook/webhook';
 import { createWebTable, readWebConfig } from './context';
 
 // The running app's wiring, built once on the first request and shared by every route handler

@@ -1,4 +1,4 @@
--- F01-T14 / migration 0048: roles and staff for the owner (ROLE-01-AC1, AC5, AC6, AC7; design 5.1 and 6.2).
+-- F01-T14 / migration 0050: roles and staff for the owner (ROLE-01-AC1, AC5, AC6, AC7; design 5.1 and 6.2).
 -- Every function checks the owner role from the context (app.has_any_role), takes the club from the context and never
 -- from an argument, and runs as the table owner so the policies of 0003 (which let a person update only themselves)
 -- stay as they are. Errors are `staff:<code>` (P0001); a person who is not in this club answers not_found.

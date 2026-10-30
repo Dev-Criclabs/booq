@@ -2,7 +2,7 @@ import { hashInviteToken, newInviteToken, route, RouteError, type Route, type Ro
 import type { Db } from '@booq/db';
 
 // Staff routes (F01-T14; ROLE-01-AC1, AC5, AC6, AC7; design 5.1). The owner lists staff, creates staff and coach
-// invites, sets a person's roles and deactivates a person. The rules live in the database functions of migration 0048,
+// invites, sets a person's roles and deactivates a person. The rules live in the database functions of migration 0050,
 // which check the owner role from the context and write the club audit notes; the route reads the body as sent
 // (`ctx.body`), refuses unknown fields and turns `staff:<code>` refusals into typed codes. A BOOQ account is never a
 // person of a club, so none of these can give one a club role (ROLE-01-AC6). Path parameter: `input.userId`.
