@@ -171,6 +171,77 @@ describe('applying a template (PLAT-05-AC7, AC8, AC10, AC12)', () => {
   });
 });
 
+describe('items whose handler arrives later (review gap 1)', () => {
+  async function registerProduct(sink = '__copied') {
+    await tdb.query(`create table if not exists public.${sink} (club_id uuid, key text, value jsonb)`);
+    await tdb.query(`grant all on public.${sink} to booq_owner`);
+    await tdb.query(`create or replace function public.__copy(p_club uuid, p_key text, p_value jsonb) returns void language sql as $$ insert into public.${sink} values (p_club, p_key, p_value) $$`);
+    await tdb.query(`select app.register_template_handler('product', 'public.__copy(uuid, text, jsonb)'::regprocedure)`);
+  }
+  const copied = async (club: string) => (await tdb.query(`select count(*)::int as n from public.__copied where club_id = $1`, [club])).rows[0].n as number;
+  const pendingNow = (who: string, club = CLUB) =>
+    pdb.withPlatformTx({ staffId: who, staffLabel: 'Staff', clubId: club }, async (tx) => (await tx.query(`select app.apply_pending_template_items() as r`)).rows[0]?.r);
+
+  it('a club started before the handler existed gets its products when the club asks for the catch-up, once', async () => {
+    await apply(spec, 'tennis');
+    await registerProduct();
+    expect(await copied(CLUB)).toBe(0);
+    const r = await pendingNow(spec);
+    expect(r).toMatchObject({ copied: { product: 10 }, pending: [] });
+    expect(await copied(CLUB)).toBe(10);
+    expect(await pendingNow(spec)).toMatchObject({ copied: {}, pending: [] });      // nothing is copied twice
+    expect(await copied(CLUB)).toBe(10);
+  });
+
+  it('items copied when the club started are not copied again by the catch-up', async () => {
+    await registerProduct();
+    await apply(spec, 'tennis');
+    expect(await copied(CLUB)).toBe(10);
+    expect(await pendingNow(spec)).toMatchObject({ copied: {} });
+    expect(await copied(CLUB)).toBe(10);
+  });
+
+  it('registering a handler can catch up every club already started from a template: each once; Blank and clubs with no template get nothing', async () => {
+    await apply(admin, 'tennis', CLUB);
+    await apply(admin, 'blank', OTHER);
+    await tdb.query(`insert into public.club (id, slug, name_th, name_en) values ('cccccccc-0000-4000-8000-000000000003', 'c', 'ค', 'C')`);   // never started from a template
+    await registerProduct();
+    expect((await tdb.query(`select app.catch_up_template_handler('product') as n`)).rows[0].n).toBe(10);
+    expect(await copied(CLUB)).toBe(10);
+    expect(await copied(OTHER)).toBe(0);
+    expect((await tdb.query(`select app.catch_up_template_handler('product') as n`)).rows[0].n).toBe(0);
+  });
+
+  it('a kind with no handler stays pending and is reported; the catch-up is for the club\'s staff or owner only', async () => {
+    await apply(spec, 'tennis');
+    expect(await pendingNow(spec)).toMatchObject({ copied: {}, pending: ['product'] });
+    await expect(pendingNow(loner)).rejects.toThrow(/template:not_found/);
+    await expect(applyAsOwner('tennis', ['player'])).rejects.toThrow(/template:already_applied|template:not_allowed/);
+    const asOwner = (roles: string[]) => db.withClubTx({ clubId: CLUB, userId: USER, roles, source: 'admin' }, async (tx) => (await tx.query(`select app.apply_pending_template_items() as r`)).rows[0]?.r);
+    await expect(asOwner(['front_desk', 'player'])).rejects.toThrow(/template:not_allowed/);
+    expect(await asOwner(['owner', 'player'])).toMatchObject({ pending: ['product'] });
+  });
+
+  it('the catch-up functions: the club one is not callable by the app roles, and the maintenance one only by the owner role', async () => {
+    const q = (fn: string, role: string) => tdb.query(`select has_function_privilege($1, $2, 'execute') as ok`, [role, fn]).then((r) => r.rows[0].ok);
+    expect(await q('app.apply_pending_template_items()', 'booq_platform')).toBe(true);
+    expect(await q('app.apply_pending_template_items()', 'booq_app')).toBe(true);
+    for (const role of ['booq_worker', 'anon', 'authenticated']) expect(await q('app.apply_pending_template_items()', role), role).toBe(false);
+    for (const role of ['booq_platform', 'booq_app', 'booq_worker', 'anon', 'authenticated']) expect(await q('app.catch_up_template_handler(text)', role), role).toBe(false);
+  });
+});
+
+describe('the P6 entry on the staff path (review gap 2)', () => {
+  it('applying a template as BOOQ staff writes one P6 entry with the staff name and the counts; the owner path writes none', async () => {
+    await apply(spec, 'tennis');
+    const p6 = (await tdb.query(`select action, staff_name_at_time as n, club_id, detail from platform.audit_log where action = 'club.template_applied'`)).rows;
+    expect(p6).toHaveLength(1);
+    expect(p6[0]).toMatchObject({ n: 'Sam Specialist', club_id: CLUB, detail: { template: 'tennis', copied: { setting: 11, opening_hours: 7, label: 1 }, pending: ['product'] } });
+    await applyAsOwner('blank', ['owner', 'player'], OTHER);
+    expect((await tdb.query(`select count(*)::int as n from platform.audit_log where action = 'club.template_applied'`)).rows[0].n).toBe(1);
+  });
+});
+
 describe('who may apply one', () => {
   it('an unassigned specialist gets not found; an assigned one and an admin can', async () => {
     await expect(apply(loner, 'tennis')).rejects.toThrow(/template:not_found/);

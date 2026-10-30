@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from './tx';
+import { createPlatformDb } from './platform-tx';
 import { createTestDatabase, type TestDatabase } from './testing/harness';
 
 // F01-T25 / migration 0038: feature switches (PLAT-05-AC1 to AC6; design A-1).
@@ -99,5 +100,39 @@ describe('every change is audited (PLAT-05-AC3)', () => {
     const r = await tdb.query(`select action, old_value, new_value from public.audit_entry where club_id = $1 and record_type = 'club_feature' order by occurred_at, id`, [A]);
     expect(r.rows.map((x) => x.action)).toEqual(['insert', 'update']);
     expect(JSON.stringify(r.rows[1])).toContain('false');
+  });
+});
+
+describe('who flips a switch (review of 0038)', () => {
+  const owner = (clubId: string) => ({ clubId, userId: USER, roles: ['owner', 'player'], source: 'admin' as const });
+
+  it('the club owner reads the switches and cannot write one: BOOQ sets them', async () => {
+    await setFeature(A, 'coach_add_at_checkout', true);
+    const r = await db.withClubTx(owner(A), (tx) => tx.query(`select feature_key, enabled from public.club_feature`));
+    expect(r.rows).toEqual([{ feature_key: 'coach_add_at_checkout', enabled: true }]);
+    for (const sql of [
+      `insert into public.club_feature (club_id, feature_key, enabled) values ($1, 'backup_mode', true)`,
+      `update public.club_feature set enabled = false where club_id = $1`,
+      `delete from public.club_feature where club_id = $1`,
+    ]) await expect(db.withClubTx(owner(A), (tx) => tx.query(sql, [A])), sql).rejects.toThrow(/permission denied/i);
+    expect(await has(A, 'coach_add_at_checkout')).toBe(true);
+  });
+
+  it('a specialist assigned to the club can set a switch while it is in Testing, and cannot on a Live club without the owner window', async () => {
+    const staffId = (await tdb.query(`insert into platform.platform_staff (auth_user_id, email, display_name, role) values (gen_random_uuid(), 's@booq.example', 'Sam', 'onboarding_specialist') returning id`)).rows[0].id;
+    await tdb.query(`insert into platform.staff_assignment (staff_id, club_id) values ($1, $2)`, [staffId, A]);
+    await tdb.query(`update public.club set status = 'testing' where id = $1`, [A]);
+    const pdb = createPlatformDb({ connectionString: tdb.url, max: 1 });
+    try {
+      const set = (v: boolean) => pdb.withPlatformTx({ staffId, staffLabel: 'Sam', clubId: A }, (tx) =>
+        tx.query(`insert into public.club_feature (club_id, feature_key, enabled) values ($1, 'coach_add_at_checkout', $2) on conflict (club_id, feature_key) do update set enabled = excluded.enabled`, [A, v]));
+      await set(true);
+      expect(await has(A, 'coach_add_at_checkout')).toBe(true);
+      await tdb.query(`update public.club set status = 'live' where id = $1`, [A]);
+      await expect(set(false)).rejects.toThrow(/row-level security/i);
+      expect(await has(A, 'coach_add_at_checkout')).toBe(true);
+    } finally {
+      await pdb.end();
+    }
   });
 });

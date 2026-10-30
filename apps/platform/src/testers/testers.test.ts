@@ -27,6 +27,7 @@ beforeEach(async () => {
   spec = await staff('spec@booq.example', 'onboarding_specialist', '99999999-0000-4000-8000-000000000002', 'Sam Specialist');
   loner = await staff('loner@booq.example', 'onboarding_specialist', '99999999-0000-4000-8000-000000000003', 'Lee Loner');
   await tdb.query(`insert into platform.staff_assignment (staff_id, club_id) values ($1, $2)`, [spec, CLUB]);
+  await tdb.query(`insert into platform.config (key, value) values ('tester_invite_ttl_hours', '720')`);   // set by a person; nothing is seeded
   pdb = createPlatformDb({ connectionString: tdb.url, max: 1 });
   svc = createTesterService({ db: pdb, baseUrl: 'https://app.example.test/' });
 });
@@ -48,6 +49,12 @@ describe('creating a tester link', () => {
     const status = await svc.listTesters(spec, CLUB);
     expect(status).toEqual({ ok: true, testers: [], pendingInvites: 1 });
     expect(JSON.stringify(status)).not.toContain(token);                       // no read-back of a link
+  });
+
+  it('without a configured link life no link is made (not_configured)', async () => {
+    await tdb.query(`delete from platform.config where key = 'tester_invite_ttl_hours'`);
+    expect(await svc.createTesterInvite(spec, CLUB)).toEqual({ ok: false, code: 'not_configured' });
+    expect((await tdb.query(`select count(*)::int as n from public.club_invite`)).rows[0].n).toBe(0);
   });
 
   it('each call is a new link; an admin can make one for any club', async () => {
