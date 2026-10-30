@@ -12,8 +12,9 @@ Roles: **Arch** Architect/data, **BE-P** back end platform and LINE, **DevOps**,
 
 ## A. Repository, database and test foundation
 
-- [ ] **F01-T01** Repo scaffold: pnpm workspace with `apps/web`, `apps/platform`, `apps/worker`, `packages/{db,auth,domain,payments,line,i18n,time,ui,testing}`, TypeScript, lint, Vitest. IDs: PLAT-05-AC5 (one codebase), CC-5. Role: Arch · Size: S
+- [x] **F01-T01** Repo scaffold: pnpm workspace with `apps/web`, `apps/platform`, `apps/worker`, `packages/{db,auth,domain,payments,line,i18n,time,ui,testing}`, TypeScript, lint, Vitest. IDs: PLAT-05-AC5 (one codebase), CC-5. Role: Arch · Size: S
   Tests first: a smoke test per package runs; a lint rule file exists that fails on `service_role` and on importing `pg` outside `packages/db`.
+  Built: pnpm workspace, TypeScript strict, Vitest, `tools/lint/banned-patterns.mjs`; the three apps are plain TypeScript placeholders (Next.js is added by the first task that needs a route, F01-T13/T17); `packages/contract` is not created until build plan section 7 is approved.
 - [ ] **F01-T02** Test harness: local Postgres, migration runner, per-test database reset, a controllable clock (`app.now()` in test databases only). IDs: PLAT-04-AC11, CC-6 (decision D30). Role: Arch · Deps T01 · Size: M
   Tests first: a test moves the clock and reads a Bangkok date at 23:59:59 and 00:00:01; the override is impossible without the test-only setting.
 - [ ] **F01-T03** Migration 0001: extensions, schemas `app`/`platform`/`audit`, roles `booq_owner`/`booq_app`/`booq_worker`/`booq_platform`, no grants to `anon`/`authenticated`/`public`, per-role Bangkok time zone, helper functions `app.club_id()`, `app.user_id()`, `app.roles()`, `app.has_any_role()`. IDs: CC-1, CC-2, PDPA-01-AC1. Role: Arch · Deps T02 · Size: M
