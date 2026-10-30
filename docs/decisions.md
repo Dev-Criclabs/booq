@@ -14,6 +14,12 @@ Decisions made by the user, newest first. Each is also written into the PRD chan
 | D36 | A validly signed Beam callback with the wrong amount: record it, flag it for the owner, return a success status so Beam stops retrying (refines D24) |
 | Open | Whether a late payment that goes to the wallet gets its own receipt is with the accountant |
 
+## 30 Oct 2026, round 12 (orchestrator, standing approval D147)
+
+| # | Decision |
+|---|---|
+| D148 | BOOQ staff password sign in (Supabase Auth, needs the anon key) goes through the separate `apps/staff-invite` app (F01-T17b), so `apps/platform` holds neither the anon key nor the service-role key and SR-06 stays as written. `apps/platform` keeps the sign in rules behind an interface; the Supabase adapter is built in T17b. Security should confirm this reading of SR-06 when its chat is next answered by the user |
+
 ## 30 Oct 2026, round 11 (approved as recommended)
 
 F14 and F15 requirements are approved. F15 Q10 (platform log retention) stays open and parked.

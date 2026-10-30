@@ -21,7 +21,11 @@ importers:
         specifier: ^3.2.7
         version: 3.2.7(@types/node@22.20.5)
 
-  apps/platform: {}
+  apps/platform:
+    dependencies:
+      '@booq/time':
+        specifier: workspace:*
+        version: link:../../packages/time
 
   apps/web: {}
 
