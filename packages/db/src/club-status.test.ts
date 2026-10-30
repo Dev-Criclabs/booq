@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createDb, type Db, type PlatformDb } from './tx';
+import { createDb, type Db } from './tx';
+import { createPlatformDb, type PlatformDb } from './platform-tx';
 import { createTestDatabase, type TestDatabase } from './testing/harness';
 
 // F01-T20 / migration 0032: app.set_club_status and the transition table
@@ -9,7 +10,8 @@ const OTHER = '9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d';
 const USER = '11111111-2222-4333-8444-555555555555';
 
 let tdb: TestDatabase;
-let db: Db & PlatformDb;
+let db: Db;
+let pdb: PlatformDb;
 let admin: string;
 let spec: string;
 let loner: string;
@@ -18,7 +20,7 @@ async function staff(email: string, role: string, auth: string, name: string): P
   return (await tdb.query(`insert into platform.platform_staff (auth_user_id, email, display_name, role) values ($1, $2, $3, $4) returning id`, [auth, email, name, role])).rows[0].id;
 }
 const setStatus = async (staffId: string, to: string, reason?: string, club = CLUB) =>
-  db.withPlatformTx({ staffId, staffLabel: 'x', clubId: club }, async (tx) => (await tx.query(`select app.set_club_status($1, $2) as status`, [to, reason ?? null])).rows[0]?.status as string);
+  pdb.withPlatformTx({ staffId, staffLabel: 'x', clubId: club }, async (tx) => (await tx.query(`select app.set_club_status($1, $2) as status`, [to, reason ?? null])).rows[0]?.status as string);
 /** The internal function, called as the database owner with the staff context set by hand. */
 async function apply(staffId: string | null, to: string, reason: string | null, viaPause = true, club = CLUB): Promise<string> {
   const c = await tdb.pool.connect();
@@ -54,9 +56,11 @@ beforeEach(async () => {
   loner = await staff('loner@booq.example', 'onboarding_specialist', '99999999-0000-4000-8000-000000000003', 'Lee Loner');
   await tdb.query(`insert into platform.staff_assignment (staff_id, club_id) values ($1, $2)`, [spec, CLUB]);
   db = createDb({ connectionString: tdb.url, max: 1 });
+  pdb = createPlatformDb({ connectionString: tdb.url, max: 1 });
 });
 afterEach(async () => {
   await db.end();
+  await pdb.end();
   await tdb.close();
 });
 
