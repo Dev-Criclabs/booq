@@ -190,10 +190,9 @@ describe('platform schema (P6, team, usage, templates)', () => {
     const t = await tdb.query(`insert into platform.template (key, name) values ('squash', 'Squash') returning id`);
     expect((await rows(spec, `select key from platform.config`)).length).toBe(configRows);
     expect((await rows(spec, `select key from platform.template`)).length).toBe(5); // the four seeded templates and this one
-    const upd = await pdb.withPlatformTx(as(spec), (tx) => tx.query(`update platform.config set value = '48'`));
-    expect(upd.rowCount).toBe(0);
-    const upd2 = await pdb.withPlatformTx(as(admin), (tx) => tx.query(`update platform.config set value = '48'`));
-    expect(upd2.rowCount).toBe(configRows);
+    // No role writes the table directly any more: platform.set_config_value is the only way and it writes P6 (migration 0046).
+    await expect(pdb.withPlatformTx(as(spec), (tx) => tx.query(`update platform.config set value = '48'`))).rejects.toThrow(/permission denied/i);
+    await expect(pdb.withPlatformTx(as(admin), (tx) => tx.query(`update platform.config set value = '48'`))).rejects.toThrow(/permission denied/i);
     await expect(pdb.withPlatformTx(as(admin), (tx) => tx.query(`insert into platform.template (key, name) values ('x', 'x')`))).rejects.toThrow(/permission denied/i);
     const self = await pdb.withPlatformTx(as(spec), (tx) => tx.query(`update platform.platform_staff set role = 'platform_admin' where id = $1`, [spec]));
     expect(self.rowCount).toBe(0);
@@ -201,14 +200,13 @@ describe('platform schema (P6, team, usage, templates)', () => {
     expect(t.rows).toHaveLength(1);
   });
 
-  it('only an admin writes launch check results; a specialist cannot mark a check as passed (review R2)', async () => {
+  it('no role writes launch check rows directly; results come from platform.record_launch_check (review R2, migration 0046)', async () => {
     const put = (staffId: string) =>
-      pdb.withPlatformTx(as(staffId), (tx) => tx.query(`insert into platform.launch_check (club_id, check_key, result, checked_by) values ($1, 'line_test', 'pass', $2)`, [TEST, staffId]));
-    await expect(put(spec)).rejects.toThrow(/row-level security/i);
-    await put(admin);
-    const up = await pdb.withPlatformTx(as(spec), (tx) => tx.query(`update platform.launch_check set result = 'fail' where club_id = $1`, [TEST]));
-    expect(up.rowCount).toBe(0);
-    expect((await rows(spec, `select result from platform.launch_check`)).map((r) => r.result)).toEqual(['pass']);
+      pdb.withPlatformTx(as(staffId), (tx) => tx.query(`insert into platform.launch_check (club_id, check_key, result, checked_by) values ($1, 'beam_key_swap', 'pass', $2)`, [TEST, staffId]));
+    await expect(put(spec)).rejects.toThrow(/permission denied/i);
+    await expect(put(admin)).rejects.toThrow(/permission denied/i);
+    const up = await pdb.withPlatformTx(as(admin), (tx) => tx.query(`select 1`).then(() => tdb.query(`select count(*)::int as n from platform.launch_check`)));
+    expect(up.rows[0].n).toBe(0);
   });
 
   it('every platform table has row security on', async () => {

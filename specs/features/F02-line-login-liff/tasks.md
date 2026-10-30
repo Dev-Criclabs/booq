@@ -70,7 +70,7 @@ Depends on F01 tasks: T03 to T07 (database, context, tenant suite), T10 and T11 
 
 - [x] **F02-T18** LIFF client module: `liff.init`, silent in-client login, browser login with return path, `getIDToken` to `/auth/session`, offline handling, re-establishing a lost session silently in LINE. IDs: LINE-01-AC1 to AC3, AUTH-01-AC2, AC12. Role: FE-P · Deps T07 · Size: M
   Tests first (Playwright with a LIFF stub): inside LINE sign-in finishes with no tap; in a browser one tap on Log in with LINE; a reload keeps the session; an offline error shows P-0327 and P-0328.
-- [ ] **F02-T19** C1 Welcome screen: note instead of a checkbox (decision D38), Log in with LINE, Keep browsing, Thai and English, buttons never wrap. IDs: AUTH-01-AC6, LINE-01-AC2, AC6. Role: FE-P · Deps T18 · Size: S
+- [x] **F02-T19** C1 Welcome screen: note instead of a checkbox (decision D38), Log in with LINE, Keep browsing, Thai and English, buttons never wrap. IDs: AUTH-01-AC6, LINE-01-AC2, AC6. Role: FE-P · Deps T18 · Size: S
   Tests first: no checkbox exists; the Thai longest string does not wrap the button; Keep browsing creates nothing.
 - [ ] **F02-T20** C2 Profile setup screen: three fields, consent line with links, continue to payment with the choice kept. IDs: AUTH-02-AC1 to AC8. Role: FE-P · Deps T09 · Size: M
   Tests first: missing consent shows what is missing; the consent line wraps inside its card in Thai; the screen is marked "text pending legal check" in code review notes only (D10), not on screen.

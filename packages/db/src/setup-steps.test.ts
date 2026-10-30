@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createPlatformDb, type PlatformDb } from './platform-tx';
 import { createTestDatabase, type TestDatabase } from './testing/harness';
+import { recordLaunchChecks } from './setup-fixture';
 
 // F01-T23 part a / migration 0034: setup steps for Draft to Testing, required launch checks for
 // Testing to Live (review T20 R2), and the P3 progress list (PLAT-01-AC2, AC3, AC9, AC12).
@@ -120,26 +121,26 @@ describe('Testing to Live needs the required launch checks from config (review T
   it('with no check recorded, Go live is refused and lists every required check', async () => {
     await toTesting();
     const b = await blockers(admin, 'live');
-    expect(b?.items.map((x) => x.item)).toEqual((await required()).map((r) => r.key));
-    expect(b?.items.every((x) => x.result === 'missing')).toBe(true);
+    // the LINE test is derived from the connection, which toTesting() completed, and no failure is open; everything else is still open
+    expect(b?.items.map((x) => x.item)).toEqual((await required()).map((r) => r.key).filter((k) => k !== 'line_test' && k !== 'no_open_launch_failure'));
+    expect(b?.items.every((x) => x.result === 'pending')).toBe(true);
   });
 
-  it('one required row missing or failing blocks; extra unknown keys do not count', async () => {
+  it('one required check not passing blocks; extra unknown keys do not count; a recorded failure says fail', async () => {
     await toTesting();
     const keys = (await required()).map((r) => r.key);
-    await pass(keys.slice(1));
+    await recordLaunchChecks(tdb, CLUB, ['pending']);
     await pass(['some_other_check']);
-    expect((await blockers(admin, 'live'))?.items).toEqual([{ item: keys[0], owed_by: (await required())[0]?.owed_by, result: 'missing' }]);
-    await tdb.query(`insert into platform.launch_check (club_id, check_key, result) values ($1, $2, 'fail')`, [CLUB, keys[0]]);
-    expect((await blockers(admin, 'live'))?.items[0]).toMatchObject({ item: keys[0], result: 'fail' });
-    await tdb.query(`update platform.launch_check set result = 'pass' where club_id = $1`, [CLUB]);
+    expect((await blockers(admin, 'live'))?.items).toEqual([{ item: keys[0], owed_by: (await required())[0]?.owed_by, result: 'pending' }]);
+    await recordLaunchChecks(tdb, CLUB, ['pass', 'pass', 'pass', 'pass', 'pass', 'fail']);
+    expect((await blockers(admin, 'live'))?.items[0]).toMatchObject({ item: 'owner_verified', result: 'fail' });
+    await recordLaunchChecks(tdb, CLUB);
     expect(await setStatus(admin, 'live')).toBe('live');
   });
 
   it('owner_verified is among them: a Go live without it is refused (SR-01)', async () => {
     await toTesting();
-    const keys = (await required()).map((r) => r.key);
-    await pass(keys.filter((k) => k !== 'owner_verified'));
+    await recordLaunchChecks(tdb, CLUB, ['pass', 'pass', 'pass', 'pass', 'pass', 'pending']);
     expect((await blockers(admin, 'live'))?.items.map((x) => x.item)).toEqual(['owner_verified']);
   });
 
@@ -163,12 +164,14 @@ describe('platform.club_progress (P3: what is missing and who owes it)', () => {
       { item: 'payments', done: false, owed_by: 'booq' },
     ]);
     expect(p.launch).toHaveLength(10);
-    expect(p.launch[0]).toEqual({ item: 'line_test', result: 'missing', owed_by: 'booq' });
+    expect(p.launch[0]).toEqual({ item: 'line_test', result: 'pending', owed_by: 'booq' });
   });
 
-  it('shows recorded results, and nothing about a club the caller cannot see', async () => {
-    await tdb.query(`insert into platform.launch_check (club_id, check_key, result) values ($1, 'line_test', 'pass')`, [CLUB]);
-    expect((await progress(spec)).launch[0]).toMatchObject({ item: 'line_test', result: 'pass' });
+  it('shows computed and recorded results, and nothing about a club the caller cannot see', async () => {
+    await tdb.query(`insert into platform.launch_check (club_id, check_key, result) values ($1, 'owner_signed_in', 'pass'), ($1, 'line_test', 'pass')`, [CLUB]);
+    const launch = (await progress(spec)).launch as Array<{ item: string; result: string }>;
+    expect(launch.find((x) => x.item === 'owner_signed_in')).toMatchObject({ result: 'pass' });
+    expect(launch.find((x) => x.item === 'line_test')).toMatchObject({ result: 'pending' });   // derived: a typed row does not count
     expect(await progress(loner)).toBeNull();
     expect(await progress(spec, OTHER)).toBeNull();
     expect((await progress(admin, OTHER)).setup).toHaveLength(5);
