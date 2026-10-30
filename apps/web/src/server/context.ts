@@ -1,5 +1,5 @@
 import { createClaimService } from '@booq/domain';
-import { createRateLimiter } from '@booq/auth';
+import { createDbRateLimiter } from '@booq/auth';
 import { createDbDirectory, createProfileService, createPublicConfigService, createSignInService, type LineVerifier, type RouteSession, type ServeDeps } from '@booq/auth';
 import type { Db } from '@booq/db';
 import type { Route } from '@booq/auth';
@@ -17,8 +17,8 @@ export interface WebConfig {
   maxBodyBytes: number;
   /** Import limits are platform config; until both are set the import answers 503 import_not_configured. */
   importLimits: { maxRows: number; stagingHours: number } | null;
-  /** Attempts allowed per caller and club in a window, on sign-in and profile. Platform config; absent means no limit (set it before launch). */
-  signInRateLimit?: { limit: number; windowSeconds: number } | null;
+  /** Attempts allowed per caller and club in a window, on sign-in and profile, counted in the database (migration 0027). `hmacKey` keys the hash of the caller's address. Platform config; absent means no limit (set it before launch). */
+  signInRateLimit?: { limit: number; windowSeconds: number; hmacKey: string } | null;
 }
 
 const WHOLE = /^[1-9][0-9]*$/;
@@ -38,8 +38,12 @@ export function readWebConfig(env: Record<string, string | undefined>): WebConfi
   const rw = env['WEB_SIGNIN_RATE_WINDOW_SECONDS'];
   if ((rl && !rw) || (!rl && rw)) throw new Error('WEB_SIGNIN_RATE_LIMIT and WEB_SIGNIN_RATE_WINDOW_SECONDS are set together or not at all');
   if (rl && (!WHOLE.test(rl) || !WHOLE.test(rw!))) throw new Error('WEB_SIGNIN_RATE_LIMIT and WEB_SIGNIN_RATE_WINDOW_SECONDS must be whole numbers above zero');
+  // The caller's address is hashed with this key before it is counted; no default, and never printed.
+  const rk = env['WEB_RATE_LIMIT_KEY'];
+  if (rl && !rk) throw new Error('WEB_RATE_LIMIT_KEY is required when the sign-in rate limit is set');
+  if (rk && rk.length < 32) throw new Error('WEB_RATE_LIMIT_KEY must be at least 32 characters');
   return {
-    signInRateLimit: rl ? { limit: Number(rl), windowSeconds: Number(rw) } : null,
+    signInRateLimit: rl ? { limit: Number(rl), windowSeconds: Number(rw), hmacKey: rk! } : null,
     databaseUrl: env['DATABASE_URL']!,
     sessionSeconds: Number(env['WEB_SESSION_SECONDS']),
     maxBodyBytes: Number(env['WEB_MAX_BODY_BYTES']),
@@ -79,7 +83,19 @@ export function createWebTable(parts: WebParts): { table: Route<unknown>[]; deps
       routeDeps: { hasFeature: async () => true }, // club feature switches arrive with F01's feature reader
       maxBodyBytes: config.maxBodyBytes,
       ...(config.signInRateLimit
-        ? { rateLimit: { limiter: createRateLimiter({ ...config.signInRateLimit, now }), routes: ['POST /auth/session', 'POST /auth/profile'] } }
+        ? {
+            rateLimit: {
+              limiter: createDbRateLimiter({
+                db,
+                clubIdBySlug: async (slug) => (await clubBySlug(slug))?.clubId ?? null,
+                hmacKey: config.signInRateLimit.hmacKey,
+                limit: config.signInRateLimit.limit,
+                windowSeconds: config.signInRateLimit.windowSeconds,
+                now,
+              }),
+              routes: ['POST /auth/session', 'POST /auth/profile'],
+            },
+          }
         : {}),
       async resolveSession(slug, cookie): Promise<RouteSession | null | 'not_found'> {
         const r = await signIn.authenticate({ slug, cookieHeader: cookie });

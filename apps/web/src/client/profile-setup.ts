@@ -4,13 +4,17 @@ import { safeNext, signInPath } from './paths';
 // C2 submit (design 4.3; AUTH-02-AC1 to AC6). Only full name, phone and consent are asked. Without
 // consent nothing is sent, so nothing is created (AC3). Field refusals come back as codes, which map
 // to the pending P keys; the player continues to where they were going with the choice kept (AC6).
+// The consent is for the current notice release from the club config (D152); with none published
+// nothing is sent.
 
 export type Field = 'fullName' | 'phone' | 'consent';
 export type FieldErrors = Partial<Record<Field, string>>;
 export type ProfileOutcome =
   | { kind: 'go'; url: string }
   | { kind: 'fields'; errors: FieldErrors }
-  | { kind: 'error'; key: string };
+  | { kind: 'error'; key: string }
+  /** The notice changed while the player was on C2 (D152): reload the config and ask for consent again. */
+  | { kind: 'stale' };
 
 const FIELD_KEY: Record<string, string> = {
   name_missing: 'P-new.profile_name_missing',
@@ -28,7 +32,8 @@ export interface ProfileInput {
   phone: string;
   consent: boolean;
   language: Lang;
-  noticeVersion(): Promise<string>;
+  /** The current release from GET /public/config (D152); null when none is published. */
+  noticeVersion: string | null;
   fetch: typeof fetch;
 }
 
@@ -45,13 +50,14 @@ export async function submitProfile(input: ProfileInput): Promise<ProfileOutcome
   const next = safeNext(input.slug, input.next);
   const before = missing(input);
   if (Object.keys(before).length) return { kind: 'fields', errors: before };
+  if (!input.noticeVersion) return { kind: 'error', key: 'P-new.notice_unavailable' };
   let res: Response;
   try {
     res = await input.fetch(`/api/c/${input.slug}/auth/profile`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       credentials: 'same-origin',
-      body: JSON.stringify({ fullName: input.fullName, phone: input.phone, consent: true, noticeVersion: await input.noticeVersion(), language: input.language }),
+      body: JSON.stringify({ fullName: input.fullName, phone: input.phone, consent: true, noticeVersion: input.noticeVersion, language: input.language }),
     });
   } catch {
     return { kind: 'error', key: 'P-0327' };
@@ -67,6 +73,8 @@ export async function submitProfile(input: ProfileInput): Promise<ProfileOutcome
     return { kind: 'fields', errors };
   }
   if (body.code === 'consent_required') return { kind: 'fields', errors: { consent: CONSENT_KEY } };
+  if (body.code === 'notice_version_stale') return { kind: 'stale' };
+  if (body.code === 'no_notice') return { kind: 'error', key: 'P-new.notice_unavailable' };
   // The pending sign-up ran out (30 minutes) or was never there: sign in again, same choice.
   if (res.status === 401) return { kind: 'go', url: signInPath(input.slug, next) };
   // Already a player (a second tab finished first): carry on.

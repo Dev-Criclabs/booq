@@ -14,7 +14,7 @@ Not startable until their lists exist: F10 enqueues are called by F07 (substitut
   Tests first: none (a written record); a failed check goes to the orchestrator as a question before T08 or T10 starts. Until Hunter's real OA is ready (the ops plan has it after the 7 Dec test start), T08 to T13 are built and tested against the fake LINE and checked on the test OA.
 - [x] **F10-T02** Migration 0601: `message_outbox` as FA §5.3 with the design columns, unique `(club_id, dedupe_key)`, partial index on `send_at` where pending, status and `void_reason` checks. IDs: LINE-03-AC6, CC-1, CC-3. Role: BE-P · Deps F01-T12 · Size: S
   Tests first: a duplicate dedupe key is refused; a CHECK refuses `params` with a name, phone or date of birth key; another club's rows are not reachable.
-- [ ] **F10-T03** Migration 0602: `notification_pref` (reminders default on, promotions default off, A-2). IDs: LINE-05, D94. Role: BE-P · Deps T02 · Size: S
+- [x] **F10-T03** Migration 0602: `notification_pref` (reminders default on, promotions default off, A-2). IDs: LINE-05, D94. Role: BE-P · Deps T02 · Size: S
   Tests first: defaults as stated; a player writes only their own row.
 - [ ] **F10-T04** Migration 0603: `rich_menu_label` (six rows per club, tile 1 to 6) and `rich_menu` (one active row per club). IDs: LINE-02-AC1, AC2. Role: BE-P · Deps T02 · Size: S
   Tests first: a seventh tile is refused; two active rows for one club are refused; links are not stored.
@@ -24,6 +24,7 @@ Not startable until their lists exist: F10 enqueues are called by F07 (substitut
 ## B. Functions and grants
 
 - [ ] **F10-T06** Migration 0605: `app.enqueue_message(...) returns uuid` and its registration as the fifth payment port `enqueue_message` in `app.payment_ports`, `app.void_messages`, `app.cap_state`, `app.mark_undeliverable`. IDs: LINE-03, LINE-05, LINE-07-AC1 to AC4, D96. Role: BE-P · Deps T02 to T05 · Size: M
+  Also in 0605: the anonymise handler that clears `message_outbox.params` for the person, registered in `app.anonymise_handlers` (migration 0019 names it; orchestrator, 30 Oct). IDs: PDPA-01-AC5, CC-3.
   Tests first: the port is registered and `apply_payment` with the port missing fails closed; the same dedupe key enqueues once and returns the same id; `booking_released` is not enqueued for the reason `payment_unavailable`; at 80 percent no reminder row is created and queued reminders are voided with `cap` and never revived; at 100 percent on a free plan a message becomes `undeliverable`; a reminder whose hour has passed is not queued; every row of a Testing club is `is_test`.
 - [ ] **F10-T07** Migration 0606: policies and grants (the sender role, the platform reader). IDs: LINE-03, CC-2, D27. Role: BE-P · Deps T06 · Size: S
   Tests first: the blind suite shows BOOQ staff read no outbox row; only the sender role reads the LINE token; no club role can read it.

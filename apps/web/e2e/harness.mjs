@@ -47,13 +47,14 @@ export async function startApp(port = 3107) {
   throw new Error(`next dev did not start:\n${log}`);
 }
 
-export const CLUB = { nameTh: 'ฮันเตอร์ เทนนิส คลับ', nameEn: 'Hunter Tennis Club', defaultLanguage: 'th', status: 'live', liffId: 'liff-test', languages: ['th', 'en'] };
+export const CLUB = { nameTh: 'ฮันเตอร์ เทนนิส คลับ', nameEn: 'Hunter Tennis Club', defaultLanguage: 'th', status: 'live', liffId: 'liff-test', languages: ['th', 'en'], noticeVersion: 'v1' };
 
 /**
- * A page with the club API faked. `session` answers POST /auth/session, `profile` POST /auth/profile; every API call is recorded,
+ * A page with the club API faked. `session` answers POST /auth/session, `profile` POST /auth/profile (a reply, or a
+ * function of the calls so far), `notice` GET /public/notice/{kind} as { privacy: { th: doc } }; every API call is recorded,
  * so a test can prove nothing was created.
  */
-export async function openPage(browser, { liff, club = CLUB, session = { status: 200, body: { state: 'active' } }, profile = { status: 200, body: { state: 'active' } }, lang, width = 375, height = 812 } = {}) {
+export async function openPage(browser, { liff, club = CLUB, session = { status: 200, body: { state: 'active' } }, profile = { status: 200, body: { state: 'active' } }, notice = null, lang, width = 375, height = 812 } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, locale: 'th-TH' });
   if (lang) await context.addCookies([{ name: 'lang', value: lang, url: 'http://localhost' }]);
   const page = await context.newPage();
@@ -69,7 +70,16 @@ export async function openPage(browser, { liff, club = CLUB, session = { status:
       return route.fulfill({ status: 200, json: club });
     }
     if (path.endsWith('/auth/session') && req.method() === 'POST') return route.fulfill({ status: session.status, json: session.body });
-    if (path.endsWith('/auth/profile') && req.method() === 'POST') return route.fulfill({ status: profile.status, json: profile.body });
+    if (path.endsWith('/auth/profile') && req.method() === 'POST') {
+      const r = typeof profile === 'function' ? profile(calls) : profile;
+      return route.fulfill({ status: r.status, json: r.body });
+    }
+    const kind = /\/public\/notice\/(privacy|terms)$/.exec(path)?.[1];
+    if (kind) {
+      const lang = new URL(req.url()).searchParams.get('lang');
+      const doc = notice?.[kind]?.[lang];
+      return doc ? route.fulfill({ status: 200, json: doc }) : route.fulfill({ status: 404, json: { code: 'no_notice' } });
+    }
     return route.fulfill({ status: 404, json: { code: 'not_found' } });
   });
   if (liff) await page.addInitScript((state) => (window.__BOOQ_LIFF_FAKE__ = state), liff);
