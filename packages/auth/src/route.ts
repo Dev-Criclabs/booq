@@ -11,9 +11,11 @@ export interface RouteDeclaration {
   method: Method;
   /** Path below the app prefix, for example `/settings/:key`. */
   path: string;
-  /** Exactly one of `permission` or `public: true`. */
+  /** Exactly one of `permission`, `public: true` or `needsPerson: true`. */
   permission?: string;
   public?: true;
+  /** Any signed-in active person, whatever their roles: checkout, My bookings, Credits and wallet, Refer a friend, Profile (F02-T11). A guest gets `sign_in_required`. */
+  needsPerson?: true;
   /** Club feature switch the route needs (PLAT-05-AC2). */
   feature?: string;
 }
@@ -58,8 +60,10 @@ export function validateDeclaration(def: Partial<RouteDeclaration>): string[] {
   if (!def.path || !def.path.startsWith('/')) problems.push('path must start with "/"');
   const hasPermission = def.permission !== undefined;
   const isPublic = def.public === true;
-  if (!hasPermission && !isPublic) problems.push('route must declare a permission or public: true');
-  if (hasPermission && isPublic) problems.push('route cannot declare both a permission and public');
+  const isPerson = def.needsPerson === true;
+  const declared = [hasPermission, isPublic, isPerson].filter(Boolean).length;
+  if (declared === 0) problems.push('route must declare a permission, public: true or needsPerson: true');
+  if (declared > 1) problems.push('route must declare only one of permission, public and needsPerson');
   if (hasPermission && !isPermission(def.permission as string)) problems.push(`unknown permission "${def.permission}"`);
   if (def.feature !== undefined && def.feature.trim() === '') problems.push('feature must not be empty');
   return problems;
@@ -73,6 +77,7 @@ export function route<T>(def: RouteDeclaration, handler: (ctx: RouteContext) => 
     def,
     async handle(req, deps) {
       const { session } = req;
+      if (def.needsPerson === true && !session) return { ok: false, status: 401, code: 'sign_in_required' };
       if (def.permission !== undefined) {
         if (!session) return { ok: false, status: 401, code: 'unauthenticated' };
         if (!can(session.roles, def.permission)) return { ok: false, status: 403, code: 'forbidden' };

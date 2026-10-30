@@ -1,7 +1,7 @@
 import type { Db } from '../../../db/src/tx';
 import type { LineVerifier } from './verify';
 import type { Logger } from './log-redaction';
-import { clubOfToken, hashToken, newSessionToken, parseSessionCookie, serializeSessionCookie } from './cookie';
+import { clearSessionCookie, clubOfToken, hashToken, newSessionToken, parseSessionCookie, serializeSessionCookie } from './cookie';
 
 // POST /auth/session and per-request authentication (F02-T07; LINE-01-AC1 to AC5, AC10, AC11,
 // AC13; AUTH-01-AC13 to AC15; design 4.2, 4.4, 6.3, 6.4). The ID token is checked with LINE against
@@ -38,7 +38,7 @@ export interface SignInOptions {
 }
 
 export type SignInResult =
-  | { ok: true; state: 'active' | 'pending_profile'; clubId: string; setCookie: string }
+  | { ok: true; state: 'active' | 'pending_profile'; clubId: string; setCookie: string; invite?: 'redeemed' | 'invalid' }
   | { ok: false; status: 400 | 401 | 403 | 404 | 503; code: 'bad_input' | 'invalid_token' | 'account_inactive' | 'not_found' | 'offline' };
 
 export type AuthenticateResult =
@@ -69,6 +69,7 @@ export function createSignInService(options: SignInOptions) {
 
       const token = newSessionToken(club.clubId);
       const expiresAt = new Date(options.now().getTime() + options.sessionSeconds * 1000);
+      let invite: 'redeemed' | 'invalid' | undefined;
       const outcome = await db.withClubTx(guest(club.clubId), async (tx): Promise<'active' | 'pending_profile' | 'not_found' | 'account_inactive'> => {
         const gate = (await tx.query('select app.sign_in_gate($1, $2) as gate', [verified.lineUserId, input.inviteHash ?? null])).rows[0]?.gate as string;
         if (gate === 'account_inactive') return 'account_inactive';
@@ -84,12 +85,38 @@ export function createSignInService(options: SignInOptions) {
           null,
           expiresAt,
         ]);
+        // An existing person opening an invite link: the roles it carries are added in this transaction
+        // (single use, one winner; SR-01, D122). A new person redeems it in the profile step (F02-T09).
+        // A link that does not apply (used, expired, unknown, bound to another LINE id) adds nothing and
+        // the answer does not say which; the person still signs in as they were.
+        if (person && input.inviteHash) {
+          await tx.query(`select set_config('app.user_id', $1, true)`, [person.id]);
+          const redeemed = await tx.query('select * from app.redeem_invite($1, $2, $3)', [input.inviteHash, verified.lineUserId, person.id]);
+          invite = redeemed.rows.length > 0 ? 'redeemed' : 'invalid';
+        }
         return person ? 'active' : 'pending_profile';
       });
       logger?.info('auth.session', { clubId: club.clubId, outcome });
       if (outcome === 'not_found') return { ok: false, status: 404, code: 'not_found' };
       if (outcome === 'account_inactive') return { ok: false, status: 403, code: 'account_inactive' };
-      return { ok: true, state: outcome, clubId: club.clubId, setCookie: serializeSessionCookie(token, options.sessionSeconds) };
+      return { ok: true, state: outcome, clubId: club.clubId, setCookie: serializeSessionCookie(token, options.sessionSeconds), ...(invite ? { invite } : {}) };
+    },
+
+    /**
+     * POST /auth/logout (ROLE-02-AC4 club side, AUTH-02-AC5). Revokes this session only and clears the
+     * cookie. No cookie, or one already revoked, is fine. A token issued for another club is not touched.
+     * Deactivating a person ends all their sessions in the database (trigger), so no call is needed for that.
+     */
+    async logout(input: { slug: string; cookieHeader: string | undefined }): Promise<{ ok: true; setCookie: string } | { ok: false; status: 404; code: 'not_found' }> {
+      if (typeof input.slug !== 'string' || !SLUG.test(input.slug)) return { ok: false, status: 404, code: 'not_found' };
+      const club = await directory.clubBySlug(input.slug);
+      if (!club) return { ok: false, status: 404, code: 'not_found' };
+      const token = parseSessionCookie(input.cookieHeader);
+      if (token) {
+        if (clubOfToken(token) !== club.clubId) return { ok: false, status: 404, code: 'not_found' };
+        await db.withClubTx(guest(club.clubId), (tx) => tx.query('select app.revoke_session($1)', [hashToken(token)]));
+      }
+      return { ok: true, setCookie: clearSessionCookie() };
     },
 
     async authenticate(input: { slug: string; cookieHeader: string | undefined }): Promise<AuthenticateResult> {
