@@ -36,10 +36,10 @@ afterEach(async () => {
 
 describe('creating a club (PLAT-01-AC1)', () => {
   it('a specialist creates a Draft club, is assigned to it, and sees it afterwards', async () => {
-    const r = await create(spec, valid({ owner_name: 'Nok', owner_phone: '0812345678', owner_line: '@nok', owner_email: 'nok@example.com', template_id: templateId, receipt_prefix: 'HTC' }));
+    const r = await create(spec, valid({ owner_name: 'Nok', owner_phone: '0812345678', owner_line: 'U00000000000000000000000000000002', owner_email: 'nok@example.com', template_id: templateId, receipt_prefix: 'HTC' }));
     if (!r.ok) throw new Error(r.code);
     const club = (await tdb.query(`select status, created_by_staff, template_id, receipt_prefix, owner_line from public.club where id = $1`, [r.id])).rows[0];
-    expect(club).toEqual({ status: 'draft', created_by_staff: spec, template_id: templateId, receipt_prefix: 'HTC', owner_line: '@nok' });
+    expect(club).toEqual({ status: 'draft', created_by_staff: spec, template_id: templateId, receipt_prefix: 'HTC', owner_line: 'U00000000000000000000000000000002' });
     expect((await tdb.query(`select staff_id from platform.staff_assignment where club_id = $1`, [r.id])).rows).toEqual([{ staff_id: spec }]);
     expect((await svc.getProgress(spec, r.id)).ok).toBe(true);
     expect(await svc.getProgress(other, r.id)).toEqual({ ok: false, code: 'not_found' });
@@ -71,7 +71,7 @@ describe('creating a club (PLAT-01-AC1)', () => {
     const bad: Array<Record<string, unknown>> = [
       { slug: 'x', name_th: 'ก' }, { ...valid(), slug: 'Bad Slug' }, { ...valid(), slug: '-x' }, { ...valid(), name_en: '' },
       { ...valid(), owner_email: 'not-an-email' }, { ...valid(), name_en: 'x'.repeat(201) }, { ...valid(), template_id: 'aaaaaaaa-0000-4000-8000-0000000000ff' },
-      { ...valid(), owner_phone: 5 }, { ...valid(), default_language: 'de' },
+      { ...valid(), owner_phone: 5 }, { ...valid(), owner_line: '@nok' }, { ...valid(), owner_line: 'U1' }, { ...valid(), default_language: 'de' },
     ];
     for (const body of bad) expect(await create(spec, body), JSON.stringify(body)).toEqual({ ok: false, code: 'invalid' });
     expect(await create(spec, null)).toEqual({ ok: false, code: 'invalid' });

@@ -8,7 +8,7 @@ export interface Querier {
 export async function completeSetup(db: Querier, club: string): Promise<void> {
   const t = await db.query(`insert into platform.template (key, name) values ('t' || gen_random_uuid()::text, 'T') returning id`);
   await db.query(
-    `update public.club set owner_name = 'Nok', owner_phone = '0812345678', owner_line = '@nok', owner_email = 'nok@example.com',
+    `update public.club set owner_name = 'Nok', owner_phone = '0812345678', owner_line = 'U00000000000000000000000000000002', owner_email = 'nok@example.com',
             template_id = $2, billing_starts_at = '2027-02-01T00:00:00Z', payment_option = 'beam' where id = $1`,
     [club, t.rows[0]?.id],
   );

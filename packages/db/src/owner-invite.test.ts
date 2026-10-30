@@ -85,7 +85,7 @@ describe('creating the owner invite (SR-01, D122)', () => {
   it('refuses an unassigned specialist (not found), a club with no owner LINE id or email, and a bad token hash', async () => {
     await expect(invite(loner)).rejects.toThrow(/not_found/);
     await expect(invite(adminA, HASH1, OTHER)).rejects.toThrow(/owner_contact_missing/); // OTHER has no owner_line
-    await tdb.query(`update public.club set owner_line = 'U2', owner_email = null where id = $1`, [OTHER]);
+    await tdb.query(`update public.club set owner_line = 'U00000000000000000000000000000002', owner_email = null where id = $1`, [OTHER]);
     await expect(invite(adminA, HASH1, OTHER)).rejects.toThrow(/owner_contact_missing/);
     await expect(invite(adminA, 'short')).rejects.toThrow(/token_hash/);
     expect((await tdb.query(`select count(*)::int as n from public.club_invite`)).rows[0].n).toBe(0);
@@ -228,11 +228,21 @@ describe('changing the owner contact (review T18 R5; design 7.1)', () => {
 
   it('an admin who requests a change cannot approve their own; another admin can reject it', async () => {
     await invite(adminA);
-    const r = await change(adminB, { owner_line: 'U9' });
+    const r = await change(adminB, { owner_line: 'U00000000000000000000000000000003' });
     await expect(decide(adminB, r.request_id, true)).rejects.toThrow(/same_admin/);
     await decide(adminA, r.request_id, false);
     expect((await tdb.query(`select owner_line from public.club where id = $1`, [CLUB])).rows[0].owner_line).toBe(OWNER_LINE);
     expect((await tdb.query(`select status, decided_by from platform.owner_contact_change where id = $1`, [r.request_id])).rows[0]).toEqual({ status: 'rejected', decided_by: adminA });
+  });
+
+  it('the owner LINE id must be a LINE user id: U and 32 hex characters (D122), in the table and in the change function', async () => {
+    const bad = ['@nok', 'U1', 'u00000000000000000000000000000001', 'U0000000000000000000000000000000G', 'U000000000000000000000000000000012', ' U00000000000000000000000000000001'];
+    for (const v of bad) {
+      await expect(tdb.query(`update public.club set owner_line = $2 where id = $1`, [CLUB, v]), v).rejects.toThrow(/club_owner_line_format|check/i);
+      await expect(change(spec, { owner_line: v }), v).rejects.toThrow(/invalid_field/);
+    }
+    expect((await tdb.query(`select owner_line from public.club where id = $1`, [CLUB])).rows[0].owner_line).toBe(OWNER_LINE);
+    expect(await change(spec, { owner_line: 'U0000000000000000000000000000000a' })).toMatchObject({ applied: true });
   });
 
   it('accepts only the four owner columns, and not for a club the caller cannot see or cannot edit', async () => {

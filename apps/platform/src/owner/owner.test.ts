@@ -149,10 +149,11 @@ describe('owner contact changes (review T18 R5)', () => {
     expect(await svc.changeOwnerContact(act(spec), CLUB, { name_en: 'x' })).toEqual({ ok: false, code: 'invalid' });
     expect(await svc.changeOwnerContact(act(spec), CLUB, {})).toEqual({ ok: false, code: 'invalid' });
     expect(await svc.changeOwnerContact(act(spec), CLUB, null)).toEqual({ ok: false, code: 'invalid' });
+    expect(await svc.changeOwnerContact(act(spec), CLUB, { owner_line: '@nok' })).toEqual({ ok: false, code: 'invalid' });
     expect(await svc.changeOwnerContact(act(spec, false), CLUB, { owner_phone: '1' })).toEqual({ ok: false, code: 'step_up_required' });
     expect(await svc.changeOwnerContact(act(loner), CLUB, { owner_phone: '1' })).toEqual({ ok: false, code: 'not_found' });
     await svc.createOwnerInvite(act(adminA), CLUB);
-    const r = await svc.changeOwnerContact(act(adminB), CLUB, { owner_line: 'U9' });
+    const r = await svc.changeOwnerContact(act(adminB), CLUB, { owner_line: 'U00000000000000000000000000000003' });
     if (!r.ok || r.applied) throw new Error('should wait');
     expect(await svc.decideOwnerContactChange(act(adminB), CLUB, r.requestId, true)).toEqual({ ok: false, code: 'same_admin' });
     expect(await svc.decideOwnerContactChange(act(adminA), CLUB, r.requestId, false)).toEqual({ ok: true });
