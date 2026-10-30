@@ -27,6 +27,9 @@ const identity: IdentityProvider = {
     if (email === 'sam@booq.example' && password === 'pw-sam') return { authUserId: 'u-spec' };
     return null;
   },
+  async verifyPasswordFor(authUserId, password) {
+    return (authUserId === 'u-admin' && password === 'pw-ada') || (authUserId === 'u-spec' && password === 'pw-sam') ? { authUserId } : null;
+  },
   async verifyTotp(authUserId, code) {
     return code === `totp-${authUserId}`;
   },
@@ -235,8 +238,8 @@ describe('lockout, session limits and step up (SR-16)', () => {
     expect(await auth.authenticate(c)).toMatchObject({ ok: true, stepUpFresh: true });
     clock.advance(6 * MIN);
     expect(await auth.authenticate(c)).toMatchObject({ ok: true, stepUpFresh: false });
-    expect(await auth.stepUp(c, 'wrong')).toEqual({ ok: false, code: 'bad_code' });
-    expect(await auth.stepUp(c, 'totp-u-admin')).toEqual({ ok: true });
+    expect(await auth.stepUp(c, { code: 'wrong', password: 'pw-ada' })).toEqual({ ok: false, code: 'bad_code' });
+    expect(await auth.stepUp(c, { code: 'totp-u-admin', password: 'pw-ada' })).toEqual({ ok: true });
     expect(await auth.authenticate(c)).toMatchObject({ ok: true, stepUpFresh: true });
     expect(audit.filter((e) => e.action === 'auth.step_up')).toHaveLength(1);
     expect(audit.filter((e) => e.action === 'auth.step_up_failed')).toHaveLength(1);
@@ -244,8 +247,8 @@ describe('lockout, session limits and step up (SR-16)', () => {
 
   it('step up failures count toward the lockout', async () => {
     const c = await signInFully();
-    for (let i = 0; i < 5; i++) await auth.stepUp(c, 'wrong');
-    expect(await auth.stepUp(c, 'totp-u-admin')).toEqual({ ok: false, code: 'locked' });
+    for (let i = 0; i < 5; i++) await auth.stepUp(c, { code: 'wrong', password: 'pw-ada' });
+    expect(await auth.stepUp(c, { code: 'totp-u-admin', password: 'pw-ada' })).toEqual({ ok: false, code: 'locked' });
   });
 });
 
@@ -256,9 +259,12 @@ describe('provider state between the two steps (D148, D160)', () => {
     async verifyPassword(email, password) {
       return email === 'ada@booq.example' && password === 'pw-ada' ? { authUserId: 'u-admin', state: `first-step-${seen.length}` } : null;
     },
+    async verifyPasswordFor(authUserId, password) {
+      return authUserId === 'u-admin' && password === 'pw-ada' ? { authUserId, state: `step-up-${seen.length}` } : null;
+    },
     async verifyTotp(_id, code, state) {
       seen.push({ code, state });
-      return state?.startsWith('first-step-') === true && code === '123456';
+      return (state?.startsWith('first-step-') === true || state?.startsWith('step-up-') === true) && code === '123456';
     },
   };
   const buildStateful = () =>
@@ -285,7 +291,7 @@ describe('provider state between the two steps (D148, D160)', () => {
     expect(JSON.stringify(audit)).not.toContain('first-step');
   });
 
-  it('a step-up has no first step, so the provider is asked without state', async () => {
+  it('a step-up asks for the password again and gives the code a fresh state; a wrong password is the same answer as a wrong code (D161)', async () => {
     seen.length = 0;
     const a = buildStateful();
     const first = await a.signIn({ email: 'ada@booq.example', password: 'pw-ada' });
@@ -293,7 +299,20 @@ describe('provider state between the two steps (D148, D160)', () => {
     const done = await a.verifySecondFactor({ challengeId: first.challengeId, code: '123456' });
     if (!done.ok) throw new Error(done.code);
     seen.length = 0;
-    expect(await a.stepUp(done.cookie, '123456')).toEqual({ ok: false, code: 'bad_code' }); // this provider needs the state
-    expect(seen).toEqual([{ code: '123456', state: undefined }]);
+    expect(await a.stepUp(done.cookie, { code: '123456', password: 'wrong' })).toEqual({ ok: false, code: 'bad_code' });
+    expect(seen).toEqual([]); // the code is not even tried without the password
+    expect(await a.stepUp(done.cookie, { code: '123456', password: 'pw-ada' })).toEqual({ ok: true });
+    expect(seen).toEqual([{ code: '123456', state: 'step-up-0' }]);
+    expect(JSON.stringify(audit)).not.toContain('step-up-0');
+    expect(JSON.stringify(audit)).not.toContain('pw-ada');
+  });
+  it('wrong passwords count toward the lockout like wrong codes', async () => {
+    const a = buildStateful();
+    const first = await a.signIn({ email: 'ada@booq.example', password: 'pw-ada' });
+    if (!first.ok) throw new Error(first.code);
+    const done = await a.verifySecondFactor({ challengeId: first.challengeId, code: '123456' });
+    if (!done.ok) throw new Error(done.code);
+    for (let i = 0; i < 5; i += 1) await a.stepUp(done.cookie, { code: '123456', password: 'wrong' });
+    expect(await a.stepUp(done.cookie, { code: '123456', password: 'pw-ada' })).toEqual({ ok: false, code: 'locked' });
   });
 });

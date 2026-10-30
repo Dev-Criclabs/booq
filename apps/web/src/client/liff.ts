@@ -1,22 +1,15 @@
-// The small LIFF surface the player screens need (design 4.2). The real module is F02-T18
-// (platform lane); until it lands the screens run against this interface, and tests and local
-// runs install a fake. Nothing here trusts the client: the server verifies the ID token (CC-2).
+import type { LiffLike } from '@booq/line';
 
-export interface LiffPort {
-  init(liffId: string): Promise<void>;
-  /** Inside the LINE app (design 4.2 step 3). */
-  isInClient(): boolean;
-  isLoggedIn(): boolean;
-  /** Opens LINE's own login; LINE comes back to `redirectUri`, which must be under the endpoint URL. */
-  login(redirectUri: string): void;
-  getIDToken(): string | null;
-  /** The LINE app language, such as `th` or `en-US` (design 6.7). */
-  getLanguage(): string;
+// The LIFF the player screens use (design 4.2). The sign-in logic is F02-T18's createLiffClient
+// (packages/line); this file only supplies the SDK object it takes: the real @line/liff in the
+// app, or a fake for e2e runs. Nothing here trusts the client: the server verifies the ID token (CC-2).
+
+export interface LiffPort extends LiffLike {
   /** The LINE display name from the ID token, for the C2 greeting only (AUTH-02-AC7); never the full name (LINE-01-AC12). */
   getDisplayName(): string | null;
 }
 
-/** What a test or a local run puts on `window.__BOOQ_LIFF_FAKE__` (only read when the build allows it). */
+/** What an e2e run puts on `window.__BOOQ_LIFF_FAKE__` (only read when the build sets NEXT_PUBLIC_LIFF_FAKE=1). */
 export interface LiffFakeState {
   inClient: boolean;
   loggedIn: boolean;
@@ -29,38 +22,52 @@ export interface LiffFakeState {
 
 const FAKE_LOGGED_IN = 'booq.fake-liff.logged-in';
 
-/** A fake LIFF for tests: `login` marks the session logged in and goes to the redirect. */
+/** A fake LIFF: `login` marks the session logged in and goes to the redirect. */
 export function fakeLiff(state: LiffFakeState, go: (url: string) => void, store?: Pick<Storage, 'getItem' | 'setItem'>): LiffPort {
+  const loggedIn = () => state.loggedIn || store?.getItem(FAKE_LOGGED_IN) === '1';
   return {
     async init() {
-      if (state.offline) throw new Error('offline');
+      if (state.offline) throw new Error('offline'); // i18n-ignore: fake SDK failure, never shown
     },
     isInClient: () => state.inClient,
-    isLoggedIn: () => state.loggedIn || store?.getItem(FAKE_LOGGED_IN) === '1',
-    login(redirectUri) {
+    isLoggedIn: loggedIn,
+    login({ redirectUri }) {
       store?.setItem(FAKE_LOGGED_IN, '1');
       state.loggedIn = true;
       go(redirectUri);
     },
-    getIDToken: () => (state.loggedIn || store?.getItem(FAKE_LOGGED_IN) === '1' ? state.idToken : null),
+    getIDToken: () => (loggedIn() ? state.idToken : null),
     getLanguage: () => state.language,
     getDisplayName: () => state.displayName ?? null,
   };
 }
 
-let installed: LiffPort | null = null;
-
-/** F02-T18 installs the real LIFF here. */
-export function installLiff(port: LiffPort): void {
-  installed = port;
+/** The real SDK, loaded only in the browser and only when a page needs it. */
+async function realLiff(): Promise<LiffPort> {
+  const { default: liff } = await import('@line/liff');
+  return {
+    init: (config) => liff.init(config),
+    isInClient: () => liff.isInClient(),
+    isLoggedIn: () => liff.isLoggedIn(),
+    login: (options) => liff.login(options),
+    getIDToken: () => liff.getIDToken(),
+    getLanguage: () => liff.getLanguage(),
+    getDisplayName: () => {
+      const name = liff.getDecodedIDToken()?.name;
+      return typeof name === 'string' && name !== '' ? name : null;
+    },
+  };
 }
 
-/** The LIFF to use, or null when none is available (the screen then shows the offline error). */
-export function liffPort(): LiffPort | null {
-  if (installed) return installed;
-  if (process.env['NEXT_PUBLIC_LIFF_FAKE'] === '1' && typeof window !== 'undefined') {
+let loaded: Promise<LiffPort | null> | null = null;
+
+/** The LIFF for this page, or null when it cannot be loaded (the screen then shows the offline error). */
+export function liffPort(): Promise<LiffPort | null> {
+  if (typeof window === 'undefined') return Promise.resolve(null);
+  if (process.env['NEXT_PUBLIC_LIFF_FAKE'] === '1') {
     const state = (window as unknown as { __BOOQ_LIFF_FAKE__?: LiffFakeState }).__BOOQ_LIFF_FAKE__;
-    if (state) return fakeLiff(state, (url) => window.location.assign(url), window.sessionStorage);
+    if (state) return Promise.resolve(fakeLiff(state, (url) => window.location.assign(url), window.sessionStorage));
   }
-  return null;
+  loaded ??= realLiff().catch(() => null);
+  return loaded;
 }

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db, type Tx } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
 import { CheckoutError } from './errors';
-import { parsePayRequest, preparePay } from './pay';
+import { parsePayRequest, placeOrder, preparePay } from './pay';
 import { quoteFor } from './quote';
 import { fixtureSources, IDS, seedHunter } from './test-fixture';
 
@@ -82,5 +82,69 @@ describe('preparePay: gate and reprice', () => {
     const body = { ...choice, coachId: COACH, coachSource: 'classes' };
     const hash = await hashNow(body);
     expect((await inTx((tx) => preparePay(tx, ME, parsePayRequest({ ...body, quoteHash: hash }), fixtureSources()))).kind).toBe('ready');
+  });
+});
+
+// F04-T12b: the order with its frozen amounts, then reserve_court, then the lines (R7-AC1, R3-AC6, BOOK-06,
+// D40, D47, D111; design 4.5 step 3). Uses app.create_priced_order and app.add_order_lines (Architect).
+// Skipped until the Architect's app.create_priced_order and app.add_order_lines reach main (requested 30 Oct).
+describe.skip('placeOrder', () => {
+  const ready = async (body: Record<string, unknown>) => {
+    const hash = await hashNow(body);
+    const r = await inTx((tx) => preparePay(tx, ME, parsePayRequest({ ...body, quoteHash: hash }), fixtureSources()));
+    if (r.kind !== 'ready') throw new Error('expected ready');
+    return { choice: parsePayRequest({ ...body, quoteHash: hash }).choice, quote: r.quote };
+  };
+  const place = async (body: Record<string, unknown>) => {
+    const { choice: c, quote } = await ready(body);
+    return inTx((tx) => placeOrder(tx, ME, c, quote, fixtureSources()));
+  };
+  const HOUR2 = '2026-12-02T19:00:00+07:00';
+
+  it('writes the frozen amounts, holds each hour as its own booking and links each line to its hour (BOOK-06, R7-AC1)', async () => {
+    const r = await place({ courtId: COURT, hours: [HOUR2, HOUR], addOnIds: [IDS.WATER] });
+    expect(r).toMatchObject({ reused: false });
+    expect(r.holdExpiresAt).not.toBeNull();
+    const o = (await tdb.query(`select status, subtotal_satang, total_satang, money_satang, quote_hash, priced_at from public.orders where id = $1`, [r.orderId])).rows[0];
+    expect(o).toMatchObject({ status: 'open', subtotal_satang: 102000, total_satang: 102000, money_satang: 102000 });
+    expect(o.priced_at).not.toBeNull();
+    const lines = (await tdb.query(
+      `select l.position, l.kind, l.unit_price_satang, b.start_at, l.description_key from public.order_line l join public.booking b on b.id = l.booking_id
+        where l.order_id = $1 order by l.position`, [r.orderId])).rows;
+    expect(lines.map((l) => [l.position, l.kind, l.unit_price_satang, new Date(l.start_at).toISOString()])).toEqual([
+      [1, 'court_hour', 50000, '2026-12-02T11:00:00.000Z'],
+      [2, 'court_hour', 50000, '2026-12-02T12:00:00.000Z'],
+      [3, 'add_on', 2000, '2026-12-02T11:00:00.000Z'], // the add-on belongs to the first hour (D111, R3-AC6)
+    ]);
+    expect(lines.map((l) => l.description_key)).toEqual(['P-0076', 'P-0076', 'P-0071']);
+    expect(Number((await tdb.query(`select count(*) from public.booking where order_id = $1`, [r.orderId])).rows[0].count)).toBe(2);
+  });
+
+  it('the stored lines keep their prices and names when the club changes them later (R7-AC2)', async () => {
+    const r = await place({ courtId: COURT, hours: [HOUR], addOnIds: [IDS.WATER] });
+    await tdb.query(`update public.add_on set price_satang = 9999, name_en = 'Still water' where club_id = $1`, [A]);
+    await tdb.query(`update public.court_price_rule set price_satang = 1 where club_id = $1`, [A]);
+    const lines = (await tdb.query(`select kind, unit_price_satang, name_en from public.order_line where order_id = $1 order by position`, [r.orderId])).rows;
+    expect(lines).toEqual([{ kind: 'court_hour', unit_price_satang: 50000, name_en: '1' }, { kind: 'add_on', unit_price_satang: 2000, name_en: 'Water' }]);
+  });
+
+  it('a taken slot refuses and nothing is created (BOOK-04, R8-AC1)', async () => {
+    const other = '55555555-5555-4555-8555-555555555555';
+    await tdb.query(`insert into public.app_user (club_id, id, line_user_id, full_name) values ($1,$2,'L9','Other')`, [A, other]);
+    await tdb.query(`insert into public.app_user_role (club_id, user_id, role) values ($1,$2,'player')`, [A, other]);
+    const theirs = (await tdb.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'online') returning id`, [A, other])).rows[0].id as string;
+    await db.withClubTx({ ...me, userId: other }, (tx) => tx.query(`select app.reserve_court($1, $2, $3::timestamptz[])`, [theirs, COURT, [new Date(HOUR).toISOString()]]));
+    const before = [await count('orders'), await count('order_line'), await count('booking')];
+    await expect(place({ courtId: COURT, hours: [HOUR] })).rejects.toMatchObject({ code: 'BK001', message: 'slot_unavailable' });
+    expect([await count('orders'), await count('order_line'), await count('booking')]).toEqual(before);
+  });
+
+  it('a second tap returns the same order and hold and leaves no second order (D47, BOOK-03-AC15)', async () => {
+    const first = await place({ courtId: COURT, hours: [HOUR] });
+    const orders = await count('orders');
+    const second = await place({ courtId: COURT, hours: [HOUR] });
+    expect(second).toMatchObject({ orderId: first.orderId, reused: true });
+    expect(new Date(second.holdExpiresAt!).getTime()).toBe(new Date(first.holdExpiresAt!).getTime());
+    expect(await count('orders')).toBe(orders);
   });
 });

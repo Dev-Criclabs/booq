@@ -32,7 +32,7 @@ export function readWorkerConfig(env: Record<string, string | undefined>): Worke
   const names = ['DATABASE_URL', 'WORKER_QUEUE_URL', 'WORKER_HOUSEKEEPING_CRON', 'WORKER_IMPORT_SWEEP_CRON', 'WORKER_RATE_LIMIT_SWEEP_CRON', 'WORKER_PAY_TAP_PRUNE_CRON', 'WORKER_RATE_LIMIT_KEEP_SECONDS', 'WORKER_CONSOLE_SWEEP_CRON', 'WORKER_CONSOLE_SESSION_ABSOLUTE_SECONDS', 'WORKER_HOLD_RELEASE_TICK_SECONDS'] as const;
   const missing = names.filter((n) => !env[n]);
   if (missing.length) throw new Error(`worker settings missing: ${missing.join(', ')}`);
-  for (const n of ['WORKER_HOUSEKEEPING_CRON', 'WORKER_IMPORT_SWEEP_CRON', 'WORKER_RATE_LIMIT_SWEEP_CRON', 'WORKER_CONSOLE_SWEEP_CRON', 'WORKER_PAY_TAP_PRUNE_CRON'] as const) {
+  for (const n of ['WORKER_HOUSEKEEPING_CRON', 'WORKER_IMPORT_SWEEP_CRON', 'WORKER_RATE_LIMIT_SWEEP_CRON', 'WORKER_PAY_TAP_PRUNE_CRON', 'WORKER_CONSOLE_SWEEP_CRON'] as const) {
     if (!CRON.test(env[n]!)) throw new Error(`${n} must be five cron fields`);
   }
   if (!/^[1-9][0-9]*$/.test(env['WORKER_HOLD_RELEASE_TICK_SECONDS']!)) throw new Error('WORKER_HOLD_RELEASE_TICK_SECONDS must be a whole number of seconds above zero');
@@ -53,6 +53,6 @@ export function readWorkerConfig(env: Record<string, string | undefined>): Worke
 }
 
 /** Graphile Worker crontab text: housekeeping, the dispatchers that add one import sweep and one Pay tap prune per club, the rate-limit sweep and the console session sweep. */
-export function buildCrontab(c: Pick<WorkerConfig, 'housekeepingCron' | 'importSweepCron' | 'rateLimitSweepCron' | 'consoleSweepCron' | 'payTapPruneCron'>): string {
-  return `${c.housekeepingCron} ${HOUSEKEEPING}\n${c.importSweepCron} ${IMPORT_STAGING_DISPATCH}\n${c.rateLimitSweepCron} ${RATE_LIMIT_SWEEP}\n${c.consoleSweepCron} ${CONSOLE_SESSION_SWEEP}\n${c.payTapPruneCron} ${PAY_TAP_PRUNE_DISPATCH}\n`;
+export function buildCrontab(c: Pick<WorkerConfig, 'housekeepingCron' | 'importSweepCron' | 'rateLimitSweepCron' | 'payTapPruneCron' | 'consoleSweepCron'>): string {
+  return `${c.housekeepingCron} ${HOUSEKEEPING}\n${c.importSweepCron} ${IMPORT_STAGING_DISPATCH}\n${c.rateLimitSweepCron} ${RATE_LIMIT_SWEEP}\n${c.payTapPruneCron} ${PAY_TAP_PRUNE_DISPATCH}\n${c.consoleSweepCron} ${CONSOLE_SESSION_SWEEP}\n`;
 }

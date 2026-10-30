@@ -76,8 +76,8 @@ describe('console session limit', () => {
 
 describe('buildCrontab', () => {
   it('schedules housekeeping, the club dispatches and the two sweeps, one line each', () => {
-    expect(buildCrontab({ housekeepingCron: '*/5 * * * *', importSweepCron: '17 * * * *', rateLimitSweepCron: '41 * * * *', consoleSweepCron: '53 * * * *', payTapPruneCron: '23 * * * *' })).toBe(
-      '*/5 * * * * housekeeping\n17 * * * * import_staging_dispatch\n41 * * * * rate_limit_sweep\n53 * * * * console_session_sweep\n23 * * * * pay_tap_prune_dispatch\n',
+    expect(buildCrontab({ housekeepingCron: '*/5 * * * *', importSweepCron: '17 * * * *', rateLimitSweepCron: '41 * * * *', payTapPruneCron: '23 * * * *', consoleSweepCron: '53 * * * *' })).toBe(
+      '*/5 * * * * housekeeping\n17 * * * * import_staging_dispatch\n41 * * * * rate_limit_sweep\n23 * * * * pay_tap_prune_dispatch\n53 * * * * console_session_sweep\n',
     );
   });
 });
