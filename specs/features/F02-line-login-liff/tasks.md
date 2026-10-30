@@ -83,7 +83,7 @@ Depends on F01 tasks: T03 to T07 (database, context, tenant suite), T10 and T11 
 
 ## F. Cross-checks and sweep
 
-- [ ] **F02-T24** Cross-club and abuse tests: a token for club A at club B; the same person at two clubs; rate limit on `POST /auth/session` (value from platform config, none invented); pending-session abuse. IDs: LINE-01-AC4, AC14, CC-1, CC-2. Role: QA · Deps T07, T09 · Size: M
+- [x] **F02-T24** Cross-club and abuse tests: a token for club A at club B; the same person at two clubs; rate limit on `POST /auth/session` (value from platform config, none invented); pending-session abuse. IDs: LINE-01-AC4, AC14, CC-1, CC-2. Role: QA · Deps T07, T09 · Size: M
   Tests first: this task is the tests; they must fail on a deliberately wrong audience check.
 - [ ] **F02-T25** Acceptance sweep: run the AC-to-test table in `design.md` section 13, close gaps, record results against the requirement IDs. IDs: all F02. Role: QA · Deps all · Size: M
   Done when: every AC has a passing test or a filed bug naming its ID. AUTH-02-AC9 stays marked pending (D10).

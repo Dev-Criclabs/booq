@@ -1,3 +1,4 @@
+import type { RateLimiter } from './rate-limit';
 import { checkRouteTable, Reply, type Route, type RouteDeps, type RouteResult, type RouteSession } from './route';
 
 // serveRoutes (apps/web transport; FA 4.3): turns a table of declared routes into one standard
@@ -14,6 +15,12 @@ export interface ServeDeps {
   resolveSession(slug: string, cookie: string | undefined): Promise<RouteSession | null | 'not_found'>;
   /** Longest request body in bytes. A setting: no default here. */
   maxBodyBytes: number;
+  /**
+   * A limit on attempts for chosen routes (for example `POST /auth/session`), counted per club address
+   * and per caller. Absent means no limit. The caller is `x-real-ip`, else the first `x-forwarded-for`
+   * entry, which is only as trustworthy as the platform in front (DevOps sets that up with the host).
+   */
+  rateLimit?: { limiter: RateLimiter; routes: readonly string[] };
 }
 
 export interface ServeContext {
@@ -146,6 +153,11 @@ function serveNow(table: readonly Route<unknown>[], deps: ServeDeps): (request: 
       const read = await readBody(request);
       if (read instanceof Response) return read;
       body = read;
+    }
+    if (deps.rateLimit?.routes.includes(`${found.route.def.method} ${found.route.def.path}`)) {
+      const caller = request.headers.get('x-real-ip') ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+      const hit = deps.rateLimit.limiter.hit(`${found.route.def.method} ${found.route.def.path}|${slug}|${caller}`);
+      if (!hit.allowed) return json(429, { code: 'rate_limited' }, { 'retry-after': String(hit.retryAfterSeconds) });
     }
     const cookie = request.headers.get('cookie') ?? undefined;
     const session = await deps.resolveSession(slug, cookie);

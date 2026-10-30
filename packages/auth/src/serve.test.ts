@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Reply, route, RouteError, type RouteSession } from './route';
 import { serveRoutes, type ServeDeps } from './serve';
+import { createRateLimiter } from './rate-limit';
 import { findUndeclaredRoutes } from './check';
 
 // F02 / apps/web transport: serveRoutes turns a table of declared routes into a standard
@@ -211,5 +212,33 @@ describe('typed params on a refusal', () => {
     });
     const r = await call(serveRoutes([weird], deps()), 'GET', '/api/c/hunter/weird');
     expect(await r.json()).toEqual({ code: 'bad', params: { ok: true, n: 1, s: 'x' } });
+  });
+});
+
+describe('rate limit on chosen routes', () => {
+  const at = { t: 5_000_000 };
+  const limited = () =>
+    serveRoutes(
+      [route({ method: 'POST', path: '/auth/session', public: true }, async () => ({ ok: 1 })), route({ method: 'GET', path: '/public/config', public: true }, async () => 'cfg')],
+      deps({ rateLimit: { limiter: createRateLimiter({ limit: 2, windowSeconds: 60, now: () => new Date(at.t) }), routes: ['POST /auth/session'] } }),
+    );
+  it('refuses the attempt after the limit with 429, rate_limited and Retry-After', async () => {
+    const h = limited();
+    const ip = { 'x-forwarded-for': '203.0.113.9, 10.0.0.1' };
+    expect((await call(h, 'POST', '/api/c/hunter/auth/session', { body: {}, headers: ip })).status).toBe(200);
+    expect((await call(h, 'POST', '/api/c/hunter/auth/session', { body: {}, headers: ip })).status).toBe(200);
+    const third = await call(h, 'POST', '/api/c/hunter/auth/session', { body: {}, headers: ip });
+    expect([third.status, await third.json(), third.headers.get('retry-after')]).toEqual([429, { code: 'rate_limited' }, '60']);
+  });
+  it('counts per caller and per club, leaves other routes alone, and opens when the window ends', async () => {
+    const h = limited();
+    const a = { 'x-real-ip': '198.51.100.1' };
+    for (let i = 0; i < 2; i += 1) await call(h, 'POST', '/api/c/hunter/auth/session', { body: {}, headers: a });
+    expect((await call(h, 'POST', '/api/c/hunter/auth/session', { body: {}, headers: a })).status).toBe(429);
+    expect((await call(h, 'POST', '/api/c/hunter/auth/session', { body: {}, headers: { 'x-real-ip': '198.51.100.2' } })).status).toBe(200);
+    expect((await call(h, 'POST', '/api/c/other-club/auth/session', { body: {}, headers: a })).status).toBe(200);
+    expect((await call(h, 'GET', '/api/c/hunter/public/config', { headers: a })).status).toBe(200);
+    at.t += 61_000;
+    expect((await call(h, 'POST', '/api/c/hunter/auth/session', { body: {}, headers: a })).status).toBe(200);
   });
 });
