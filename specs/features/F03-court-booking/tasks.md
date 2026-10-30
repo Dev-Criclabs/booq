@@ -41,7 +41,7 @@ Depends on: F01 T03 to T07 (database, context, tenant suite), T08 (settings), T1
 - [x] **F03-T14** `app.reclaim_order` for a late payment. IDs: BOOK-03-AC7, AC8, decision D25. Role: BE-B · Deps T13 · Size: M
   Tests first: slot open reclaims and confirms; slot taken, held or closed raises `slot_unavailable`; a solo class with the coach busy raises it and leaves nothing partial.
 - [x] **F03-T15** `app.move_booking` (staff): in-place update, conflicts re-checked by the constraints, coach rules, customer message enqueued. IDs: BOOK-04-AC7. Role: BE-B · Deps T08 · Size: M
-  Tests first: a move onto a taken slot or a busy coach is refused and nothing changes; a successful move enqueues one message.
+  Tests first: a move onto a taken slot or a busy coach is refused and nothing changes; a successful move enqueues one message; in a Paused club owner and front desk may still move (D107, migration 0225 replaces 0219's owner-only check).
 - [x] **F03-T16** Opening hours and court change guard `app.count_live_occupancy`, called by the F01 `PUT /hours` and `PUT /resources/{id}` routes. IDs: decision D50. Role: BE-B · Deps T08, F01-T08 · Size: S
   Tests first: shortening hours or deactivating a court over a live booking is refused with the closure hint; with no bookings it succeeds.
 
@@ -62,8 +62,9 @@ Depends on: F01 T03 to T07 (database, context, tenant suite), T08 (settings), T1
   Tests first: guest access works; the response has the seven states (the client adds Selected), `mine` only for a signed in player, `waitlist` flag; a full day reports Day full.
 - [x] **F03-T21** Player routes `GET /bookings/{id}` and `POST /bookings/{id}/release`. IDs: BOOK-03-AC14, ROLE-AC4. Role: BE-B · Deps T06, T13 · Size: S
   Tests first: another player's booking is 404; releasing a confirmed booking is refused.
-- [ ] **F03-T22** Staff routes `POST /staff/bookings`, `PUT /staff/bookings/{id}/move`, `POST /staff/bookings/{id}/release`, with permissions and the Paused rule (owner may still manage existing bookings). IDs: BOOK-04-AC7, decisions D43, D60. Role: BE-B · Deps T10, T15 · Size: M
-  Tests first: front desk and owner only; a staff booking awaiting payment holds for the hold time; in a Paused club front desk is refused and the owner can move and release.
+- [x] **F03-T22** Staff routes `PUT /staff/bookings/{id}/move` and `POST /staff/bookings/{id}/release`, with permissions and the Paused rule (owner and front desk may still manage existing bookings, D107). IDs: BOOK-04-AC7, decisions D43, D60, D107. Role: BE-B · Deps T10, T15 · Size: M
+  Tests first: front desk and owner only; in a Paused club owner and front desk can move and release.
+  `POST /staff/bookings` is superseded by F04's `POST /staff/orders/quote` and `/pay` (F04-T13), which price the order and call `reserve_court`; its test "a staff booking awaiting payment holds for the hold time" moved to F04-T13.
 - [ ] **F03-T23** Performance check of the schedule: seeded month of bookings, throttled 4G profile, under 2 seconds, loading and offline states. IDs: BOOK-01-AC13. Role: QA · Deps T20 · Size: S
   Tests first: the budget test is the task; fails if over.
 

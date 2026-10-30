@@ -59,6 +59,7 @@ Migration numbers are 0301 to 0399 and rise with task order (the migrator refuse
   Tests first: zero money confirms in the same transaction with no charge; a taken slot refuses and nothing is used up; a 100 percent code follows the zero path; any failed step rolls everything back.
 - [ ] **F04-T13** `GET /orders/{id}` and the staff routes `POST /staff/orders/quote` and `/pay`. IDs: R7-AC2, ROLE-01-AC4, CC-2. Role: BE-C · Deps T12d · Size: S
   Tests first: own or staff only; the snapshot is unchanged after prices and names change; staff booking as a player pays as a player.
+  Also (moved from F03-T22, which no longer has `POST /staff/bookings`): a staff booking awaiting payment holds the slot for the hold time (D43).
 - [ ] **F04-T14** Owner setup routes `/setup/price-groups`, `/court-prices`, `/coach-tier-prices`, `/add-ons`, `/partners`, `/promo-codes`, audited, new orders only. IDs: R3-AC8, PROMO-01-AC12. Role: BE-C · Deps T05 · Size: M
   Tests first: owner only; a price in use by a held or paid order cannot be deleted; every write has an audit entry with old and new values.
 - [ ] **F04-T15** Add a coach to an existing booking: the coaching portion is priced as its own order with its own receipt (D111) and the coach is claimed on the booking through F03's `add_coach_to_booking` (F03-T29). IDs: R2-AC9, D111. Role: BE-C · Deps T12d, F03-T29, F07 (coach rules, interface) · Size: M
