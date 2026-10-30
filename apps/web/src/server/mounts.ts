@@ -1,9 +1,10 @@
-import { createClaimService, createDataRequestService, createImportService, normalizePhone } from '@booq/domain';
+import { createClaimService, createDataRequestService, createImportService, createProfileEditService, normalizePhone } from '@booq/domain';
 import type { Route } from '@booq/auth';
 import type { Db } from '@booq/db';
 import { bangkokDate } from '@booq/time';
 import { claimRoutes } from '../api/claim/routes';
 import { dataRequestRoutes } from '../api/data-request/routes';
+import { profileRoutes } from '../api/profile/routes';
 import { importRoutes } from '../api/import/routes';
 import type { WebConfig } from './context';
 
@@ -35,4 +36,5 @@ export const mounts: readonly Mount[] = [
     }),
   (m) => claimRoutes({ db: m.db, service: () => createClaimService() }),
   (m) => dataRequestRoutes({ db: m.db, service: () => createDataRequestService() }),
+  (m) => profileRoutes({ db: m.db, service: () => createProfileEditService({ today: () => bangkokDate(m.now()) }) }),
 ];
