@@ -60,7 +60,9 @@ describe('roles and schemas (CC-1, CC-2, PDPA-01-AC1)', () => {
     expect(await usage('booq_worker', 'platform')).toBe(true);
     expect(await usage('booq_app', 'platform')).toBe(false);
     expect(await usage('booq_app', 'app')).toBe(true);
-    expect(await usage('booq_platform', 'audit')).toBe(false);
+    // F01-T10: the audit schema is usable (audit.note is callable) but holds no readable table.
+    expect(await usage('booq_platform', 'audit')).toBe(true);
+    expect((await db.query("select has_table_privilege('booq_platform', 'audit.registry', 'select') as ok")).rows[0].ok).toBe(false);
     for (const role of ['booq_app', 'booq_worker', 'booq_platform']) {
       const c = await db.query('select has_schema_privilege($1, $2, $3) as ok', [role, 'public', 'create']);
       expect(c.rows[0].ok, role).toBe(false);

@@ -11,4 +11,8 @@ export const tables: Fragment = {
   'public.opening_hours': { class: 'S' },
   'public.club_pause': { class: 'S' },
   'public.club_status_change': { class: 'D' },
+  // audit (F01-T10)
+  'audit.registry': { class: 'infra' },
+  'public.audit_entry': { class: 'D' },
+  'public.audit_erasure': { class: 'D' },
 };
