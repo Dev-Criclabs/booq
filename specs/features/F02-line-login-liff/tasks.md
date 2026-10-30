@@ -8,7 +8,7 @@ Depends on F01 tasks: T03 to T07 (database, context, tenant suite), T10 and T11 
 
 ## Setup task (not code, before the build)
 
-- [ ] **F02-T00** User ID parity and LIFF setup with a real LINE account. Create a test provider with one Login channel, one Messaging API channel linked to it, and one LIFF app with endpoint `https://{domain}/c/{slug}` and **Add friend option = On (normal)** (decision D38). Sign in through LIFF, then confirm the Login `sub` equals the Messaging API `source.userId` from a webhook event for the same user, and that a push to it arrives. Record the result in the design. IDs: LINE-01-AC4, AC5, AC6; design Q33. Role: DevOps with the user · Size: S
+- [x] **F02-T00** User ID parity and LIFF setup with a real LINE account. Create a test provider with one Login channel, one Messaging API channel linked to it, and one LIFF app with endpoint `https://{domain}/c/{slug}` and **Add friend option = On (normal)** (decision D38). Sign in through LIFF, then confirm the Login `sub` equals the Messaging API `source.userId` from a webhook event for the same user, and that a push to it arrives. Record the result in the design. IDs: LINE-01-AC4, AC5, AC6; design Q33. Role: DevOps with the user · Size: S
   Done when: a short note in `design.md` section 3.3 says the ids match (or the design is reopened, because the player record would change).
 
 ## A. Data and session
@@ -54,7 +54,7 @@ Depends on F01 tasks: T03 to T07 (database, context, tenant suite), T10 and T11 
 
 - [x] **F02-T13** `price_group_for(dob, on_date)` and the Student-item eligibility check used by F04 and F06. IDs: AUTH-02-AC10 to AC14, AC17. Role: BE-P · Size: S
   Tests first: no date of birth gives Adult; 17 years 364 days is Student, the 18th birthday in Bangkok switches to Adult; a Student item with no date of birth returns the ask code; 18 or older is refused for a Student item.
-- [ ] **F02-T14** `PUT /me/profile`: name, phone, date of birth (not future), level, language; never locked; audited. IDs: AUTH-02-AC15 to AC23, AC29. Role: BE-P · Deps T08, F01-T10 · Size: M
+- [x] **F02-T14** `PUT /me/profile`: name, phone, date of birth (not future), level, language; never locked; audited. IDs: AUTH-02-AC15 to AC23, AC29. Role: BE-P · Deps T08, F01-T10 · Size: M
   Tests first: unlimited changes; future date refused; an adult adds a date of birth with no price effect; a bought Student package stays valid (assertion contract with F06); each change has an audit entry with old and new.
 - [ ] **F02-T15** Date of birth history route for the owner only, filtering audit entries. IDs: AUTH-02-AC21, AC24, decision D55. Role: BE-P · Deps T14 · Size: S
   Tests first: owner sees the changes; front desk, accountant and the player do not.

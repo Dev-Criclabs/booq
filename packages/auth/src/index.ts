@@ -2,6 +2,7 @@ export const packageName = '@booq/auth';
 
 export { can, canAll, isPermission, permissionNames, ROLES, type Role } from './permissions';
 export {
+  Reply,
   route,
   RouteError,
   checkRouteTable,
@@ -25,3 +26,4 @@ export { createDbDirectory } from './liff/directory';
 export { createPublicConfigService, type PublicConfig, type PublicConfigResult } from './liff/public-config';
 export { createProfileService, type ProfileOptions, type ProfileResult } from './liff/profile';
 export { safeReturnPath } from './liff/return-path';
+export { serveRoutes, type ServeContext, type ServeDeps, type ServeSource } from './serve';
