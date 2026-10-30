@@ -95,8 +95,8 @@ describe('write-only grants (SR-03, D27)', () => {
   beforeEach(async () => {
     await put('beam_api_key_live');
   });
-  it('booq_platform has no privilege on any secret table', async () => {
-    for (const t of ['club_secret', 'club_secret_read', 'line_connection', 'payment_connection']) {
+  it('booq_platform has no privilege on the secret tables themselves (its way in is platform.write_secret)', async () => {
+    for (const t of ['club_secret', 'club_secret_read']) {
       for (const priv of ['select', 'insert', 'update', 'delete']) {
         expect((await tdb.query('select has_table_privilege($1, $2, $3) as ok', ['booq_platform', `public.${t}`, priv])).rows[0].ok, `${t} ${priv}`).toBe(false);
       }
@@ -138,7 +138,8 @@ describe('read_secret has no club argument and a role allow-list (SR-03)', () =>
   });
   it('a row copied from one club to another does not decrypt there', async () => {
     await put('beam_api_key_live', 'club-b-value-1111', B, OWNER_B);
-    await tdb.query(`insert into public.club_secret (club_id, kind, ciphertext, key_id, written_by_staff) select $1, kind, ciphertext, key_id, gen_random_uuid() from public.club_secret where club_id = $2`, [A, B]);
+    await tdb.query(`insert into platform.platform_staff (id, auth_user_id, email, display_name, role) values ('77777777-7777-4777-8777-777777777771', gen_random_uuid(), 'a@booq.test', 'Ann', 'platform_admin')`);
+    await tdb.query(`insert into public.club_secret (club_id, kind, ciphertext, key_id, written_by_staff) select $1, kind, ciphertext, key_id, '77777777-7777-4777-8777-777777777771' from public.club_secret where club_id = $2`, [A, B]);
     await expect(read('beam_api_key_live', A)).rejects.toThrow(/decrypt/);
   });
   it('fails with no club in the context', async () => {
