@@ -46,3 +46,10 @@ export function createDbAuditSink(db: PlatformDb): AuditSink {
     },
   };
 }
+
+/** Thrown by the placeholder identity: the password adapter (apps/staff-invite, T17b) is not connected. The routes answer 503. */
+export class IdentityUnavailable extends Error {
+  constructor() {
+    super('identity_unavailable');
+  }
+}
