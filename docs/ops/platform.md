@@ -23,11 +23,11 @@ BOOQ staff sign in with email and a second factor (D3). The password check happe
 |---|---|---|
 | `SUPABASE_URL` | yes | The project's API address. Not secret |
 | `SUPABASE_SERVICE_ROLE_KEY` | yes | **Secret.** Used for the admin calls (staff invites). Set only here. Nothing else in the system holds it (Security SR-06) |
-| `SUPABASE_ANON_KEY` **(branch)** | yes | The project's public key, sent as the `apikey` header on the sign-in calls (password check and the second-factor challenge and verify). Public by design, and the Data API is switched off, so it grants no data access, but keep it **only in this deployment**. Update the launch checklist wording "the anon key is in no app environment" to "only in `apps/staff-invite`" (Security SR-06) |
+| `SUPABASE_ANON_KEY` **(branch)** | yes | The project's public key, sent as the `apikey` header on the sign-in calls (password check and the second-factor challenge and verify). Public by design, and the Data API is switched off, so it grants no data access, but keep it **only in this deployment**. Both keys may be only in `apps/staff-invite` (D148; the SR-06 row of the launch checklist now says so) |
 | `STAFF_INVITE_SIGNING_SECRET` | yes | **Secret.** 32+ characters, the same value as in `apps/platform`. A request not signed with it is refused |
 | `PLATFORM_DATABASE_URL` | yes | Role `booq_platform`, to record what the function does. A second credential for that role, set only here |
-| `STAFF_INVITE_MAX_SKEW_SECONDS` | yes | Whole number above 0: how far the request's timestamp may differ from the clock. Proposed **300** as a starting value for Security to confirm (replay window versus clock drift) |
-| `STAFF_INVITE_MAX_BODY_BYTES` | yes | Whole number above 0. Proposed **4096**, since the body is a few fields; Security to confirm |
+| `STAFF_INVITE_MAX_SKEW_SECONDS` | yes | Whole number above 0: how far the request's timestamp may differ from the clock. **300**: starting value, review in the security pass (accepted under D147; a request guard, not a product setting). Replay window versus clock drift |
+| `STAFF_INVITE_MAX_BODY_BYTES` | yes | Whole number above 0. **4096**: starting value, review in the security pass (accepted under D147; a request guard, not a product setting). The body is a few fields |
 
 Proposed values above are my suggestions, not rules. The function's address is internal to the console: host it so that only the console can reach it if the host offers that, otherwise the signed request is the only gate, so `STAFF_INVITE_SIGNING_SECRET` must be strong and rotated if it leaks.
 
