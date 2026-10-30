@@ -87,8 +87,7 @@ describe('preparePay: gate and reprice', () => {
 
 // F04-T12b: the order with its frozen amounts, then reserve_court, then the lines (R7-AC1, R3-AC6, BOOK-06,
 // D40, D47, D111; design 4.5 step 3). Uses app.create_priced_order and app.add_order_lines (Architect).
-// Skipped until the Architect's app.create_priced_order and app.add_order_lines reach main (requested 30 Oct).
-describe.skip('placeOrder', () => {
+describe('placeOrder', () => {
   const ready = async (body: Record<string, unknown>) => {
     const hash = await hashNow(body);
     const r = await inTx((tx) => preparePay(tx, ME, parsePayRequest({ ...body, quoteHash: hash }), fixtureSources()));
@@ -130,13 +129,33 @@ describe.skip('placeOrder', () => {
 
   it('a taken slot refuses and nothing is created (BOOK-04, R8-AC1)', async () => {
     const other = '55555555-5555-4555-8555-555555555555';
-    await tdb.query(`insert into public.app_user (club_id, id, line_user_id, full_name) values ($1,$2,'L9','Other')`, [A, other]);
-    await tdb.query(`insert into public.app_user_role (club_id, user_id, role) values ($1,$2,'player')`, [A, other]);
+    const c = await tdb.pool.connect();
+    try {
+      await c.query('begin');
+      await c.query(`insert into public.app_user (club_id, id, line_user_id, full_name) values ($1,$2,'L9','Other')`, [A, other]);
+      await c.query(`insert into public.app_user_role (club_id, user_id, role) values ($1,$2,'player')`, [A, other]);
+      await c.query('commit');
+    } finally {
+      c.release();
+    }
     const theirs = (await tdb.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'online') returning id`, [A, other])).rows[0].id as string;
     await db.withClubTx({ ...me, userId: other }, (tx) => tx.query(`select app.reserve_court($1, $2, $3::timestamptz[])`, [theirs, COURT, [new Date(HOUR).toISOString()]]));
     const before = [await count('orders'), await count('order_line'), await count('booking')];
     await expect(place({ courtId: COURT, hours: [HOUR] })).rejects.toMatchObject({ code: 'BK001', message: 'slot_unavailable' });
     expect([await count('orders'), await count('order_line'), await count('booking')]).toEqual(before);
+  });
+
+  it('past the platform limit on Pay taps the claim refuses with too_many_attempts and the seconds to wait; nothing is made (D61, F03 4.8)', async () => {
+    // The limit is Security's platform setting; these values are test data.
+    await tdb.query(`insert into platform.config (key, value) values ('pay_tap_limit_count', '2'), ('pay_tap_limit_window_seconds', '600')
+                     on conflict (key) do update set value = excluded.value`);
+    await place({ courtId: COURT, hours: ['2026-12-02T08:00:00+07:00'] });
+    await place({ courtId: COURT, hours: ['2026-12-02T09:00:00+07:00'] });
+    const before = [await count('orders'), await count('booking')];
+    const e = await place({ courtId: COURT, hours: ['2026-12-02T10:00:00+07:00'] }).then(() => null, (x: { code?: string; message?: string; detail?: string }) => x);
+    expect(e).toMatchObject({ code: 'BK001', message: 'too_many_attempts' });
+    expect(Number(e!.detail)).toBeGreaterThan(0);
+    expect([await count('orders'), await count('booking')]).toEqual(before);
   });
 
   it('a second tap returns the same order and hold and leaves no second order (D47, BOOK-03-AC15)', async () => {
