@@ -39,4 +39,6 @@ export const tables: Fragment = {
   'app.test_tables': { class: 'infra' },   // F01-T26
   'public.audit_entry': { class: 'D' },
   'public.audit_erasure': { class: 'D' },
+  // pause and resume (F01-T22): work to run when a club resumes; written only by migrations
+  'app.pause_handlers': { class: 'infra' },
 };
