@@ -5,4 +5,5 @@ export const tables: Fragment = {
   'public.orders': { class: 'D', audited: true },   // F03-T01 (0201); audit registered in 0203
   'public.booking': { class: 'D', audited: true },  // F03-T01 (0202); audit registered in 0203
   'public.occupancy': { class: 'D' },               // F03-T02 (0203); audited through its booking
+  'app.release_handlers': { class: 'infra' },        // F03-T06 (0210)
 };
