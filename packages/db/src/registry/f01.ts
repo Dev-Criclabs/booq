@@ -22,4 +22,8 @@ export const tables: Fragment = {
   'platform.template_item': { class: 'P' },
   'platform.launch_check': { class: 'P' },
   'platform.export_request': { class: 'P' },
+  // audit (F01-T10)
+  'audit.registry': { class: 'infra' },
+  'public.audit_entry': { class: 'D' },
+  'public.audit_erasure': { class: 'D' },
 };
