@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createStaffDb, type StaffDb } from '@booq/db';
+import { createPlatformDb, type PlatformDb } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
 import { createSupportService } from './support';
 
@@ -10,7 +10,7 @@ const PAUSED = 'aaaaaaaa-0000-4000-8000-00000000000e';
 const OTHER = 'aaaaaaaa-0000-4000-8000-0000000000ff';
 
 let tdb: TestDatabase;
-let pdb: StaffDb;
+let pdb: PlatformDb;
 let svc: ReturnType<typeof createSupportService>;
 let admin: string;
 let spec: string;
@@ -38,7 +38,7 @@ beforeEach(async () => {
   for (const c of [LIVE, TEST, PAUSED]) await tdb.query(`insert into platform.staff_assignment (staff_id, club_id) values ($1, $2)`, [spec, c]);
   await tdb.query(`insert into public.location (club_id, id, name) values ($1, 'cccccccc-0000-4000-8000-000000000001', 'Main')`, [TEST]);
   await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1, 'hold_minutes', '15')`, [TEST]);
-  pdb = createStaffDb({ connectionString: tdb.url, max: 1 });
+  pdb = createPlatformDb({ connectionString: tdb.url, max: 1 });
   svc = createSupportService({ db: pdb });
 });
 afterEach(async () => {

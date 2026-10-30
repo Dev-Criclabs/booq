@@ -13,7 +13,7 @@
 -- or assignment from the setting: both are read from the platform tables.
 create function platform.staff_id() returns uuid
 language sql stable set search_path = pg_catalog
-as $$ select nullif(current_setting('app.platform_staff_id', true), '')::uuid $$;
+as $$ select nullif(current_setting('app.actor_platform_staff_id', true), '')::uuid $$;
 
 -- The helpers read platform tables as booq_owner (they bypass the tables' row security), so a
 -- policy that calls them does not recurse.
@@ -141,7 +141,7 @@ grant insert, update (display_name, role, active) on platform.platform_staff to 
 grant insert, delete on platform.staff_assignment to booq_platform;
 grant insert, update (closed_at) on platform.support_session to booq_platform;
 grant update (value) on platform.config to booq_platform;
-grant insert, update on platform.launch_check to booq_platform;
+grant insert, update on platform.launch_check to booq_platform;   -- admin only by policy, until a definer function records results (review R2)
 grant insert on platform.export_request to booq_platform;
 
 create policy staff_select on platform.platform_staff for select to booq_platform using (platform.is_admin() or id = platform.staff_id());
@@ -169,10 +169,13 @@ create policy template_select on platform.template for select to booq_platform u
 create policy template_item_select on platform.template_item for select to booq_platform using (platform.staff_role() is not null);
 
 create policy launch_check_select on platform.launch_check for select to booq_platform using (platform.can_see_club(club_id));
+-- Results are written by an admin only. A specialist cannot mark a check as passed: Go live is gated
+-- on every check passing. A definer function that runs or reads the real check replaces this later.
 create policy launch_check_insert on platform.launch_check for insert to booq_platform
-  with check (platform.can_see_club(club_id) and (checked_by is null or checked_by = platform.staff_id()));
+  with check (platform.is_admin() and platform.can_see_club(club_id) and (checked_by is null or checked_by = platform.staff_id()));
 create policy launch_check_update on platform.launch_check for update to booq_platform
-  using (platform.can_see_club(club_id)) with check (platform.can_see_club(club_id) and (checked_by is null or checked_by = platform.staff_id()));
+  using (platform.is_admin() and platform.can_see_club(club_id))
+  with check (platform.is_admin() and platform.can_see_club(club_id) and (checked_by is null or checked_by = platform.staff_id()));
 
 create policy export_select on platform.export_request for select to booq_platform using (platform.can_see_club(club_id));
 create policy export_insert on platform.export_request for insert to booq_platform

@@ -1,4 +1,4 @@
-import type { StaffDb, StaffTx } from '@booq/db';
+import type { PlatformDb, PlatformTx } from '@booq/db';
 
 // The support view (F01-T19; PLAT-02-AC2 to AC7, AC9; design 5.2): GET and PUT
 // /clubs/{id}/support/setup and the session behind them. Transport-neutral: the routes call these
@@ -54,7 +54,7 @@ function pick(body: unknown, allowed: readonly string[]): Record<string, unknown
   return body;
 }
 
-async function setColumns(tx: StaffTx, clubId: string, values: Record<string, unknown>): Promise<string[]> {
+async function setColumns(tx: PlatformTx, clubId: string, values: Record<string, unknown>): Promise<string[]> {
   const cols = Object.keys(values);
   const sets = cols.map((c, i) => `${c} = $${i + 2}`).join(', ');
   const r = await tx.query(`update public.club set ${sets} where id = $1`, [clubId, ...cols.map((c) => values[c])]);
@@ -69,7 +69,7 @@ interface Applied {
 
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
-async function applySection(tx: StaffTx, clubId: string, section: string, body: unknown): Promise<Applied> {
+async function applySection(tx: PlatformTx, clubId: string, section: string, body: unknown): Promise<Applied> {
   switch (section) {
     case 'basics': {
       const values = pick(body, BASICS);
@@ -163,22 +163,22 @@ interface StaffRow {
   active: boolean;
 }
 
-export function createSupportService(deps: { db: StaffDb }) {
+export function createSupportService(deps: { db: PlatformDb }) {
   const { db } = deps;
 
   async function loadStaff(staffId: string): Promise<StaffRow | null> {
-    const row = await db.withStaffTx({ staffId: null }, async (tx) => (await tx.query<StaffRow>('select id, display_name, role, active from platform.staff_by_id($1)', [staffId])).rows[0] ?? null);
+    const row = await db.withPlatformTx({ staffId: null }, async (tx) => (await tx.query<StaffRow>('select id, display_name, role, active from platform.staff_by_id($1)', [staffId])).rows[0] ?? null);
     return row && row.active ? row : null;
   }
 
-  const p6 = (tx: StaffTx, action: string, club: string | null, detail: Record<string, unknown>, session: string | null = null, reason: string | null = null) =>
+  const p6 = (tx: PlatformTx, action: string, club: string | null, detail: Record<string, unknown>, session: string | null = null, reason: string | null = null) =>
     tx.query('select platform.write_audit($1, $2, $3, $4, $5::jsonb, $6, $7)', [action, club, club ? 'club' : null, club, JSON.stringify(detail), reason, session]);
 
-  const clubNote = (tx: StaffTx, action: string, record: string, detail: Record<string, unknown>) =>
+  const clubNote = (tx: PlatformTx, action: string, record: string, detail: Record<string, unknown>) =>
     tx.query(`select audit.note($1, $2, $3, $4::jsonb, null)`, [action, 'club', record, JSON.stringify(detail)]);
 
   /** Makes sure the staff member has one open session of the wanted mode on this club. */
-  async function ensureSession(tx: StaffTx, staffId: string, clubId: string, mode: SupportMode): Promise<string> {
+  async function ensureSession(tx: PlatformTx, staffId: string, clubId: string, mode: SupportMode): Promise<string> {
     const open = await tx.query<{ id: string; mode: SupportMode }>(
       'select id, mode from platform.support_session where staff_id = $1 and club_id = $2 and closed_at is null',
       [staffId, clubId],
@@ -198,14 +198,14 @@ export function createSupportService(deps: { db: StaffDb }) {
     return id;
   }
 
-  async function seeClub(tx: StaffTx, clubId: string): Promise<Record<string, unknown> | null> {
+  async function seeClub(tx: PlatformTx, clubId: string): Promise<Record<string, unknown> | null> {
     const r = await tx.query(`select ${CLUB_COLUMNS.join(', ')} from public.club where id = $1`, [clubId]);
     return r.rows[0] ?? null;
   }
 
   async function refused(staff: StaffRow, clubId: string, what: string): Promise<{ ok: false; code: 'not_found' }> {
     // The club may not exist, so it is not a foreign key: the id goes in the detail as text.
-    await db.withStaffTx({ staffId: staff.id }, (tx) => p6(tx, 'support.access_refused', null, { what, club_ref: clubId }));
+    await db.withPlatformTx({ staffId: staff.id, staffLabel: staff.display_name }, (tx) => p6(tx, 'support.access_refused', null, { what, club_ref: clubId }));
     return { ok: false, code: 'not_found' };
   }
 
@@ -215,7 +215,7 @@ export function createSupportService(deps: { db: StaffDb }) {
     const staff = validId(staffId) ? await loadStaff(staffId) : null;
     if (!staff) return { ok: false, code: 'not_found' };
     if (!validId(clubId)) return refused(staff, clubId, 'read');
-    const result = await db.withStaffTx({ staffId: staff.id, clubId, actorLabel: staff.display_name }, async (tx): Promise<SupportSetup | null> => {
+    const result = await db.withPlatformTx({ staffId: staff.id, clubId, staffLabel: staff.display_name }, async (tx): Promise<SupportSetup | null> => {
       const club = await seeClub(tx, clubId);
       if (!club) return null;
       const editable = (await tx.query<{ ok: boolean }>('select platform.club_editable($1) as ok', [clubId])).rows[0]?.ok === true;
@@ -244,7 +244,7 @@ export function createSupportService(deps: { db: StaffDb }) {
 
     type Outcome = { kind: 'not_found' } | { kind: 'look_only' } | { kind: 'done'; changed: string[] };
     try {
-      const outcome = await db.withStaffTx({ staffId: staff.id, clubId, actorLabel: staff.display_name }, async (tx): Promise<Outcome> => {
+      const outcome = await db.withPlatformTx({ staffId: staff.id, clubId, staffLabel: staff.display_name }, async (tx): Promise<Outcome> => {
         if (!(await seeClub(tx, clubId))) return { kind: 'not_found' };
         const editable = (await tx.query<{ ok: boolean }>('select platform.club_editable($1) as ok', [clubId])).rows[0]?.ok === true;
         if (!editable) {
@@ -273,7 +273,7 @@ export function createSupportService(deps: { db: StaffDb }) {
   async function closeSession(staffId: string, clubId: string): Promise<{ ok: true } | { ok: false; code: 'not_found' }> {
     const staff = validId(staffId) && validId(clubId) ? await loadStaff(staffId) : null;
     if (!staff) return { ok: false, code: 'not_found' };
-    return db.withStaffTx({ staffId: staff.id, clubId, actorLabel: staff.display_name }, async (tx) => {
+    return db.withPlatformTx({ staffId: staff.id, clubId, staffLabel: staff.display_name }, async (tx) => {
       const open = await tx.query<{ id: string; mode: SupportMode }>(
         'update platform.support_session set closed_at = app.now() where staff_id = $1 and club_id = $2 and closed_at is null returning id, mode',
         [staff.id, clubId],

@@ -17,12 +17,12 @@ Depends on F01 tasks: T03 to T07 (database, context, tenant suite), T10 and T11 
   Tests first: the same person at two clubs has two rows; unique on club and LINE id; a shared phone is allowed and flagged on both records.
 - [ ] **F02-T02** Migration 0102: `auth_session` (hash only), pending state with a 30 minute life, housekeeping purge. IDs: LINE-01-AC13, AUTH-02-AC3. Role: BE-P · Deps T01, F01-T34 · Size: S
   Tests first: the table never holds a token; an expired pending row is purged; a revoked session is refused at once.
-- [ ] **F02-T03** Log redaction for `idToken`, `access_token`, `Authorization`, with a test that scans captured logs. IDs: LINE-01-AC13. Role: BE-P · Size: S
+- [x] **F02-T03** Log redaction for `idToken`, `access_token`, `Authorization`, with a test that scans captured logs. IDs: LINE-01-AC13. Role: BE-P · Size: S
   Tests first: a request carrying a token produces no log line containing it.
 
 ## B. Verifying and signing in
 
-- [ ] **F02-T04** LINE verify client with an interface, a real and a fake (valid, wrong audience, expired, bad signature, unreachable). IDs: LINE-01-AC4, AC11, CC-2. Role: BE-P · Deps QA fake LINE · Size: M
+- [x] **F02-T04** LINE verify client with an interface, a real and a fake (valid, wrong audience, expired, bad signature, unreachable). IDs: LINE-01-AC4, AC11, CC-2. Role: BE-P · Deps QA fake LINE · Size: M
   Tests first: a token for club A's channel is refused at club B; an offline response creates nothing and returns the offline code.
 - [ ] **F02-T05** Club resolver and status gate: slug to club, `clubUrl()` for every deep link, 404 for unknown or not visible, Draft and Testing only for testers. IDs: AUTH-01-AC13 to AC15, BOOK-02-AC3. Role: BE-P · Deps F01-T28 · Size: M
   Tests first: unknown slug 404; Draft and Testing 404 for guests and non-testers; a link for club A never signs in to club B; slug and session club mismatch is 404.
