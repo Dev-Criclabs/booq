@@ -72,7 +72,7 @@ export async function exchange(input: SignInInput, next = safeNext(input.slug, i
 /** The language keys for each error (P-0327 offline, the rest pending in locales/pending/f02.json). */
 export const ERROR_KEY: Record<SignInError, string> = {
   offline: 'P-0327',
-  sign_in_failed: 'P-new.sign_in_failed',
+  sign_in_failed: 'P-new.signin_failed',
   not_found: 'P-new.page_not_found',
-  account_inactive: 'P-new.account_inactive',
+  account_inactive: 'P-new.signin_account_inactive',
 };

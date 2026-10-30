@@ -50,7 +50,7 @@ describe('public config', () => {
 describe('what a guest can read (D103)', () => {
   it('the public view lists exactly these columns; a new column fails this test', async () => {
     const cols = (await tdb.query(`select column_name from information_schema.columns where table_schema = 'public' and table_name = 'public_club_config' order by column_name`)).rows;
-    expect(cols.map((c) => c.column_name)).toEqual(['default_language', 'liff_id', 'name_en', 'name_th', 'status']);
+    expect(cols.map((c) => c.column_name)).toEqual(['default_language', 'liff_id', 'name_en', 'name_th', 'notice_version', 'status']);
   });
   it('a guest reads one club’s config through the view and nothing of another club', async () => {
     const rows = (await db.withClubTx(guest(A), (tx) => tx.query('select name_en from public.public_club_config'))).rows;

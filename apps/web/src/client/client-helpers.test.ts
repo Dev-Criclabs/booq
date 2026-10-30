@@ -15,7 +15,7 @@ describe('text comes from the language files (CC-5)', () => {
   it('reads the main files, then pending keys, and never invents text', () => {
     expect(translator('en')('P-0004')).toBe(en['P-0004']);
     expect(translator('th')('P-0004')).toBe(th['P-0004']);
-    expect(translator('th')('P-new.sign_in_failed')).toBe(f02.th['P-new.sign_in_failed']);
+    expect(translator('th')('P-new.signin_failed')).toBe(f02.th['P-new.signin_failed']);
     expect(translator('en')('P-9999')).toBe('P-9999');
   });
   it('every pending F02 key is in both languages with the same variables', () => {

@@ -19,6 +19,8 @@ export const tables: Fragment = {
   'platform.club_usage_daily': { class: 'P' },
   'platform.config': { class: 'P' },
   'platform.template': { class: 'P' },
+  'platform.legal_release': { class: 'P' },     // D152 (0048): published privacy notice and terms, append-only
+  'platform.legal_text': { class: 'P' },
   'platform.template_item': { class: 'P' },
   'platform.launch_check': { class: 'P' },
   'platform.export_request': { class: 'P' },
@@ -47,6 +49,7 @@ export const tables: Fragment = {
   'app.test_tables': { class: 'infra' },
   'app.anonymise_handlers': { class: 'infra' },          // F01-T33 (0019)
   'app.deletion_impact_handlers': { class: 'infra' },   // F01-T33 (0019)
+  'public.rate_limit_hit': { class: 'D' },               // migration 0027: hashed sign-in counters, no raw address
   'public.audit_entry': { class: 'D' },
   'public.audit_erasure': { class: 'D' },
   // pause and resume (F01-T22): work to run when a club resumes; written only by migrations
