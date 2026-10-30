@@ -49,4 +49,8 @@ export const tables: Fragment = {
   'public.audit_erasure': { class: 'D' },
   // pause and resume (F01-T22): work to run when a club resumes; written only by migrations
   'app.pause_handlers': { class: 'infra' },
+  // setup steps that block Draft to Testing (F01-T23): registered by migrations only
+  'app.setup_steps': { class: 'infra' },
+  // owner contact changes that need a second admin (F01-T23 part b)
+  'platform.owner_contact_change': { class: 'P' },
 };

@@ -2,10 +2,44 @@
   "_note": "Proposed by BE-P for F01 (D51). Numbers to be assigned by Content; wording drafted, writers own it.",
   "en": {
     "L-new.club_paused": "Online booking at {clubName} is paused by BOOQ. Reason: {reason}. Existing bookings and reminders are not affected, and package and wallet expiry dates move forward by the length of the pause.",
-    "L-new.club_resumed": "Online booking at {clubName} is open again."
+    "L-new.club_resumed": "Online booking at {clubName} is open again.",
+    "A-new.import_name_missing": "Full name is missing.",
+    "A-new.import_phone_missing": "Phone number is missing.",
+    "A-new.import_phone_invalid": "This phone number is not valid.",
+    "A-new.import_dob_invalid": "Date of birth is not a real date. Use YYYY-MM-DD.",
+    "A-new.import_dob_future": "Date of birth is in the future.",
+    "A-new.import_row_width": "This row has a different number of columns from the header.",
+    "A-new.import_duplicate_phone": "This phone number is also used by another row in the file.",
+    "A-new.import_file_empty": "The file has no rows to import.",
+    "A-new.import_column_missing": "The file needs the columns full_name and phone.",
+    "A-new.import_column_duplicate": "A column name appears twice in the header row.",
+    "A-new.import_too_many_rows": "The file has more than {maxRows} rows. Split it and upload again.",
+    "A-new.import_kind_not_available": "This kind of import is not available yet.",
+    "A-new.import_not_confirmable": "This import cannot be confirmed. Fix the file and upload it again.",
+    "A-new.import_expired": "This import has expired. Upload the file again.",
+    "A-new.import_not_configured": "Import is not set up yet. Please contact BOOQ.",
+    "L-new.owner_invite_subject": "Your invitation to set up {clubName} on BOOQ",
+    "L-new.owner_invite_body": "BOOQ has set up {clubName} for you. Open this link on the phone where you use LINE to sign in as the club owner: {link} The link works once, for you only, and stops working after a few days. If you did not expect this email, ignore it."
   },
   "th": {
     "L-new.club_paused": "BOOQ หยุดการจองออนไลน์ของ {clubName} ชั่วคราว เหตุผล: {reason} การจองที่มีอยู่และการแจ้งเตือนไม่ได้รับผลกระทบ และวันหมดอายุของแพ็กเกจและกระเป๋าเงินจะเลื่อนออกไปตามระยะเวลาที่หยุด",
-    "L-new.club_resumed": "เปิดให้จองออนไลน์ที่ {clubName} อีกครั้งแล้ว"
+    "L-new.club_resumed": "เปิดให้จองออนไลน์ที่ {clubName} อีกครั้งแล้ว",
+    "A-new.import_name_missing": "ไม่มีชื่อ-นามสกุล",
+    "A-new.import_phone_missing": "ไม่มีเบอร์โทรศัพท์",
+    "A-new.import_phone_invalid": "เบอร์โทรศัพท์ไม่ถูกต้อง",
+    "A-new.import_dob_invalid": "วันเกิดไม่ใช่วันที่จริง ใช้รูปแบบ ปปปป-ดด-วว",
+    "A-new.import_dob_future": "วันเกิดเป็นวันในอนาคต",
+    "A-new.import_row_width": "แถวนี้มีจำนวนคอลัมน์ไม่ตรงกับหัวตาราง",
+    "A-new.import_duplicate_phone": "เบอร์โทรศัพท์นี้ซ้ำกับแถวอื่นในไฟล์",
+    "A-new.import_file_empty": "ไฟล์ไม่มีแถวที่จะนำเข้า",
+    "A-new.import_column_missing": "ไฟล์ต้องมีคอลัมน์ full_name และ phone",
+    "A-new.import_column_duplicate": "มีชื่อคอลัมน์ซ้ำในแถวหัวตาราง",
+    "A-new.import_too_many_rows": "ไฟล์มีมากกว่า {maxRows} แถว กรุณาแบ่งไฟล์แล้วอัปโหลดใหม่",
+    "A-new.import_kind_not_available": "การนำเข้าประเภทนี้ยังไม่พร้อมใช้งาน",
+    "A-new.import_not_confirmable": "ยืนยันการนำเข้านี้ไม่ได้ กรุณาแก้ไฟล์แล้วอัปโหลดใหม่",
+    "A-new.import_expired": "การนำเข้านี้หมดอายุแล้ว กรุณาอัปโหลดไฟล์อีกครั้ง",
+    "A-new.import_not_configured": "ยังไม่ได้ตั้งค่าการนำเข้า กรุณาติดต่อ BOOQ",
+    "L-new.owner_invite_subject": "คำเชิญตั้งค่า {clubName} บน BOOQ",
+    "L-new.owner_invite_body": "BOOQ ตั้งค่า {clubName} ไว้ให้คุณแล้ว เปิดลิงก์นี้บนโทรศัพท์ที่ใช้ LINE เพื่อเข้าสู่ระบบในฐานะเจ้าของสโมสร: {link} ลิงก์ใช้ได้ครั้งเดียว เฉพาะคุณเท่านั้น และจะหมดอายุภายในไม่กี่วัน หากคุณไม่ได้คาดว่าจะได้รับอีเมลนี้ โปรดไม่ต้องสนใจ"
   }
 }

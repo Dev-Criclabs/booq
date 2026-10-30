@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createPlatformDb, type PlatformDb } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
+import { completeSetup, recordLaunchChecks } from '../../../../packages/db/src/setup-fixture';
 import { createStatusService } from './status';
 
 // F01-T21: POST /clubs/{id}/status (PLAT-01-AC8, ROLE-AC5; design 5.2; step-up from SR-16).
@@ -30,6 +31,8 @@ beforeEach(async () => {
   spec = await staff('spec@booq.example', 'onboarding_specialist', '99999999-0000-4000-8000-000000000002', 'Sam Specialist');
   loner = await staff('loner@booq.example', 'onboarding_specialist', '99999999-0000-4000-8000-000000000003', 'Lee Loner');
   await tdb.query(`insert into platform.staff_assignment (staff_id, club_id) values ($1, $2)`, [spec, CLUB]);
+  await completeSetup(tdb, CLUB);
+  await completeSetup(tdb, OTHER);
   pdb = createPlatformDb({ connectionString: tdb.url, max: 1 });
   svc = createStatusService({ db: pdb });
 });
@@ -48,7 +51,7 @@ describe('who may change status (PLAT-01-AC8, ROLE-AC5)', () => {
 
   it('an assigned specialist can take a club from Draft to Testing and Testing to Live', async () => {
     expect(await change(spec, 'testing', { reason: 'setup done' })).toEqual({ ok: true, from: 'draft', to: 'testing' });
-    await tdb.query(`insert into platform.launch_check (club_id, check_key, result) values ($1, 'line_test', 'pass')`, [CLUB]);
+    await recordLaunchChecks(tdb, CLUB);
     expect(await change(spec, 'live')).toEqual({ ok: true, from: 'testing', to: 'live' });
     expect((await p6()).find((r) => r.detail?.to === 'testing')?.detail).toEqual({ from: 'draft', to: 'testing', reason: 'setup done' });
   });
@@ -88,8 +91,12 @@ describe('who may change status (PLAT-01-AC8, ROLE-AC5)', () => {
 describe('what the route refuses (PLAT-01-AC2, AC3, AC9)', () => {
   it('Go live with checks not passed is refused and says which are missing', async () => {
     await setStatus('testing');
-    await tdb.query(`insert into platform.launch_check (club_id, check_key, result) values ($1, 'a', 'pass'), ($1, 'b', 'fail'), ($1, 'c', 'pending')`, [CLUB]);
-    expect(await change(spec, 'live')).toEqual({ ok: false, code: 'blocked', missing: [{ item: 'b', result: 'fail' }, { item: 'c', result: 'pending' }] });
+    const keys = await recordLaunchChecks(tdb, CLUB, ['pass', 'fail', 'pending']);
+    expect(await change(spec, 'live')).toEqual({
+      ok: false,
+      code: 'blocked',
+      missing: [{ item: keys[1], owed_by: 'booq', result: 'fail' }, { item: keys[2], owed_by: 'booq', result: 'pending' }],
+    });
     expect(await status()).toBe('testing');
   });
 
@@ -131,7 +138,7 @@ describe('what the route refuses (PLAT-01-AC2, AC3, AC9)', () => {
 
   it('writes the change in the club audit log naming the BOOQ staff member', async () => {
     await change(spec, 'testing');
-    const a = await tdb.query(`select actor_type, actor_label from public.audit_entry where club_id = $1 and record_type = 'club' and action = 'update'`, [CLUB]);
+    const a = await tdb.query(`select actor_type, actor_label from public.audit_entry where club_id = $1 and record_type = 'club' and action = 'update' and actor_type = 'platform_staff'`, [CLUB]);
     expect(a.rows).toEqual([{ actor_type: 'platform_staff', actor_label: 'Sam Specialist' }]);
   });
 });
