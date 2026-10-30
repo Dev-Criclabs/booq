@@ -68,7 +68,7 @@ Conventions are FA §2.1 (uuid keys, composite foreign keys, `club_id` first in 
 
 **`user_staff_note`**, **`user_consent`** (D; consent is append-only, `(club_id, user_id, notice_version, language, accepted_at)`; the fields are the proposed answer to F01 Q20 and need the PRD and hand-off change first, A-4). Note that the consent screen is F02.
 
-**`club_invite`** (D). `(club_id, id, token_hash, roles text[], kind in ('owner','staff','coach','tester'), created_by_staff | created_by_user, expires_at, used_at, used_by_user)`. Token is random 32 bytes, shown once, stored hashed. Redeeming is done by F02's sign in (assumption A-5 for F02 Q13).
+**`club_invite`** (D). `(club_id, id, token_hash, kind in ('owner','staff','coach','tester'), roles text[], bound_line_user_id null, created_by_staff | created_by_user, expires_at, used_at, used_by_user)`. The token is 32 random bytes, stored hashed, and **never returned after creation** (SR-01). A CHECK ties kind to roles: `owner` gives `{owner, player}`, `tester` gives `{player}` only, and `staff` and `coach` invites can be created by an owner only; the platform may create only `owner` and `tester` invites. Every club person also has the Player role (decision D115). Redemption is one atomic statement, `UPDATE club_invite SET used_at = now(), used_by_user = $2 WHERE token_hash = $1 AND used_at IS NULL AND expires_at > now() AND (bound_line_user_id IS NULL OR bound_line_user_id = $3) RETURNING ...`, so two parallel redemptions have one winner. **An owner invite is bound to the owner's LINE ID entered in P2 step 1 and is single use for granting the role (decision D122).** After redemption, the same link opened by the same bound LINE user only opens the club (return visits, decision D102); any other LINE user is refused. Tester invites are long lived (D102). Expiry comes from `platform.config.invite_ttl_hours` (the value is for a person to set; 72 hours for an owner invite is a proposal). Redeeming is done by F02's sign in.
 
 **`club_tester`** (D). `(club_id, user_id, kind in ('owner','boq_tester'), added_by_staff, added_at, removed_at)` (PLAT-07-AC5). Every change goes to P6.
 
@@ -89,12 +89,13 @@ Conventions are FA §2.1 (uuid keys, composite foreign keys, `club_id` first in 
 
 - `app.set_club_status(club, to, reason, actor)`: checks the transition table (§4.1) and preconditions, writes `club_status_change`, updates `club`, all in one transaction. The only writer of `club.status`; `club.status` is not updatable by the plain table grants.
 - `app.go_live(club, actor)`: runs inside `set_club_status` for `testing -> live`: verifies every `launch_check` is `pass`, then calls `go_live_purge()` (§7.6) in the same transaction, then sets `live`. Any failure rolls the whole thing back and the status stays Testing (PLAT-07-AC4).
+- `app.set_support_window(club, on)`: the only writer of `club.allow_booq_changes_until` and `allow_booq_changes_set_at`; called from the owner's route; sets `now() + interval '24 hours'` (SR-02). `app.claim_confirm(imported_user, claimant_user)`: front desk or owner confirms an imported-player claim (§7.4, decision D105).
 - `app.pause_club(club, reason, actor)` and `app.resume_club(club, reason, actor)` (§4.2).
 - `app.has_feature(club, key)` for `route()`.
 - `platform.bump_usage(...)`.
 - `audit.write(...)` and `audit.note(...)` (FA §8.1), and the generic trigger function.
 
-All are `SECURITY INVOKER` except `bump_usage`, `audit.*` and `go_live_purge`, which are `SECURITY DEFINER` with a fixed search path and are listed in `packages/db/definer-functions.ts` for review.
+All are `SECURITY INVOKER` except `bump_usage`, `audit.*`, `go_live_purge`, `anonymise_user`, `read_secret`, `set_support_window`, `claim_confirm` and F03's booking functions (F03 §4.3, SR-07), which are `SECURITY DEFINER` with a fixed search path, take the club from `app.club_id()` and never from an argument, check `current_user` (never a session setting) for any fence, and are listed in `packages/db/definer-functions.ts` and tested.
 
 ## 4. State machine: club status (PLAT-01, PLAT-03)
 
@@ -115,7 +116,7 @@ A specialist acts only on assigned clubs; a request for another club returns 404
 
 ### 4.2 Pause and resume
 
-`pause_club`: in one transaction set status `paused`, insert `club_pause`, insert an outbox row for the owner's LINE (template key from the L set, new key listed in §13), audit and P6. While `paused`, `claim_occupancy` and the checkout routes refuse with `club_paused` (FA §3.3). Existing bookings and holds are untouched: holds run to their normal end; reminders and releases keep running (PLAT-03-AC6). The player app and club admin read `club.status` and the open `club_pause` to show the paused states and banner (PLAT-03-AC4, AC5, AC8).
+`pause_club`: in one transaction set status `paused`, insert `club_pause`, insert an outbox row for the owner's LINE (template key from the L set, new key listed in §13), audit and P6. While `paused`, `claim_occupancy` and the checkout routes refuse with `club_paused` (FA §3.3). Existing bookings and holds are untouched: holds run to their normal end; reminders and releases keep running (PLAT-03-AC6). The player app and club admin read `club.status` and the open `club_pause` to show the paused states and banner (PLAT-03-AC4, AC5, AC8). While Paused, **the owner and staff may still move, add a coach to, cancel and mark a no show on existing bookings (decision D107)**; a late payment is not used to confirm a booking in a Paused club and goes to the wallet (D107, D109).
 
 `resume_club`: close `club_pause`, set `live`, then run every handler registered in `app.pause_handlers` with `(club, paused_at, resumed_at)`. F06 registers the package and wallet expiry shift there, writing one ledger movement per package with the reason (PLAT-03-AC7). Until F06 exists the registry is empty and resume only changes status. A wallet without an expiry has nothing to shift (assumption A-7 for requirements Q11). A payment started before the pause is handled by F05's PAY-03 rules as if no pause (PLAT-03-AC9; assumption A-8).
 
@@ -162,7 +163,7 @@ Authentication: Supabase Auth email plus second factor; the session carries `sta
 | `GET /clubs/{id}` | admin, assigned specialist | P3: checklist, missing items and who owes them, owner contact, aggregate counts |
 | `POST /clubs/{id}/status` `{to, reason?}` | admin; specialist for Draft, Testing, Live | `set_club_status`; pause and resume are separate |
 | `POST /clubs/{id}/pause`, `POST /clubs/{id}/resume` `{reason}` | **admin only** | §4.2 |
-| `POST /clubs/{id}/owner-invite` | admin, assigned specialist | Creates the owner invite link (shown once) and logs it |
+| `POST /clubs/{id}/owner-invite` | admin, assigned specialist | Needs the owner's LINE ID from step 1 (it binds the invite, decision D122). The **system emails the link to `club.owner_email`**; the link is never returned to the staff member. The console shows status only (sent, opened, redeemed) and who redeemed it (SR-01) |
 | `GET /clubs/{id}/support/setup` | admin, assigned specialist | The setup-only projection: hours and courts, products and pricing with add-ons, LINE, payment connections, settings; secrets show `secret_last4` only (D27) |
 | `PUT /clubs/{id}/support/setup/{section}` | as above | Edits; refused when look only. Opens a `support_session` on first use |
 | `GET /clubs/{id}/launch`, `POST /clubs/{id}/launch/{checkKey}/run` | admin, assigned specialist | P4 results as pass or fail; running a check |
@@ -177,7 +178,7 @@ Routes that do not exist anywhere: delete club (D14), cash refund, any route tha
 
 ### 6.1 BOOQ sign in (ROLE-02)
 
-`apps/platform` uses Supabase Auth with password or magic link plus TOTP; a session is created only after the second factor (AC1). The auth user must exist in `platform.platform_staff` with `active = true`; otherwise the session is ended (AC4). A LINE-signed club session is never accepted by the platform app (separate cookie name, separate signing key, separate deployment) and a BOOQ account cannot get a club session, because `app_user` creation requires a LINE verification (AC2, AC3). Sign in, failed sign in, second-factor reset and teammate invite write `platform.audit_log` (AC5). Which factor type and the reset process are requirements Q-C (assumption A-10: authenticator app, reset by another platform admin).
+`apps/platform` uses Supabase Auth with password or magic link plus TOTP; a session is created only after the second factor (AC1). The auth user must exist in `platform.platform_staff` with `active = true`; otherwise the session is ended (AC4). A LINE-signed club session is never accepted by the platform app (separate cookie name, separate signing key, separate deployment) and a BOOQ account cannot get a club session, because `app_user` creation requires a LINE verification (AC2, AC3). Sign in, failed sign in, second-factor reset and teammate invite write `platform.audit_log` (AC5). Which factor type and the reset process are requirements Q-C (assumption A-10: authenticator app, reset by another platform admin). **Service-role key and the Data API (SR-06, decision D124, option 1):** inviting a teammate, resetting a factor and deactivating an account use Supabase's admin API, which needs the service-role key. That key lives in exactly one small separate function, `apps/staff-invite`, which holds it and nothing else; `apps/platform` and every other app hold neither the service-role key nor the anon key. The Data API, GraphQL and Realtime are disabled on the staging and production projects. The lint allows the string `service_role` only under `apps/staff-invite/`. A launch check proves a request with the anon key to `/rest/v1/` fails, and a database test proves `anon` and `authenticated` have no privilege on any object. Migrations run as `booq_owner` in CI and in production. A second factor is reset only by another platform admin and logged in P6 (decision D123).
 
 ### 6.2 Club roles (ROLE-01, ROLE-AC1 to AC6)
 
@@ -186,13 +187,16 @@ Routes that do not exist anywhere: delete club (D14), cash refund, any route tha
 | Permission | Player | Coach | Front desk | Accountant | Owner |
 |---|---|---|---|---|---|
 | `club.read` | yes | yes | yes | yes | yes |
-| `settings.read` | | | | yes | yes |
+| `settings.read` (all settings) | | | | | yes |
+| `settings.business.read` (business and tax details only) | | | | yes | yes |
 | `settings.write`, `club.business.write`, `hours.write`, `resource.write` | | | | | yes |
 | `staff.manage`, `roles.assign`, `support-window.write` | | | | | yes |
 | `audit.read`, `import.run`, `export.run` | | | | | yes |
 | `datarequest.handle` | | | yes | | yes |
 | `customer.contact.read` (phone, date of birth) | | | yes | **no** | yes |
 | `customer.names.read` (names on receipts and reports) | | | yes | yes | yes |
+
+**Every club person also has the Player role (decision D115).** The Accountant reads business and tax settings only (`settings.business.read`); only the Owner has `settings.read` and `settings.write`; only the Owner marks a coach payout paid (F12/F13).
 
 Accountant (decision D35): sees names on receipts and reports, not phone numbers or dates of birth. This is enforced twice: the accountant has no `select` on `app_user`; accountant routes read names through the view `app_user_names (club_id, id, full_name, display_name)`, which has the tenant filter built in; and the permission `customer.contact.read` is refused. A CI test requests phone and date of birth as an accountant through every route and expects them to be absent.
 
@@ -201,10 +205,10 @@ Two layers, as in FA §4.3: `route({permission})` on the server, and row-level p
 ### 6.3 Row-level policies and grants (migration 0008)
 
 - Every club table: the restrictive tenant policy of FA §4.3, `FORCE ROW LEVEL SECURITY`.
-- `club` for `booq_app`: `id = app.club_id()`; writes by owner only through the routes above; `status`, `slug` after Testing, and `allow_booq_changes_until` are not directly writable (functions only).
-- S tables for `booq_platform`: `select` for admin or assigned specialist; `insert/update` only when the club's status is `draft` or `testing`, or `allow_booq_changes_until > now()` (the policy reads the club row; there is no job, it expires by itself). A Paused club is neither, so it is look only (D27).
+- `club` for `booq_app`: `id = app.club_id()`; writes by owner only through the routes above; `status`, `slug` after Testing, `allow_booq_changes_until` and `allow_booq_changes_set_at` are not directly writable (functions only).
+- S tables for `booq_platform`: `select` for admin or assigned specialist; `insert/update` only when the club's status is `draft` or `testing`, or `allow_booq_changes_until > now()` (the policy reads the club row; there is no job, it expires by itself). A Paused club is neither, so it is look only (D27). **Column grants (SR-02):** `booq_platform` has no `UPDATE` on `club.status`, `club.allow_booq_changes_until` or `club.allow_booq_changes_set_at`; a CHECK requires `allow_booq_changes_until <= allow_booq_changes_set_at + interval '24 hours'`; `set_club_status` clears the window on Go live, on pause and on resume. A platform write to `payment_connection`, `line_connection` or `club_secret` on a Live or Paused club creates an **owner notice** (admin banner and a LINE message through the outbox; new keys for the writers) as well as the audit entry; in Draft and Testing no notice is needed.
 - D tables for `booq_platform`: **no grant at all.**
-- `club_secret`: `booq_platform` and `booq_app` get `insert, update`, never `select`, and never see the plaintext or the master key; reads go through a `SECURITY DEFINER` function `app.read_secret(club, kind)` callable only by `booq_worker` and the payment/LINE adapters' role (listed in `definer-functions.ts`).
+- `club_secret` (SR-03): `booq_platform` and `booq_app` get `insert, update`, never `select`. The ciphertext is an **asymmetric envelope**: the platform app holds only the public key and can only encrypt; only `apps/web` and `apps/worker` hold the private key. Reads go through the definer function `app.read_secret(kind)`, which has **no club argument**: it reads `app.club_id()` and fails when it is null, and it applies an allow-list by calling role: `booq_app` (the Beam callback route, the Pay route and `createQr`, all in `apps/web`) may read `beam_*`; `booq_worker` (reconcile and the LINE sender in `apps/worker`) may read `beam_*` and `line_*`; `booq_platform` cannot execute it. One module `packages/secrets` is the only code that imports the key or calls the function (a lint enforces it). Each read increments a per-club counter (never the value) for monitoring.
 - `audit_entry`, ledgers: no `insert` for any app role; only the definer writer functions insert (FA §8.1).
 - `platform.club_usage_daily`: `select` for `booq_platform` and `booq_app` (own club only); no direct `insert`.
 
@@ -212,7 +216,7 @@ Two layers, as in FA §4.3: `route({permission})` on the server, and row-level p
 
 ### 7.1 Creating a club (Flow J)
 
-P2 step 1 creates a Draft club with the chosen template copied into the club (§9). Steps 2 to 5 are saved at any time. P3 invites the owner with a `club_invite` of kind `owner`; the owner signs in with LINE (F02), the invite creates `app_user` with role `owner` and the club audit entry. The owner finishes steps 6 to 9 in A0 (F11).
+P2 step 1 creates a Draft club with the chosen template copied into the club (§9). Steps 2 to 5 are saved at any time. P3 invites the owner with a `club_invite` of kind `owner`, bound to the owner's LINE ID (decision D122) and emailed by the system to `club.owner_email` (SR-01); the owner signs in with LINE (F02), the invite creates `app_user` with roles `owner` and `player` and the club audit entry. Redemption writes P6 and the club audit entry with the redeemer's LINE display name and the phone typed at C2; P3 shows both beside `owner_phone`. A phone that does not match `club.owner_phone` marks the club "owner not verified" and Go live is refused (launch check `owner_verified`) until a platform admin **other than the one who created the invite** confirms with the owner by another channel. After an owner invite exists, a change to `club.owner_*` needs a second platform admin and is logged. The owner finishes steps 6 to 9 in A0 (F11).
 
 ### 7.2 Support session
 
@@ -227,7 +231,7 @@ The first read or write by BOOQ staff on a club opens a `support_session` (mode 
 1. `POST /imports` with kind and file. The file is parsed into `import_row` staging rows in one request; the raw file is never stored (AC10). Size and row limits are a platform config (no value invented here).
 2. Validation runs on every row; errors are listed per row with a reason **code** (the client maps codes to locale keys). Any error: status `failed`, nothing saved, the owner fixes the file and uploads again (AC1, AC2).
 3. A valid file shows a preview with counts; `POST /imports/{id}/confirm` saves in one transaction: players, customer packages and ledger movements with reason `import` and the owner as actor; **never bookings** (AC18, AC3). A club ID in the file is ignored (AC5). Amounts are read as THB and stored as satang; dates as Bangkok dates (AC9).
-4. Players are created without a LINE user ID, inactive until first sign in; at first LINE sign in F02 matches them on normalised phone (AC7). Two matches or none: not matched automatically (assumption A-12 for Q16: the player gets a normal new profile and staff see an "unmatched import" flag). Duplicate phones are flagged (D11).
+4. **Imported players are claimed, never matched silently (decision D105, SR-05).** Players are created without a LINE user ID, in state `unclaimed`; their imported credits and wallet movements are inert (nobody can sign in as them). At first LINE sign in F02 compares the typed phone with unclaimed records; a single match creates a `claim_request`, and the person continues as a **new player** who sees nothing of the imported record. The front desk or owner confirms or rejects the claim in A6 (the screen shows the imported name beside the typed name and phone and the staff member checks the person at the counter). `app.claim_confirm` then moves the imported movements to the claimant with paired append-only ledger rows (reason `import_transfer`, a transfer out and a transfer in), marks the imported record `merged_into`, and writes an audit entry. A sign in matching no record, or more than one, is a new player. Unclaimed imports are listed to staff; their retention is a Security question (SR-05 Q-07). Duplicate phones are flagged (D11).
 5. One audit entry for the import (file name, counts) and one per created balance (AC6). Package expiry from the file is kept as given (assumption A-13 for Q15); recomputing from validity is rejected as a surprise to the owner.
 6. Import is refused for every role except the owner, including BOOQ support (AC8).
 
@@ -238,8 +242,8 @@ BOOQ staff `POST /clubs/{id}/exports` inserts `export_request`; a `booq_worker` 
 ### 7.6 Test mode (PLAT-07, FA §2.6)
 
 - `app.test_tables (table_name, delete_order)` lists every table that carries `is_test`. Each later feature's migration adds its tables here; CI fails if a table has the column and is not registered. F01 registers its own.
-- A `BEFORE INSERT` trigger sets `is_test` from the club status at insert time; the column cannot be updated (AC1).
-- `go_live_purge(club)` deletes only `is_test` rows of that club in `delete_order`, in the Go live transaction, and the append-only triggers allow it only through that function (FA §2.6). It writes one non-test audit entry with row counts and one P6 entry (AC8).
+- A `BEFORE INSERT` trigger sets `is_test` from the club status at insert time on the registered tables; the column cannot be updated (AC1). **Two exceptions (decisions D100, D101):** an `app_user` row is `is_test` only when it is created through a **tester** invite, so owner, staff and coach accounts are never test rows and survive Go live; and `audit_entry` is never flagged on its own: an entry is flagged only when its subject row is test data, so a setting, price or role changed in Testing keeps its audit entry after Go live.
+- `go_live_purge(club)` deletes only `is_test` rows of that club in `delete_order`, in the Go live transaction. The append-only triggers allow the exception only when **`current_user` is the purge function's dedicated owner role**, never because of a session setting (SR-15), and only for `is_test` rows, so audit history of live data and every owner, staff and coach account stay (D100, D101). The one-active-owner constraint cannot trip, because owners are never purged. It writes one non-test audit entry with row counts and one P6 entry (AC8). Required tests: an owner invited and signed in during Testing survives Go live; a setting changed in Testing keeps its audit entry after Go live; the purge never touches a non-test ledger or audit row.
 - Testers (AC5): the owner and BOOQ testers in `club_tester`. A BOOQ tester receives a tester invite link, signs in with LINE and gets a normal player account flagged as a tester; no BOOQ credential is involved (ROLE-02-AC2). F02's sign-in gate uses `club_tester`.
 - BOOQ staff see pass or fail per check only (`launch_check`); the P4 page never queries D tables (AC6). Test-flagged rows are excluded from all reports, the daily close, receipt lists and platform counts, and show only in test-mode views (AC7, decision D33; mechanism in FA §2.6).
 - Test payments use Beam's Playground only (D26, AC9).
@@ -253,7 +257,7 @@ A player's `POST /me/data-requests` stores the request and an audit entry. Staff
 
 All of FA §8. F01 specifics:
 
-- Audited F01 tables: `club`, `club_feature`, `club_setting`, `location`, `resource`, `opening_hours`, `line_connection`, `payment_connection`, `club_secret` (write event only, never values, never the ciphertext), `app_user` (including date of birth), `app_user_role`, `club_invite`, `club_tester`, `club_pause`, `club_status_change`, `import_job`, `data_export`, `data_request`.
+- Audited F01 tables: `club`, `club_feature`, `club_setting`, `location`, `resource`, `opening_hours`, `line_connection`, `payment_connection`, `club_secret` (write event only, never values, never the ciphertext), `app_user` (including date of birth, which the owner can see changed, decision D12), `app_user_role`, tags, `club_invite`, `club_tester`, `club_pause`, `club_status_change`, `import_job`, `data_export`, `data_request`. **Personal values in an entry** (audited `full_name`, `phone`, `date_of_birth`, `line_user_id`, free-text notes) are stored only in the two columns `pii_old` and `pii_new`; every other column of `audit_entry` is immutable (SR-04, decision D104).
 - `route()` sets the transaction-local `reason` where the screen asks for one (status change, pause, resume, role change, setting change). A staff ledger movement without a note is refused by the table CHECK (PLAT-04-AC3).
 - A change that cannot write its audit entry rolls back (AC2): the trigger runs in the same transaction, and a failure raises.
 - P6 events written by F01: club created, setup section changed, connection tested, status change, pause, resume, support session opened and closed, support edit, tester list change, owner invite created, export started, purge run, BOOQ staff account events and every sign in and failure (ROLE-02-AC5).
@@ -276,7 +280,7 @@ Whether the P5 actions New template, Duplicate and Edit exist in v1 is requireme
 
 ### 9.3 Go live checks
 
-The check keys are data rows per template (`launch_check.check_key`) so the list can change without code. The spec's P4 list is requirements Q7 (open). Until it is answered the design implements these assumed checks (A-19): LINE connection test passed, the **pay-tap limit is set** (decision D61, F03 §4.8), and Beam **key swap** (decision D32: the club's live Beam key set is entered and active, the test key set is no longer used, and a smoke test passes; see A-23), at least one product with a price, every setting the template marks `required` is set (BOOK-05 and the other TBD settings are not `required`), owner signed in, at least one successful test booking on the Playground, no open launch failure. For a Beam club the fake-slip tests of H-P4-Launch are replaced by Beam tests (Gaps A2).
+The check keys are data rows per template (`launch_check.check_key`) so the list can change without code. Decision D108 and the review round fix the list: LINE connection test passed; the **pay-tap limit is set** (decision D61, F03 §4.8); Beam **key swap** with its smoke test (decision D32: the club's live Beam key set is entered and active, the test key set is no longer used; see A-23); **receipt prefix set** in P2 step 1 (decision D106); **owner signed in** and **owner verified** (§7.1, SR-01); at least one product with a price; every setting the template marks `required` is set (BOOK-05 and the other TBD settings are not `required`); **one completed test booking**; no open launch failure. For a Beam club the fake-slip tests of H-P4-Launch are replaced by Beam tests (Gaps A2).
 
 ## 10. Settings registry
 
@@ -322,7 +326,7 @@ These need a person's yes or no; none changes the tables much.
 | A-2 | Data model allows several locations, no add-location UI | Q26 |
 | A-3 | A club keeps at least one active owner once it leaves Draft; a user keeps at least one role | Q-B |
 | A-4 | `user_consent` holds notice version, language and time | Q20 |
-| A-5 | Invites are created in F01 (`club_invite`) and redeemed in F02's sign in; screens by F11 and F15 | F02 Q13 |
+| A-5 | Invites are created in F01 (`club_invite`) and redeemed in F02's sign in, owner invites bound to the owner's LINE ID and emailed by the system (D122, SR-01); screens by F11 and F15 | F02 Q13 |
 | A-6 | No backward status moves in v1 | Q4 |
 | A-7 | A wallet with no expiry is not touched on resume | Q11 |
 | A-8 | A payment started before a pause is handled by PAY-03 as if no pause | Q12 |
@@ -382,3 +386,23 @@ All tests run against a real Postgres (FA §4.5, decision D30); Playwright for t
 ## 15. Not decided here
 
 D10 (consent for players under 18) is F02's. The LINE cap is F10's. The hosting legal check is deferred by the user. The questions in §12 are assumptions to confirm; the open items in the requirements that §12 does not list (Q-D which aggregate counts, beyond P1's 30-day bookings, which is the only count designed) stay open.
+
+
+## 16. Review amendments, 30 Oct 2026 (decisions D100 to D124)
+
+Applied after the Reviewer's `docs/review/spec-consistency.md` and Security's `docs/security/design-review-F01-F02-F03.md`. These supersede any earlier text in this file.
+
+| Finding or decision | Change | Where |
+|---|---|---|
+| SR-01, D122 | Owner invite bound to the owner's LINE ID, emailed by the system, never returned to staff; atomic single-use redemption; kind-to-roles CHECK; second admin for owner contact changes; `owner_verified` launch check | §3.2, §5.2, §7.1, §9.3 |
+| SR-02 | Column grants, `set_support_window`, 24 hour CHECK, window cleared on Go live, pause and resume, owner notice on platform writes to connections and secrets | §3.3, §6.3 |
+| SR-03 | `read_secret(kind)` without a club argument, role allow-list, asymmetric envelope, `packages/secrets` | §6.3 |
+| SR-04, D104 | Personal values only in `pii_old` and `pii_new`; fenced anonymise path; `audit_erasure` row | §7.7, §8 |
+| SR-05, D105 | Imported players claimed only after front desk confirmation; paired transfer rows | §7.4 |
+| SR-06, D124 | Service-role key only in `apps/staff-invite`; Data API off; tests | §6.1 |
+| F01-1, F01-2, D100, D101 | Purge removes only tester-kind rows and never audit history of live data | §7.6 |
+| F01-3, F01-4, D102, D103 | See F02 design §6.1 and §6.4 | F02 |
+| D106 | Yearly receipt series per club; prefix required before Go live | §9.3, FA §2.4 |
+| D107, D108, D109, D115 | Paused-club management, Go live list, late-payment refusals, Player role for everyone, Accountant business settings only | §4.2, §6.2, §9.3 |
+
+Conflict reported: D122 says the owner invite is single use and D102 says it stays valid for return visits. Reconciled as written in §3.2: single use for granting the role, and the same link by the same bound LINE user only opens the club afterwards.
