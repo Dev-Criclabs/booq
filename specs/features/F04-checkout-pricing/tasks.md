@@ -63,7 +63,7 @@ Migration numbers are 0301 to 0399 and rise with task order (the migrator refuse
   Receipt: calls `app.issue_receipt` through `app.payment_ports` (the F13 issue_receipt port; a fake until F13 exists), in this task (F13 design; orchestrator 30 Oct).
 - [x] **F04-T13-db** Migration 0320: `app.customer_dob_for_pricing(customer) returns date` (definer, granted to `booq_app`, owner and front desk only): the date of birth or null, for staff Pay to pick the price group; `customer: not found` for a person who is missing, of another club, inactive, anonymised or an unclaimed import. IDs: R2-AC1, ROLE-01-AC4, D12, D35, CC-1. Role: Architect · Deps T12b-db · Size: S
   Tests first: `customer-dob-for-pricing.test.ts`.
-- [ ] **F04-T13** `GET /orders/{id}` and the staff routes `POST /staff/orders/quote` and `/pay`. IDs: R7-AC2, ROLE-01-AC4, CC-2. Role: BE-C · Deps T12d · Size: S
+- [x] **F04-T13** `GET /orders/{id}` and the staff routes `POST /staff/orders/quote` and `/pay`. IDs: R7-AC2, ROLE-01-AC4, CC-2. Role: BE-C · Deps T12d · Size: S
   Tests first: own or staff only; the snapshot is unchanged after prices and names change; staff booking as a player pays as a player.
   Also (moved from F03-T22, which no longer has `POST /staff/bookings`): a staff booking awaiting payment holds the slot for the hold time (D43).
 - [ ] **F04-T14** Owner setup routes `/setup/price-groups`, `/court-prices`, `/coach-tier-prices`, `/add-ons`, `/partners`, `/promo-codes`, audited, new orders only. IDs: R3-AC8, PROMO-01-AC12. Role: BE-C · Deps T05 · Size: M
