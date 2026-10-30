@@ -53,7 +53,7 @@ Depends on: F01 T03 to T07 (database, context, tenant suite), T08 (settings), T1
 - [x] **F03-T18** Migration 0206 policies and grants, registry entries, tenant isolation and platform blind suites extended to F03 tables. IDs: CC-1, PLAT-02-AC1, PDPA-01-AC1. Role: Arch · Deps T01, T02, F01-T07, T18 · Size: S
   Tests first: club A cannot see club B bookings; `booq_platform` is denied on every F03 table.
   - Built (Architect): `0221_booking_policies.sql` (the design's 0206). Reads only: staff roles read the club's orders, bookings and occupancy; a player their own orders and bookings; a coach the bookings that name them; the worker reads in the club's context. No write grant to any app role (definer functions only). `booking-policies.test.ts` covers tenant isolation, roles, no-context, direct writes refused, and BOOQ staff blind to every F03 table and both views.
-- [ ] **F03-T19** `hold_release` worker task: batch by order, per-order club-context transaction, lag heartbeat. IDs: BOOK-03-AC5, AC6. Role: BE-B · Deps T06, F01-T34 · Size: S
+- [x] **F03-T19** `hold_release` worker task: batch by order, per-order club-context transaction, lag heartbeat. IDs: BOOK-03-AC5, AC6. Role: BE-B · Deps T06, F01-T34 · Size: S
   Tests first: orders release together; the job after a lazy release does nothing; the lag metric is recorded.
 
 ## C. Routes
