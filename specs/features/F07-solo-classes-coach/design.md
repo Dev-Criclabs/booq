@@ -59,7 +59,7 @@ F07 uses the number block 0801 to 0899 (assumption A-1; `docs/proposals/migratio
 
 **`coach_pay`** (D, owner only; **this is the table that holds the coach pay fields**): `club_id`, `coach_id`, `monthly_base_satang integer null` (null for freelancers), `solo_pay_kind` in (`fixed`, `percent`) null, `solo_pay_value integer null` (satang when fixed, basis points when percent, applied to the coaching portion only), `group_pay_kind null`, `group_pay_value integer null`. Null means the owner has not set it; no default is ever written (HO open items). F13's payout functions and F12's K6 read it; the coach reads only the amounts F13 computes for them, never this table (CPORT-06); front desk, the Accountant (payouts come through F13 views) and BOOQ staff cannot read it. Whether F12 needs more fields is Q-2.
 
-**`booking_coach_add`** (D): `club_id`, `order_id`, `booking_id`, `coach_id`, `status` in (`pending`, `confirmed`, `released`), `created_at`. One row for the order made by Add a coach (§5.5).
+**`booking_coach_add`** (D): `club_id`, `order_id`, `booking_id`, `coach_id`, `status` in (`pending`, `confirmed`, `released`), `hold_expires_at timestamptz` (set while `pending`, null otherwise: the booking is already confirmed, so the hold of the add order cannot sit on a booking row; 0806, orchestrator approved 30 Oct), `created_at`. One row for the order made by Add a coach (§5.5).
 
 **`coach_substitution`** (D, append only): `club_id`, `id`, `booking_id`, `from_coach_id`, `to_coach_id`, `by_staff_id`, `reason` (`leave`, `closed_time`, `inactive`, `other`), `created_at`. `revoke update, delete`, trigger, FORCE RLS (as FA §2.3). It is the fact F09 reads for "this solo class had its coach changed" (CANCEL-01-AC18).
 
