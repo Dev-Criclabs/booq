@@ -17,7 +17,7 @@ Depends on F01 tasks: T03 to T07 (database, context, tenant suite), T10 and T11 
   Tests first: the same person at two clubs has two rows; unique on club and LINE id; a shared phone is allowed and flagged on both records.
 - [ ] **F02-T02** Migration 0102: `auth_session` (hash only), pending state with a 30 minute life, housekeeping purge. IDs: LINE-01-AC13, AUTH-02-AC3. Role: BE-P · Deps T01, F01-T34 · Size: S
   Tests first: the table never holds a token; an expired pending row is purged; a revoked session is refused at once.
-- [ ] **F02-T03** Log redaction for `idToken`, `access_token`, `Authorization`, with a test that scans captured logs. IDs: LINE-01-AC13. Role: BE-P · Size: S
+- [x] **F02-T03** Log redaction for `idToken`, `access_token`, `Authorization`, with a test that scans captured logs. IDs: LINE-01-AC13. Role: BE-P · Size: S
   Tests first: a request carrying a token produces no log line containing it.
 
 ## B. Verifying and signing in
