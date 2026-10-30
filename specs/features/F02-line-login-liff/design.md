@@ -186,6 +186,8 @@ Columns added to F01's `app_user`: `display_name`, `full_name` (null until conse
 
 Existing audit trigger covers `app_user` including `date_of_birth`.
 
+**Phone convention (one rule for sign-up, import and claim).** `phone` keeps what was typed (or the international form from `normalizePhone`, with `+`); `phone_normalized` is **digits only**, with a Thai number in international form without the plus (`66812345678`): the value `normalizePhone` returns with the `+` removed. The column CHECK is `^[0-9]{6,15}$`. F02-T09 sign-up, the player import (F01-T31) and `app.request_claim` all compare and store `phone_normalized` in that form, so the match is an exact equality. A claim also needs the imported record to be `claim_state = 'unclaimed'` (migration 0103): an imported player has no LINE id and that state, so an ordinary player who has not signed in yet can never be matched.
+
 ### 7.2 Sessions (migration `0102_auth_session.sql`)
 
 `auth_session (club_id, id, token_hash, user_id null, line_user_id, state in ('pending_profile','active','revoked'), created_at, last_seen_at, expires_at, revoked_at)`; class D. Server-side sessions let us end a session at once when a role is removed or a person is deactivated (ROLE-02, F01 §6.1). The pending state holds the LINE id and display name for at most the pending lifetime and a housekeeping task purges expired rows (FA §5.4). Tokens are never stored (AC13), only the session cookie's hash.
