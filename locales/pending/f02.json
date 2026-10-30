@@ -15,7 +15,9 @@
     "P-new.profile_dob_future": "Your date of birth cannot be in the future.",
     "P-new.profile_level_invalid": "Please choose one of the levels shown.",
     "P-new.profile_language_invalid": "Please choose Thai or English.",
-    "P-new.profile_already_registered": "You already have an account at this club."
+    "P-new.profile_already_registered": "You already have an account at this club.",
+    "P-new.language_toggle_th": "ไทย",
+    "P-new.language_toggle_en": "EN"
   },
   "th": {
     "P-new.signin_failed": "เข้าสู่ระบบด้วย LINE ไม่สำเร็จ กรุณาลองอีกครั้ง",
@@ -32,6 +34,8 @@
     "P-new.profile_dob_future": "วันเกิดต้องไม่เป็นวันในอนาคต",
     "P-new.profile_level_invalid": "กรุณาเลือกระดับที่แสดงอยู่",
     "P-new.profile_language_invalid": "กรุณาเลือกภาษาไทยหรืออังกฤษ",
-    "P-new.profile_already_registered": "คุณมีบัญชีที่สโมสรนี้อยู่แล้ว"
+    "P-new.profile_already_registered": "คุณมีบัญชีที่สโมสรนี้อยู่แล้ว",
+    "P-new.language_toggle_th": "ไทย",
+    "P-new.language_toggle_en": "EN"
   }
 }

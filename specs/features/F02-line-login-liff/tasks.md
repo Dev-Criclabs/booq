@@ -58,7 +58,7 @@ Depends on F01 tasks: T03 to T07 (database, context, tenant suite), T10 and T11 
   Tests first: unlimited changes; future date refused; an adult adds a date of birth with no price effect; a bought Student package stays valid (assertion contract with F06); each change has an audit entry with old and new.
 - [ ] **F02-T15** Date of birth history route for the owner only, filtering audit entries. IDs: AUTH-02-AC21, AC24, decision D55. Role: BE-P · Deps T14 · Size: S
   Tests first: owner sees the changes; front desk, accountant and the player do not.
-- [ ] **F02-T16** Language handling: detect the LINE app language, guest cookie, saved at first sign in, Profile toggle, shared toggle component. IDs: AUTH-02-AC25 to AC27. Role: BE-P with FE-P · Deps T09, T14 · Size: M
+- [x] **F02-T16** Language handling: detect the LINE app language, guest cookie, saved at first sign in, Profile toggle, shared toggle component. IDs: AUTH-02-AC25 to AC27. Role: BE-P with FE-P · Deps T09, T14 · Size: M
   Tests first: LINE language starts the right language; guest choice is saved at first sign in; Profile toggle changes every screen and later messages.
 
 ## D. Friend status and webhook

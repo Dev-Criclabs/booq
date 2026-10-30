@@ -11,10 +11,10 @@ export function createDbDirectory(db: Db): SignInDirectory {
   return {
     async clubBySlug(slug) {
       const row = (
-        await db.withClubTx(NO_CLUB, (tx) => tx.query('select club_id, status, liff_id, login_channel_id from app.club_sign_in_target($1)', [slug]))
-      ).rows[0] as { club_id: string; status: string; liff_id: string | null; login_channel_id: string | null } | undefined;
+        await db.withClubTx(NO_CLUB, (tx) => tx.query('select club_id, status, liff_id, login_channel_id, default_language from app.club_sign_in_target($1)', [slug]))
+      ).rows[0] as { club_id: string; status: string; liff_id: string | null; login_channel_id: string | null; default_language: string | null } | undefined;
       // A club with no LINE connection yet cannot sign anyone in.
-      return row && row.login_channel_id && row.liff_id ? { clubId: row.club_id, status: row.status, liffId: row.liff_id, loginChannelId: row.login_channel_id } : null;
+      return row && row.login_channel_id && row.liff_id ? { clubId: row.club_id, status: row.status, liffId: row.liff_id, loginChannelId: row.login_channel_id, defaultLanguage: row.default_language ?? undefined } : null;
     },
     async personByLineId(tx, lineUserId) {
       const row = (await tx.query('select id, active from app.person_by_line_id($1)', [lineUserId])).rows[0] as { id: string; active: boolean } | undefined;

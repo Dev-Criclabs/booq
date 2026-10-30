@@ -14,6 +14,8 @@ export interface ClubTarget {
   clubId: string;
   status: string;
   liffId: string;
+  /** The club's default language (th or en), for a first sign-in that brings no language of its own. */
+  defaultLanguage?: string | undefined;
   /** Server side only: the channel an ID token must have been issued for. Never in a response. */
   loginChannelId: string;
 }

@@ -28,3 +28,4 @@ export { createPublicConfigService, type PublicConfig, type PublicConfigResult }
 export { createProfileService, type ProfileOptions, type ProfileResult } from './liff/profile';
 export { safeReturnPath } from './liff/return-path';
 export { serveRoutes, type ServeContext, type ServeDeps, type ServeSource } from './serve';
+export { chooseLanguage, LANG_COOKIE, LANG_COOKIE_SECONDS, parseLangCookie, parsePreferredLanguage, serializeLangCookie, type Lang } from './liff/language';
