@@ -9,3 +9,4 @@ export * from './test-data';
 export * from './reports/registry';
 export * from './booking';
 export * from './profile';
+export * from './checkout';
