@@ -8,7 +8,7 @@ Depends on: F01 T09 (setup tables), T12 (people), T13 (route wrapper), T18 (gran
 
 ## A. Tables, ledgers, views
 
-- [ ] **F06-T01** Migration 0501: `package_product` (F04 lists it but no F04 migration creates it, so F06 does; class S, with a foreign key from `order_line.package_product_id`), `customer_package` (product snapshot, immutable `credits_total`, `purchase_date`, `expires_at`, unique `(club_id, order_id, product_id)`), `package_extension`, `wallet_account`. IDs: PKG-02-AC1, AC4, CC-1. Role: BE-C · Deps F04-T03 (`order_line`), F01-T12 · Size: M
+- [x] **F06-T01** Migration 0501: `package_product` (F04 lists it but no F04 migration creates it, so F06 does; class S, with a foreign key from `order_line.package_product_id`), `customer_package` (product snapshot, immutable `credits_total`, `purchase_date`, `expires_at`, unique `(club_id, order_id, product_id)`), `package_extension`, `wallet_account`. IDs: PKG-02-AC1, AC4, CC-1. Role: BE-C · Deps F04-T03 (`order_line`), F01-T12 · Size: M
   Tests first: a package line must name a product of the same club; `credits_total` cannot be updated; a second grant row for the same order and product is refused; every table has its class and club columns; another club's package is not reachable.
 - [ ] **F06-T02** Migration 0502: `credit_ledger` and `wallet_ledger` as FA §2.3 (reasons, sign rules, `payment_id`, dedupe keys, staff note checks), append-only by revoke, trigger and FORCE RLS, deferred `balance >= 0` triggers. IDs: PKG-01-AC1 to AC3, AC5, AC7, D83. Role: BE-C · Deps T01 · Size: M
   Tests first: `UPDATE` and `DELETE` fail as every role including the owner; a staff row without a note is refused; an `adjust` below zero is refused; the reason set equals the D78 list (and `import_transfer` only after T08).
@@ -81,3 +81,9 @@ Depends on: F01 T09 (setup tables), T12 (people), T13 (route wrapper), T18 (gran
 T01 to T03 first, then T04, T06a, T06b, T07, T05, T08, T09, T10, T11, T12 (the order of the migration numbers), then T13 and T14, T15 and T16, T21 before the screens, then the screens, then F. About 25 tasks, each under a day.
 
 **Acceptance criteria closed by other features.** R1-AC6 (a mixed payment cancelled 12 hours or more ahead returns credit to the package and money to the wallet with reason `refund`) and R1-AC7 (a club closure returns full value) are closed by the F09 task list; R1-AC10 (a solo credit covers the coaching line only) is closed by the F07 task list. Those lists are not written yet, so these three are marked **waiting** in the T24 sweep; F06 supplies `wallet_credit`, `wallet_return` and `credit_return` and F09 and F07 call them. F06 does not edit F07 or F09 code.
+
+## Follow-up added by F09 (gate 3 of that feature, 30 Oct 2026, D158)
+
+- [ ] **F06-T25** Migration 0515: `app.wallet_return_line(order_line, reason)`: returns the wallet spend of one order line (a one hour cancel needs one line; `wallet_return(order)` returns every spend row). IDs: PKG-01-AC8, R1-AC6, AC7, D158. Role: BE-C · Deps T04 · Size: S
+  Tests first: only the named line's spend rows come back; a repeat returns once (key `return:{spend_id}`); a line with no spend returns nothing; a spend of another order is refused.
+
