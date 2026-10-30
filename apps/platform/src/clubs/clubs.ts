@@ -81,9 +81,8 @@ export function createClubService(deps: { db: PlatformDb }) {
         }
         await tx.query(`select platform.write_audit('club.created', $1, 'club', $2, $3::jsonb, null, null)`, [id, id, JSON.stringify({ slug: values['slug'] })]);
         if (templateId !== undefined) {
-          const t = await tx.query<{ r: { template: string; copied: Record<string, number>; pending: string[] } }>('select app.apply_template($1) as r', [templateId]);
-          const r = t.rows[0]?.r;
-          await tx.query(`select platform.write_audit('club.template_applied', $1, 'club', $2, $3::jsonb, null, null)`, [id, id, JSON.stringify({ template: r?.template, copied: r?.copied, pending: r?.pending })]);
+          // The P6 entry for the template is written by app.apply_template itself.
+          await tx.query('select app.apply_template($1)', [templateId]);
         }
       });
     } catch (e) {

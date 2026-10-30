@@ -61,4 +61,6 @@ export const tables: Fragment = {
   'app.template_handlers': { class: 'infra' },
   // the club settings that can exist (F01-T08): written by migrations only
   'app.setting_keys': { class: 'infra' },
+  // which template items a club has been given by a handler (F01-T24 follow-up): only the definer functions write it
+  'public.club_template_copy': { class: 'S' },
 };
