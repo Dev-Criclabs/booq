@@ -35,6 +35,13 @@ describe('the registry and the database agree', () => {
     const keys = (await tdb.query(`select setting_key from app.setting_keys order by setting_key`)).rows.map((r) => r.setting_key);
     expect(keys).toEqual(SETTINGS.map((s) => s.key).sort());
   });
+
+  it('a setting a template must have set (Go live) is one the registry does not allow to stay unset; the slip setting only exists for slip clubs', async () => {
+    const rows = (await tdb.query(`select setting_key, required, slip_only from app.setting_keys order by setting_key`)).rows;
+    expect(rows).toEqual(
+      SETTINGS.map((s) => ({ setting_key: s.key, required: !s.unsetAllowed, slip_only: s.slipOnly === true })).sort((a, b) => a.setting_key.localeCompare(b.setting_key)),
+    );
+  });
 });
 
 describe('PUT /settings/{key}', () => {
