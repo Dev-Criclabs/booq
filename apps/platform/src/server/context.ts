@@ -16,6 +16,9 @@ import { createOwnerService, type InviteMailer } from '../owner/owner';
 import { ownerRoutes } from '../owner/routes';
 import { createTesterService } from '../testers/testers';
 import { testerRoutes } from '../testers/routes';
+import { supportRoutes } from '../support/routes';
+import { createSupportService } from '../support/support';
+import type { Connections } from '../connections/connections';
 import type { PlatformRoute, PlatformSource } from '../http/server';
 
 // The platform console's composition root (F01-T17, T18; D148): wires the database role
@@ -91,6 +94,8 @@ export interface PlatformParts {
   config: PlatformConfig;
   notifier?: OwnerNotifier;
   mailer?: InviteMailer;
+  /** LINE and Beam probes and the secrets public key. Absent until the provider clients exist: the connection sections answer section_unavailable. */
+  connections?: Connections;
   /** Extra route groups, for tests and for the parts added next. */
   extraRoutes?: readonly PlatformRoute[];
 }
@@ -117,6 +122,7 @@ export function createPlatformTable(parts: PlatformParts): PlatformSource {
       }),
       ...ownerRoutes({ owner: createOwnerService({ db, mailer: parts.mailer ?? mailerNotConnected, baseUrl: config.appBaseUrl }) }),
       ...testerRoutes({ testers: createTesterService({ db, baseUrl: config.appBaseUrl }) }),
+      ...supportRoutes({ support: createSupportService({ db, ...(parts.connections ? { connections: parts.connections } : {}) }) }),
       ...(config.healthToken ? healthRoutes({ health: createHealthService({ db, token: config.healthToken }) }) : []),
       ...(parts.extraRoutes ?? []),
     ],
