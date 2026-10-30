@@ -77,7 +77,8 @@ describe('coach tiers and add-ons: null means not for sale (R2-AC3, R3-AC1)', ()
 });
 
 describe('who reads and writes (CC-1)', () => {
-  it('every person of the club reads the prices; only the owner writes; the other club sees none', async () => {
+  it('every person of an open club reads the prices; only the owner writes; the other club sees none', async () => {
+    await tdb.query(`update public.club set status = 'live'`);
     const seen = await web.withClubTx(ctx(PLAYER, ['player']), (tx) => tx.query('select name_en from public.price_group order by name_en'));
     expect(seen.rows).toEqual([{ name_en: 'Adult' }, { name_en: 'Student' }]);
     await expect(web.withClubTx(ctx(PLAYER, ['player']), (tx) => tx.query(`insert into public.add_on (club_id, name_th, name_en) values ($1,'x','x')`, [A]))).rejects.toThrow(/row-level security/);
@@ -95,5 +96,44 @@ describe('who reads and writes (CC-1)', () => {
     const reg = await collectRegistry();
     for (const t of ['price_group', 'court_price_rule', 'coach_tier', 'coach_tier_price', 'add_on']) expect(reg[`public.${t}`]?.class, t).toBe('S');
     expect((await checkTableClasses(tdb.pool, reg)).problems.filter((p) => p.table !== 'app.test_clock')).toEqual([]);
+  });
+});
+
+describe('prices are not readable before the club is open (Reviewer F4-2)', () => {
+  const GUEST = { clubId: A, userId: null, roles: ['guest'], source: 'player_app' as const };
+  const names = (c: typeof GUEST | ReturnType<typeof ctx>) => web.withClubTx(c, (tx) => tx.query('select name_en from public.price_group')).then((r) => r.rows.length);
+  it('a guest or player sees the prices of a Live or Paused club only', async () => {
+    await tdb.query(`update public.club set status = 'live' where id = $1`, [A]);
+    expect(await names(GUEST)).toBe(2);
+    await tdb.query(`update public.club set status = 'paused' where id = $1`, [A]);
+    expect(await names(GUEST)).toBe(2);
+    await tdb.query(`update public.club set status = 'testing' where id = $1`, [A]);
+    expect(await names(GUEST)).toBe(0);
+    expect(await names(ctx(PLAYER, ['player']))).toBe(0);
+    await tdb.query(`update public.club set status = 'draft' where id = $1`, [A]);
+    expect(await names(GUEST)).toBe(0);
+    expect(await names(ctx(PLAYER, ['player']))).toBe(0);
+  });
+  it('in Testing the club’s testers see them; staff roles see them in every status', async () => {
+    await tdb.query(`update public.club set status = 'testing' where id = $1`, [A]);
+    await tdb.query(`insert into public.club_tester (club_id, user_id, kind) values ($1,$2,'boq_tester')`, [A, PLAYER]);
+    expect(await names(ctx(PLAYER, ['player']))).toBe(2);
+    expect(await names(ctx(OWNER, ['owner', 'player']))).toBe(2);
+    await tdb.query(`update public.club set status = 'draft' where id = $1`, [A]);
+    expect(await names(ctx(OWNER, ['owner', 'player']))).toBe(2);
+    expect(await names(ctx(PLAYER, ['player']))).toBe(0);
+  });
+  it('the same rule holds for every price table', async () => {
+    await tdb.query(`insert into public.court_price_rule (club_id, price_group_id, price_satang) values ($1,$2,50000)`, [A, ADULT]);
+    await tdb.query(`insert into public.coach_tier (club_id, name_th, name_en) values ($1,'x','Coach')`, [A]);
+    await tdb.query(`insert into public.add_on (club_id, name_th, name_en, price_satang) values ($1,'x','Balls',1000)`, [A]);
+    await tdb.query(`update public.club set status = 'draft' where id = $1`, [A]);
+    for (const t of ['price_group', 'court_price_rule', 'coach_tier', 'coach_tier_price', 'add_on']) {
+      expect((await web.withClubTx(GUEST, (tx) => tx.query(`select 1 from public.${t}`))).rowCount, t).toBe(0);
+    }
+    await tdb.query(`update public.club set status = 'live' where id = $1`, [A]);
+    for (const t of ['price_group', 'court_price_rule', 'coach_tier', 'add_on']) {
+      expect((await web.withClubTx(GUEST, (tx) => tx.query(`select 1 from public.${t}`))).rowCount, t).toBeGreaterThan(0);
+    }
   });
 });

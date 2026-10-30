@@ -112,8 +112,10 @@ async function applySection(tx: PlatformTx, clubId: string, section: string, bod
       return { changed: await setColumns(tx, clubId, values), detail: { section, changed: values } };
     }
     case 'template': {
+      // Starting from a template copies it into the club (PLAT-05-AC7, AC12); it is not a column write.
       const values = pick(body, ['template_id']);
-      return { changed: await setColumns(tx, clubId, values), detail: { section, changed: values } };
+      const r = await tx.query<{ r: { template: string; copied: Record<string, number>; pending: string[] } }>('select app.apply_template($1) as r', [values['template_id']]);
+      return { changed: ['template_id'], detail: { section, template: r.rows[0]?.r.template, copied: r.rows[0]?.r.copied, pending: r.rows[0]?.r.pending } };
     }
     case 'features': {
       if (!isObject(body) || !isObject(body['features']) || Object.keys(body).length !== 1) throw new Invalid();
@@ -324,7 +326,7 @@ export function createSupportService(deps: { db: PlatformDb; connections?: Conne
     } catch (e) {
       const code = (e as { code?: string }).code ?? '';
       // Invalid input, or a value the database refuses (check, unique, foreign key, bad text).
-      if (e instanceof Invalid || /^(22|23)/.test(code)) return { ok: false, code: 'invalid' };
+      if (e instanceof Invalid || /^(22|23)/.test(code) || /^template:/.test((e as Error).message ?? '')) return { ok: false, code: 'invalid' };
       throw e;
     }
   }
