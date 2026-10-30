@@ -38,7 +38,7 @@ Depends on: F01 T03 to T07 (database, context, tenant suite), T08 (settings), T1
 - [x] **F03-T13** `app.confirm_booking` and the PAY-07 path (`confirm_now`): guarded status change, hold cleared, same transaction. IDs: BOOK-03-AC7, AC9, BOOK-04-AC8. Role: BE-B · Deps T08 · Size: M
   Tests first: a confirmed booking has no hold; confirm and expiry at the same instant give exactly one outcome (FA T10); a taken slot refuses a PAY-07 order and nothing is used up.
   Review amendment: SR-07. `confirm_now` is not a parameter: the function confirms only when the order's frozen amount due is zero or a cash payment record exists; `reclaim_order` is callable only from the payment path. Extra tests: `confirm_now` cannot be forced; a player cannot call `reclaim_order`.
-- [ ] **F03-T14** `app.reclaim_order` for a late payment. IDs: BOOK-03-AC7, AC8, decision D25. Role: BE-B · Deps T13 · Size: M
+- [x] **F03-T14** `app.reclaim_order` for a late payment. IDs: BOOK-03-AC7, AC8, decision D25. Role: BE-B · Deps T13 · Size: M
   Tests first: slot open reclaims and confirms; slot taken, held or closed raises `slot_unavailable`; a solo class with the coach busy raises it and leaves nothing partial.
 - [ ] **F03-T15** `app.move_booking` (staff): in-place update, conflicts re-checked by the constraints, coach rules, customer message enqueued. IDs: BOOK-04-AC7. Role: BE-B · Deps T08 · Size: M
   Tests first: a move onto a taken slot or a busy coach is refused and nothing changes; a successful move enqueues one message.
