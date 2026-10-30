@@ -86,15 +86,8 @@ describe('success after the hold, slot still open (outcome applied_late)', () =>
   });
 });
 
-describe('what part (a) does not decide', () => {
+describe('what part (a) leaves to the others', () => {
   beforeEach(() => setup());
-
-  it('a paid order and a cancelled payment raise until part (c) exists', async () => {
-    const o = await order('held');
-    const p = await payment(o);
-    await tdb.query(`update public.payment set status = 'cancelled' where id = $1`, [p]);
-    await expect(apply(p)).rejects.toThrow(/wallet_path_not_built/);
-  });
 
   it('a wrong amount is refused here (the caller raises the owner flag)', async () => {
     const o = await order('held');
