@@ -141,8 +141,9 @@ Roles: **Arch** Architect/data, **BE-P** back end platform and LINE, **DevOps**,
   Tests first: a task runs in the right club context; a crashed task retries once; heartbeat is recorded.
 - [ ] **F01-T35** Aggregate counts for P1 and P3 from `club_usage_daily`, nothing finer. IDs: PLAT-02-AC10, AC11. Role: BE-P · Deps T16, T18 · Size: S
   Tests first: counts only; no list behind a count; test activity excluded.
-- [ ] **F01-T36** CI static checks wired: no `service_role`, no raw `pg`, routes declare permissions, hard-coded text lint hook, definer-function list review. IDs: CC-5, CC-2. Role: DevOps/Arch · Deps T01, T13 · Size: S
+- [x] **F01-T36** CI static checks wired: no `service_role`, no raw `pg`, routes declare permissions, hard-coded text lint hook, definer-function list review. IDs: CC-5, CC-2. Role: DevOps/Arch · Deps T01, T13 · Size: S
   Tests first: each check fails on a planted violation.
+  - Built (Architect part): `tools/check-migrations.mjs` (names, feature blocks, never-edited), `test:db` and `db:types` scripts, `packages/db/supabase/config.toml` (not run here). The other checks of this task (no `service_role`, no raw `pg`, secrets access, banned patterns) are in `tools/lint`; routes-declare-permissions is lane B's T13 build check; the hard-coded text lint is Content's; the definer-function list review is still a person's. Status of every CI_STRICT item: `docs/ops/ci-strict-readiness.md`.
 - [ ] **F01-T37** Acceptance sweep: run the AC-to-test table in `design.md` section 14, close gaps, record results against the requirement IDs. IDs: all F01. Role: QA · Deps all · Size: M
   Tests first: n/a (this task is the sweep); done when every AC has a passing test or a filed bug naming its ID.
 
