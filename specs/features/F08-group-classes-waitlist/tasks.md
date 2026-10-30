@@ -10,8 +10,9 @@ Depends on: F01 (settings `group_min_players`, `group_max_players`, `below_min_a
 
 ## A. Tables
 
-- [ ] **F08-T01** Migration 0901: `class_template` and its CHECKs (60 minutes, the min and max players from settings at save, level text, audience, nullable `drop_in_price_satang` with no default, D157). IDs: CLASS-01-AC1, AC5, AC10. Role: BE-B · Deps F01 settings, F07-T01 (`coach`) · Size: S
+- [x] **F08-T01** Migration 0901: `class_template` and its CHECKs (60 minutes, the min and max players from settings at save, level text, audience, nullable `drop_in_price_satang` with no default, D157). IDs: CLASS-01-AC1, AC5, AC10. Role: BE-B · Deps F01 settings, F07-T01 (`coach`) · Size: S
   Tests first: a template cannot be 90 minutes; the drop in price is null until the owner sets it and a null means credit or wallet only; another club's template is not reachable.
+  - Built (Architect): `0901_class_template.sql`, `class-template.test.ts`, registry `registry/f08.ts`. `coach_id` and `resource_id` are required (a group class needs both). Policies and grants wait for 0911 (T09).
 - [ ] **F08-T02** Migration 0902: `class_session` (unique `(club_id, template_id, start_at)`, statuses `scheduled`, `cancelled`, `needs_attention`, the edited flag). IDs: CLASS-01-AC2, AC3, AC9. Role: BE-B · Deps T01 · Size: S
   Tests first: a second session for one template and start is refused; status values match the design.
 - [ ] **F08-T03** Migration 0903: `booking.class_session_id` and `booking.waitlist_entry_id`, the partial unique index for one live seat per player and session, the CHECK tying `type = 'class_seat'` to a session. IDs: CLASS-01-AC4, AC17, CLASS-02-AC12. Role: BE-B · Deps T02, F03 `booking` · Size: S

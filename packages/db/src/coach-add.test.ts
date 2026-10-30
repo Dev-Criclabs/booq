@@ -249,7 +249,9 @@ describe('payment, release and expiry of the add order (D111, CC-4)', () => {
 
   it('f07_release is registered at ord 35, after F04 (10) and F05 (20)', async () => {
     expect((await tdb.query(`select ord from app.release_handlers where name = 'f07_coach_add'`)).rows).toEqual([{ ord: 35 }]);
-    expect((await tdb.query(`select name from app.release_handlers where ord < 35 order by ord`)).rows.map((r) => r.name)).toEqual(['f04_entitlements', 'f05_payment_unavailable']);
+    // Containment, not an exact list: later features register their own handlers (F06 at 30, F08 50, F10 60).
+    const before = (await tdb.query(`select name, ord from app.release_handlers where ord < 35 order by ord, name`)).rows;
+    expect(before).toEqual(expect.arrayContaining([{ name: 'f04_entitlements', ord: 10 }, { name: 'f05_payment_unavailable', ord: 20 }]));
   });
 
   it('the ordinary release of a court order runs the handler as a no op', async () => {
