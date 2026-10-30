@@ -3,8 +3,8 @@ import type { Db } from '@booq/db';
 import { DataRequestError, type DataRequestAction, type DataRequestErrorCode, createDataRequestService } from '@booq/domain';
 
 // Staff routes for player data requests (F01-T33; PDPA-01-AC4, AC6, AC7). `datarequest.handle`
-// is the owner's and front desk's. The player's own routes (POST and GET /me/data-requests)
-// wait for a player permission in packages/auth (Architect/BE-P lane B). Path parameter: `input.id`.
+// is the owner's and front desk's. A player makes and reads their own through `datarequest.own`
+// (POST and GET /me/data-requests). Path parameter: `input.id`.
 
 type Service = ReturnType<typeof createDataRequestService>;
 
@@ -33,6 +33,12 @@ export function dataRequestRoutes(deps: DataRequestRouteDeps): Route<unknown>[] 
   const actor = (ctx: RouteContext) => ({ clubId: ctx.clubId, userId: ctx.userId, roles: ctx.roles as readonly string[] });
 
   return [
+    route({ method: 'POST', path: '/me/data-requests', permission: 'datarequest.own' }, (ctx) => {
+      const kind = (ctx.input as { kind?: unknown } | null)?.kind;
+      if (kind !== 'copy' && kind !== 'delete') throw bad();
+      return inClub(ctx, (s, tx) => s.create(tx, actor(ctx), { kind }));
+    }),
+    route({ method: 'GET', path: '/me/data-requests', permission: 'datarequest.own' }, (ctx) => inClub(ctx, (s, tx) => s.listOwn(tx, actor(ctx)))),
     route({ method: 'GET', path: '/data-requests', permission: 'datarequest.handle' }, (ctx) => inClub(ctx, (s, tx) => s.listOpen(tx, actor(ctx)))),
     route({ method: 'POST', path: '/data-requests/:id/handle', permission: 'datarequest.handle' }, (ctx) => {
       const i = ctx.input as { id?: unknown; action?: unknown; note?: unknown } | null;

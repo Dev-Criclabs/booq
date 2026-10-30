@@ -39,8 +39,21 @@ afterEach(async () => {
 });
 
 describe('data request staff routes', () => {
-  it('declare datarequest.handle on every route', () => {
-    expect(routes().map((r) => `${r.def.method} ${r.def.path} ${r.def.permission}`).sort()).toEqual(['GET /data-requests datarequest.handle', 'POST /data-requests/:id/handle datarequest.handle']);
+  it('declare a permission on every route: staff handle, players own', () => {
+    expect(routes().map((r) => `${r.def.method} ${r.def.path} ${r.def.permission}`).sort()).toEqual([
+      'GET /data-requests datarequest.handle',
+      'GET /me/data-requests datarequest.own',
+      'POST /data-requests/:id/handle datarequest.handle',
+      'POST /me/data-requests datarequest.own',
+    ]);
+  });
+  it('a player makes a request and lists only their own; a guest is refused', async () => {
+    const s = session(P1, ['player']);
+    const made = await find('POST', '/me/data-requests').handle({ session: s, input: { kind: 'delete' } }, deps);
+    expect(made).toMatchObject({ ok: true, body: { kind: 'delete', status: 'requested', userId: P1 } });
+    expect(await find('GET', '/me/data-requests').handle({ session: s, input: {} }, deps)).toMatchObject({ ok: true, body: [{ kind: 'delete' }, { kind: 'copy' }] });
+    expect(await find('POST', '/me/data-requests').handle({ session: null, input: { kind: 'copy' } }, deps)).toMatchObject({ ok: false, status: 401 });
+    expect(await find('POST', '/me/data-requests').handle({ session: s, input: { kind: 'everything' } }, deps)).toMatchObject({ ok: false, status: 400, code: 'bad_input' });
   });
   it('a player is refused before the handler runs', async () => {
     expect(await find('GET', '/data-requests').handle({ session: session(P1, ['player']), input: {} }, deps)).toMatchObject({ ok: false, status: 403 });
