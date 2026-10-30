@@ -22,6 +22,13 @@ export const tables: Fragment = {
   'platform.template_item': { class: 'P' },
   'platform.launch_check': { class: 'P' },
   'platform.export_request': { class: 'P' },
+  // People (F01-T12, migration 0003): club data, BOOQ staff never.
+  'public.app_user': { class: 'D', audited: true },
+  'public.app_user_role': { class: 'D', audited: true },
+  'public.user_staff_note': { class: 'D', audited: true },
+  'public.user_consent': { class: 'D' },     // append-only record
+  'public.club_invite': { class: 'D', audited: true },
+  'public.club_tester': { class: 'D', audited: true },
   // audit (F01-T10)
   'audit.registry': { class: 'infra' },
   'app.test_tables': { class: 'infra' },   // F01-T26
