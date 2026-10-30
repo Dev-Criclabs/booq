@@ -16,39 +16,74 @@ Reviewer, 30 Oct 2026. Scope: requirements F01 to F06, F10 to F12; designs F01 t
 | Should fix | 68 |
 | Note | 24 |
 
+## Status after decisions D100 to D128 (`main` head 218bac0)
+
+The orchestrator answered the 16 questions in D100 to D128. **Decided** means the user has settled the rule; the finding stays open until the text it names is changed (specs, designs, tasks, QA files, ops docs). **Closed** means the text on `main` already matches. At this head only the PRD refund line and the `CLAUDE.md` locales rule were edited; no spec, design, QA or ops file has yet been changed for D100 to D128, so nothing else is closed.
+
+| Finding | Decision | Status | What still has to change |
+|---|---|---|---|
+| F01-1 | D100 | Decided | PLAT-07 text (PRD, hand-off, F01 requirement), `foundation.md` line 207 and 212, F01-T26 and T27 tests |
+| F01-2 | D101 | Decided | `foundation.md` line 207 (`audit_entry` out of the auto-flag list), PLAT-07-AC3 wording, test |
+| F01-3 | D102 | Decided | F02 design 6.4, F02-T05 and T10 tests (owner and tester return visits, minimal sign-in config) |
+| F01-4 | D103 | Decided | F02 design 6.1 (named public views), F02-T06 test that lists guest-readable columns |
+| F01-6 | D104 | Decided | F01 design 7.7 and PLAT-04-AC6 (placeholder replacement is the named exception), append-only guard |
+| F01-21 | D105, D122 | Decided | F02 design and tasks (claim confirmed by front desk in A6), F11 A6 AC, F01 T31 |
+| F01-18 | D106 | Decided | PLAT-07-AC3, RCPT-01 wording, F01-T27b assertion (first real receipt per year) |
+| F01-17, F03-11 | D107 | Decided | F01 and F03 designs (which owner actions pass while Paused; late payment in a Paused club goes to the wallet) |
+| F01-14, F03-5 | D108 | Decided | F01 design 9.3 (Go live checks list and the Draft to Testing steps list), F03-T12 keeps `pay_tap_limit_set` |
+| F03-2 | D109 | Decided | F05 design 5.4 and PAY-03 (refusal reasons: paused club, closure, deleted account); `reapply_order_entitlements` still needed |
+| F03-4, F03-8 | D110 | Decided | F03 design A-8 and A-10: remove the running hour and same date rules; override roles front desk and owner |
+| F04-1, F04-2, F04-3, F04-5, F04-8 | D111 | Decided | F04 requirement R1-AC4 (peak not built), F04 design text for net-of-share restore, add-on on the first hour (`booking_id`), top-up as its own order |
+| F05-4 | D112 | Decided | F05 requirement PAY-02-AC17 and Q1, wrong amount LINE message in F10 |
+| QA-4 | D112 | Decided | Beam fake scenarios (player notice, LINE) |
+| F05-6 | D113 | Decided | F05 design 5.7 (a paused club keeps its current key set) |
+| F10-1, F10-2 | D114 | Decided | F10 LINE-03-AC9, LINE-05-AC14, LINE-06-AC4 (banner plus P1), LINE-02-AC10 and ADMIN-16 (labels in Settings), six label keys |
+| F02-4, F01-16, F11-2 | D115 | Decided | F02 permission name, F01 matrix (accountant business and tax settings only), ADMIN-14 AC (owner only) |
+| F06-4 | D116 | Decided | F06 CC-5, F10 CC-5, i18n kept-number list |
+| M-1 (refund line) | D117 | **Closed in part** | PRD Option A refund sentence is fixed. Still open: PRD line 654 ("PromptPay refunds" in the Notion bullet), the change log rows ("Beam QR expires with the hold" in the Decisions (4) row; the older "A3 Check-in ... arrivals list" row), decisions log round 5 "Open" row and D17 "Confirm", plan section 4 and canvas gaps C4 and C5 |
+| M-2 | D117 | **Closed** | `CLAUDE.md` line 38 now says `locales/pending/<feature>.json`. Content tools must read the pending folder (F01-T36, i18n lint) |
+| QA-1, QA-3 | D126 | Decided | QA skeletons for F03 to F13, CI check that every AC ID appears in `tests/acceptance`, fake Beam lateness from the hold end |
+| OPS-1 | D127 | Decided | `docs/ops/runbooks.md`, `plan.md`, `accounts.md`, `secrets.md` (two Beam sets, P4 swap before Go live, no test LINE values) |
+| F01-5, F01-7, F01-8, F01-9 to F01-13, F01-15, F01-19, F01-20, F01-23, F02-1 to F02-3, F03-1, F03-3, F03-6, F03-7, F04-4, F04-6, F04-7, F05-1 to F05-3, F05-5, QA-2, QA-5 to QA-8, F10-3, F10-6, F06-1, F06-2, OPS-2 to OPS-6, OPS-8, I18N-1, M-3, M-4 | none | Open | Author fixes; no decision needed |
+| OPS-8 (script names) | none | **Closed in part** | CI now calls the i18n tools directly (commit 08faf79). Strict mode and the uncalled checks remain (see `wave0.md` W0-4) |
+
+D104 note: the decision lets an audit row change by replacing personal fields with a placeholder. The Reviewer will check that the guard allows that one operation and no other update or delete.
+
+D118 to D121 (F09, F13, F07, F08 answers) and D124 to D125 (Security findings) cover requirements and findings outside this review. The Reviewer has not read `docs/security/` or the F07, F08, F09 and F13 requirements yet.
+
 ## Blocking
 
-### F01-1 | blocking | Go live purge deletes real owner, staff and coach accounts *(verified on main)*
+### F01-1 | blocking | decided D100, text pending | Go live purge deletes real owner, staff and coach accounts *(verified on main)*
 - Where: `foundation.md` §2.6 line 207 (`is_test` set at insert for every `app_user`, "tester player accounts, Q29"), line 212 (purge deletes `is_test` rows); FA Q29 (line 810, still Open, recommends keeping owner, staff and coach); F01 design A-3 (a live club keeps one active owner); PLAT-07-AC1, AC3.
 - Wrong: the trigger flags by club status at insert and cannot tell a tester from an owner. Anyone first signing in while the club is Testing (owner invite redeemed in Testing) is flagged and purged at Go live. The purge can also trip the "one active owner" constraint and roll Go live back.
 - Fix: define which `app_user` rows are test rows (flag follows the tester kind; owner, staff and coach never `is_test`), write it into PLAT-07 (PRD, hand-off, requirement), add the test "owner invited and signed in during Testing survives Go live". **QUESTION** for the user: FA Q29.
 
-### F01-2 | blocking | Go live purge deletes real audit history *(verified on main)*
+### F01-2 | blocking | decided D101, text pending | Go live purge deletes real audit history *(verified on main)*
 - Where: `foundation.md` line 207 (`audit_entry` in the `is_test` list), line 212 (purge may delete test audit rows); PLAT-04-AC1, AC6; D28.
 - Wrong: every audited setup change made in Testing (prices, settings, roles, key swap, support edits) is flagged test and deleted at Go live. The live prices' history is lost, though PLAT-04-AC1 requires an entry for every price or setting change and AC6 allows the purge exception only for "test flagged data".
 - Fix: do not auto-flag `audit_entry`; flag only entries whose subject row is test data. Test: a setting changed in Testing still has its audit entry after Go live. Reconcile PLAT-07-AC3 wording.
 
-### F01-3 | blocking | A returning owner or tester cannot sign in to a Draft or Testing club
+### F01-3 | blocking | decided D102, text pending | A returning owner or tester cannot sign in to a Draft or Testing club
 - Where: F02 design §6.4 lines 135 to 142, §4.1 (LIFF endpoint `/c/{slug}`); F01 design §4.1 line 106, §7.1 line 215; F02-T10 (an owner invite adds roles only, no `club_tester` row); PRD Flow J (owner works A0 in Draft).
 - Wrong: Draft and Testing clubs admit only `club_tester` users or someone redeeming an invite, and answer 404 to everyone else including `GET /public/config`, which carries the `liffId` that `liff.init` needs. An owner who redeemed the invite once is refused on later visits until the club is Testing, so A0 steps 6 to 8 (needed for Testing, PLAT-01-AC2) cannot be finished. Testers cannot start LIFF login except through the invite link.
 - Fix: state the gate: owner role and testers pass; a non-live club serves a minimal sign-in config to unauthenticated callers, or the invite link is the only entry and testers get long-lived invites. Add the cases to F02-T05 tests. **QUESTION** for the user if a second tester entry rule is wanted.
 
-### F01-4 | blocking | Guests can read owner contact and merchant ids
+### F01-4 | blocking | decided D103, text pending | Guests can read owner contact and merchant ids
 - Where: F02 design §6.1 line 123 and F02-T06 (guest `select` on "setup-class rows of live and paused clubs"); F01 design §3.2 lines 53 to 61 (`club` holds owner name, phone, LINE, email, billing dates, tax id; `line_connection`, `payment_connection` hold merchant ids and `secret_last4`); FA §2.2 (all class S); D2.
 - Wrong: class S includes those tables, so any anonymous visitor could read the owner's phone and email (D2 allows only BOOQ staff) and Beam merchant ids. The planned test ("no player data in any guest response") would pass while this leaks.
 - Fix: guests read only fixed public views or routes with named columns (name, language, status, `liffId`, logo, public setup). Test that lists the columns a guest can read. Never grant a guest a whole S table.
 
-### QA-1 | blocking | QA covers only F01 and F02
+### QA-1 | blocking | decided D126, text pending | QA covers only F01 and F02
 - Where: `docs/qa/traceability.md` lines 13 to 24 and `tests/acceptance/` (F01 and F02 only).
 - Wrong: approved acceptance criteria F03 (77), F04 (79), F05 (56) are cited nowhere in QA; BOOK-06, WAIT-01, F04 R1 to R8, ADMIN-01 to 17, CPORT-01 to 07, F06 and F10 criteria have no row. PKG-03, LINE-05, LINE-06 and LINE-07 still say GAP though approved criteria exist. The money rules D63 to D80 have no test target at a gate. Also F01: four ACs missing from the skeleton (PLAT-02-AC12, AC13, PLAT-07-AC10, AC11).
 - Fix: regenerate skeletons for every approved feature as was done for F01 and F02; refresh the summary table (it still counts 52 hand-off IDs); add a CI check that every AC ID in a `requirements.md` appears in `tests/acceptance`.
 
-### QA-3 | blocking | Fake Beam pins the wrong late-payment boundary
+### QA-3 | blocking | decided D126, text pending | Fake Beam pins the wrong late-payment boundary
 - Where: `tests/fakes/beam/scenarios.ts` lines 74, 147, 148, 182; `types.ts` 24, 80; `docs/qa/concurrency-tests.md` CONC-27; `tests/fakes/README.md` line 85; D80, PAY-02-AC2. *(scenarios.ts verified on main: "D18: the QR expires exactly when the hold ends")*
 - Wrong: D80 (refines D18) sets the QR to expire slightly before the hold ends, by a platform margin. The late-callback scenario measures lateness from QR expiry, so a payment between QR expiry and hold end counts as late, while PAY-02-AC2 and D25 say only a payment after the hold ends is late.
 - Fix: measure lateness from hold end; add a case "paid after QR expiry but inside the hold"; the margin is a platform setting and QA must not pick a value.
 
-### OPS-1 | blocking | Ops runbook gets the Beam key swap wrong
+### OPS-1 | blocking | decided D127, text pending | Ops runbook gets the Beam key swap wrong
 - Where: `docs/ops/runbooks.md` line 96 ("Swap the club's Beam and LINE keys from test to live values if they differ", a step after the purge); `plan.md` line 41 and `accounts.md` line 44 ("test LINE values ... Testing configuration"); `secrets.md` (one Beam set per club); D32, PLAT-07-AC10. *(verified on main)*
 - Wrong: D32 gives each club two Beam key sets and sends test LINE messages through the club's real Official Account. The swap is a required P4 item with a smoke test, ticked before Go live. The runbook treats it as optional and after the status change, and keeps a separate "test LINE" configuration that D32 removed.
 - Fix: rewrite runbook step and the secrets table for two Beam sets plus a P4 swap and smoke test before Go live; delete "test LINE values".

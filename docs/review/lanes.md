@@ -32,9 +32,9 @@ Written 30 Oct 2026 by the Reviewer. Use it to spot a pull request outside its l
 | `locales/en.json`, `locales/th.json` (wording, numbering) | - | - | - | - | - | - | - | - | - | own | - | - | - | - |
 | `locales/copy-index.csv`, `locales/*.md`, `locales/*.csv`, `tools/i18n/**` | - | - | - | - | - | - | - | - | - | own | - | - | - | - |
 | New keys proposed by a feature (D51) | - | - | - | list in the task | list in the task | list in the task | list in the task | list in the task | list in the task | adds and numbers them | - | - | - | - |
-| `tools/lint/**` (banned patterns), table-class and audit-trigger checks | - | - | own | - | - | - | - | - | - | - | - | wires into CI (F01-T36) | - | - |
+| `tools/lint/**` (banned patterns), `tools/test/**` (Vitest global setup), table-class and audit-trigger checks | - | - | own | - | - | - | - | - | - | - | - | wires into CI (F01-T36) | - | - |
 | `tests/**` (acceptance, e2e, concurrency, rls, `tests/fakes`, `tests/support`), `docs/qa/**` | - | - | - | unit tests beside own code only | unit tests beside own code only | unit tests beside own code only | unit tests beside own code only | unit tests beside own code only | unit tests beside own code only | tests for `tools/i18n` | own | - | - | - |
-| `packages/testing/**` (database harness, fixtures; not the fakes) | - | - | own | - | - | - | - | - | - | - | E fixtures | - | - | - |
+| `packages/testing/**` (fixtures; not the fakes) and `packages/db/src/testing/**` (database harness, moved there in 99144db because only `packages/db` may import the driver) | - | - | own | - | - | - | - | - | - | - | E fixtures | - | - | - |
 | `.github/**`, `infra/**`, `docs/ops/**` | - | - | - | - | - | - | - | - | - | - | - | own | - | - |
 | Security reports (threat model, RLS review, Beam callback review) | - | - | - | - | - | - | - | - | - | - | - | - | own (path not yet set; propose `docs/security/**`) | - |
 | `docs/review/**` | - | - | - | - | - | - | - | - | - | - | - | - | - | own |
