@@ -200,8 +200,8 @@ describe('invites (SR-01, D115, D122)', () => {
     await expect(mk('staff', ['owner', 'player'], { user: U1 })).rejects.toThrow(/roles_for_kind/);
     await expect(mk('coach', ['coach'], { user: U1 })).rejects.toThrow(/roles_for_kind/);
   });
-  it('an owner invite is bound to one LINE ID', async () => {
-    await expect(mk('owner', ['owner', 'player'], { staff: STAFF })).rejects.toThrow(/owner_bound/);
+  it('an owner invite may be unbound: it binds to the first person who redeems it (D151, migration 0042)', async () => {
+    await mk('owner', ['owner', 'player'], { staff: STAFF });
   });
   it('a platform account cannot create a staff or coach invite; there is exactly one creator', async () => {
     await expect(mk('staff', ['front_desk', 'player'], { staff: STAFF })).rejects.toThrow(/platform_kinds/);

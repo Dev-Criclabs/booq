@@ -202,6 +202,23 @@ describe('the sign-in gate (PLAT-01-AC5, AC11; D102)', () => {
     expect(await gate(PLAYER_LINE, 'c'.repeat(64))).toBe('not_a_tester');
   });
 
+  it('an owner link that nobody has used yet admits any new person; once used it admits nobody else (D151)', async () => {
+    await tdb.query(`insert into public.club_invite (club_id, token_hash, kind, roles, created_by_staff, expires_at) values ($1,$2,'owner','{owner,player}',$3, app.now() + interval '1 day')`, [CLUB, 'e'.repeat(64), admin]);
+    expect(await gate(PLAYER_LINE, 'e'.repeat(64))).toBe('open');
+    expect(await gate(OWNER_LINE, 'e'.repeat(64))).toBe('open');
+    await makeOwner();
+    const c = await tdb.pool.connect();                       // the redemption, as F02 does it: in the club's context
+    try {
+      await c.query('begin');
+      await c.query(`select set_config('app.club_id', $1, true), set_config('app.source', 'player_app', true)`, [CLUB]);
+      await c.query(`update public.club_invite set used_at = app.now(), used_by_user = $1, bound_line_user_id = $2 where token_hash = $3`, [OWNER_USER, OWNER_LINE, 'e'.repeat(64)]);
+      await c.query('commit');
+    } finally {
+      c.release();
+    }
+    expect(await gate(PLAYER_LINE, 'e'.repeat(64))).toBe('not_a_tester');
+  });
+
   it('a tester returns on later visits with no invite: the long-lived link is not needed again', async () => {
     await createInvite(spec);
     await join(H1);
