@@ -28,7 +28,7 @@ describe('clubTask (F01-T34)', () => {
       expect(payload.clubId).toBe(CLUB);
     })({ clubId: CLUB, orderId: 'o1' }, { job: { id: '7' } });
     expect(ran).toBe(1);
-    expect(seen).toEqual([{ clubId: CLUB, userId: null, roles: [], requestId: 'job:7' }]);
+    expect(seen).toEqual([{ clubId: CLUB, userId: null, roles: [], source: 'job', requestId: 'job:7' }]);
   });
 
   it.each([[{}], [{ clubId: null }], [{ clubId: '' }], [{ clubId: 'not-a-uuid' }], [null], [undefined], ['x']])(

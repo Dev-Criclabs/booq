@@ -1,0 +1,33 @@
+# Local Supabase stack for the CI `db` job (F01-T36; .github/workflows/ci.yml): `supabase start`
+# applies every migration of packages/db/migrations (linked below) from scratch, which proves they
+# run on the real Supabase Postgres image and its default privileges (review SR-06).
+# The Data API, GraphQL and Realtime are off, as on staging and production (decision D124).
+project_id = "booq"
+
+[api]
+enabled = false
+
+[db]
+port = 54322
+major_version = 17
+
+[realtime]
+enabled = false
+
+[studio]
+enabled = false
+
+[inbucket]
+enabled = false
+
+[storage]
+enabled = false
+
+[auth]
+enabled = false
+
+[edge_runtime]
+enabled = false
+
+[analytics]
+enabled = false

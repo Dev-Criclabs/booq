@@ -129,7 +129,7 @@ Roles: **Arch** Architect/data, **BE-P** back end platform and LINE, **DevOps**,
 - [ ] **F01-T30** Migration 0007 and the CSV validator for players: parse to staging, per-row error codes, all or nothing. IDs: PLAT-06-AC1, AC2, AC5, AC9, AC10, AC18. Role: BE-P · Deps T12 · Size: M
   Tests first: one bad row saves nothing; a club id column is ignored; amounts read as THB into satang; raw file not kept.
   - Database part built (Architect): `0007_import_export.sql` (`import_job`, `import_row` staging, `data_export`, `data_request`, owner-only imports, staging removed by trigger when a job is confirmed or cancelled, `app.sweep_import_staging()` for the worker per club, audit registered; raw staging values never audited). Also `platform.worker_heartbeat` for F01-T34 (counts only, worker writes, BOOQ staff read).
-- [ ] **F01-T31** Import routes (owner only), confirm in one transaction, `import_handlers` registry for packages and balances (registered by F06), audit entries, staging clean-up job. IDs: PLAT-06-AC3, AC4, AC6, AC7, AC8. Role: BE-P · Deps T30 · Size: M
+- [x] **F01-T31** Import routes (owner only), confirm in one transaction, `import_handlers` registry for packages and balances (registered by F06), audit entries, staging clean-up job. IDs: PLAT-06-AC3, AC4, AC6, AC7, AC8. Role: BE-P · Deps T30 · Size: M
   Tests first: non-owner and BOOQ refused; imported players have no LINE id and match on phone at first sign-in (F02); duplicate phones flagged.
   Review amendment: D105 and SR-05 (blocking). Imported players are `unclaimed` with inert balances; nothing is matched silently. Extra tests: an imported record is never visible to a second person typing the same phone; no imported field is pre-filled anywhere.
 - [ ] **F01-T31b** Claim confirmation: `claim_request` table and `app.claim_confirm(imported_user, claimant_user)` with paired append-only ledger rows (reason `import_transfer`), routes for front desk and owner to list, confirm and reject, audit entries. IDs: PLAT-06-AC7, decision D105, SR-05. Role: BE-P · Deps F01-T31, F01-T10 · Size: M
@@ -146,8 +146,9 @@ Roles: **Arch** Architect/data, **BE-P** back end platform and LINE, **DevOps**,
   Tests first: a task runs in the right club context; a crashed task retries once; heartbeat is recorded.
 - [ ] **F01-T35** Aggregate counts for P1 and P3 from `club_usage_daily`, nothing finer. IDs: PLAT-02-AC10, AC11. Role: BE-P · Deps T16, T18 · Size: S
   Tests first: counts only; no list behind a count; test activity excluded.
-- [ ] **F01-T36** CI static checks wired: no `service_role`, no raw `pg`, routes declare permissions, hard-coded text lint hook, definer-function list review. IDs: CC-5, CC-2. Role: DevOps/Arch · Deps T01, T13 · Size: S
+- [x] **F01-T36** CI static checks wired: no `service_role`, no raw `pg`, routes declare permissions, hard-coded text lint hook, definer-function list review. IDs: CC-5, CC-2. Role: DevOps/Arch · Deps T01, T13 · Size: S
   Tests first: each check fails on a planted violation.
+  - Built (Architect part): `tools/check-migrations.mjs` (names, feature blocks, never-edited), `test:db` and `db:types` scripts, `packages/db/supabase/config.toml` (not run here). The other checks of this task (no `service_role`, no raw `pg`, secrets access, banned patterns) are in `tools/lint`; routes-declare-permissions is lane B's T13 build check; the hard-coded text lint is Content's; the definer-function list review is still a person's. Status of every CI_STRICT item: `docs/ops/ci-strict-readiness.md`.
 - [ ] **F01-T37** Acceptance sweep: run the AC-to-test table in `design.md` section 14, close gaps, record results against the requirement IDs. IDs: all F01. Role: QA · Deps all · Size: M
   Tests first: n/a (this task is the sweep); done when every AC has a passing test or a filed bug naming its ID.
 
