@@ -1,6 +1,6 @@
 # F06 Packages, credit and wallet ledgers · Requirements
 
-Status: **Approved 30 Oct 2026** (gate 1). Recorded in `docs/decisions.md`, round 9: the drafter's F06 and F10 requirements and the answers D83 to D99 were approved by the user. Revision 2 applies D83 to D90 and the hand-off and PRD rows on `main`. Changes after approval go PRD, then hand-off, then this file. No design or code follows until the design gate.
+Status: **Approved 30 Oct 2026** (gate 1). Recorded in `docs/decisions.md`, round 9: the drafter's F06 and F10 requirements and the answers D83 to D99 were approved by the user. Revision 3 (30 Oct 2026) applies D83 to D90, D116 and the Reviewer's findings F06-1, F06-2, F06-4, F10-6 (`docs/review/spec-consistency.md`). Changes after approval go PRD, then hand-off, then this file. No design or code follows until the design gate.
 
 Feature: F06 Packages, credit and wallet ledgers. Depends on: F04. Requirement IDs: PKG-01, PKG-02, PKG-03. Also covers the rules the hand-off has no ID for (labelled R1 to R6, local to this file). Wave 3.
 
@@ -37,7 +37,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 
 **CC-4 No double booking.** A credit reserves nothing on the schedule; the booking does (F03). A credit is reserved in the same transaction as the booking, so two parallel bookings that need the last credit give exactly one success and one refusal, never a negative balance and never a booking with no credit paid. Credit reserved for a booking that is released or cancelled returns to the package.
 
-**CC-5 Language files (TEXT-01 to TEXT-06).** All text from `locales/*` by key, Thai and English. Sample values become named variables with the same names in both files: `{credits}`, `{hours}`, `{sessions}`, `{date}` (expiry), `{amount}`, `{days}`. Validity, expiry reminder days and the cancel window are variables, never typed. Existing wording is not edited; new text gets new keys in both files, proposed by the drafter, owned by the writers (D51). Dates use the international year in both languages. Layouts survive the longest string; buttons never wrap; the history list scrolls.
+**CC-5 Language files (TEXT-01 to TEXT-06).** All text from `locales/*` by key, Thai and English. Sample values become named variables with the same names in both files: `{credits}`, `{hours}`, `{sessions}`, `{date}` (expiry), `{amount}`, `{days}`. Validity, expiry reminder days and the cancel window are variables, never typed. Existing wording is not edited; new text gets new keys in both files, proposed by the drafter, owned by the writers (D51). Dates use the international year in both languages. Layouts survive the longest string; buttons never wrap; the history list scrolls. Variable names are the ones in `locales/README.md` (for example `{clubName}`, `{coachName}`, `{receiptNumber}`, `{holdMinutes}`, `{cancelHours}`, `{claimMinutes}`); names used in this file are descriptive and map to them, and the writers' variables are not renamed (Reviewer F10-6).
 
 **CC-6 Other platform rules.** All times Asia/Bangkok. Money is integer satang; credits are whole numbers. Value never goes back as cash: it returns as wallet or package credit (CANCEL-02, PAY-05). Never invent a price or setting: wallet balance expiry is an empty setting.
 
@@ -123,7 +123,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 - PKG-03-AC4. Given an `expire` row, when it is written, then it is a new ledger row, not an edit of earlier rows (D28).
 - PKG-03-AC5. Given an owner extends a package, when they save it, then a written reason is required, the new expiry date (still ending 23:59 Bangkok) is stored, an `adjust` row or extension record with the reason is written, and the change is audited (PRD, PLAT-04). Front desk cannot extend. The owner extends one package at a time; there is no bulk extension in v1 (D88).
 - PKG-03-AC6. Given an extension, when the reminder dates of the new expiry arrive, then reminders follow the new date; earlier reminders already sent are not repeated.
-- PKG-03-AC7. Given a club is resumed after a pause, when the pause ends, then every package expiry date moves forward by the exact length of the pause, and the expiry then runs to 23:59 Asia/Bangkok on the resulting day, including for a pause shorter than a day (PLAT-03, D20, D90). Each move is one ledger or extension record with the reason "pause".
+- PKG-03-AC7. Given a club is resumed after a pause, when the pause ends, then every package expiry date, and the wallet balance expiry when the club has set one, moves forward by the exact length of the pause, and the expiry then runs to 23:59 Asia/Bangkok on the resulting day, including for a pause shorter than a day (PLAT-03, D20, D90). Each move is one ledger or extension record with the reason "pause".
 - PKG-03-AC8. Given credit reserved for a future booking before the package reaches its expiry date, when the date arrives, then the credit stays valid for that session (D85) and is used when the session starts.
 - PKG-03-AC9. Given a booking made with a credit reserved before expiry, when it is cancelled after the package expiry date, then the credit is lost and not returned (D85). A new booking can never reserve a credit of an expired package.
 - PKG-03-AC10. Given a wallet balance expiry, when the club has set one, then `expire` rows apply to wallet balances at that date; when the setting is empty, wallet balances never expire, and staff are warned when the setting is first set that existing balances will start to expire (D89, D78).
@@ -203,6 +203,8 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 - R3-AC6. Given a package order for a Paused club, when a player tries to buy, then the server refuses (F01 PLAT-03).
 - R3-AC7. Given a package bought together with a booking whose payment arrives late so the booking cannot be confirmed, when it is handled, then all of it goes to the wallet, with nothing partly created (D87, PAY-03).
 - R3-AC8. Given the owner sells a package, when it is a Student product, then the buyer must be under 18 (PKG-02-AC6).
+- R3-AC9. Given a payment arrives after a package order was cancelled (a package bought alone whose QR time ended), when it is reported, then the value goes to the wallet with the reason `late_payment` and its own receipt (D74, D78, PAY-04, F05 PAY-04-AC5); no package is created.
+- R3-AC10. Given the reminder days (14 and 3), the cancel window and the hold time, when text or settings use them, then the numbers are variables in the text and settings in code, never typed in a key (D116).
 
 **Meets.** PDPA: not beyond CC-3. No double booking: a package alone cannot double book; a package with a booking uses the booking's hold and uniqueness. Club scope: per club. TEXT: C9, C10P, C12P text from P keys with `{credits}`, `{hours}`, `{sessions}`, `{date}`, `{amount}`.
 

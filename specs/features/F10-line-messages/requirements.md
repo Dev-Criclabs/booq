@@ -1,6 +1,6 @@
 # F10 LINE messages and rich menu · Requirements
 
-Status: **Approved 30 Oct 2026** (gate 1). Recorded in `docs/decisions.md`, round 9: the drafter's F06 and F10 requirements and the answers D83 to D99 were approved by the user. Revision 2 applies D91 to D99 and the hand-off and PRD rows on `main`. Changes after approval go PRD, then hand-off, then this file. No design or code follows until the design gate.
+Status: **Approved 30 Oct 2026** (gate 1). Recorded in `docs/decisions.md`, round 9: the drafter's F06 and F10 requirements and the answers D83 to D99 were approved by the user. Revision 3 (30 Oct 2026) applies D91 to D99, D114, D116 and the Reviewer's findings F10-1, F10-2, F10-3, F10-6 (`docs/review/spec-consistency.md`). Changes after approval go PRD, then hand-off, then this file. No design or code follows until the design gate.
 
 Feature: F10 LINE messages and rich menu. Depends on: F03. Requirement IDs: LINE-02 to LINE-07 (LINE-01 is F02). Wave 2.
 
@@ -37,7 +37,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, L- LINE boards, F1-, F2- flow 
 
 **CC-4 No double booking.** Messages never reserve or release a slot. A message that offers a slot (Waitlist spot open) refers to a hold or offer owned by F08 and F03; sending it late or not at all never changes the schedule. A message sent for a state the schedule no longer holds (a released hold) is not repeated.
 
-**CC-5 Language files (TEXT-01 to TEXT-06).** Wording and layout are fixed in code but the text is not: LINE Flex cards read from `locales/*` by key (L keys), the same files as the screens and PDF receipts (CLAUDE.md). One key can serve several messages. Sample values become named variables with the same names in both files (`{club}`, `{court}`, `{date}`, `{time}`, `{coach}`, `{amount}`, `{receipt}`, `{minutes}`, `{days}`, `{hours}`). Club name, logo and rules fill the templates (LINE-03). Existing wording is not edited; new text gets new keys in both files, proposed by the drafter, owned by the writers (D51). Each message ships in Thai and English. Cards survive the longest Thai or English string; buttons never wrap. The P1 and P2 text is X keys, English only.
+**CC-5 Language files (TEXT-01 to TEXT-06).** Wording and layout are fixed in code but the text is not: LINE Flex cards read from `locales/*` by key (L keys), the same files as the screens and PDF receipts (CLAUDE.md). One key can serve several messages. Sample values become named variables with the same names in both files (`{club}`, `{court}`, `{date}`, `{time}`, `{coach}`, `{amount}`, `{receipt}`, `{minutes}`, `{days}`, `{hours}`). Club name, logo and rules fill the templates (LINE-03). Existing wording is not edited; new text gets new keys in both files, proposed by the drafter, owned by the writers (D51). Each message ships in Thai and English. Cards survive the longest Thai or English string; buttons never wrap. The P1 and P2 text is X keys, English only. Variable names are the ones in `locales/README.md` (for example `{clubName}`, `{coachName}`, `{receiptNumber}`, `{holdMinutes}`, `{cancelHours}`, `{claimMinutes}`); names used in this file are descriptive and map to them, and the writers' variables are not renamed (Reviewer F10-6).
 
 **CC-6 Other platform rules.** All times Asia/Bangkok. Reminders count from the booking start in Bangkok time. Never invent a rule: where the spec is silent it is a question below.
 
@@ -62,7 +62,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, L- LINE boards, F1-, F2- flow 
 - LINE-02-AC7. Given a Paused club, when a tile is tapped, then the page opens in its paused state; the tiles are not removed (PLAT-03).
 - LINE-02-AC8. Given the menu is uploaded, when it fails, then P2 shows the failure (a Test step) and the club stays in Draft until it works; a stale menu keeps working.
 - LINE-02-AC9. Given the rich menu, when it is built, then it is one image with Thai and English labels together, rendered on the server from the owner's six labels, and one menu serves every player (D92).
-- LINE-02-AC10. Given the owner changes a label after Go live, when it is saved, then the menu is rebuilt for the club and the change is audited (PLAT-04).
+- LINE-02-AC10. Given the owner edits a tile label after Go live, when it is saved in Settings (A16), then the image is rendered again for the club and the change is audited (D114, PLAT-04). Six label keys are needed (D54): new keys in both files, listed for the writers.
 
 **Meets.**
 
@@ -93,7 +93,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, L- LINE boards, F1-, F2- flow 
 - LINE-03-AC6. Given a message was sent, when it is recorded, then a log row notes message type, club, recipient reference, time and result, with no message text beyond the type, for usage and support; the log is not visible to BOOQ staff beyond counts (CC-3).
 - LINE-03-AC7. Given the same event, when the job runs twice or a retry happens, then the player gets the message once (each message has a dedupe key such as booking and type).
 - LINE-03-AC8. Given a club in Testing, when a message is sent, then it goes through the club's real Official Account to the testers and counts toward the monthly cap (D32); it is flagged test in the log and excluded from reports (D33).
-- LINE-03-AC9. Given a club's Messaging API token fails, when a send is tried, then the send fails safely, nothing else breaks, the failure shows in P1 and the owner is told (D75, LINE-06).
+- LINE-03-AC9. Given a club's Messaging API token fails, when a send is tried, then the send fails safely, nothing else breaks, BOOQ sees an alert in P1 and the owner sees a banner in the club admin (D114, LINE-06). The owner is not told through LINE, because the message would go through the failed Official Account.
 - LINE-03-AC10. Given a message goes to staff or a coach, when it is sent, then it is sent in their language: staff and coaches have a language field that defaults to their LINE app language (D95).
 - LINE-03-AC11. Given a message for a Paused club, when the event is a reminder or a cancellation result of an existing booking, then it is still sent (PLAT-03: existing bookings and reminders stay).
 
@@ -155,8 +155,9 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, L- LINE boards, F1-, F2- flow 
 - LINE-05-AC11. Given the owner decides a leave request, when it is saved, then the coach gets Leave approved or declined (F12 CPORT-04).
 - LINE-05-AC12. Given a class is below its minimum a set time before start, when the time arrives, then front desk gets Class below minimum (F08).
 - LINE-05-AC13. Given a late payment (PAY-03) or a wrong amount (F05), when it is handled, then the player gets a message saying what happened to the money. The messages that have no board use the writers' wording on the Booking confirmed card style in v1 (D91).
-- LINE-05-AC14. Given the owner's pause or a failed key check or a cap level, when it happens, then the owner gets a message (PLAT-03-AC1, D75, LINE-07-AC4).
+- LINE-05-AC14. Given the owner's pause or a cap level, when it happens, then the owner gets a message (PLAT-03-AC1, LINE-07-AC4). A failed key check or token failure is a banner and a P1 alert, not a LINE message (D114, D75).
 - LINE-05-AC15. Given a booking made less than 24 hours or 2 hours before start, when it is confirmed, then the reminders already past are skipped (D96).
+- LINE-05-AC16. Given the reminder hours (24 and 2) and the package expiry days (14 and 3), when text or settings use them, then the numbers are variables in the text and settings in code, never typed in a key (D116).
 
 **Meets.** PDPA: each message goes to its own recipient only. No double booking: a Waitlist spot message refers to an offer, not a hold, until it is claimed. Club scope: per club token. TEXT: one L key set per message in Thai and English; named variables replace sample values.
 
@@ -175,7 +176,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, L- LINE boards, F1-, F2- flow 
 - LINE-06-AC1. Given each club, when P1 loads, then it shows the messages used this month against the club's plan limit, as numbers only.
 - LINE-06-AC2. Given the usage, when it is read, then it comes from LINE's own count for the club's Official Account (PRD LINE-07: "reads each club's monthly usage from LINE"), and the plan limit is the club's LINE plan (set in setup).
 - LINE-06-AC3. Given the month changes at Bangkok midnight on the first, when it does, then the counter starts again.
-- LINE-06-AC4. Given a club's Messaging API token fails (a send or a health check fails), when it is detected, then P1 shows an alert for that club and the owner is told (D75).
+- LINE-06-AC4. Given a club's Messaging API token fails (a send or a health check fails), when it is detected, then P1 shows an alert for that club and the owner sees a banner in the club admin (D114).
 - LINE-06-AC5. Given P1, when BOOQ staff look at a club, then they see counts and health only, never message content or recipients (PLAT-02, CC-3).
 - LINE-06-AC6. Given a club on the free plan or a paid plan, when its limit is shown, then the plan is shown (the cap rules differ at 100 percent, LINE-07).
 - LINE-06-AC7. Given test messages through the real Official Account (D32), when usage is shown, then they are included, because LINE counts them toward the cap.

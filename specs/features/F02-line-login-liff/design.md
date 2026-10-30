@@ -71,9 +71,10 @@ If step 5 finds no player, no `app_user` row is created. The server creates a **
 
 1. Requires the `pending_profile` session. Server checks name and phone format (§6.9) and `consent = true` (AC2). Without consent nothing is created and the pending session simply expires (AC3).
 2. In one transaction: insert `app_user` (role `player`, display name as given by LINE, full name, normalised phone, language, `line_friend` as known), insert `app_user_role`, insert `user_consent` (notice version, language, time), write the audit entries, flag the phone if another player at this club has it (AC28, D11).
+   **Claim (decision D105, SR-05).** If the typed normalised phone matches exactly one unclaimed imported record at this club, the same transaction inserts a `claim_request` (imported record, this new player, the typed name and phone, time). The person continues as a **new player**: C2 never says a record was found, never pre-fills imported fields, and no imported balance is visible or spendable. The front desk or owner confirms or rejects the claim in A6 (F01 `claim_confirm`). No match, or more than one, creates nothing.
 3. Upgrade the session to `active`, answer `active`. The player continues to where they were going (AC4, AC6).
 
-A returning player never sees C2 (AC5). A club that is Testing sets `is_test` through the F01 trigger (F01 §7.6). A player at two clubs signs in twice and has two records and two consents (CC-1, LINE-01-AC14).
+A returning player never sees C2 (AC5). In a Testing club the F01 trigger flags only accounts created through a tester invite as test rows; owner, staff and coach accounts never are (F01 §7.6, decision D100). A player at two clubs signs in twice and has two records and two consents (CC-1, LINE-01-AC14).
 
 ### 4.4 Verifying the token
 
@@ -120,7 +121,7 @@ Conventions as FA §9: typed codes, no text; no club id in bodies; 404 for out-o
 
 ### 6.1 Guests (AUTH-01-AC1, AC3, AC7, AC8, AC10, AC11)
 
-A guest request runs with context `{ clubId, userId: null, roles: ['guest'] }`. Row-level policies give the `guest` role `select` on setup-class rows of clubs whose status is `live` or `paused` only, plus the public views F03 and later features define for slot states. Those views expose held, taken, closed and open states with no booking id, no customer and no coach identity (AC7); this is a requirement on F03's view, written here. A guest can never create a hold: `claim_occupancy` requires a user id (AC3). Draft and Testing clubs are invisible to guests (§6.4). A paused club still lets guests browse and sign in (AC11).
+A guest request runs with context `{ clubId, userId: null, roles: ['guest'] }`. **A guest never gets `select` on a whole setup table (decision D103, review F01-4).** Class S tables hold the owner's contact details, tax details, billing dates and merchant ids, which only BOOQ staff may see (D2). A guest reads only fixed **public views or routes with named columns**: `public_club_config` (name in Thai and English, default language, status, logo, LIFF id, supported languages) and the public catalogue views each feature defines (courts and hours, prices, packages, classes, coaches' public profile), each listing its columns in code. A test lists the exact columns a guest can read and fails when one is added; another proves a guest cannot read owner contact, merchant ids or tax details. The slot-state views of F03 expose held, taken, closed and open states with no booking id, customer or coach identity (AC7). A guest can never create a hold: `reserve_court` requires a user id (AC3). A paused club still lets guests browse and sign in (AC11); the Draft and Testing rules are in §6.4.
 
 ### 6.2 When sign in starts (AUTH-01-AC2, AC5, AC9, AC10)
 
@@ -136,7 +137,7 @@ Every route is under `/c/{slug}`. The domain is the config value `APP_BASE_URL` 
 
 | Club status | Guest browsing | Sign in |
 |---|---|---|
-| Draft, Testing | 404 | Only users in `club_tester` (owner, BOOQ testers), or a valid tester or owner invite being redeemed. Anyone else gets `not_a_tester` shown as not found |
+| Draft, Testing | 404 for the catalogue. A **minimal sign-in config** (name, language, status, LIFF id) is served to callers who are not signed in, so `liff.init` can run (decision D102, review F01-3) | The **owner role** and testers pass, on every visit, not only on the first. Testers are in `club_tester` and hold long-lived invites. Anyone else gets `not_available`, shown as not found |
 | Live, Paused | Yes | Yes |
 
 A BOOQ tester signs in with LINE as an ordinary player account, never with the BOOQ credential (F01 ROLE-02-AC2).
@@ -173,7 +174,7 @@ Name and phone rules are F02 Q2, open. Assumption A-12 until decided: name is re
 
 ### 6.10 Invites (LINE-01-AC10; assumption A-13 for F02 Q13)
 
-A staff, coach, owner or tester invite is `club_invite` (F01 §3.2). The link is `/c/{slug}/join?invite={token}`. After the LINE token is verified, a valid unused invite is redeemed in the same transaction: the `app_user` (created if new, with the first-profile step for name, phone and consent, as for a player) receives the invite's roles; a tester invite also adds `club_tester`. A person with no role signs in as a player. A deactivated user signing in gets `account_inactive`. The invite pages belong to F11 and F15.
+A staff, coach, owner or tester invite is `club_invite` (F01 §3.2). The link is `/c/{slug}/join?invite={token}`. **Redemption is one atomic statement** (single use, not expired, and for an owner invite the signing-in LINE ID must equal the LINE ID the invite is bound to, decision D122); two parallel redemptions have one winner. After the LINE token is verified, a valid invite is redeemed in the same transaction: the `app_user` (created if new, with the first-profile step for name, phone and consent) receives the invite's roles, which the database fixes by kind (`owner` gives owner and player, `tester` gives player only; a BOOQ account never receives a token, because the system emails the owner invite to the owner, F01 §7.1, SR-01); a tester invite also adds `club_tester`. **Return visits (decision D102):** the same link opened by the same bound LINE user only opens the club; any other user is refused; an owner who has the role is admitted to a Draft or Testing club by role. A person with no role signs in as a player. A deactivated user gets `account_inactive`. The invite pages belong to F11 and F15.
 
 ## 7. Data and migrations
 
@@ -271,3 +272,13 @@ Each needs a yes or no from a person; none changes the tables much.
 | A-16 | A deleted player signing in again is a brand new player with a new consent | Q15 |
 
 Open and not assumed: Q1 (consent for players under 18, D10, pending legal input). Q33 (user ID parity) is a setup task (§3.3), not a question.
+
+
+## 15. Review amendments, 30 Oct 2026 (decisions D100 to D124)
+
+| Finding or decision | Change | Where |
+|---|---|---|
+| F01-3, D102 | Owner role and testers pass in Draft and Testing on every visit; minimal sign-in config for callers who are not signed in; long-lived tester invites | §6.4, §6.10 |
+| F01-4, D103 | Guests read only named public columns through views or routes, never a whole setup table | §6.1 |
+| SR-01, D122 | Atomic single-use redemption; owner invite bound to the owner's LINE ID; kind-to-roles fixed by the database | §6.10 |
+| SR-05, D105 | Phone match creates a claim request; the person is a new player until staff confirm | §4.3 |
