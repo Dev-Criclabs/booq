@@ -19,6 +19,8 @@ export const tables: Fragment = {
   'platform.club_usage_daily': { class: 'P' },
   'platform.config': { class: 'P' },
   'platform.template': { class: 'P' },
+  'platform.legal_release': { class: 'P' },     // D152 (0048): published privacy notice and terms, append-only
+  'platform.legal_text': { class: 'P' },
   'platform.template_item': { class: 'P' },
   'platform.launch_check': { class: 'P' },
   'platform.export_request': { class: 'P' },

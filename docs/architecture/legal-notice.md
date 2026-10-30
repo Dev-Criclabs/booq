@@ -25,5 +25,5 @@ Nothing is published at first, so no player can sign up and no tester can join. 
 ## Not decided here (parked with the legal input)
 Whether a new release forces existing players to accept again. The data allows it (compare their latest consent version with the current one); no rule is built until someone decides. Retention of old releases: kept for ever as proof, no deletion is built.
 
-## Migration (0028, this branch)
+## Migration (0048, this branch)
 `platform.legal_release`, `platform.legal_text` and their append-only triggers, the three functions, the view column, the replaced `app.sign_up_player` (same signature, adds the version check), the setup step.
