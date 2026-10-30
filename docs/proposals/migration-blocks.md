@@ -23,3 +23,19 @@ One block per feature, one migration file per task, numbers rising in the order 
 | F16 | 1601 to 1699 | not for the Hunter launch |
 
 Why F07 is not 0601: the F10 design already holds 0601 to 0699. Open for the Architect: whether the numbering could follow the build waves instead; no feature depends on the order of the blocks, only on the order inside each block and on the features it calls.
+
+## Rule D159 audit of the F06 to F10 and F13 tasks (30 Oct 2026)
+
+A redefinition is numbered above the last definition of the object, wherever the migration lives (the orchestrator's rule; D159 is not yet in `docs/decisions.md` on the branch this was written on). Checked for every migration that redefines something that already exists; new objects, `ALTER TABLE ... ADD`, registry inserts and function bodies that are only called need no change.
+
+| Task | Object redefined | Last earlier definition | Number |
+|---|---|---|---|
+| F03-T30 | `release_hold`, release reason CHECK | F05 0403 (and 0409 is the highest F05 file today) | 0411 |
+| F03-T31 | `move_booking` | 0225 (D107 Paused change) | 0227 |
+| F06-T03b | `order_line` kind CHECK, the lines-add-up check | F04 0303 | 0504 |
+| F04-T22a | `order_line` kind CHECK | F06-T03b 0504 | 0516, builds after F06-T03b |
+| F06-T08 | ledger reason CHECKs (`import_transfer`) | F06-T02 0502 | 0510 |
+| F06-T14 | `package_reminder_hook` | F06-T07 0508 | 0514 |
+| F07-T03 | `lock_coach`, `coach_rules_check` registration | F03 0213 | 0803 |
+All other F06 to F10 and F13 migrations create new objects, add columns or foreign keys, or insert into registries, so the rule does not move them. F04-T22b and F04-T22c are route code, not migrations (Pay is route code), so the earlier numbers 0315 and 0316 are removed.
+
