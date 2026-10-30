@@ -115,6 +115,26 @@ export interface PlatformAuditLog {
   support_session_id: string | null;
 }
 
+export interface PlatformClubHealth {
+  club_id: string;
+  check_key: string;
+  status: string;
+  reason: string | null;
+  changed_at: string;
+  checked_at: string;
+}
+
+export interface PlatformClubLineUsage {
+  club_id: string;
+  month: string;
+  used: number;
+  line_consumption: number | null;
+  message_limit: number | null;
+  plan_kind: string | null;
+  source: string;
+  synced_at: string | null;
+}
+
 export interface PlatformClubUsageDaily {
   club_id: string;
   day: string;
@@ -951,6 +971,8 @@ export interface Tables {
   'app.test_tables': AppTestTables;
   'audit.registry': AuditRegistry;
   'platform.audit_log': PlatformAuditLog;
+  'platform.club_health': PlatformClubHealth;
+  'platform.club_line_usage': PlatformClubLineUsage;
   'platform.club_usage_daily': PlatformClubUsageDaily;
   'platform.config': PlatformConfig;
   'platform.export_request': PlatformExportRequest;
