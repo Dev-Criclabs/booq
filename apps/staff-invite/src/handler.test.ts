@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { signInternalCall } from '@booq/auth';
 import { createPlatformDb, type PlatformDb } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
-import { createStaffInviteHandler, type SupabaseAdmin } from './handler';
+import { createStaffInviteHandler, type SupabaseAdmin, type SupabaseIdentity } from './handler';
 
 // F01-T17b: the one place that can invite, reset a second factor for, and deactivate BOOQ staff (ROLE-02-AC4 to AC6, SR-06, D123, D148).
 // Every call is signed by apps/platform, checked against the database (the actor must be an active platform admin), and logged to P6.
@@ -25,10 +25,25 @@ const fake: SupabaseAdmin = {
   async resetFactors(authUserId) { calls.push(`reset:${authUserId}`); if (failNext === 'reset') throw new Error('provider down'); },
   async banUser(authUserId) { calls.push(`ban:${authUserId}`); if (failNext === 'ban') throw new Error('provider down'); },
   async deleteUser(authUserId) { calls.push(`delete:${authUserId}`); },
+  async emailOf(authUserId) { calls.push(`email:${authUserId}`); return authUserId === '99999999-0000-4000-8000-000000000001' ? 'admin@booq.example' : null; },
+};
+const ADA = '99999999-0000-4000-8000-000000000001';
+let identityDown = false;
+const fakeIdentity: SupabaseIdentity = {
+  async passwordGrant(email, password) {
+    calls.push(`grant:${email}`);
+    if (identityDown) throw new Error('provider down');
+    return email === 'admin@booq.example' && password === 'pw-ada' ? { authUserId: ADA, state: 'first-step-state' } : null;
+  },
+  async verifyCode(authUserId, state, code) {
+    calls.push(`code:${authUserId}`);
+    if (identityDown) throw new Error('provider down');
+    return authUserId === ADA && state === 'first-step-state' && code === '123456';
+  },
 };
 const staff = async (email: string, role: string, auth: string, name: string) =>
   (await tdb.query(`insert into platform.platform_staff (auth_user_id, email, display_name, role) values ($1,$2,$3,$4) returning id`, [auth, email, name, role])).rows[0].id as string;
-const handler = () => createStaffInviteHandler({ admin: fake, db: pdb, signingSecret: SECRET, maxSkewSeconds: 30, maxBodyBytes: 10_000, now: () => NOW });
+const handler = () => createStaffInviteHandler({ admin: fake, identity: fakeIdentity, db: pdb, signingSecret: SECRET, maxSkewSeconds: 30, maxBodyBytes: 10_000, now: () => NOW });
 const call = (path: string, body: unknown, over: { secret?: string; at?: Date; raw?: string } = {}) => {
   const raw = over.raw ?? JSON.stringify(body);
   return handler()(new Request('https://staff-invite.internal' + path, { method: 'POST', body: raw, headers: { 'content-type': 'application/json', ...signInternalCall(over.secret ?? SECRET, over.at ?? NOW, raw) } }));
@@ -43,6 +58,7 @@ beforeEach(async () => {
   pdb = createPlatformDb({ connectionString: tdb.url, max: 2 });
   calls = [];
   failNext = null;
+  identityDown = false;
 });
 afterEach(async () => {
   await pdb.end();
@@ -169,5 +185,58 @@ describe('deactivate (ROLE-02-AC4)', () => {
   });
   it('an unknown target is 404', async () => {
     expect((await call('/deactivate', { actorStaffId: admin, stepUpFresh: true, targetStaffId: 'aaaaaaaa-0000-4000-8000-0000000000ff' })).status).toBe(404);
+  });
+});
+
+describe('sign-in routes (D148, D160, D161)', () => {
+  it('the password step gives the person and the state of the first step; the state is not a secret key', async () => {
+    const r = await call('/identity/password', { email: ' admin@booq.example ', password: 'pw-ada' });
+    expect([r.status, await r.json()]).toEqual([200, { authUserId: ADA, state: 'first-step-state' }]);
+    expect(calls).toEqual(['grant:admin@booq.example']);
+  });
+  it('a wrong password is 401 invalid_credentials, the same for an unknown email', async () => {
+    for (const body of [{ email: 'admin@booq.example', password: 'nope' }, { email: 'ghost@booq.example', password: 'pw-ada' }]) {
+      const r = await call('/identity/password', body);
+      expect([r.status, await r.json()]).toEqual([401, { code: 'invalid_credentials' }]);
+    }
+  });
+  it('the code step is 200 with the right state and code, and 401 bad_code otherwise', async () => {
+    expect(await (await call('/identity/totp', { authUserId: ADA, state: 'first-step-state', code: '123456' })).json()).toEqual({ ok: true });
+    for (const body of [{ authUserId: ADA, state: 'first-step-state', code: '000000' }, { authUserId: ADA, state: 'other', code: '123456' }]) {
+      const r = await call('/identity/totp', body);
+      expect([r.status, await r.json()]).toEqual([401, { code: 'bad_code' }]);
+    }
+  });
+  it('a step-up knows the person only by auth user id: the email comes from the provider, and a wrong password is 401', async () => {
+    const ok = await call('/identity/password-for', { authUserId: ADA, password: 'pw-ada' });
+    expect([ok.status, await ok.json()]).toEqual([200, { authUserId: ADA, state: 'first-step-state' }]);
+    expect((await call('/identity/password-for', { authUserId: ADA, password: 'nope' })).status).toBe(401);
+    expect((await call('/identity/password-for', { authUserId: '99999999-0000-4000-8000-0000000000aa', password: 'pw-ada' })).status).toBe(401); // no email there
+  });
+  it('they need the signature of apps/platform but no actor, and nothing is written to P6 by them', async () => {
+    expect((await call('/identity/password', { email: 'admin@booq.example', password: 'pw-ada' }, { secret: 'other' })).status).toBe(401);
+    expect((await call('/identity/totp', { authUserId: ADA, state: 'first-step-state', code: '123456' }, { at: new Date(NOW.getTime() - 120_000) })).status).toBe(401);
+    expect(calls).toEqual([]);
+    await call('/identity/password', { email: 'admin@booq.example', password: 'pw-ada' });
+    expect(await p6()).toEqual([]); // the console writes the sign-in events (P6) itself
+  });
+  it('unknown fields, a missing field, a long value or a bad id is 400', async () => {
+    for (const [path, body] of [
+      ['/identity/password', { email: 'a@b.co', password: 'x', extra: 1 }],
+      ['/identity/password', { email: 'a@b.co' }],
+      ['/identity/password', { email: 'a@b.co', password: 'x'.repeat(1001) }],
+      ['/identity/password-for', { authUserId: 'not-a-uuid', password: 'x' }],
+      ['/identity/totp', { authUserId: ADA, state: 'x' }],
+    ] as const) expect((await call(path, body)).status, path).toBe(400);
+  });
+  it('a provider that cannot be reached is 502 provider_failed, not a wrong password', async () => {
+    identityDown = true;
+    for (const [path, body] of [
+      ['/identity/password', { email: 'admin@booq.example', password: 'pw-ada' }],
+      ['/identity/totp', { authUserId: ADA, state: 'first-step-state', code: '123456' }],
+    ] as const) {
+      const r = await call(path, body);
+      expect([r.status, await r.json()]).toEqual([502, { code: 'provider_failed' }]);
+    }
   });
 });
