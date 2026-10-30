@@ -60,6 +60,8 @@ export class RouteError extends Error {
 
 export interface Route<T> {
   def: RouteDeclaration;
+  /** Headers the transport sets on every answer of this route (for example `Cache-Control: no-store` on a schedule). */
+  headers?: Readonly<Record<string, string>>;
   handle(req: RouteRequest, deps: RouteDeps): Promise<RouteResult<T>>;
 }
 

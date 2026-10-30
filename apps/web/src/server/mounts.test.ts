@@ -17,7 +17,7 @@ const paths = (extra: Parameters<typeof createWebTable>[0]['extraMounts'] = []) 
 describe('route mounts', () => {
   it('the table holds the sign-in routes and every mounted feature, each declaring access', () => {
     const all = paths();
-    for (const p of ['POST /auth/session', 'POST /auth/profile', 'POST /auth/logout', 'GET /public/config', 'POST /imports', 'GET /claims', 'GET /data-requests', 'POST /me/data-requests']) {
+    for (const p of ['POST /auth/session', 'POST /auth/profile', 'POST /auth/logout', 'GET /public/config', 'POST /imports', 'GET /claims', 'GET /data-requests', 'POST /me/data-requests', 'GET /me/profile', 'PUT /me/profile']) {
       expect(all, p).toContain(p);
     }
     expect(mounts.length).toBeGreaterThanOrEqual(3);
@@ -26,12 +26,12 @@ describe('route mounts', () => {
     let seen: unknown;
     const all = paths([
       (m) => {
-        seen = { hasDb: m.db === parts.db, now: m.now().toISOString(), session: m.config.sessionSeconds };
+        seen = { hasDb: m.db === parts.db, now: m.now().toISOString(), session: m.config.sessionSeconds, clubBySlug: typeof m.clubBySlug };
         return [route({ method: 'GET', path: '/courts', public: true }, async () => 'ok')];
       },
     ]);
     expect(all).toContain('GET /courts');
-    expect(seen).toEqual({ hasDb: true, now: '2026-10-30T00:00:00.000Z', session: 60 });
+    expect(seen).toEqual({ hasDb: true, now: '2026-10-30T00:00:00.000Z', session: 60, clubBySlug: 'function' });
   });
   it('a path registered twice, by any two features, stops the app from starting', () => {
     const dup = [(): ReturnType<typeof import('@booq/auth').route>[] => [route({ method: 'POST', path: '/imports', public: true }, async () => 'x')]];

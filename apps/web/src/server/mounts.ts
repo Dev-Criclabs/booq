@@ -1,9 +1,10 @@
-import { createClaimService, createDataRequestService, createImportService, normalizePhone } from '@booq/domain';
+import { createClaimService, createDataRequestService, createImportService, createProfileEditService, normalizePhone } from '@booq/domain';
 import type { Route } from '@booq/auth';
 import type { Db } from '@booq/db';
 import { bangkokDate } from '@booq/time';
 import { claimRoutes } from '../api/claim/routes';
 import { dataRequestRoutes } from '../api/data-request/routes';
+import { profileRoutes } from '../api/profile/routes';
 import { importRoutes } from '../api/import/routes';
 import type { WebConfig } from './context';
 
@@ -12,7 +13,8 @@ import type { WebConfig } from './context';
 // lines, so they do not collide. The sign-in routes are in context.ts because they share the
 // session services with the resolver.
 //
-//   F03 booking:  add   (m) => bookingRoutes({ db: m.db, now: m.now })   below, import it above.
+//   F03 booking:  add   (m) => publicScheduleRoutes({ db: m.db, clubBySlug: m.clubBySlug })   below, import it above
+//   (and the signed-in booking routes of the same file with the deps they declare).
 //
 // serveRoutes checks the whole table when it is built: every entry declared, no path twice.
 
@@ -20,6 +22,8 @@ export interface MountContext {
   db: Db;
   now(): Date;
   config: WebConfig;
+  /** The club behind a path slug (for public routes that run before any session), or null. */
+  clubBySlug(slug: string): Promise<{ clubId: string } | null>;
 }
 export type Mount = (m: MountContext) => Route<unknown>[];
 
@@ -32,4 +36,5 @@ export const mounts: readonly Mount[] = [
     }),
   (m) => claimRoutes({ db: m.db, service: () => createClaimService() }),
   (m) => dataRequestRoutes({ db: m.db, service: () => createDataRequestService() }),
+  (m) => profileRoutes({ db: m.db, service: () => createProfileEditService({ today: () => bangkokDate(m.now()) }) }),
 ];
