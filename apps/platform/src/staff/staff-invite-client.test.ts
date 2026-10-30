@@ -20,15 +20,15 @@ const actor = { staffId: 'aaaaaaaa-0000-4000-8000-000000000001', stepUpFresh: tr
 
 describe('staff-invite client', () => {
   it('signs each call and sends the actor, the fresh second factor flag and the fields', async () => {
-    const { seen, client } = fake(200, { staffId: 's-1' });
-    expect(await client.invite(actor, { email: 'a@booq.example', displayName: 'A', role: 'onboarding_specialist' })).toEqual({ ok: true, staffId: 's-1' });
+    const { seen, client } = fake(200, { staffId: 's-1', enrolmentToken: 'tok-1' });
+    expect(await client.invite(actor, { email: 'a@booq.example', displayName: 'A', role: 'onboarding_specialist' })).toEqual({ ok: true, staffId: 's-1', enrolmentToken: 'tok-1' });
     expect(seen[0]!.url).toBe('https://invite.internal/invite');
     expect(seen[0]!.ok).toBe(true);
     expect(JSON.parse(seen[0]!.raw)).toEqual({ actorStaffId: actor.staffId, stepUpFresh: true, email: 'a@booq.example', displayName: 'A', role: 'onboarding_specialist' });
   });
   it('reset and deactivate go to their paths with the target', async () => {
-    const { seen, client } = fake(200, { ok: true });
-    expect(await client.resetFactor(actor, 't-1')).toEqual({ ok: true });
+    const { seen, client } = fake(200, { ok: true, enrolmentToken: 'tok-2' });
+    expect(await client.resetFactor(actor, 't-1')).toEqual({ ok: true, enrolmentToken: 'tok-2' });
     expect(await client.deactivate(actor, 't-1')).toEqual({ ok: true });
     expect(seen.map((s) => s.url)).toEqual(['https://invite.internal/reset-factor', 'https://invite.internal/deactivate']);
     expect(JSON.parse(seen[0]!.raw)).toMatchObject({ targetStaffId: 't-1' });
@@ -43,7 +43,7 @@ describe('staff-invite client', () => {
 
   it('after a reset or a deactivation the teammate\'s console sessions end; a refusal ends nothing', async () => {
     ended.length = 0;
-    await fake(200, { ok: true }).client.resetFactor(actor, 't-1');
+    await fake(200, { ok: true, enrolmentToken: 'tok' }).client.resetFactor(actor, 't-1');
     await fake(200, { ok: true }).client.deactivate(actor, 't-2');
     expect(ended).toEqual(['t-1', 't-2']);
     ended.length = 0;

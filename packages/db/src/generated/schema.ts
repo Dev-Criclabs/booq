@@ -233,6 +233,16 @@ export interface PlatformStaffAssignment {
   assigned_at: string;
 }
 
+export interface PlatformStaffEnrolment {
+  token_hash: string;
+  staff_id: string;
+  purpose: string;
+  created_by: string;
+  created_at: string;
+  expires_at: string;
+  used_at: string | null;
+}
+
 export interface PlatformSupportSession {
   id: string;
   staff_id: string;
@@ -430,6 +440,28 @@ export interface PublicClaimRequest {
   requested_at: string;
   handled_by: string | null;
   handled_at: string | null;
+}
+
+export interface PublicClassTemplate {
+  club_id: string;
+  id: string;
+  name_th: string;
+  name_en: string;
+  audience: string;
+  level: string | null;
+  coach_id: string;
+  resource_id: string;
+  weekday: number;
+  start_time: string;
+  duration_minutes: number;
+  min_players: number;
+  max_players: number;
+  drop_in_price_satang: number | null;
+  active: boolean;
+  created_by: string;
+  created_at: string;
+  ended_on: string | null;
+  is_test: boolean;
 }
 
 export interface PublicClosure {
@@ -1046,6 +1078,43 @@ export interface PublicRateLimitHit {
   hits: number;
 }
 
+export interface PublicReceipt {
+  club_id: string;
+  id: string;
+  order_id: string;
+  payment_id: string | null;
+  kind: string;
+  series: string;
+  seq_no: number;
+  number: string;
+  status: string;
+  issued_at: string;
+  vat_flag: boolean;
+  customer_id: string | null;
+  customer_name_snapshot: string | null;
+  lines: unknown;
+  total_satang: number;
+  is_test: boolean;
+  created_at: string;
+}
+
+export interface PublicReceiptCounter {
+  club_id: string;
+  series: string;
+  last_no: number;
+  is_test: boolean;
+}
+
+export interface PublicReceiptVoid {
+  club_id: string;
+  id: string;
+  receipt_id: string;
+  reason: string;
+  voided_by: string;
+  voided_at: string;
+  is_test: boolean;
+}
+
 export interface PublicResource {
   club_id: string;
   id: string;
@@ -1158,6 +1227,7 @@ export interface Tables {
   'platform.owner_contact_change': PlatformOwnerContactChange;
   'platform.platform_staff': PlatformPlatformStaff;
   'platform.staff_assignment': PlatformStaffAssignment;
+  'platform.staff_enrolment': PlatformStaffEnrolment;
   'platform.support_session': PlatformSupportSession;
   'platform.template': PlatformTemplate;
   'platform.template_item': PlatformTemplateItem;
@@ -1173,6 +1243,7 @@ export interface Tables {
   'public.booking_cancel': PublicBookingCancel;
   'public.booking_coach_add': PublicBookingCoachAdd;
   'public.claim_request': PublicClaimRequest;
+  'public.class_template': PublicClassTemplate;
   'public.closure': PublicClosure;
   'public.closure_resource': PublicClosureResource;
   'public.club': PublicClub;
@@ -1222,6 +1293,9 @@ export interface Tables {
   'public.promo_code': PublicPromoCode;
   'public.promo_redemption': PublicPromoRedemption;
   'public.rate_limit_hit': PublicRateLimitHit;
+  'public.receipt': PublicReceipt;
+  'public.receipt_counter': PublicReceiptCounter;
+  'public.receipt_void': PublicReceiptVoid;
   'public.resource': PublicResource;
   'public.rich_menu': PublicRichMenu;
   'public.rich_menu_label': PublicRichMenuLabel;

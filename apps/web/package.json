@@ -4,8 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "main": "src/index.ts",
+  "scripts": {
+    "build": "node ../../infra/checks/forbid-liff-fake.mjs && next build"
+  },
   "dependencies": {
     "@booq/auth": "workspace:*",
+    "@booq/beam": "workspace:*",
     "@booq/db": "workspace:*",
     "@booq/domain": "workspace:*",
     "@booq/line": "workspace:*",
