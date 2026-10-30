@@ -17,7 +17,7 @@ export type ProfileResult =
   | {
       ok: false;
       status: 400 | 401 | 404 | 409;
-      code: 'bad_input' | 'consent_required' | 'invalid' | 'unauthenticated' | 'not_found' | 'not_pending' | 'already_registered' | 'invite_invalid';
+      code: 'bad_input' | 'consent_required' | 'invalid' | 'unauthenticated' | 'not_found' | 'not_pending' | 'already_registered' | 'invite_invalid' | 'notice_version_stale' | 'no_notice';
       fields?: { fullName?: NameErrorCode; phone?: PhoneErrorCode };
     };
 
@@ -96,6 +96,9 @@ export function createProfileService(options: ProfileOptions) {
             if (/sign_up:no_pending_session/.test(m)) throw new Refused({ ok: false, status: 401, code: 'unauthenticated' });
             if (/sign_up:already_registered/.test(m)) throw new Refused({ ok: false, status: 409, code: 'already_registered' });
             if (/sign_up:not_a_tester/.test(m)) throw new Refused({ ok: false, status: 404, code: 'not_found' });
+            // D152: the consent must name the current notice release; the client reloads the config and asks again.
+            if (/sign_up:notice_version_stale/.test(m)) throw new Refused({ ok: false, status: 409, code: 'notice_version_stale' });
+            if (/sign_up:no_notice/.test(m)) throw new Refused({ ok: false, status: 409, code: 'no_notice' });
             throw e;
           }
           // From here the new person is the actor of the rest of this transaction.

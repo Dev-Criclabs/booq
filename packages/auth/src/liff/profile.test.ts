@@ -120,6 +120,23 @@ describe('what is refused creates nothing (AUTH-02-AC2, AC3)', () => {
     expect(await complete(b, noLanguage)).toEqual({ ok: true, state: 'active' });
     expect((await players()).find((p) => p.line_user_id === 'UTESTER')!.language).toBe('th'); // the club's default
   });
+  it('D152: a version that is not the current release is refused as notice_version_stale and creates nothing', async () => {
+    const cookie = await pending();
+    const before = await counts();
+    expect(await complete(cookie, { ...GOOD, noticeVersion: 'v0' })).toEqual({ ok: false, status: 409, code: 'notice_version_stale' });
+    expect(await counts()).toEqual(before);
+    expect(await signIn.authenticate({ slug: 'a', cookieHeader: cookie })).toMatchObject({ ok: true, state: 'pending_profile' });
+    expect(await complete(cookie, GOOD)).toEqual({ ok: true, state: 'active' });
+  });
+  it('D152: with no release published the sign-up is refused as no_notice and creates nothing', async () => {
+    // A throwaway database: lift the append-only guard to remove the seeded release.
+    await tdb.query('alter table platform.legal_text disable trigger user; alter table platform.legal_release disable trigger user');
+    await tdb.query('delete from platform.legal_text; delete from platform.legal_release');
+    const cookie = await pending();
+    const before = await counts();
+    expect(await complete(cookie, GOOD)).toEqual({ ok: false, status: 409, code: 'no_notice' });
+    expect(await counts()).toEqual(before);
+  });
   it('a bad language or notice version is refused', async () => {
     const cookie = await pending();
     expect(await complete(cookie, { ...GOOD, language: 'fr' })).toMatchObject({ ok: false, code: 'bad_input' });

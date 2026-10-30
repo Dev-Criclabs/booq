@@ -1,16 +1,15 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import type { Lang } from '../../client/i18n';
-import { liffPort } from '../../client/liff';
 import { NOTICE_NAME_KEY, noticeFrom, type NoticeDocument, type NoticeKind, type NoticeSource } from '../../client/notice';
-import { useClub } from '../../client/use-club';
+import { useClub, useLiff } from '../../client/use-club';
 import { Notice } from '../Notice';
 import { Loading, StateScreen } from '../StateScreen';
 
 // /c/{slug}/privacy and /c/{slug}/terms (D152). Public pages: a guest reads them before consent.
 
 export function NoticeScreen({ slug, kind, initialLang, source }: { slug: string; kind: NoticeKind; initialLang: Lang; source?: NoticeSource }) {
-  const liff = useMemo(() => liffPort(), []);
+  const liff = useLiff();
   const { load, lang, t, retry } = useClub(slug, initialLang, liff);
   const [doc, setDoc] = useState<NoticeDocument | null | undefined>(undefined);
   const [failed, setFailed] = useState(false);

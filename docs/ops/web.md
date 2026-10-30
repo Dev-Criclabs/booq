@@ -15,10 +15,14 @@ Proposal, 30 Oct 2026, from the Orchestrator's request about the sign-in work in
 
 **The rate pair is required before launch.** The code treats it as optional, and with both unset there is no limit. That is acceptable on a developer machine and not acceptable in production. Proposed rule for the launch checklist: **both must be set on the staging and production web deployments before the 7 Dec test** (it is a P4 item, like the pay-tap limit, D61), and CI strict mode should fail a deployment config check that finds only one of the pair. DevOps sets them in the hosting environment once Security approves the numbers.
 
+**Import limits (pair, optional until imports are used).** `IMPORT_MAX_ROWS` and `IMPORT_STAGING_HOURS`: set both or neither; with neither, the import answers 503 `import_not_configured`. Security proposes `5000` rows and `24` hours (threat model section 6: `import_max_rows`, and staging rows removed 24 hours after confirm or cancel). Not in the 4 Dec required set unless Hunter imports players.
+
+**Export routes (not wired yet).** The code comment says they wait for DevOps to pick the storage provider and the queue credential. Proposal, for the Architect to confirm: files go to a **private Supabase Storage bucket** in the same Singapore project (already covered by the same data-processing agreement), under `club_id/`, opened by a short-lived signed link created on click (Security proposes 10 minutes) and deleted after 24 hours. The web app should **not** hold the queue role's credential: it adds the export job through a database function that `booq_app` may call, so only the worker holds `booq_queue` (`worker.md`).
+
 ### Deploy environment checklist, `apps/web`
 
 Set in the hosting environment of each web deployment (staging, production), all without defaults in code:
-`DATABASE_URL`, `WEB_SESSION_SECONDS`, `WEB_MAX_BODY_BYTES`, `WEB_SIGNIN_RATE_LIMIT`, `WEB_SIGNIN_RATE_WINDOW_SECONDS`, `WEB_RATE_LIMIT_KEY`. The last three are one group: set all three or none, and all three before the 7 Dec test. The matching worker settings are in `worker.md`; the limiter's rows are removed by the worker's `rate_limit_sweep` task.
+`DATABASE_URL`, `WEB_SESSION_SECONDS`, `WEB_MAX_BODY_BYTES`, `WEB_SIGNIN_RATE_LIMIT`, `WEB_SIGNIN_RATE_WINDOW_SECONDS`, `WEB_RATE_LIMIT_KEY`. Never set `NEXT_PUBLIC_LIFF_FAKE=1` on a hosted deploy (it swaps the real LINE sign-in for a fake; see `plan.md` section 11). The last three are one group: set all three or none, and all three before the 7 Dec test. The matching worker settings are in `worker.md`; the limiter's rows are removed by the worker's `rate_limit_sweep` task.
 
 ## Which client IP is read
 
