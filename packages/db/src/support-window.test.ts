@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from './tx';
 import { createTestDatabase, type TestDatabase } from './testing/harness';
 
-// F01-T19 / migration 0010: the owner's window (PLAT-02-AC4, AC5; review SR-02).
+// F01-T19 / migration 0031: the owner's window (PLAT-02-AC4, AC5; review SR-02).
 const A = '3f2b8f0e-7c1d-4a55-9d0a-1c2e3f4a5b6c';
 const B = '9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d';
 const USER = '11111111-2222-4333-8444-555555555555';

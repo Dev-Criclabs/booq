@@ -1,4 +1,4 @@
--- F01-T19 / migration 0010: the owner's support window (PLAT-02-AC4, AC5; review SR-02).
+-- F01-T19 / migration 0031: the owner's support window (PLAT-02-AC4, AC5; review SR-02).
 -- The only writer of club.allow_booq_changes_until and allow_booq_changes_set_at. SECURITY
 -- DEFINER with a fixed search path; the club comes from app.club_id() and never from an argument;
 -- the caller's role is read from the transaction. Go live, pause and resume clear the window
