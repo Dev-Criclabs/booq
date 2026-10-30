@@ -22,6 +22,7 @@ export const tables: Fragment = {
   'platform.template_item': { class: 'P' },
   'platform.launch_check': { class: 'P' },
   'platform.export_request': { class: 'P' },
+  'platform.worker_heartbeat': { class: 'P' },   // migration 0007; counts only
   // People (F01-T12, migration 0003): club data, BOOQ staff never.
   'public.app_user': { class: 'D', audited: true },
   'public.app_user_role': { class: 'D', audited: true },
@@ -29,9 +30,27 @@ export const tables: Fragment = {
   'public.user_consent': { class: 'D' },     // append-only record
   'public.club_invite': { class: 'D', audited: true },
   'public.club_tester': { class: 'D', audited: true },
+  // Connections and secrets (F01-T09, migration 0012). Secrets are write-only.
+  'public.line_connection': { class: 'S', audited: true },
+  'public.payment_connection': { class: 'S', audited: true, allowColumns: ['webhook_token_hash_test', 'webhook_token_hash_live'] },
+  'public.club_secret': { class: 'S', audited: true },
+  'public.club_secret_read': { class: 'D' },
+  // Import staging, exports, data requests (migration 0007)
+  'public.import_job': { class: 'D', audited: true },
+  'public.import_row': { class: 'D' },
+  'public.data_export': { class: 'D', audited: true },
+  'public.data_request': { class: 'D', audited: true },
+  // Owner notices of platform changes (migration 0015)
+  'public.owner_notice': { class: 'D', audited: true },
   // audit (F01-T10)
   'audit.registry': { class: 'infra' },
   'app.test_tables': { class: 'infra' },   // F01-T26
   'public.audit_entry': { class: 'D' },
   'public.audit_erasure': { class: 'D' },
+  // pause and resume (F01-T22): work to run when a club resumes; written only by migrations
+  'app.pause_handlers': { class: 'infra' },
+  // setup steps that block Draft to Testing (F01-T23): registered by migrations only
+  'app.setup_steps': { class: 'infra' },
+  // owner contact changes that need a second admin (F01-T23 part b)
+  'platform.owner_contact_change': { class: 'P' },
 };

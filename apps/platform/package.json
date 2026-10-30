@@ -5,6 +5,8 @@
   "type": "module",
   "main": "src/index.ts",
   "dependencies": {
-    "@booq/time": "workspace:*"
+    "@booq/time": "workspace:*",
+    "@booq/db": "workspace:*",
+    "@booq/auth": "workspace:*"
   }
 }

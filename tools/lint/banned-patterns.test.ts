@@ -23,6 +23,16 @@ describe('F01-T01 banned patterns (FA 4.5 static checks)', () => {
     expect(findViolations('packages/auth/src/a.ts', "import x from 'pgvector'; import y from './pg-helpers';")).toEqual([]);
   });
 
+  it('flags reading the secret keys or calling the secret functions outside packages/secrets (SR-03)', () => {
+    for (const code of ["process.env.SECRETS_PRIVATE_KEY", "const k = env.SECRETS_PUBLIC_KEY;", "tx.query('select app.read_secret($1)', [k])", "select app.read_secret_worker('x')", "select app.write_secret(a,b,c,d)"]) {
+      expect(findViolations('apps/platform/src/a.ts', code).map((x) => x.rule), code).toContain('no-secret-access');
+      expect(findViolations('packages/line/src/a.ts', code).map((x) => x.rule), code).toContain('no-secret-access');
+    }
+    expect(findViolations('packages/secrets/src/a.ts', 'process.env.SECRETS_PRIVATE_KEY')).toEqual([]);
+    expect(findViolations('packages/db/src/a.ts', "select app.read_secret('x')")).toEqual([]);
+    expect(findViolations('apps/web/src/a.ts', 'const readSecretValue = 1; // read_secrets list')).toEqual([]);
+  });
+
   it('scans source files and skips node_modules and build output', () => {
     expect(isScanned('apps/web/src/a.ts')).toBe(true);
     expect(isScanned('packages/db/src/a.mjs')).toBe(true);
