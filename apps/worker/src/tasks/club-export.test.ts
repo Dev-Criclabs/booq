@@ -4,6 +4,7 @@ import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
 import { createExportService, createMemoryStorage } from '@booq/domain';
 import { clubTask, TaskRefusedError } from '../task-wrapper';
 import { CLUB_EXPORT, clubExportTask } from './club-export';
+import { closeTestDatabase } from '../testing/teardown';
 
 // F01-T32 worker task: builds the export in the club's context (PLAT-06-AC11). Payload: ids only.
 const A = '3f2b8f0e-7c1d-4a55-9d0a-1c2e3f4a5b6c';
@@ -30,7 +31,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   await db.end();
-  await tdb.close();
+  await closeTestDatabase(tdb);
 });
 const task = () => clubTask(db, clubExportTask(createExportService({ storage, linkSeconds: 86400 })), { actorLabel: CLUB_EXPORT });
 
