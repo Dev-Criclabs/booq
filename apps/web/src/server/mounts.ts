@@ -1,5 +1,7 @@
 import { createClaimService, createDataRequestService, createImportService, createProfileEditService, quoteSources, normalizePhone } from '@booq/domain';
-import type { Route } from '@booq/auth';
+import { createRedactingLogger, type Route } from '@booq/auth';
+import { beamGateway } from '@booq/beam';
+import { loadDecryptKey } from '@booq/secrets';
 import type { Db } from '@booq/db';
 import { bangkokDate } from '@booq/time';
 import { playerBookingRoutes, publicScheduleRoutes, staffBookingRoutes } from '../api/booking/routes';
@@ -33,6 +35,10 @@ export interface MountContext {
 }
 export type Mount = (m: MountContext) => Route<unknown>[];
 
+// F05 P1 alerts (a kind and the club only) go to the redacted log until a platform alert store exists.
+const alertLog = createRedactingLogger((line) => process.stderr.write(`${line}\n`));
+const paymentAlerts = { p1: (kind: string, clubId: string) => alertLog.error('p1_alert', { source: 'payments', kind, clubId }) };
+
 export const mounts: readonly Mount[] = [
   (m) =>
     importRoutes({
@@ -48,5 +54,5 @@ export const mounts: readonly Mount[] = [
   (m) => [publicScheduleRoutes, playerBookingRoutes, staffBookingRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
   (m) => noticeRoutes({ db: m.db, clubBySlug: m.clubBySlug }),
   (m) => profileRoutes({ db: m.db, service: () => createProfileEditService({ today: () => bangkokDate(m.now()) }) }),
-  (m) => checkoutRoutes({ db: m.db, clubBySlug: m.clubBySlug, sources: quoteSources }),
+  (m) => checkoutRoutes({ db: m.db, clubBySlug: m.clubBySlug, sources: quoteSources, payments: { privateKey: () => loadDecryptKey(), gateway: beamGateway, alerts: paymentAlerts, now: m.now } }),
 ];
