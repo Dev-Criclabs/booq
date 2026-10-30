@@ -1,0 +1,222 @@
+// F01 console: one club (P3 and the support view): status and checklist, owner invite, webhook addresses, club basics, step-up.
+// Run: node --test --test-concurrency=1 'apps/platform/e2e/*.e2e.mjs'  (one next dev at a time; Chromium is pre-installed).
+import assert from 'node:assert/strict';
+import { after, before, describe, it } from 'node:test';
+import { join } from 'node:path';
+import { chromium, openPage, SHOTS, startApp } from './harness.mjs';
+
+let app;
+let browser;
+before(async () => {
+  app = await startApp(3120);
+  browser = await chromium.launch();
+});
+after(async () => {
+  await browser?.close();
+  app?.stop();
+});
+
+const ID = 'c-1';
+const club = (over = {}) => ({ id: ID, slug: 'hunter', status: 'testing', name_th: 'ฮันเตอร์', name_en: 'Hunter Tennis Club', legal_name: null, owner_name: 'Nok Owner', owner_phone: '0811111111', owner_line: null, owner_email: 'nok@example.com', ...over });
+const DETAIL = {
+  progress: {
+    setup: [{ item: 'basics', done: true, owed_by: 'booq' }, { item: 'line', done: false, owed_by: 'booq' }, { item: 'legal_notice', done: true, owed_by: 'booq' }],
+    launch: [{ item: 'line_test', result: 'pass', owed_by: 'booq' }, { item: 'product_priced', result: 'pending', owed_by: 'owner' }, { item: 'brand_new_check', result: 'missing', owed_by: 'booq' }],
+  },
+  counts: { bookingsConfirmed30d: 7, lineMessagesSent30d: 120 },
+};
+const SUPPORT = (over = {}) => ({ setup: { mode: 'edit', club: club(), hours: [{ weekday: 1, open: '06:00', close: '22:00' }], locations: [], resources: [{ id: 'r1', name: 'Court 1', sport: 'tennis', active: true }], settings: [], features: [{ feature_key: 'coaches', enabled: true }], ...over } });
+
+/** A console serving this club to an admin. `over` replaces any answer ("METHOD /path" -> answer or function). */
+const api = ({ role = 'platform_admin', support = SUPPORT(), invite = { status: 'none' }, over = {} } = {}) => (method, path, body) => {
+  const key = `${method} ${path}`;
+  if (over[key]) return typeof over[key] === 'function' ? over[key](body) : over[key];
+  if (key === 'GET /auth/me') return { status: 200, body: { id: 'a1', role, displayName: 'Ada', stepUpFresh: true } };
+  if (key === `GET /clubs/${ID}`) return { status: 200, body: DETAIL };
+  if (key === `GET /clubs/${ID}/support/setup`) return { status: 200, body: support };
+  if (key === `GET /clubs/${ID}/owner-invite`) return { status: 200, body: { invite } };
+  return { status: 404, body: { code: 'not_found' } };
+};
+
+describe('the club page', () => {
+  it('shows the status, the counts, the checklist with who owes each item, the live checks and the support view', async () => {
+    const { page, context } = await openPage(browser, api(), { width: 1024, height: 900 });
+    await page.goto(`${app.base}/clubs/${ID}`);
+    await page.getByTestId('setup').waitFor();
+    assert.equal(await page.locator('h1').innerText(), 'Hunter Tennis Club');
+    assert.equal(await page.getByTestId('status').innerText(), 'Testing');
+    assert.match(await page.getByTestId('mode').innerText(), /Edit mode/);
+    assert.match(await page.getByTestId('club').innerText(), /Bookings, 30 days: 7 · LINE messages, 30 days: 120/);
+    assert.match(await page.getByTestId('setup-basics').innerText(), /Club basics · Done · BOOQ/);
+    assert.match(await page.getByTestId('setup-line').innerText(), /LINE · Not done · BOOQ/);
+    assert.match(await page.getByTestId('setup-legal_notice').innerText(), /Legal notice published · Done/);
+    assert.match(await page.getByTestId('launch-line_test').innerText(), /Passed · BOOQ/);
+    assert.match(await page.getByTestId('launch-product_priced').innerText(), /Waiting · Owner/);
+    assert.match(await page.getByTestId('launch-brand_new_check').innerText(), /brand_new_check · Missing/, 'an unknown check shows its own key, not invented text');
+    assert.match(await page.getByTestId('hours').innerText(), /Monday 06:00–22:00/);
+    assert.match(await page.getByTestId('courts').innerText(), /Court 1 · tennis/);
+    assert.match(await page.getByTestId('features').innerText(), /coaches · On/);
+    await page.screenshot({ path: join(SHOTS, 'club.png'), fullPage: true });
+    await context.close();
+  });
+
+  it('a Live club is read only: the basics cannot be saved and webhook addresses are off', async () => {
+    const support = SUPPORT({ mode: 'look', club: club({ status: 'live' }) });
+    const { page, context } = await openPage(browser, api({ support }), { width: 1024, height: 900 });
+    await page.goto(`${app.base}/clubs/${ID}`);
+    await page.getByTestId('basics-form').waitFor();
+    assert.match(await page.getByTestId('mode').innerText(), /Read only/);
+    assert.equal(await page.getByTestId('save-basics').count(), 0);
+    assert.equal(await page.locator('#b-name_en').getAttribute('readonly'), '');
+    assert.equal(await page.getByTestId('webhook-line').isDisabled(), true);
+    await context.close();
+  });
+
+  it('changing the status: a blocked move lists what is missing by name; a good one reloads', async () => {
+    let calls = 0;
+    const over = {
+      [`POST /clubs/${ID}/status`]: () => (++calls === 1 ? { status: 409, body: { code: 'blocked', missing: [{ item: 'line', owed_by: 'booq' }, { item: 'product_priced', owed_by: 'owner', result: 'pending' }] } } : { status: 200, body: { from: 'testing', to: 'live' } }),
+    };
+    const { page, context, calls: seen } = await openPage(browser, api({ over }), { width: 1024, height: 900 });
+    await page.goto(`${app.base}/clubs/${ID}`);
+    await page.getByTestId('status-form').waitFor();
+    await page.locator('#to').selectOption('live');
+    await page.locator('#reason').fill('  ready  ');
+    await page.getByTestId('change-status').click();
+    await page.getByTestId('blocked').waitFor();
+    assert.match(await page.getByTestId('blocked').innerText(), /LINE[\s\S]*A product has a price/);
+    assert.deepEqual(seen.find((c) => c.path.endsWith('/status')).body, { to: 'live', reason: 'ready' });
+    await page.getByTestId('change-status').click();
+    await page.getByTestId('notice').waitFor();
+    assert.equal(await page.getByTestId('notice').innerText(), 'The status was changed.');
+    assert.equal(await page.getByTestId('blocked').count(), 0);
+    await context.close();
+  });
+
+  it('a stale second factor opens the step-up, then the same action runs again (owner invite)', async () => {
+    let fresh = false;
+    const over = {
+      'POST /auth/step-up': () => ((fresh = true), { status: 200, body: { ok: true } }),
+      [`POST /clubs/${ID}/owner-invite`]: () => (fresh ? { status: 200, body: { status: 'sent' } } : { status: 403, body: { code: 'step_up_required' } }),
+    };
+    const { page, context, calls } = await openPage(browser, api({ over }), { width: 1024, height: 900 });
+    await page.goto(`${app.base}/clubs/${ID}`);
+    assert.equal(await page.getByTestId('invite-status').innerText(), 'No invite has been sent yet.');
+    await page.getByTestId('send-invite').click();
+    await page.getByTestId('step-up').waitFor();
+    await page.locator('#stepup-password').fill('pw');
+    await page.locator('#stepup-code').fill('123456');
+    await page.getByTestId('step-up-submit').click();
+    await page.getByTestId('notice').waitFor();
+    assert.equal(await page.getByTestId('notice').innerText(), "The invite was sent to the owner's email.");
+    assert.equal(calls.filter((c) => c.path === `/clubs/${ID}/owner-invite` && c.method === 'POST').length, 2);
+    await context.close();
+  });
+
+  it('owner invite text follows its state: pending and expired can be sent again, an opened one cannot', async () => {
+    for (const [status, text, button] of [['pending', 'Sent. The owner has not opened it yet.', 'Resend'], ['expired', 'The invite has expired.', 'Resend'], ['redeemed', 'The owner opened the invite.', null]]) {
+      const { page, context } = await openPage(browser, api({ invite: { status } }), { width: 1024, height: 900 });
+      await page.goto(`${app.base}/clubs/${ID}`);
+      await page.getByTestId('invite-status').waitFor();
+      assert.equal(await page.getByTestId('invite-status').innerText(), text);
+      if (button) assert.equal(await page.getByTestId('send-invite').innerText(), button);
+      else assert.equal(await page.getByTestId('send-invite').count(), 0);
+      await context.close();
+    }
+  });
+
+  it('a webhook address is shown once, in a box that is forgotten when closed', async () => {
+    const url = 'https://app.example/api/webhooks/line/TOKEN-ONLY-SHOWN-ONCE';
+    const over = { [`POST /clubs/${ID}/webhook-tokens/line`]: { status: 200, body: { token: 'TOKEN-ONLY-SHOWN-ONCE', url, replaced: true } } };
+    const { page, context } = await openPage(browser, api({ over }), { width: 1024, height: 900, origin: app.base });
+    await page.goto(`${app.base}/clubs/${ID}`);
+    await page.getByTestId('webhook-line').click();
+    await page.getByTestId('address-box').waitFor();
+    assert.equal(await page.getByTestId('address').inputValue(), url);
+    assert.match(await page.getByTestId('address-box').innerText(), /shown only once[\s\S]*replaced an earlier address/);
+    await page.getByTestId('address-copy').click();
+    await page.getByTestId('address-copy').filter({ hasText: 'Copied' }).waitFor({ timeout: 5000 });
+    assert.equal(await page.evaluate(() => navigator.clipboard.readText()), url);
+    await page.getByTestId('address-done').click();
+    assert.ok(!(await page.content()).includes('TOKEN-ONLY-SHOWN-ONCE'));
+    await context.close();
+  });
+
+  it('a specialist does not see the admin actions (pause, webhook addresses)', async () => {
+    const support = SUPPORT({ club: club({ status: 'live' }) });
+    const { page, context } = await openPage(browser, api({ role: 'onboarding_specialist', support }), { width: 1024, height: 900 });
+    await page.goto(`${app.base}/clubs/${ID}`);
+    await page.getByTestId('setup').waitFor();
+    await page.waitForTimeout(300);
+    assert.equal(await page.getByTestId('pause').count(), 0);
+    assert.equal(await page.getByTestId('webhook-line').count(), 0);
+    await context.close();
+  });
+
+  it('an admin pauses a live club with a reason and resumes a paused one', async () => {
+    const over = { [`POST /clubs/${ID}/pause`]: { status: 200, body: { ownerNotified: false } }, [`POST /clubs/${ID}/resume`]: { status: 200, body: {} } };
+    const live = await openPage(browser, api({ support: SUPPORT({ mode: 'look', club: club({ status: 'live' }) }), over }), { width: 1024, height: 900 });
+    await live.page.goto(`${app.base}/clubs/${ID}`);
+    await live.page.getByTestId('pause-form').waitFor();
+    assert.equal(await live.page.getByTestId('pause').isDisabled(), true, 'a reason is needed');
+    await live.page.locator('#pause-reason').fill('Court resurfacing');
+    await live.page.getByTestId('pause').click();
+    await live.page.getByTestId('notice').waitFor();
+    assert.deepEqual(live.calls.find((c) => c.path.endsWith('/pause')).body, { reason: 'Court resurfacing' });
+    await live.context.close();
+    const paused = await openPage(browser, api({ support: SUPPORT({ mode: 'look', club: club({ status: 'paused' }) }), over }), { width: 1024, height: 900 });
+    await paused.page.goto(`${app.base}/clubs/${ID}`);
+    await paused.page.getByTestId('pause-form').waitFor();
+    assert.equal(await paused.page.getByTestId('status-form').count(), 0, 'a paused club is resumed, not moved');
+    await paused.page.locator('#pause-reason').fill('Resurfacing done');
+    await paused.page.getByTestId('resume').click();
+    await paused.page.getByTestId('notice').waitFor();
+    await paused.context.close();
+  });
+
+  it('saves only what changed in the basics, and says when the owner contact waits for a second admin', async () => {
+    const over = { [`PUT /clubs/${ID}/support/setup/basics`]: { status: 200, body: { changed: ['owner_phone'], pendingOwnerContact: 'req-1' } } };
+    const { page, context, calls } = await openPage(browser, api({ over }), { width: 1024, height: 900 });
+    await page.goto(`${app.base}/clubs/${ID}`);
+    await page.getByTestId('basics-form').waitFor();
+    await page.locator('#b-owner_phone').fill('0822222222');
+    await page.getByTestId('save-basics').click();
+    await page.getByTestId('notice').waitFor();
+    assert.equal(await page.getByTestId('notice').innerText(), "The change to the owner's contact waits for a second admin to approve it.");
+    assert.deepEqual(calls.find((c) => c.method === 'PUT').body, { owner_phone: '0822222222' });
+    await context.close();
+  });
+
+  it('an unknown club, no session and a look-only refusal are told in words', async () => {
+    const gone = await openPage(browser, (m, p) => (p === '/auth/me' ? { status: 401, body: {} } : { status: 404, body: { code: 'not_found' } }));
+    await gone.page.goto(`${app.base}/clubs/${ID}`);
+    await gone.page.getByTestId('load-error').waitFor();
+    assert.match(await gone.page.getByTestId('load-error').innerText(), /does not exist, or it is not one of yours/);
+    await gone.context.close();
+    const out = await openPage(browser, (m, p) => ({ status: 401, body: { code: 'unauthenticated' } }));
+    await out.page.goto(`${app.base}/clubs/${ID}`);
+    await out.page.getByTestId('sign-in-link').waitFor();
+    assert.equal(await out.page.getByTestId('sign-in-link').getAttribute('href'), `/sign-in?next=/clubs/${ID}`);
+    await out.context.close();
+    const over = { [`PUT /clubs/${ID}/support/setup/basics`]: { status: 409, body: { code: 'look_only' } } };
+    const { page, context } = await openPage(browser, api({ over }), { width: 1024, height: 900 });
+    await page.goto(`${app.base}/clubs/${ID}`);
+    await page.locator('#b-name_en').fill('Renamed');
+    await page.getByTestId('save-basics').click();
+    await page.getByTestId('notice').waitFor();
+    assert.match(await page.getByTestId('notice').innerText(), /live or paused, so it can be looked at but not changed/);
+    await context.close();
+  });
+
+  it('fits 320 px with a very long name: nothing scrolls sideways and the buttons stay on one line', async () => {
+    const support = SUPPORT({ club: club({ name_en: 'An Extraordinarily Long Club Name That Goes On And On '.repeat(3), owner_email: 'a-very-long-owner-address-that-keeps-going@a-very-long-domain-name.example' }) });
+    const { page, context } = await openPage(browser, api({ support, invite: { status: 'pending' } }), { width: 320, height: 640 });
+    await page.goto(`${app.base}/clubs/${ID}`);
+    await page.getByTestId('basics-form').waitFor();
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    assert.ok(overflow <= 0, `page scrolls sideways by ${overflow}px`);
+    for (const b of await page.locator('main button').all()) assert.ok((await b.boundingBox()).height < 60, 'a button wraps');
+    await page.screenshot({ path: join(SHOTS, 'club-320.png'), fullPage: true });
+    await context.close();
+  });
+});
