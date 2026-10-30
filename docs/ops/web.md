@@ -22,7 +22,7 @@ Proposal, 30 Oct 2026, from the Orchestrator's request about the sign-in work in
 ### Deploy environment checklist, `apps/web`
 
 Set in the hosting environment of each web deployment (staging, production), all without defaults in code:
-`DATABASE_URL`, `WEB_SESSION_SECONDS`, `WEB_MAX_BODY_BYTES`, `WEB_SIGNIN_RATE_LIMIT`, `WEB_SIGNIN_RATE_WINDOW_SECONDS`, `WEB_RATE_LIMIT_KEY`. Never set `NEXT_PUBLIC_LIFF_FAKE=1` on a hosted deploy (it swaps the real LINE sign-in for a fake; see `plan.md` section 11). The last three are one group: set all three or none, and all three before the 7 Dec test. The matching worker settings are in `worker.md`; the limiter's rows are removed by the worker's `rate_limit_sweep` task.
+`DATABASE_URL`, `WEB_SESSION_SECONDS`, `WEB_MAX_BODY_BYTES`, `WEB_SIGNIN_RATE_LIMIT`, `WEB_SIGNIN_RATE_WINDOW_SECONDS`, `WEB_RATE_LIMIT_KEY`, `SECRETS_PUBLIC_KEY`, `SECRETS_PRIVATE_KEY` (the web app reads `line_channel_secret` to verify LINE webhooks, D149, and writes the owner's secrets). Never set `NEXT_PUBLIC_LIFF_FAKE=1` on a hosted deploy (it swaps the real LINE sign-in for a fake; see `plan.md` section 11). The last three are one group: set all three or none, and all three before the 7 Dec test. The matching worker settings are in `worker.md`; the limiter's rows are removed by the worker's `rate_limit_sweep` task.
 
 ## Which client IP is read
 

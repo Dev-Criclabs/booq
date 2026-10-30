@@ -25,7 +25,7 @@ Use a company email address (not a personal one) and 2FA on every account. Recor
 | 15 | **A tester list**: LINE accounts of the people who test on 7 Dec on production (the owner and named BOOQ testers, D4) | Test OA friends | **You** collect names. They add the test OA | 1 Dec | |
 | 16 | **Authenticator apps / hardware keys for BOOQ staff** (D3) | Second factor for the platform console and for GitHub, hosting and Supabase | **You** decide the factor type (authenticator app is fine to start). Each person sets up their own | Before they first sign in | |
 | 17 | **Hardware keys or passkeys** for the two or three people with production owner rights (GitHub, hosting, database provider) | Account takeover protection (Security OPS-4) | **You** buy them and name the people. Each person enrols their own | Before production is created (20 Nov) | Small |
-| 18 | **Key custody**: the master key for club secrets and the backup (age) key each need **two named holders** and an offline recovery copy in the password manager. The database owner access list has at most two names | Security R-12, SR-21 | **You** name the people. **DevOps** sets it up | 20 Nov | |
+| 18 | **Key custody**: the private key of the club secrets pair and the backup (age) key each need **two named holders** and an offline recovery copy in the password manager. The database owner access list has at most two names | Security R-12, SR-21 | **You** name the people. **DevOps** sets it up | 20 Nov | |
 
 ## Not accounts, but needed
 

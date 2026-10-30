@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { checkLink, finishEnrolment, groupSecret, startEnrolment, tokenFromHash } from './enrol';
 import { fill, hasKey, t } from './i18n';
+import { BASICS_FIELDS, changeStatus, errorKey as clubErrorKey, issueWebhookToken, itemKey, LAUNCH_KEY, loadClub, pauseClub, RESULT_KEY, saveBasics, sendOwnerInvite, SETUP_KEY } from './club';
+import { counts, FILTER_KEY, loadClubs, STATUS_KEY, visible, type ClubRow } from './clubs';
 import { safeNext, signInWithCode, signInWithPassword, stepUp } from './auth';
 import { deactivate, errorKey, invite, loadTeam, resetFactor } from './staff';
 
@@ -128,5 +130,86 @@ describe('sign-in', () => {
     expect(await stepUp(reply(423, { code: 'locked' }), 'pw', '1')).toEqual({ kind: 'error', key: 'X-new.signin_locked' });
     expect(await stepUp(reply(401, { code: 'session_invalid' }), 'pw', '1')).toEqual({ kind: 'error', key: 'X-new.stepup_session_ended', signedOut: true });
     expect(await stepUp(reply(401, { code: 'unauthenticated' }), 'pw', '1')).toEqual({ kind: 'error', key: 'X-new.stepup_session_ended', signedOut: true });
+  });
+});
+
+describe('clubs list (P1)', () => {
+  const club = (clubId: string, status: ClubRow['status'], n = 0): ClubRow => ({ clubId, nameTh: 'ก', nameEn: clubId, status, bookingsConfirmed30d: n });
+  const all = [club('a', 'live', 5), club('b', 'live'), club('c', 'testing'), club('d', 'draft'), club('e', 'paused')];
+  it('counts each status and filters', () => {
+    expect(counts(all)).toEqual({ all: 5, live: 2, testing: 1, draft: 1, paused: 1 });
+    expect(visible(all, 'all')).toHaveLength(5);
+    expect(visible(all, 'live').map((c) => c.clubId)).toEqual(['a', 'b']);
+    expect(visible(all, 'paused').map((c) => c.clubId)).toEqual(['e']);
+    expect(counts([])).toEqual({ all: 0, live: 0, testing: 0, draft: 0, paused: 0 });
+  });
+  it('every status and filter has a label key that exists, and the counts fill in', () => {
+    for (const k of [...Object.values(STATUS_KEY), ...Object.values(FILTER_KEY)]) expect(hasKey(k), k).toBe(true);
+    expect(t(FILTER_KEY.live, { count: 2 })).toBe('Live · 2');
+    expect(t(FILTER_KEY.all, { count: 5 })).toBe('All · 5');
+  });
+  it('loads the list, or says why not', async () => {
+    expect(await loadClubs(reply(200, { clubs: all }))).toEqual({ kind: 'ok', clubs: all });
+    expect(await loadClubs(reply(401, { code: 'unauthenticated' }))).toEqual({ kind: 'error', key: 'X-new.staff_sign_in_required', signIn: true });
+    expect(await loadClubs(reply(403, { code: 'forbidden' }))).toEqual({ kind: 'error', key: 'X-new.staff_forbidden' });
+    expect(await loadClubs(reply(500, {}))).toEqual({ kind: 'error', key: 'X-new.clubs_unavailable' });
+    expect(await loadClubs((async () => { throw new Error('offline'); }) as unknown as typeof fetch)).toEqual({ kind: 'error', key: 'X-new.clubs_unavailable' });
+  });
+});
+
+describe('club page', () => {
+  const detail = { progress: { setup: [{ item: 'basics', done: true, owed_by: 'booq' }], launch: [{ item: 'line_test', result: 'pass', owed_by: 'booq' }] }, counts: { bookingsConfirmed30d: 4, lineMessagesSent30d: 9 } };
+  const support = { setup: { mode: 'edit', club: { name_en: 'Hunter', status: 'testing' }, hours: [], locations: [], resources: [], settings: [], features: [] } };
+  const router = (answers: Record<string, { status: number; json: unknown }>) => (async (url: string, init?: RequestInit) => {
+    const a = answers[`${init?.method ?? 'GET'} ${url.replace('/api', '')}`] ?? { status: 404, json: { code: 'not_found' } };
+    return new Response(JSON.stringify(a.json), { status: a.status });
+  }) as unknown as typeof fetch;
+
+  it('every item and result the API can name has a text key that exists', () => {
+    for (const k of [...Object.values(SETUP_KEY), ...Object.values(LAUNCH_KEY), ...Object.values(RESULT_KEY)]) expect(hasKey(k), k).toBe(true);
+    expect(itemKey(SETUP_KEY, 'something_new')).toBe('something_new'); // an unknown item shows its own key, never invented text
+    for (let d = 1; d <= 7; d += 1) expect(hasKey(`X-new.weekday_${d}`)).toBe(true);
+  });
+  it('loads the detail, the support view and the owner invite together', async () => {
+    const r = await loadClub(router({ 'GET /clubs/c1': { status: 200, json: detail }, 'GET /clubs/c1/support/setup': { status: 200, json: support }, 'GET /clubs/c1/owner-invite': { status: 200, json: { invite: { status: 'pending' } } } }), 'c1');
+    expect(r).toMatchObject({ kind: 'ok', club: { counts: { bookingsConfirmed30d: 4 }, invite: { status: 'pending' }, support: { mode: 'edit' } } });
+  });
+  it('a club without an invite record still loads; an unknown club, no session and an outage each say so', async () => {
+    const ok = { 'GET /clubs/c1': { status: 200, json: detail }, 'GET /clubs/c1/support/setup': { status: 200, json: support } };
+    expect(await loadClub(router(ok), 'c1')).toMatchObject({ kind: 'ok', club: { invite: { status: 'none' } } });
+    expect(await loadClub(router({ 'GET /clubs/c1': { status: 404, json: { code: 'not_found' } }, 'GET /clubs/c1/support/setup': { status: 404, json: {} } }), 'c1')).toEqual({ kind: 'error', key: 'X-new.club_not_found', notFound: true });
+    expect(await loadClub(router({ 'GET /clubs/c1': { status: 401, json: {} }, 'GET /clubs/c1/support/setup': { status: 401, json: {} } }), 'c1')).toMatchObject({ kind: 'error', signIn: true });
+    expect(await loadClub((async () => { throw new Error('offline'); }) as unknown as typeof fetch, 'c1')).toEqual({ kind: 'error', key: 'X-new.club_unavailable' });
+  });
+  it('each refusal code has its own text; a stale second factor asks for the step-up', () => {
+    for (const code of ['look_only', 'section_unavailable', 'invalid', 'bad_input', 'reason_required', 'transition_not_allowed', 'use_pause', 'owner_contact_missing', 'mail_failed', 'not_configured']) expect(hasKey(clubErrorKey(409, code)), code).toBe(true);
+    expect(clubErrorKey(403, 'step_up_required')).toBe('X-new.staff_step_up_required');
+    expect(clubErrorKey(500, undefined)).toBe('X-new.club_unavailable');
+  });
+  it('a status change sends the status and the trimmed reason; a blocked one lists what is missing', async () => {
+    const c = calls();
+    await changeStatus(c.f, 'c1', 'testing', '  ready  ');
+    await changeStatus(c.f, 'c1', 'live', '');
+    expect(c.seen.map((x) => x.body)).toEqual([{ to: 'testing', reason: 'ready' }, { to: 'live' }]);
+    expect(await changeStatus(router({ 'POST /clubs/c1/status': { status: 409, json: { code: 'blocked', missing: [{ item: 'line', owed_by: 'booq' }] } } }), 'c1', 'testing', '')).toEqual({ kind: 'blocked', missing: [{ item: 'line', owed_by: 'booq' }] });
+    expect(await changeStatus(router({ 'POST /clubs/c1/status': { status: 403, json: { code: 'step_up_required' } } }), 'c1', 'live', '')).toMatchObject({ kind: 'error', stepUp: true });
+    expect(await pauseClub(router({ 'POST /clubs/c1/pause': { status: 200, json: { ownerNotified: false } } }), 'c1', 'x')).toEqual({ kind: 'done' });
+  });
+  it('the owner invite and the webhook address', async () => {
+    expect(await sendOwnerInvite(router({ 'POST /clubs/c1/owner-invite': { status: 200, json: { status: 'sent' } } }), 'c1')).toEqual({ kind: 'done' });
+    expect(await sendOwnerInvite(router({ 'POST /clubs/c1/owner-invite': { status: 409, json: { code: 'owner_contact_missing' } } }), 'c1')).toEqual({ kind: 'error', key: 'X-new.club_owner_contact_missing' });
+    expect(await issueWebhookToken(router({ 'POST /clubs/c1/webhook-tokens/line': { status: 200, json: { token: 't', url: 'https://app.example/api/webhooks/line/t', replaced: true } } }), 'c1', 'line')).toEqual({ kind: 'token', url: 'https://app.example/api/webhooks/line/t', replaced: true });
+    expect(await issueWebhookToken(router({ 'POST /clubs/c1/webhook-tokens/beam_live': { status: 409, json: { code: 'look_only' } } }), 'c1', 'beam_live')).toEqual({ kind: 'error', key: 'X-new.club_look_only' });
+  });
+  it('basics: only what changed is sent, an empty value clears the field, nothing changed sends nothing', async () => {
+    const was = { name_th: 'ก', name_en: 'Hunter', legal_name: null, owner_name: 'Nok', owner_phone: '081', owner_line: null, owner_email: 'n@x.co' };
+    const same = Object.fromEntries(BASICS_FIELDS.map((k) => [k, was[k] ?? ''])) as Record<(typeof BASICS_FIELDS)[number], string>;
+    const c = calls();
+    expect(await saveBasics(c.f, 'c1', same, was)).toEqual({ kind: 'saved', pendingOwnerContact: false });
+    expect(c.seen).toEqual([]);
+    await saveBasics(c.f, 'c1', { ...same, name_en: ' Hunter Club ', owner_name: '' }, was);
+    expect(c.seen[0]).toEqual({ url: '/api/clubs/c1/support/setup/basics', method: 'PUT', body: { name_en: 'Hunter Club', owner_name: null } });
+    expect(await saveBasics(router({ 'PUT /clubs/c1/support/setup/basics': { status: 200, json: { changed: ['owner_phone'], pendingOwnerContact: 'req-1' } } }), 'c1', { ...same, owner_phone: '082' }, was)).toEqual({ kind: 'saved', pendingOwnerContact: true });
+    expect(await saveBasics(router({ 'PUT /clubs/c1/support/setup/basics': { status: 409, json: { code: 'look_only' } } }), 'c1', { ...same, name_en: 'X' }, was)).toEqual({ kind: 'error', key: 'X-new.club_look_only' });
   });
 });
