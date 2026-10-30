@@ -1,6 +1,6 @@
 # F10 LINE messages and rich menu · Design
 
-Status: **DRAFT for approval (gate 2).** Drafted 30 Oct 2026 from the approved F10 requirements (`requirements.md`, approved 30 Oct 2026, decisions D91 to D99, D114, D116 and the Reviewer's findings applied). The Architect reviews it. A change to anything below goes through the PRD, then the hand-off, then this file. Tasks (gate 3) follow approval.
+Status: **Approved 30 Oct 2026 (gate 2, D153).** Drafted 30 Oct 2026 from the approved F10 requirements (`requirements.md`, approved 30 Oct 2026, decisions D91 to D99, D114, D116 and the Reviewer's findings applied). The Architect's review findings of 30 Oct 2026 are folded in. A change to anything below goes through the PRD, then the hand-off, then this file. Tasks (gate 3) follow approval.
 
 Feature: F10 LINE messages and rich menu. Requirement IDs: LINE-02 to LINE-07 (LINE-01 is F02). Depends on F03. Wave 2.
 

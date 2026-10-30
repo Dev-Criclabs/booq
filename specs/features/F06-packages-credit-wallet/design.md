@@ -1,6 +1,6 @@
 # F06 Packages, credit and wallet ledgers · Design
 
-Status: **DRAFT for approval (gate 2).** Drafted 30 Oct 2026 from the approved F06 requirements (`requirements.md`, approved 30 Oct 2026, decisions D83 to D90, D116 and the Reviewer's findings applied). The Architect reviews it. A change to anything below goes through the PRD, then the hand-off, then this file. Tasks (gate 3) follow approval.
+Status: **Approved 30 Oct 2026 (gate 2, D153).** Drafted 30 Oct 2026 from the approved F06 requirements (`requirements.md`, approved 30 Oct 2026, decisions D83 to D90, D116 and the Reviewer's findings applied). The Architect's review findings of 30 Oct 2026 are folded in. A change to anything below goes through the PRD, then the hand-off, then this file. Tasks (gate 3) follow approval.
 
 Feature: F06 Packages, credit and wallet ledgers. Requirement IDs: PKG-01, PKG-02, PKG-03 and the local rules R1 to R3 of the requirements. Depends on F04. Wave 3.
 
