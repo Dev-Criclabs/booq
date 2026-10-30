@@ -1,6 +1,6 @@
 # F05 Beam payments (Hunter launch) · Design
 
-Status: **DRAFT for approval (gate 2).** Drafted 30 Oct 2026 by the Architect role from the approved F05 requirements (`requirements.md`, approved 30 Oct 2026, `docs/decisions.md` round 8) with decisions D18 to D37 and D62 to D80 applied. Nothing here is approved until a person says so. No tasks and no code follow until then.
+Status: **Approved 30 Oct 2026** (gate 2; decision D82, with all assumptions). Drafted 30 Oct 2026 by the Architect role from the approved F05 requirements (`requirements.md`, approved 30 Oct 2026, `docs/decisions.md` round 8) with decisions D18 to D37 and D62 to D80 applied. Tasks (gate 3) are written next; a change to anything below goes through the PRD, then the hand-off, then this file.
 
 Feature: F05 Beam payments (Hunter launch). Requirement IDs: PAY-01 to PAY-06 (PAY-07 is in F04; PAY-08 is F16 and not built for Hunter). Depends on F04. Wave 2.
 

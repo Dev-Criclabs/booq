@@ -14,6 +14,42 @@ Decisions made by the user, newest first. Each is also written into the PRD chan
 | D36 | A validly signed Beam callback with the wrong amount: record it, flag it for the owner, return a success status so Beam stops retrying (refines D24) |
 | Open | Whether a late payment that goes to the wallet gets its own receipt is with the accountant |
 
+## 30 Oct 2026, round 10 (approved as recommended: "approve all")
+
+Reviewer and Security findings and the open questions of the F07, F08, F09 and F13 drafts. The F07, F08, F09 and F13 requirements are approved. Not decided here and left open on purpose: consent for players under 18 and the age threshold (D10), the VAT invoice layout, and retention periods for receipts, closes and reports.
+
+| # | Decision |
+|---|---|
+| D100 | The Go live purge removes only rows made by a tester kind. Owner, staff and coach accounts are never test rows and survive Go live (reviewer F01-1, FA Q29) |
+| D101 | Audit entries are not flagged on their own; only entries about test data are purged. A setting changed in Testing keeps its audit entry after Go live (F01-2) |
+| D102 | A Draft or Testing club admits the owner role and testers; the owner invite stays valid for return visits; testers get long lived invites; a club that is not live serves only a minimal sign in config (name, language, status, LIFF id) to callers who are not signed in (F01-3) |
+| D103 | A guest reads only named public columns or routes, never owner contact details or merchant ids (F01-4) |
+| D104 | Anonymising a deleted player replaces personal fields in audit rows with a placeholder; nothing else in an audit row can change (reviewer Q3, SR-04) |
+| D105 | An imported player record is linked only after the front desk confirms the claim in A6; a sign in matching no record becomes a new player (reviewer Q4, Security Q-02, SR-05) |
+| D106 | Receipt numbers run per club per Bangkok year; the prefix is set in P2 step 1 and required before Go live; a void only marks the receipt (reviewer Q5, F13 Q1, Q2, Q13) |
+| D107 | While a club is Paused, the owner and staff may move, add a coach, cancel and mark no show on existing bookings; a late payment is not used to confirm a booking in a Paused club and goes to the wallet (reviewer Q6) |
+| D108 | Go live checks beyond P4: the owner signed in, one completed test booking, the pay tap limit set, and the Beam key swap with its smoke test (Q7) |
+| D109 | A late payment is also refused for a paused club, a closure or a deleted account; the whole value goes to the wallet (Q8) |
+| D110 | Only staff (front desk, owner) override the future hours limit, with a logged reason; no running hour or same date rule is built (Q9) |
+| D111 | Minimum spend stays as approved in F04 A-3; the money of a cancelled hour returns to its sources net of its discount share; an add-on belongs to the first hour of its order; a coaching top up is its own order and receipt; peak pricing is not built in v1 (Q10) |
+| D112 | A duplicate payment credit gets its own receipt; the wrong amount notice reaches the player in the app and by LINE when it can be sent (Q11) |
+| D113 | A paused club keeps the Beam key set of its current mode (Q12) |
+| D114 | When the LINE token fails, the owner sees a banner in the admin and BOOQ sees an alert in P1; the owner edits the six rich menu labels in Settings after Go live, which re renders the image (Q13) |
+| D115 | Every club person also has the Player role; the Accountant reads business and tax settings only; only the Owner marks a coach payout paid (Q14) |
+| D116 | The 14 and 3 day and 24 hour and 2 hour reminder numbers are variables in the text and settings in code (Q15) |
+| D117 | The PRD wording that said refunds go back by PromptPay is corrected to wallet or package credit only; CLAUDE.md now says features add text keys in `locales/pending/` (Q16, M-1, M-2) |
+| D118 | F09: the birthday entitlement follows the code rule; staff may choose a club cancel with full value and a reason; a player may cancel during a pause; a package that expired before a closure return is listed on the closure screen and the owner extends it with a written reason; staff mark a no show only after the slot ends; a reversal changes coach pay by the normal rule and a paid referral reward stays paid; the coach's Absent in K5 is a hint only; repeat closures cancel across the booking window; the owner gets a list of players who could not be messaged |
+| D119 | F13: no credit note when value goes to the wallet; reprints are in the player's language and staff may print either; the daily close lists money methods and shows wallet and credit use as separate non money lines; a closed day is not reopened and a later void shows on the day it is made; revenue earned is credits used at their price per credit plus single sales; occupancy is booked hours over bookable hours (open hours less closures), held hours not counted; the drafter proposes the report formulas for approval |
+| D120 | F07: only approved leave hides a coach; the coach price follows the price group from the date of birth; solo credits do not apply to a coach added after booking; the court already booked is used, otherwise the lowest numbered open court; coach photo and bio are published with consent the club keeps; substitutes follow the rest rule and, if none is free, the owner cancels for full credit; a coach with future sessions cannot be deactivated; a booked session keeps its price when a tier or price changes |
+| D121 | F08: sessions are generated across the booking window; a player sees classes of their own price group and those matching credits they hold; a guest sees the Adult schedule; editing a template applies to future sessions without players and a session with players keeps its details unless the owner edits it and the players are messaged with a free cancel; the spot is held for the first in line during an offer; an offer open at the 2 hour mark stands; claim is confirmed on the tap when credit or wallet covers it, and Beam payment is needed inside the claim time when money is due; no waitlist maximum; a below minimum session runs until the alert time is set |
+| D122 | The owner invite is bound to the owner's LINE ID entered in P2 step 1 and is single use (Security Q-01, SR-01) |
+| D123 | Resetting a BOOQ console second factor is done only by another platform admin and logged in P6 (Security Q-05) |
+| D124 | Security's seven blocking findings SR-01 to SR-07 are accepted with the fixes the Security document recommends; where a fix conflicts with an approved decision the decision wins and the conflict is reported |
+| D125 | For the other Security questions, Security's own recommendation in `docs/security/open-questions.md` is accepted, except D10 (under 18 consent) and the hosting question, which stay parked |
+| D126 | QA covers every approved feature, not only F01 and F02: skeletons for all approved criteria, a CI check that every acceptance criterion ID appears in `tests/acceptance`, and the fake Beam measures lateness from the hold end (reviewer QA-1, QA-3) |
+| D127 | The ops runbook describes two Beam key sets per club and the P4 key swap with a smoke test before Go live; the separate test LINE values are removed (reviewer OPS-1) |
+| D128 | QA, DevOps and Content may push their own branches; the orchestrator merges approved work into `main` (user answer to QA, 30 Oct) |
+
 ## 30 Oct 2026, round 9 (approved as recommended)
 
 | # | Decision |

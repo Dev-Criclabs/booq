@@ -70,7 +70,7 @@ packages/
   i18n/                  loader, t(), variables, formatters (Gregorian Thai dates, money)
   time/                  Bangkok helpers, clock
   ui/                    design system
-  testing/               DB harness, fixtures (not the fakes)
+  testing/               fixtures (not the fakes); the DB harness is in packages/db/src/testing because only packages/db may import the driver
 ```
 
 **Three small changes to FA §9 for approval:**
