@@ -55,4 +55,6 @@ export const tables: Fragment = {
   'platform.owner_contact_change': { class: 'P' },
   // the list of feature switches (F01-T25): written by migrations only
   'app.feature_keys': { class: 'infra' },
+  // what to copy when a template is applied, for features that own the tables (F01-T24): written by migrations only
+  'app.template_handlers': { class: 'infra' },
 };

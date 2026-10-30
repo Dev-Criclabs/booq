@@ -211,9 +211,11 @@ describe('editing (PLAT-02-AC2 to AC5, AC7)', () => {
     expect((await tdb.query(`select feature_key, enabled from public.club_feature order by 1`)).rows).toEqual([{ feature_key: 'backup_mode', enabled: false }, { feature_key: 'coach_add_at_checkout', enabled: true }]);
 
     expect((await svc.putSetup(spec, TEST, 'plan', { plan_trial_ends_at: '2027-01-31T00:00:00Z' })).ok).toBe(true);
-    const t = await tdb.query(`insert into platform.template (key, name) values ('tennis', 'Tennis') returning id`);
+    const t = await tdb.query(`select id from platform.template where key = 'blank'`);
     expect((await svc.putSetup(spec, TEST, 'template', { template_id: t.rows[0].id })).ok).toBe(true);
     expect((await tdb.query(`select template_id from public.club where id = $1`, [TEST])).rows[0].template_id).toBe(t.rows[0].id);
+    // A template is a start: a second one is refused, and so is one that is still to build (PLAT-05-AC11).
+    expect(await svc.putSetup(spec, TEST, 'template', { template_id: t.rows[0].id })).toEqual({ ok: false, code: 'invalid' });
   });
 
   it('a P6 detail never carries player, booking or secret data', async () => {
