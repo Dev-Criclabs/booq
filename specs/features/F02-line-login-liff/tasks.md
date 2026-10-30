@@ -17,12 +17,12 @@ Depends on F01 tasks: T03 to T07 (database, context, tenant suite), T10 and T11 
   Tests first: the same person at two clubs has two rows; unique on club and LINE id; a shared phone is allowed and flagged on both records.
 - [ ] **F02-T02** Migration 0102: `auth_session` (hash only), pending state with a 30 minute life, housekeeping purge. IDs: LINE-01-AC13, AUTH-02-AC3. Role: BE-P · Deps T01, F01-T34 · Size: S
   Tests first: the table never holds a token; an expired pending row is purged; a revoked session is refused at once.
-- [ ] **F02-T03** Log redaction for `idToken`, `access_token`, `Authorization`, with a test that scans captured logs. IDs: LINE-01-AC13. Role: BE-P · Size: S
+- [x] **F02-T03** Log redaction for `idToken`, `access_token`, `Authorization`, with a test that scans captured logs. IDs: LINE-01-AC13. Role: BE-P · Size: S
   Tests first: a request carrying a token produces no log line containing it.
 
 ## B. Verifying and signing in
 
-- [ ] **F02-T04** LINE verify client with an interface, a real and a fake (valid, wrong audience, expired, bad signature, unreachable). IDs: LINE-01-AC4, AC11, CC-2. Role: BE-P · Deps QA fake LINE · Size: M
+- [x] **F02-T04** LINE verify client with an interface, a real and a fake (valid, wrong audience, expired, bad signature, unreachable). IDs: LINE-01-AC4, AC11, CC-2. Role: BE-P · Deps QA fake LINE · Size: M
   Tests first: a token for club A's channel is refused at club B; an offline response creates nothing and returns the offline code.
 - [ ] **F02-T05** Club resolver and status gate: slug to club, `clubUrl()` for every deep link, 404 for unknown or not visible, Draft and Testing only for testers. IDs: AUTH-01-AC13 to AC15, BOOK-02-AC3. Role: BE-P · Deps F01-T28 · Size: M
   Tests first: unknown slug 404; Draft and Testing 404 for guests and non-testers; a link for club A never signs in to club B; slug and session club mismatch is 404.
@@ -32,7 +32,7 @@ Depends on F01 tasks: T03 to T07 (database, context, tenant suite), T10 and T11 
   Review amendment: D103 (review F01-4). Guests read only named public columns through views or routes; never a whole setup table. Extra tests: a test lists the exact columns a guest can read and fails when one is added; a guest cannot read owner contact, merchant ids or tax details.
 - [ ] **F02-T07** `POST /auth/session` for an existing player: verify, find by club and LINE id, create the session cookie (`__Host-`, httpOnly, Secure, SameSite Lax), roles read per request, inactive account refused. IDs: LINE-01-AC1 to AC5, AC10. Role: BE-P · Deps T02, T04, T05 · Size: M
   Tests first: a valid token for an active user returns `active`; a deactivated user gets `account_inactive`; roles removed take effect on the next request; the token is not stored.
-- [ ] **F02-T08** Name and phone validation module (`packages/domain/phone.ts` and name rules from design A-12) with a single place to change. IDs: AUTH-02-AC2, AC28. Role: BE-P · Size: S
+- [x] **F02-T08** Name and phone validation module (`packages/domain/phone.ts` and name rules from design A-12) with a single place to change. IDs: AUTH-02-AC2, AC28. Role: BE-P · Size: S
   Tests first: Thai mobile formats normalise to E.164; spaces and dashes stripped; invalid values return codes, never text.
 - [ ] **F02-T09** Pending sign-up and `POST /auth/profile`: create `app_user`, role Player, consent row with notice version and language, audit entries, phone duplicate flag, session upgrade. IDs: AUTH-02-AC1 to AC8, AC28. Role: BE-P · Deps T07, T08, F01-T12 · Size: M
   Tests first: no consent creates nothing; consent creates the record, role, consent row and audit in one transaction; a returning player never reaches this step; only three fields are accepted.

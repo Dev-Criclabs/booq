@@ -15,3 +15,5 @@ export {
   type RouteSession,
 } from './route';
 export { findUndeclaredRoutes, isRouteFile, type SourceFile, type UndeclaredRoute } from './check';
+export { createRedactingLogger, redact, scrubText, REDACTED, type Logger, type LogLevel } from './liff/log-redaction';
+export { createLineVerifier, createFakeLineVerifier, type LineVerifier, type VerifyFailure, type VerifyRequest, type VerifyResult, type FakeVerifierMode, type LineVerifierOptions } from './liff/verify';
