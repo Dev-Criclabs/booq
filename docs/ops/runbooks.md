@@ -30,10 +30,11 @@ Effect: slots stay held after the hold time, players are blocked, no "booking re
 3. What the app does at the cap is an open product question (`docs/canvas-gaps.md`). DevOps does not change it.
 
 ## 5. Beam callback failures (Page / Warn)
-- **Bad signature spike:** check whether a key was just rotated. If not, treat as an attack: keep rejecting, rate limit at the edge, tell Security.
+- **Bad signature:** nothing changes (PAY-02) and every one shows in P1 (D75). The app raises one alert per time window, not one per request, so a flood does no database work beyond a counter. First check whether a key was just rotated or the club's key set was just swapped. If not, treat it as an attack: keep rejecting, rate limit at the edge, tell Security. A validly signed callback on the inactive key set is recorded, flagged and answered 200 with no change (BEAM-7).
 - **Wrong amount or unknown order:** nothing is confirmed (PAY-02). Record the order ID, ask Security and the commerce role. Do not "fix" an order by hand.
 - **Processing error / missing callback:** use Beam's dashboard (the club's merchant) to look for the payment, then use the reconciliation job to apply it through the normal path. A late payment follows PAY-03 (approve if the slot is open, else wallet). Do not edit rows directly.
-- **After a rotation:** run a sandbox or small test payment.
+- **No callback for a payment:** the 20 minute wait before looking is an ops default, not a product rule. The server may check Beam's charge status and confirm only when amount and reference match (D73); that is the product's path, DevOps does not do it by hand.
+- **After a rotation or key swap:** run a Playground payment in Testing, or the smoke test (runbook 13) before Go live. Never a real payment as a test.
 
 ## 6. Site down or slow (Page)
 1. Check the hosting status page and the Supabase status page.
@@ -54,6 +55,7 @@ Use for: data loss, bad migration, corruption. **Never restore over production w
    - The no-double-booking uniqueness rule is present and rejects a duplicate court slot and a duplicate coach slot.
    - Row level security is on for every table.
    - Receipt numbers per club are an unbroken sequence (RCPT-01).
+   - The per-club audit hash chain verifies (each row holds the hash of the previous row), and the latest hash per club matches what the nightly job wrote to the backup bucket (Security SR-21, when the chain exists).
 5. Replay data created after the restore point: use the Beam report and LINE logs to find orders paid after that point, hand the list to the Orchestrator.
 6. Switch the app to the new project (env vars), redeploy, check the health probe.
 7. Re-apply deletion requests received after the restore point (PDPA). Ask the Security role for the deletion log.
@@ -86,14 +88,26 @@ This is a product feature (PLAT-03, P3c). Ops does not pause clubs. If a club as
 ## 12. Preview and staging reset
 Preview database: reset from seed weekly, or on request. Staging: reset before the 7 Dec test and on request, only after telling the testers. Production is never reset.
 
-## 13. Go live: purge test data (D4)
-Product feature (F01, F13, F15). Ops steps around it. Do this with the user's go ahead, never as a side job. Production holds Hunter's Testing data from the 7 Dec test (D16), so this is also the end of the test.
-1. Check the P4 go live checks are all passed.
-2. Take a **named backup** of production and note its id. Keep it 30 days.
-3. Run the purge from the product feature. It removes only rows flagged as test data for this club.
-4. Check: counts per table logged, no test flags remain, real settings (courts, prices, staff) untouched, the next receipt number is 000001 (RCPT-01), test receipts used their own non-legal numbers.
-5. If something real was removed, stop and use the named backup (runbook 7). Do not edit rows by hand.
-6. Swap the club's Beam and LINE keys from test to live values if they differ (`secrets.md`), send one real small payment and one LINE message, then tell the user.
+## 13. Go live: key swap, purge, status change (D4, D32, D108)
+Product feature (F01 sections 4.1 and 9.3, F13, F15). The order below follows the F01 design; where this runbook and the design differ, the design wins and this file is wrong. Do it with the user's go ahead, never as a side job. Production holds Hunter's Testing data from the 7 Dec test (D16), so this is also the end of the test.
+
+**Keys.** Each club holds **two Beam key sets, test and live** (D32), kept apart as `club_secret` kinds (`secrets.md`). A Testing club uses the test set (Beam's Playground). A Live club uses the live set. The active set follows the club status; nobody types it. There is **no separate "test LINE" configuration**: a club has one LINE channel set, and test messages go through the club's real Official Account and count toward its monthly cap (D32).
+
+**Order of steps** (who does it, who confirms). Every step is logged in P6.
+1. A platform admin who did **not** create the owner invite confirms the owner's identity by another channel; the check turns `pass`. (Security checklist, SR-01)
+2. The owner confirms the live merchant in the app: sees the merchant name and the last four characters of each key. (SR-17)
+3. DevOps takes a **named backup** of production and notes its id. Keep it 30 days.
+4. A BOOQ person (the one named in the plan) enters the **live** Beam key set (merchant ID, API key, HMAC key) in the console, write only, with the step-up second factor. The live set is entered only in this window, not earlier, and the live webhook URL with its own token is registered in the club's live Beam dashboard.
+5. The **key swap smoke test** (P4 item, D108) runs and must pass: a read-only authenticated call to Beam with the live keys, plus a check that a body signed with the stored live HMAC key verifies. It **moves no money**. Every other P4 check must be `pass` too (pay-tap limit set, owner signed in, LINE connection test, at least one priced product).
+6. A platform admin, or the assigned onboarding specialist, runs **Go live**. One transaction runs the checks, then the purge of test rows (only `is_test` rows of this club), then sets the status to Live. Any failure rolls the whole thing back and the club stays Testing.
+7. DevOps runs the verification queries and files the output: no test rows remain, real settings (courts, prices, staff) untouched, counts per table logged, the next receipt number is **000001** (RCPT-01), test receipts used their own non-legal series.
+8. The on-call person starts the 72 hour watch (Security checklist 2.5).
+
+**No real payment is made as a test.** A payment after the purge would be receipt 000001 in the legal series, real money the club must account for, and it can never go back as cash (CANCEL-02). If the owner wants one real proof, it is a normal booking made by the owner at the normal price after opening, and only if the owner decides so (Security question Q-17). Not a DevOps step.
+
+**If something real was removed:** stop and restore from the named backup (runbook 7). Do not edit rows by hand.
+
+**After Go live:** the test key set is no longer used. A callback to a test URL changes nothing (BEAM-7). Tell the user.
 
 ## 14. BOOQ staff cannot sign in or lost their second factor (D3)
 1. A platform admin resets the factor after checking the person by another channel. A platform admin cannot reset their own.
@@ -103,3 +117,12 @@ Product feature (F01, F13, F15). Ops steps around it. Do this with the user's go
 
 ## 15. A new club's LINE provider (D7)
 Each club owns its own LINE provider. Setup steps, in order: the club creates the provider and OA, adds a named BOOQ person as admin, a BOOQ person creates the Messaging API, LINE Login and LIFF channels, sets the LIFF endpoint to the club's URL, pastes the values into the console (write only), sends a test message, and removes BOOQ's admin access if the club asks.
+
+## 16. Break-glass access to production data (SR-21)
+Engineers are BOOQ staff, so reading club data breaks the promise that BOOQ never sees players, bookings or payments. It is for a real incident only.
+1. A ticket with the reason and the scope (which club, which tables).
+2. A second person approves. The access lasts at most **4 hours**, then it is removed.
+3. The record (who, what, why, when, ticket) is kept **outside the database**, in the ops record, and the **club owner is told** that it happened and why.
+4. Only the two named holders of database owner access (hardware keys) can grant it. The `booq_owner` password is not known to any person; migrations run through CI.
+5. Provider access logs are kept and a named person reviews them monthly.
+6. Afterwards: remove the access, close the ticket, note whether anything was changed (it should not be).
