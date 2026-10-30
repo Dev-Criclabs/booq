@@ -14,6 +14,9 @@ const identity: IdentityProvider = {
   async verifyPassword(email, password) {
     return email === 'ada@booq.example' && password === 'pw-ada' ? { authUserId: AUTH_USER } : null;
   },
+  async verifyPasswordFor(authUserId, password) {
+    return authUserId === AUTH_USER && password === 'pw-ada' ? { authUserId } : null;
+  },
   async verifyTotp(_id, code) {
     return code === '123456';
   },
@@ -162,6 +165,9 @@ describe('the provider state through the shared store', () => {
     const provider: IdentityProvider = {
       async verifyPassword(email, password) {
         return email === 'ada@booq.example' && password === 'pw-ada' ? { authUserId: AUTH_USER, state: 'provider-token-xyz' } : null;
+      },
+      async verifyPasswordFor() {
+        return null;
       },
       async verifyTotp(_id, code, state) {
         return state === 'provider-token-xyz' && code === '123456';

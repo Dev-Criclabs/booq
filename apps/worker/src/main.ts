@@ -4,6 +4,7 @@ import { buildCrontab, readWorkerConfig } from './config';
 import { IMPORT_STAGING_DISPATCH, IMPORT_STAGING_SWEEP, importStagingDispatch, sweepImportStaging } from './tasks/import-staging';
 import { CONSOLE_SESSION_SWEEP, consoleSessionSweep } from './tasks/console-session-sweep';
 import { RATE_LIMIT_SWEEP, rateLimitSweep } from './tasks/rate-limit-sweep';
+import { PAY_TAP_PRUNE, PAY_TAP_PRUNE_DISPATCH, payTapPruneDispatch, prunePayTaps } from './tasks/pay-tap-prune';
 import { runHoldRelease } from './tasks/hold-release';
 import { startTicker } from './ticker';
 import { startWorker } from './worker';
@@ -20,9 +21,10 @@ const sweepRateLimit = rateLimitSweep({ db, keepSeconds: config.rateLimitKeepSec
 const worker = await startWorker({
   connectionString: config.queueUrl,
   db,
-  tasks: { [IMPORT_STAGING_SWEEP]: sweepImportStaging },
+  tasks: { [IMPORT_STAGING_SWEEP]: sweepImportStaging, [PAY_TAP_PRUNE]: prunePayTaps },
   globalTasks: {
     [IMPORT_STAGING_DISPATCH]: importStagingDispatch({ listClubIds: () => listClubIds(db) }),
+    [PAY_TAP_PRUNE_DISPATCH]: payTapPruneDispatch({ listClubIds: () => listClubIds(db) }),
     [RATE_LIMIT_SWEEP]: async () => {
       await sweepRateLimit();
     },
