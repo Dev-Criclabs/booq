@@ -18,7 +18,7 @@ async function staff(email: string, role: string, auth: string, name: string): P
   return (await tdb.query(`insert into platform.platform_staff (auth_user_id, email, display_name, role) values ($1, $2, $3, $4) returning id`, [auth, email, name, role])).rows[0].id;
 }
 const setStatus = async (staffId: string, to: string, reason?: string, club = CLUB) =>
-  db.withPlatformTx({ staffId, staffLabel: 'x', clubId: club }, async (tx) => (await tx.query(`select app.set_club_status($1, $2) as status`, [to, reason ?? null])).rows[0].status as string);
+  db.withPlatformTx({ staffId, staffLabel: 'x', clubId: club }, async (tx) => (await tx.query(`select app.set_club_status($1, $2) as status`, [to, reason ?? null])).rows[0]?.status as string);
 /** The internal function, called as the database owner with the staff context set by hand. */
 async function apply(staffId: string | null, to: string, reason: string | null, viaPause = true, club = CLUB): Promise<string> {
   const c = await tdb.pool.connect();
