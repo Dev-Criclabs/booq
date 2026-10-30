@@ -50,10 +50,10 @@ export async function startApp(port = 3107) {
 export const CLUB = { nameTh: 'ฮันเตอร์ เทนนิส คลับ', nameEn: 'Hunter Tennis Club', defaultLanguage: 'th', status: 'live', liffId: 'liff-test', languages: ['th', 'en'] };
 
 /**
- * A page with the club API faked. `session` answers POST /auth/session; every API call is recorded,
+ * A page with the club API faked. `session` answers POST /auth/session, `profile` POST /auth/profile; every API call is recorded,
  * so a test can prove nothing was created.
  */
-export async function openPage(browser, { liff, club = CLUB, session = { status: 200, body: { state: 'active' } }, lang, width = 375, height = 812 } = {}) {
+export async function openPage(browser, { liff, club = CLUB, session = { status: 200, body: { state: 'active' } }, profile = { status: 200, body: { state: 'active' } }, lang, width = 375, height = 812 } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, locale: 'th-TH' });
   if (lang) await context.addCookies([{ name: 'lang', value: lang, url: 'http://localhost' }]);
   const page = await context.newPage();
@@ -69,6 +69,7 @@ export async function openPage(browser, { liff, club = CLUB, session = { status:
       return route.fulfill({ status: 200, json: club });
     }
     if (path.endsWith('/auth/session') && req.method() === 'POST') return route.fulfill({ status: session.status, json: session.body });
+    if (path.endsWith('/auth/profile') && req.method() === 'POST') return route.fulfill({ status: profile.status, json: profile.body });
     return route.fulfill({ status: 404, json: { code: 'not_found' } });
   });
   if (liff) await page.addInitScript((state) => (window.__BOOQ_LIFF_FAKE__ = state), liff);

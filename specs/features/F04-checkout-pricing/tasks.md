@@ -39,7 +39,7 @@ Migration numbers are 0301 to 0399 and rise with task order (the migrator refuse
 
 ## B. Pricing engine (pure code)
 
-- [ ] **F04-T08** `priceOrder` in `packages/domain/pricing`: lines, price group, rounding half up, allocation, `quote_hash`. No database, no clock. IDs: R1-AC1 to AC7, R2-AC1 to AC8, R4-AC1 to AC4, AC6, D22, D23, D62. Role: BE-C · Deps none · Size: M
+- [x] **F04-T08** `priceOrder` in `packages/domain/pricing`: lines, price group, rounding half up, allocation, `quote_hash`. No database, no clock. IDs: R1-AC1 to AC7, R2-AC1 to AC8, R4-AC1 to AC4, AC6, D22, D23, D62. Role: BE-C · Deps none · Size: M
   Tests first: the worked examples of design 9 (Adult 50000 + coach 80000 = 130000; Student 70000 + 50000 = 120000); a property test that the lines always sum to the order total and to credit + wallet + money; half-up rounding; no rule means the hour is refused.
 - [ ] **F04-T09** Promo and birthday rules in the engine: scope, add-ons excluded unless included, fixed code capped and split by price with largest remainder (the remainder rule is assumption A-6, tested against the design), minimum spend on the pre-credit total, stacking and "the larger wins, tie to the code" (assumption A-2), the referral code as the one code (PROMO-01-AC11), a code that makes the amount due zero (AC13). IDs: PROMO-01-AC2 to AC6, AC8, AC11, AC13, R5, D65, D67, D68. Role: BE-C · Deps T08 · Size: M
   Tests first: each typed refusal reason; partner code on a solo class refused; stackable code plus birthday gives both; not stackable gives the larger; fixed shares sum exactly; a 100 percent code makes money due zero.
@@ -58,6 +58,7 @@ Migration numbers are 0301 to 0399 and rise with task order (the migrator refuse
   Tests first: credit, then wallet, then money; a failed reservation rolls the whole Pay back; the code use and the entitlement are counted once and restored when the hold ends.
 - [ ] **F04-T12d** Pay, part (d): the zero money path through the claim (no hold, no Beam, confirmed in the same transaction) and the response `{ orderId, holdExpiresAt | null, payment | null, confirmed }`. IDs: PAY-07-AC1 to AC5, PROMO-01-AC13, R7-AC3, decision D64. Role: BE-C · Deps T12c · Size: S
   Tests first: zero money confirms in the same transaction with no charge; a taken slot refuses and nothing is used up; a 100 percent code follows the zero path; any failed step rolls everything back.
+  Receipt: calls `app.issue_receipt` through `app.payment_ports` (the F13 issue_receipt port; a fake until F13 exists), in this task (F13 design; orchestrator 30 Oct).
 - [ ] **F04-T13** `GET /orders/{id}` and the staff routes `POST /staff/orders/quote` and `/pay`. IDs: R7-AC2, ROLE-01-AC4, CC-2. Role: BE-C · Deps T12d · Size: S
   Tests first: own or staff only; the snapshot is unchanged after prices and names change; staff booking as a player pays as a player.
 - [ ] **F04-T14** Owner setup routes `/setup/price-groups`, `/court-prices`, `/coach-tier-prices`, `/add-ons`, `/partners`, `/promo-codes`, audited, new orders only. IDs: R3-AC8, PROMO-01-AC12. Role: BE-C · Deps T05 · Size: M
