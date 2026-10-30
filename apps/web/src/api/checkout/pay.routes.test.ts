@@ -209,9 +209,8 @@ describe('GET /orders/:id', () => {
   });
 });
 
-// F04-T13: the staff routes (ROLE-01-AC4, BOOK-04-AC7, D43). Skipped until the Architect's
-// app.customer_dob_for_pricing reaches main (requested 30 Oct).
-describe.skip('POST /staff/orders/quote and /pay', () => {
+// F04-T13: the staff routes (ROLE-01-AC4, BOOK-04-AC7, D43), on app.customer_dob_for_pricing (0320).
+describe('POST /staff/orders/quote and /pay', () => {
   const DESK = '88888888-8888-4888-8888-888888888888';
   const KID = '44444444-4444-4444-8444-444444444444';
   const desk = { clubId: A, userId: DESK, roles: ['front_desk', 'player'] };

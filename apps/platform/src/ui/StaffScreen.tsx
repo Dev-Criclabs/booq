@@ -1,5 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { ConsoleNav } from './ConsoleNav';
+import { StepUpPanel } from './StepUpPanel';
 import { t } from './i18n';
 import { deactivate, invite, loadTeam, resetFactor, ROLE_KEY, type LinkOutcome, type Member } from './staff';
 
@@ -10,7 +12,9 @@ import { deactivate, invite, loadTeam, resetFactor, ROLE_KEY, type LinkOutcome, 
 const ROLES: Member['role'][] = ['onboarding_specialist', 'platform_admin'];
 
 export function StaffScreen() {
-  const [state, setState] = useState<{ kind: 'loading' } | { kind: 'error'; key: string } | { kind: 'ready'; team: Member[] }>({ kind: 'loading' });
+  const [state, setState] = useState<{ kind: 'loading' } | { kind: 'error'; key: string; signIn?: boolean } | { kind: 'ready'; team: Member[] }>({ kind: 'loading' });
+  // The action that needs a fresh second factor, kept to run again once the step-up passes (D161).
+  const [pending, setPending] = useState<{ run(): Promise<void> } | null>(null);
   const [form, setForm] = useState<{ email: string; displayName: string; role: Member['role'] }>({ email: '', displayName: '', role: 'onboarding_specialist' });
   const [shown, setShown] = useState<{ name: string; link: string } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -19,16 +23,21 @@ export function StaffScreen() {
 
   const reload = useCallback(async () => {
     const r = await loadTeam(window.fetch.bind(window));
-    setState(r.kind === 'ok' ? { kind: 'ready', team: r.team } : { kind: 'error', key: r.key });
+    setState(r.kind === 'ok' ? { kind: 'ready', team: r.team } : { kind: 'error', key: r.key, ...(r.signIn ? { signIn: true } : {}) });
   }, []);
   useEffect(() => {
     void reload();
   }, [reload]);
 
-  async function after(r: LinkOutcome, name: string) {
+  async function after(r: LinkOutcome, name: string, again?: () => Promise<void>) {
     setBusy(false);
+    if (r.kind === 'error' && r.stepUp && again) {
+      setMessage(null);
+      return setPending({ run: again });
+    }
     if (r.kind === 'error') return setMessage(r.key);
     setMessage(null);
+    setPending(null);
     if (r.kind === 'link') setShown({ name, link: r.link });
     await reload();
   }
@@ -39,21 +48,32 @@ export function StaffScreen() {
     setBusy(true);
     setMessage(null);
     const name = form.displayName.trim();
-    const r = await invite(window.fetch.bind(window), { email: form.email.trim(), displayName: name, role: form.role });
-    if (r.kind !== 'error') setForm({ email: '', displayName: '', role: 'onboarding_specialist' });
-    await after(r, name);
+    const input = { email: form.email.trim(), displayName: name, role: form.role };
+    const run = async () => {
+      setBusy(true);
+      const r = await invite(window.fetch.bind(window), input);
+      if (r.kind !== 'error') setForm({ email: '', displayName: '', role: 'onboarding_specialist' });
+      await after(r, name, run);
+    };
+    await run();
   }
 
   async function onReset(m: Member) {
     if (busy || !window.confirm(t('X-new.staff_confirm_reset', { name: m.displayName }))) return;
-    setBusy(true);
-    await after(await resetFactor(window.fetch.bind(window), m.id), m.displayName);
+    const run = async () => {
+      setBusy(true);
+      await after(await resetFactor(window.fetch.bind(window), m.id), m.displayName, run);
+    };
+    await run();
   }
 
   async function onDeactivate(m: Member) {
     if (busy || !window.confirm(t('X-new.staff_confirm_deactivate', { name: m.displayName }))) return;
-    setBusy(true);
-    await after(await deactivate(window.fetch.bind(window), m.id), m.displayName);
+    const run = async () => {
+      setBusy(true);
+      await after(await deactivate(window.fetch.bind(window), m.id), m.displayName, run);
+    };
+    await run();
   }
 
   async function copy() {
@@ -67,8 +87,21 @@ export function StaffScreen() {
   }
 
   return (
+    <>
+    <ConsoleNav current="team" />
     <main className="page wide" data-testid="staff">
       <h1>{t('X-new.staff_title')}</h1>
+      {pending ? (
+        <StepUpPanel
+          signInHref="/sign-in?next=/staff"
+          onCancel={() => setPending(null)}
+          onDone={() => {
+            const again = pending.run;
+            setPending(null);
+            void again();
+          }}
+        />
+      ) : null}
       {message ? <p role="alert" className="error" data-testid="message">{t(message)}</p> : null}
 
       {shown ? (
@@ -84,7 +117,11 @@ export function StaffScreen() {
       ) : null}
 
       {state.kind === 'loading' ? <p aria-busy="true">…</p> : null}
-      {state.kind === 'error' ? <p role="alert" data-testid="load-error">{t(state.key)}</p> : null}
+      {state.kind === 'error' ? (
+        <p role="alert" data-testid="load-error">
+          {t(state.key)} {state.signIn ? <a href="/sign-in?next=/staff" data-testid="sign-in-link">{t('X-new.signin_link')}</a> : null}
+        </p>
+      ) : null}
       {state.kind === 'ready' ? (
         <>
           <form onSubmit={onInvite} className="form inline" data-testid="invite-form">
@@ -131,5 +168,6 @@ export function StaffScreen() {
         </>
       ) : null}
     </main>
+    </>
   );
 }
