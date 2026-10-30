@@ -18,7 +18,7 @@ describe('privacy and terms page shell', () => {
   });
 
   it('renders a document passed in as plain text, with its version, and never as HTML', () => {
-    const doc = { title: 'Doc title', version: '3', sections: [{ heading: 'One', body: 'First para.\n\nSecond <b>para</b>.' }] };
+    const doc = { title: 'Doc title', version: '3', body: 'First para.\n\nSecond <b>para</b>.' };
     const html = renderToStaticMarkup(createElement(Notice, { t: translator('en'), nameKey: 'P-0009', doc }));
     expect(html).toContain('<h1 class="notice-title">Doc title</h1>');
     expect(html).toContain(translator('en')('P-new.notice_version', { version: '3' }));
