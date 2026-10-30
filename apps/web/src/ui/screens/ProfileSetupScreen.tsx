@@ -1,6 +1,5 @@
 'use client';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { noticeVersion } from '../../client/consent';
 import type { Lang } from '../../client/i18n';
 import { liffPort } from '../../client/liff';
 import { clubHome, safeNext } from '../../client/paths';
@@ -20,7 +19,7 @@ function without(errors: FieldErrors, field: keyof FieldErrors): FieldErrors {
 export function ProfileSetupScreen({ slug, next: rawNext, initialLang }: { slug: string; next: string | null; initialLang: Lang }) {
   const liff = useMemo(() => liffPort(), []);
   const next = safeNext(slug, rawNext);
-  const { load, lang, t, retry } = useClub(slug, initialLang, liff);
+  const { load, lang, t, retry, reload: reloadConfig } = useClub(slug, initialLang, liff);
   const [lineName, setLineName] = useState<string | null>(null);
   const [form, setForm] = useState({ fullName: '', phone: '', consent: false });
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -54,12 +53,18 @@ export function ProfileSetupScreen({ slug, next: rawNext, initialLang }: { slug:
     const before = missing(form);
     if (Object.keys(before).length) return setErrors(before);
     setBusy(true);
-    const out = await submitProfile({ slug, next, ...form, language: lang, noticeVersion: () => noticeVersion(t, lang), fetch: window.fetch.bind(window) });
+    const version = load.state === 'ready' ? (load.config.noticeVersion ?? null) : null;
+    const out = await submitProfile({ slug, next, ...form, language: lang, noticeVersion: version, fetch: window.fetch.bind(window) });
     if (out.kind === 'go') return window.location.replace(out.url);
     setBusy(false);
     if (out.kind === 'fields') setErrors(out.errors);
-    else setFormError(out.key);
-  }, [form, slug, next, lang, t]);
+    else if (out.kind === 'stale') {
+      // A new release was published meanwhile: load it, and ask for consent to it (D152).
+      setForm((f) => ({ ...f, consent: false }));
+      setFormError('P-new.notice_updated');
+      reloadConfig();
+    } else setFormError(out.key);
+  }, [form, slug, next, lang, load, reloadConfig]);
 
   if (load.state === 'not_found') return <StateScreen t={t} testId="not-found" textKey="P-new.page_not_found" />;
   if (load.state === 'offline') return <StateScreen t={t} offline testId="offline" titleKey="P-0326" textKey="P-0327" actionKey="P-0328" onAction={retry} />;
