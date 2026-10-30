@@ -19,7 +19,7 @@ Depends on: F01 T03 to T07 (database, context, tenant suite), T08 (settings), T1
   Tests first: hours differ by weekday; an inactive court is not offered and requests for it are refused.
 - [x] **F03-T05** `app.hold_minutes(club)` reading the setting (the one place F16 will override) and the `hold_setting_unset` rule. IDs: BOOK-03-AC3, decision D52. Role: BE-B · Deps F01-T08 · Size: S
   Tests first: only 10, 15 or 20 read back; an unset setting refuses a payment hold but not a PAY-07 booking.
-- [ ] **F03-T06** `app.release_hold`, the `app.release_handlers` registry, and the lazy release inside the claim. IDs: BOOK-03-AC5, AC6, BOOK-04-AC6, decisions D45, D48. Role: BE-B · Deps T02 · Size: M
+- [x] **F03-T06** `app.release_hold`, the `app.release_handlers` registry, and the lazy release inside the claim. IDs: BOOK-03-AC5, AC6, BOOK-04-AC6, decisions D45, D48. Role: BE-B · Deps T02 · Size: M
   Tests first: an expired hold with the job not run does not block the next request, and the old booking ends `released`; a handler runs once; one released message per order.
 - [ ] **F03-T07** `reserve_court` part 1: context checks, status gate, selection shape, opening hours, window, past and started hour, resource. IDs: BOOK-01, BOOK-03-AC2, BOOK-06, decisions D39, D42, D60. Role: BE-B · Deps T03, T04, T05 · Size: M
   Tests first: a guest and a signed out session are refused; Draft for a non tester, Paused (staff too), and an inactive court are refused with the typed codes; non-consecutive hours and two courts are refused.
