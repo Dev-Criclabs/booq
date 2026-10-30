@@ -118,6 +118,9 @@ describe('app.wallet_return_line (F06-T25, D158)', () => {
     expect(await returnLine(o.lines[0]!)).toBe(0);
     const walkIn = await order(1, 0, { customer: null });
     expect(await returnLine(walkIn.lines[0]!)).toBe(0);
+    // A customer who is not an app user (an imported or anonymised record) and never spent: no lock, no error.
+    const stranger = await order(1, 0, { customer: 'abababab-0000-4000-8000-000000000001' });
+    expect(await returnLine(stranger.lines[0]!)).toBe(0);
   });
 
   it("refuses a blank reason, an unknown line and another club's line", async () => {

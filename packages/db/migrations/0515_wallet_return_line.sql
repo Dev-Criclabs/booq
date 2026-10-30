@@ -7,7 +7,7 @@
 -- 'return' row per 'spend' row of the line, in id order. The dedupe key is wallet_return's own, return:{spend_row}, so
 -- the two functions never return the same spend twice whichever runs first, and a repeat writes nothing. p_reason is
 -- the caller's cause (player_cancel, club_cancel, closure ...); the ledger reason is always return. Returns the number
--- of rows written. A walk in order (no customer) spends no wallet and returns 0. Not granted to an app role: F09's
+-- of rows written. A line with no spend (a walk in order, a customer who never paid by wallet) returns 0 and takes no lock. Not granted to an app role: F09's
 -- return_booking_value and F08's cancel_session call it from their definer functions.
 
 create function app.wallet_return_line(p_order_line uuid, p_reason text) returns integer
@@ -29,7 +29,10 @@ begin
   if v_order is null then
     raise exception 'wallet:line_not_found' using errcode = 'P0001';
   end if;
-  if v_customer is null then
+  -- No spend on the line, nothing to return: and no wallet lock, which would refuse a customer who is not an app user
+  -- (wallet:customer_not_found, the 0509 rule).
+  if v_customer is null
+     or not exists (select 1 from public.wallet_ledger w where w.club_id = v_club and w.order_line_id = p_order_line and w.reason = 'spend') then
     return 0;
   end if;
   perform app.lock_wallet(v_customer);
