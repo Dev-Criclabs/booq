@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { Db } from '../../../db/src/tx';
 import { createDbDirectory } from './directory';
 
-// The real directory calls two definer functions (requested from the Architect; migration pending).
-// This test pins what it asks and what it returns; the database test follows when they exist.
+// The real directory calls two definer functions (migrations 0022, 0023). This pins what it asks and returns;
+// session.test.ts runs it against the real functions.
 function fakeDb(rows: Record<string, unknown>[], seen: { sql: string; params: unknown[]; ctx: unknown }[]): Db {
   return {
     withClubTx: async (ctx: unknown, fn: (tx: unknown) => Promise<unknown>) =>
@@ -19,6 +19,10 @@ describe('createDbDirectory', () => {
     expect(await d.clubBySlug('hunter')).toEqual({ clubId: 'c1', status: 'live', liffId: 'L', loginChannelId: 'LC' });
     expect(seen[0]).toMatchObject({ sql: 'select club_id, status, liff_id, login_channel_id from app.club_sign_in_target($1)', params: ['hunter'] });
     expect(seen[0]!.ctx.userId).toBeNull();
+  });
+  it('a club with no LINE connection yet cannot sign anyone in', async () => {
+    const d = createDbDirectory(fakeDb([{ club_id: 'c1', status: 'live', liff_id: null, login_channel_id: null }], []));
+    expect(await d.clubBySlug('hunter')).toBeNull();
   });
   it('an unknown slug is null', async () => {
     expect(await createDbDirectory(fakeDb([], [])).clubBySlug('nope')).toBeNull();

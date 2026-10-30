@@ -22,3 +22,4 @@ export { clubUrl } from './liff/club-url';
 export { clearSessionCookie, clubOfToken, hashToken, newSessionToken, parseSessionCookie, serializeSessionCookie, SESSION_COOKIE } from './liff/cookie';
 export { createSignInService, type AuthenticateResult, type ClubTarget, type SignInDirectory, type SignInOptions, type SignInResult, type SignInTx } from './liff/session';
 export { createDbDirectory } from './liff/directory';
+export { createPublicConfigService, type PublicConfig, type PublicConfigResult } from './liff/public-config';
