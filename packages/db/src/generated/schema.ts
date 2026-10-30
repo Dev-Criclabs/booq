@@ -12,6 +12,12 @@ export interface AppCoachRulesHook {
   handler: unknown;
 }
 
+export interface AppMoveHandlers {
+  name: string;
+  handler: unknown;
+  ord: number;
+}
+
 export interface AppPauseHandlers {
   handler_key: string;
   handler: unknown;
@@ -717,6 +723,7 @@ export interface PublicUserStaffNote {
 export interface Tables {
   'app.claim_handlers': AppClaimHandlers;
   'app.coach_rules_hook': AppCoachRulesHook;
+  'app.move_handlers': AppMoveHandlers;
   'app.pause_handlers': AppPauseHandlers;
   'app.release_handlers': AppReleaseHandlers;
   'app.setup_steps': AppSetupSteps;
