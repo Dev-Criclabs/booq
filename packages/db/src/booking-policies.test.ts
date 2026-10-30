@@ -38,6 +38,7 @@ beforeEach(async () => {
       c.release();
     }
   }
+  await tdb.query('insert into public.coach (club_id, id) values ($1, $2)', [A, COACH]);   // a solo class needs a coach row (F07, migration 0801)
   // P1 has a court booking, P2 a solo class with COACH, club B has one of its own
   const make = async (club: string, cust: string, res: string, coach: string | null, hour: number) => {
     const order = (await tdb.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'staff') returning id`, [club, cust])).rows[0].id;

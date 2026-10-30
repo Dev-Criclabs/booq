@@ -57,6 +57,7 @@ beforeEach(async () => {
   tdb = await createTestDatabase();
   await tdb.setNow('2026-12-01T03:00:00Z');
   await tdb.query(`insert into public.club (id, slug, name_th, name_en, status) values ($1,'club-a','ก','A','live'), ($2,'club-b','ข','B','live')`, [A, B]);
+  await tdb.seedCoach(A, COACH);   // a solo class needs a coach row (F07, migration 0801)
   await tdb.query(`insert into public.location (club_id, id, name) values ($1,$2,'Main'), ($3,$4,'Main')`, [A, LOC, B, LOC_B]);
   await tdb.query(`insert into public.resource (club_id, id, location_id, name, sport) values ($1,$2,$3,'1','tennis'), ($1,$4,$3,'2','tennis'), ($5,$6,$7,'1','tennis')`, [A, COURT1, LOC, COURT2, B, COURT_B, LOC_B]);
   for (const club of [A, B]) {
