@@ -14,6 +14,30 @@ Decisions made by the user, newest first. Each is also written into the PRD chan
 | D36 | A validly signed Beam callback with the wrong amount: record it, flag it for the owner, return a success status so Beam stops retrying (refines D24) |
 | Open | Whether a late payment that goes to the wallet gets its own receipt is with the accountant |
 
+## 30 Oct 2026, round 9 (approved as recommended)
+
+| # | Decision |
+|---|---|
+| D81 | The build plan (`docs/architecture/build-plan.md`) is approved: the ordered merge, `packages/contract`, registries as fragments with `locales/pending/`, the wave and lane plan with Wave 0 done by one session. A `main` branch is created from the ordered merge. Making `main` the default branch and protecting it are repository settings for the user |
+| D82 | The F04 and F05 designs are approved with their assumptions (F04 A-1 to A-9, F05 A-1 to A-6) |
+| D83 | A staff adjustment can never take a balance below zero (F06 Q1) |
+| D84 | A player who turns 18 keeps using the Student credits they bought, for the Student items they were bought for, until expiry (Q2) |
+| D85 | A credit reserved before the package expires stays valid for that session; if the booking is cancelled after expiry, the credit is lost (Q3) |
+| D86 | The package expiring message goes with the F10 boards (Q4) |
+| D87 | A package bought with a booking, paid late so the booking cannot be confirmed: all of it goes to the wallet (Q5) |
+| D88 | The owner extends one package at a time with a written reason; no bulk extension in v1 (Q6) |
+| D89 | An empty wallet expiry setting means never; staff are warned when it is first set (Q7) |
+| D90 | A pause shorter than a day moves the expiry by the exact pause length, then the expiry runs to 23:59 on the resulting day (Q8) |
+| D91 | The 11 messages without boards use the writers' wording on the Confirmed card style in v1 (F10 Q1) |
+| D92 | The rich menu is one image with Thai and English labels together, rendered on the server from the owner's six labels (Q2) |
+| D93 | A queued message uses the language at send time (Q3) |
+| D94 | Booking reminders in LINE controls the 24 hour and 2 hour reminders; Promotions in LINE controls the birthday discount and referral reward; everything else is always sent (Q4) |
+| D95 | Staff and coaches have a language field, defaulting to their LINE app language (Q5) |
+| D96 | A booking made less than 24 or 2 hours ahead skips the reminders already past (Q6) |
+| D97 | If LINE usage cannot be read, use the last known value and alert in P1; reminders are not stopped (Q7) |
+| D98 | The 70 percent banner uses the pause banner style (Q8) |
+| D99 | If the owner upgrades the LINE plan mid month, LINE's own count decides (Q9) |
+
 ## 30 Oct 2026, round 8 (approved as recommended)
 
 Approved by the user: the architect's F01 and F02 task lists and F03 design (assumptions A-1 to A-3), and the spec drafter's F04 and F05 requirements with the answers below.
