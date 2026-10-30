@@ -59,6 +59,35 @@ afterEach(async () => {
   await tdb.close();
 });
 
+describe('requestFromProfile (F02 calls this)', () => {
+  const asNew = (user: string) => ({ clubId: A, userId: user, roles: ['player'], source: 'player_app' as const });
+  it('makes one open request on an exact single phone match, and says nothing either way', async () => {
+    const out = await db.withClubTx(asNew(NEW1), (tx) => svc.requestFromProfile(tx, { claimantUserId: NEW1, fullName: 'Somchai J.', phone: '081 234 5678' }));
+    expect(out).toBeUndefined();
+    expect(await claims()).toEqual([{ claimant_user_id: NEW1, status: 'open' }]);
+  });
+  it('no match, an invalid phone, or a repeat creates nothing new', async () => {
+    await db.withClubTx(asNew(NEW1), (tx) => svc.requestFromProfile(tx, { claimantUserId: NEW1, fullName: 'X', phone: '0899999999' }));
+    await db.withClubTx(asNew(NEW1), (tx) => svc.requestFromProfile(tx, { claimantUserId: NEW1, fullName: 'X', phone: 'not a phone' }));
+    expect(await claims()).toEqual([]);
+    for (let i = 0; i < 2; i += 1) await db.withClubTx(asNew(NEW1), (tx) => svc.requestFromProfile(tx, { claimantUserId: NEW1, fullName: 'Somchai J.', phone: '0812345678' }));
+    expect(await claims()).toHaveLength(1);
+  });
+  it('two imported records with the same phone match nothing (not a single match)', async () => {
+    const c = await tdb.pool.connect();
+    try {
+      await c.query('begin');
+      await c.query(`insert into public.app_user (club_id, id, full_name, phone, phone_normalized, claim_state) values ($1,'a2a2a2a2-0000-4000-8000-000000000002','Twin','+66812345678','66812345678','unclaimed')`, [A]);
+      await c.query(`insert into public.app_user_role (club_id, user_id, role) values ($1,'a2a2a2a2-0000-4000-8000-000000000002','player')`, [A]);
+      await c.query('commit');
+    } finally {
+      c.release();
+    }
+    await db.withClubTx(asNew(NEW1), (tx) => svc.requestFromProfile(tx, { claimantUserId: NEW1, fullName: 'Somchai J.', phone: '0812345678' }));
+    expect(await claims()).toEqual([]);
+  });
+});
+
 describe('listing (A6)', () => {
   it('staff see the imported name beside the typed name and phone; nobody else lists claims', async () => {
     await requestClaim(NEW1, 'Somchai J.', '081-234-5678');
