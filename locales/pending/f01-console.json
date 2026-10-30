@@ -205,6 +205,7 @@
     "X-new.legal_missing": "This is empty: {what}.",
     "X-new.legal_unknown_field": "Only {clubName} and {legalName} can be used in the text. Found: {field}.",
     "X-new.legal_invalid": "The texts were not accepted. Check every field.",
-    "X-new.legal_admin_only": "Only a platform admin can publish a version."
+    "X-new.legal_admin_only": "Only a platform admin can publish a version.",
+    "X-new.config_fixed": "Fixed by the product."
   }
 }

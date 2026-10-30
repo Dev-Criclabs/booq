@@ -247,6 +247,8 @@ describe('settings page', () => {
     for (const { key } of KNOWN) expect(hasKey(labelKey(key)), key).toBe(true);
     expect(isKnown('pay_tap_limit_count')).toBe(true);
     expect(isKnown('invented')).toBe(false);
+    expect(KNOWN.filter((k) => k.fixed).map((k) => k.key)).toEqual(['line_cap_alert_percent', 'line_cap_reminders_stop_percent', 'line_cap_over_limit_percent']);
+    expect(hasKey('X-new.config_fixed')).toBe(true);
   });
   it('a number must be above zero and a list must be a list; nothing is guessed', () => {
     expect(parse('number', ' 72 ')).toEqual({ ok: true, value: 72 });
