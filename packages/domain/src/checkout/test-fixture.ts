@@ -46,8 +46,8 @@ export const fixtureSources = (over: Partial<QuoteSources> = {}): QuoteSources =
   ...over,
 });
 
-/** F13's issue_receipt and F10's enqueue_message ports as fakes until those features register theirs. They log
- *  their calls in public.__f04_port_log. */
+/** F13's issue_receipt and F10's enqueue_message ports replaced by fakes that log their calls in
+ *  public.__f04_port_log, so a checkout test checks what Pay asks for, not the receipt or the message itself. */
 export async function fakeReceiptAndMessagePorts(tdb: TestDatabase): Promise<void> {
   await tdb.query(`create table if not exists public.__f04_port_log (n serial, port text, args jsonb)`);
   await tdb.query(`grant all on public.__f04_port_log, public.__f04_port_log_n_seq to booq_owner`);

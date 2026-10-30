@@ -23,6 +23,8 @@ export const CHECKOUT_TEXT_KEYS = {
   birthday_not_available: 'P-new.birthday_not_available',
   credit_unavailable: 'P-new.credit_unavailable',
   payment_unavailable: 'P-new.payment_unavailable',
+  order_not_found: 'P-new.order_not_found',
+  customer_not_found: 'A-new.customer_not_found',
 } as const;
 
 export type CheckoutErrorCode = keyof typeof CHECKOUT_TEXT_KEYS;

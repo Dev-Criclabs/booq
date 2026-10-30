@@ -16,8 +16,9 @@ Depends on: F01 (settings `group_min_players`, `group_max_players`, `below_min_a
 - [x] **F08-T02** Migration 0902: `class_session` (unique `(club_id, template_id, start_at)`, statuses `scheduled`, `cancelled`, `needs_attention`, the edited flag). IDs: CLASS-01-AC2, AC3, AC9. Role: BE-B · Deps T01 · Size: S
   Tests first: a second session for one template and start is refused; status values match the design.
   - Built (Architect): `0902_class_session.sql`, `class-session.test.ts`. Also adds `occupancy_class_session_fk` (F03's 0203 left `occupancy.class_session_id` without a key). `needs_attention` and `attention_reason` go together; `cancelled` needs `cancel_reason` and `cancelled_at`.
-- [ ] **F08-T03** Migration 0903: `booking.class_session_id` and `booking.waitlist_entry_id`, the partial unique index for one live seat per player and session, the CHECK tying `type = 'class_seat'` to a session. IDs: CLASS-01-AC4, AC17, CLASS-02-AC12. Role: BE-B · Deps T02, F03 `booking` · Size: S
+- [x] **F08-T03** Migration 0903: `booking.class_session_id` and `booking.waitlist_entry_id`, the partial unique index for one live seat per player and session, the CHECK tying `type = 'class_seat'` to a session. IDs: CLASS-01-AC4, AC17, CLASS-02-AC12. Role: BE-B · Deps T02, F03 `booking` · Size: S
   Tests first: a player cannot hold two live seats in one session; a seat with no session is refused; existing booking rows are unchanged.
+  - Built (Architect): `0903_seat_link.sql`, `seat-link.test.ts`. `booking.waitlist_entry_id` is a plain column here; its key is added with the table in 0904. The seat's `coach_id` stays null by design (the session holds the coach); no CHECK was added for it.
 - [ ] **F08-T04** Migration 0904: `waitlist_entry`, `waitlist_seq`, indexes, one live entry per player and subject. IDs: CLASS-02-AC1, AC8, AC16, WAIT-01-AC1. Role: BE-B · Deps T02 · Size: S
   Tests first: a player joins several waitlists (D157) but not the same one twice; positions are per subject and own; no maximum on entries.
 

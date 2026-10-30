@@ -147,3 +147,114 @@ describe('POST /checkout/pay', () => {
     expect(await call('/checkout/pay', { courtId: COURT, hours: [HOUR], quoteHash: 'a'.repeat(64) }, me, { idempotencyKey: 'bad key' })).toMatchObject({ status: 400, code: 'bad_input' });
   });
 });
+
+// F04-T13: GET /orders/:id (R7-AC2, ROLE-01-AC4, CC-2).
+describe('GET /orders/:id', () => {
+  const read = (id: string, session: { clubId: string; userId: string; roles: string[] } | null = me) =>
+    routes().find((r) => r.def.path === '/orders/:id')!.handle({ session: session as never, input: { slug: 'club-a', id } }, deps);
+  const DESK = '88888888-8888-4888-8888-888888888888';
+  const ACC = '99999999-9999-4999-8999-999999999999';
+  const OTHER = '55555555-5555-4555-8555-555555555555';
+  beforeEach(async () => {
+    const c = await tdb.pool.connect();
+    try {
+      await c.query('begin');
+      for (const [u, role] of [[DESK, 'front_desk'], [ACC, 'accountant'], [OTHER, 'player']] as const) {
+        await c.query(`insert into public.app_user (club_id, id, line_user_id) values ($1,$2,$3)`, [A, u, `L-${u.slice(0, 4)}`]);
+        await c.query(`insert into public.app_user_role (club_id, user_id, role) values ($1,$2,$3), ($1,$2,'player') on conflict do nothing`, [A, u, role]);
+      }
+      await c.query('commit');
+    } finally {
+      c.release();
+    }
+  });
+
+  it('is permission orders.read.own, held by every club person, answered with no-store', () => {
+    const r = routes().find((x) => x.def.path === '/orders/:id')!;
+    expect(r.def).toMatchObject({ method: 'GET', permission: 'orders.read.own' });
+    expect(r.headers).toEqual({ 'Cache-Control': 'no-store' });
+  });
+
+  it('returns the stored snapshot, unchanged after the club changes prices and names (R7-AC2)', async () => {
+    const paid = await pay({ courtId: COURT, hours: [HOUR], addOnIds: [IDS.WATER] });
+    const id = (paid as { body: { orderId: string } }).body.orderId;
+    await tdb.query(`update public.add_on set price_satang = 1, name_en = 'Renamed' where club_id = $1`, [A]);
+    await tdb.query(`update public.court_price_rule set price_satang = 1 where club_id = $1`, [A]);
+    const r = await read(id);
+    expect(r).toMatchObject({
+      ok: true,
+      body: {
+        id, status: 'open', subtotalSatang: 52000, totalSatang: 52000, moneySatang: 52000,
+        lines: [
+          { position: 1, kind: 'court_hour', descriptionKey: 'P-0076', nameEn: '1', unitPriceSatang: 50000 },
+          { position: 2, kind: 'add_on', descriptionKey: 'P-0071', nameEn: 'Water', unitPriceSatang: 2000 },
+        ],
+      },
+    });
+  });
+
+  it('front desk and the accountant read the club order; another player gets not found (ROLE-01-AC4)', async () => {
+    const paid = await pay({ courtId: COURT, hours: [HOUR] });
+    const id = (paid as { body: { orderId: string } }).body.orderId;
+    expect(await read(id, { clubId: A, userId: DESK, roles: ['front_desk', 'player'] })).toMatchObject({ ok: true });
+    expect(await read(id, { clubId: A, userId: ACC, roles: ['accountant', 'player'] })).toMatchObject({ ok: true });
+    expect(await read(id, { clubId: A, userId: OTHER, roles: ['player'] })).toEqual({ ok: false, status: 404, code: 'order_not_found' });
+  });
+
+  it('an unknown or malformed id, and a slug of another club, are not found', async () => {
+    expect(await read('00000000-0000-4000-8000-00000000dead')).toEqual({ ok: false, status: 404, code: 'order_not_found' });
+    expect(await read('nope')).toEqual({ ok: false, status: 404, code: 'order_not_found' });
+    const r = await routes().find((x) => x.def.path === '/orders/:id')!.handle({ session: me, input: { slug: 'club-b', id: 'x' } }, deps);
+    expect(r).toEqual({ ok: false, status: 404, code: 'not_found' });
+  });
+});
+
+// F04-T13: the staff routes (ROLE-01-AC4, BOOK-04-AC7, D43). Skipped until the Architect's
+// app.customer_dob_for_pricing reaches main (requested 30 Oct).
+describe.skip('POST /staff/orders/quote and /pay', () => {
+  const DESK = '88888888-8888-4888-8888-888888888888';
+  const KID = '44444444-4444-4444-8444-444444444444';
+  const desk = { clubId: A, userId: DESK, roles: ['front_desk', 'player'] };
+  beforeEach(async () => {
+    const c = await tdb.pool.connect();
+    try {
+      await c.query('begin');
+      await c.query(`insert into public.app_user (club_id, id, line_user_id) values ($1,$2,'LD')`, [A, DESK]);
+      await c.query(`insert into public.app_user_role (club_id, user_id, role) values ($1,$2,'front_desk'), ($1,$2,'player')`, [A, DESK]);
+      await c.query(`insert into public.app_user (club_id, id, line_user_id, date_of_birth) values ($1,$2,'LK','2012-01-01')`, [A, KID]);
+      await c.query(`insert into public.app_user_role (club_id, user_id, role) values ($1,$2,'player')`, [A, KID]);
+      await c.query('commit');
+    } finally {
+      c.release();
+    }
+    await tdb.query(`update public.court_price_rule set price_satang = 40000 where club_id = $1 and price_group_id = $2`, [A, IDS.STUDENT]);
+  });
+  const staff = (path: string, body: unknown, session: unknown = desk) =>
+    routes().find((r) => r.def.path === path)!.handle({ session: session as never, input: { slug: 'club-a', ...(body as object) }, body }, deps);
+
+  it('both need booking.create.staff: a player is refused', async () => {
+    for (const p of ['/staff/orders/quote', '/staff/orders/pay']) {
+      expect(routes().find((r) => r.def.path === p)!.def.permission).toBe('booking.create.staff');
+      expect(await staff(p, { customerId: KID, courtId: COURT, hours: [HOUR] }, me)).toMatchObject({ ok: false, status: 403 });
+    }
+  });
+
+  it('staff booking for a Student pays as that player: the Student price (ROLE-01-AC4)', async () => {
+    const q = await staff('/staff/orders/quote', { customerId: KID, courtId: COURT, hours: [HOUR] });
+    expect(q).toMatchObject({ ok: true, body: { totalSatang: 40000, priceGroupId: IDS.STUDENT } });
+    const hash = (q as { body: { quoteHash: string } }).body.quoteHash;
+    const r = await staff('/staff/orders/pay', { customerId: KID, courtId: COURT, hours: [HOUR], quoteHash: hash });
+    expect(r).toMatchObject({ ok: true, body: { confirmed: false, payment: { amountSatang: 40000 } } });
+    const id = (r as { body: { orderId: string } }).body.orderId;
+    expect((await tdb.query(`select customer_id, source from public.orders where id = $1`, [id])).rows[0]).toEqual({ customer_id: KID, source: 'staff' });
+    // A staff booking awaiting payment holds for the hold time like a player's (D43; moved from F03's POST /staff/bookings).
+    const b = (await tdb.query(`select status, hold_expires_at from public.booking where order_id = $1`, [id])).rows[0];
+    expect(b.status).toBe('awaiting_payment');
+    expect(new Date(b.hold_expires_at).toISOString()).toBe('2026-12-02T10:15:00.000Z');
+  });
+
+  it('a customerId that is not a customer of the club is customer_not_found; none at all is bad input', async () => {
+    expect(await staff('/staff/orders/quote', { customerId: '00000000-0000-4000-8000-00000000beef', courtId: COURT, hours: [HOUR] })).toEqual({ ok: false, status: 404, code: 'customer_not_found' });
+    expect(await staff('/staff/orders/quote', { courtId: COURT, hours: [HOUR] })).toEqual({ ok: false, status: 400, code: 'bad_input' });
+  });
+});

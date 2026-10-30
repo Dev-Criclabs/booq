@@ -7,6 +7,12 @@ export interface AppAnonymiseHandlers {
   created_at: string;
 }
 
+export interface AppCancelHandlers {
+  name: string;
+  handler: unknown;
+  ord: number;
+}
+
 export interface AppClaimHandlers {
   handler_key: string;
   handler: unknown;
@@ -47,6 +53,7 @@ export interface AppMessageKinds {
   kind: string;
   cap_class: string;
   switch_key: string | null;
+  hours_before: number | null;
 }
 
 export interface AppMoveHandlers {
@@ -398,6 +405,8 @@ export interface PublicBooking {
   is_test: boolean;
   created_at: string;
   updated_at: string;
+  class_session_id: string | null;
+  waitlist_entry_id: string | null;
 }
 
 export interface PublicBookingCancel {
@@ -1220,6 +1229,7 @@ export interface PublicWalletLedger {
 
 export interface Tables {
   'app.anonymise_handlers': AppAnonymiseHandlers;
+  'app.cancel_handlers': AppCancelHandlers;
   'app.claim_handlers': AppClaimHandlers;
   'app.coach_rules_hook': AppCoachRulesHook;
   'app.coach_rules_move_hook': AppCoachRulesMoveHook;
