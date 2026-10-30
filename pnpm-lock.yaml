@@ -36,6 +36,15 @@ importers:
         specifier: workspace:*
         version: link:../../packages/time
 
+  apps/staff-invite:
+    dependencies:
+      '@booq/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@booq/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+
   apps/web:
     dependencies:
       '@booq/auth':
