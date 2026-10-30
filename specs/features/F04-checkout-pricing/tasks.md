@@ -39,7 +39,7 @@ Migration numbers are 0301 to 0399 and rise with task order (the migrator refuse
 
 ## B. Pricing engine (pure code)
 
-- [ ] **F04-T08** `priceOrder` in `packages/domain/pricing`: lines, price group, rounding half up, allocation, `quote_hash`. No database, no clock. IDs: R1-AC1 to AC7, R2-AC1 to AC8, R4-AC1 to AC4, AC6, D22, D23, D62. Role: BE-C · Deps none · Size: M
+- [x] **F04-T08** `priceOrder` in `packages/domain/pricing`: lines, price group, rounding half up, allocation, `quote_hash`. No database, no clock. IDs: R1-AC1 to AC7, R2-AC1 to AC8, R4-AC1 to AC4, AC6, D22, D23, D62. Role: BE-C · Deps none · Size: M
   Tests first: the worked examples of design 9 (Adult 50000 + coach 80000 = 130000; Student 70000 + 50000 = 120000); a property test that the lines always sum to the order total and to credit + wallet + money; half-up rounding; no rule means the hour is refused.
 - [ ] **F04-T09** Promo and birthday rules in the engine: scope, add-ons excluded unless included, fixed code capped and split by price with largest remainder (the remainder rule is assumption A-6, tested against the design), minimum spend on the pre-credit total, stacking and "the larger wins, tie to the code" (assumption A-2), the referral code as the one code (PROMO-01-AC11), a code that makes the amount due zero (AC13). IDs: PROMO-01-AC2 to AC6, AC8, AC11, AC13, R5, D65, D67, D68. Role: BE-C · Deps T08 · Size: M
   Tests first: each typed refusal reason; partner code on a solo class refused; stackable code plus birthday gives both; not stackable gives the larger; fixed shares sum exactly; a 100 percent code makes money due zero.
