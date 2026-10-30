@@ -21,6 +21,7 @@ export interface LaunchItem {
   recorded: boolean;
 }
 export type LaunchResult = { ok: true; clubName: string; clubStatus: string; items: LaunchItem[] } | { ok: false; code: 'not_found' };
+export type ListConfigResult = { ok: true; config: Array<{ key: string; value: unknown }> } | { ok: false; code: 'not_found' };
 export type PublishLegalResult = { ok: true; version: string } | Refusal;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -123,5 +124,14 @@ export function createAdminService(deps: { db: PlatformDb }) {
     });
   }
 
-  return { recordLaunchCheck, setConfig, publishLegalRelease, launchOverview };
+  /** P6 config: every platform value that is set. Any active staff member may read them (they hold no secrets); only an admin changes one. */
+  async function listConfig(staffId: string): Promise<ListConfigResult> {
+    if (!UUID.test(staffId)) return { ok: false, code: 'not_found' };
+    const staff = await db.withPlatformTx({ staffId: null }, async (tx) => (await tx.query<Staff>('select id, display_name, role, active from platform.staff_by_id($1)', [staffId])).rows[0] ?? null);
+    if (!staff || !staff.active) return { ok: false, code: 'not_found' };
+    const rows = await db.withPlatformTx({ staffId: staff.id, staffLabel: staff.display_name }, async (tx) => (await tx.query<{ key: string; value: unknown }>('select key, value from platform.config order by key')).rows);
+    return { ok: true, config: rows };
+  }
+
+  return { recordLaunchCheck, setConfig, publishLegalRelease, launchOverview, listConfig };
 }

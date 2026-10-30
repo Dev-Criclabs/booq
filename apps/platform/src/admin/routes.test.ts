@@ -72,6 +72,15 @@ describe('the launch overview', () => {
 });
 
 describe('config', () => {
+  it('any staff member reads the values that are set, in key order; a guest does not', async () => {
+    await h.call('PUT', '/config/pay_tap_limit_count', { body: { value: 5 }, as: 'admin' });
+    const r = await h.call('GET', '/config', { as: 'spec' });
+    expect(r.status).toBe(200);
+    const keys = (r.body.config as Array<{ key: string }>).map((c) => c.key);
+    expect(keys).toEqual([...keys].sort());
+    expect(r.body.config).toContainEqual({ key: 'pay_tap_limit_count', value: 5 });
+    expect((await h.call('GET', '/config', { as: null })).status).toBe(401);
+  });
   it('an admin sets a value and it is audited; a number key must be above zero', async () => {
     expect((await h.call('PUT', '/config/tester_invite_ttl_hours', { body: { value: 48 }, as: 'admin' })).status).toBe(200);
     expect((await h.tdb.query(`select value from platform.config where key = 'tester_invite_ttl_hours'`)).rows[0].value).toBe(48);
