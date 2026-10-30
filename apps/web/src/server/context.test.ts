@@ -6,7 +6,8 @@ const ENV = { DATABASE_URL: 'postgres://u:pw@h/db', WEB_SESSION_SECONDS: '3600',
 
 describe('readWebConfig', () => {
   it('reads the required settings; import limits are optional and come as a pair', () => {
-    expect(readWebConfig(ENV)).toEqual({ databaseUrl: ENV.DATABASE_URL, sessionSeconds: 3600, maxBodyBytes: 100000, importLimits: null });
+    expect(readWebConfig(ENV)).toEqual({ databaseUrl: ENV.DATABASE_URL, sessionSeconds: 3600, maxBodyBytes: 100000, importLimits: null, signInRateLimit: null });
+    expect(readWebConfig({ ...ENV, WEB_SIGNIN_RATE_LIMIT: '10', WEB_SIGNIN_RATE_WINDOW_SECONDS: '60' }).signInRateLimit).toEqual({ limit: 10, windowSeconds: 60 });
     expect(readWebConfig({ ...ENV, IMPORT_MAX_ROWS: '5000', IMPORT_STAGING_HOURS: '24' }).importLimits).toEqual({ maxRows: 5000, stagingHours: 24 });
   });
   it('names the missing settings and never prints a value', () => {
@@ -27,6 +28,9 @@ describe('readWebConfig', () => {
     [{ IMPORT_MAX_ROWS: '100' }],
     [{ IMPORT_STAGING_HOURS: '24' }],
     [{ IMPORT_MAX_ROWS: '0', IMPORT_STAGING_HOURS: '24' }],
+    [{ WEB_SIGNIN_RATE_LIMIT: '10' }],
+    [{ WEB_SIGNIN_RATE_WINDOW_SECONDS: '60' }],
+    [{ WEB_SIGNIN_RATE_LIMIT: '0', WEB_SIGNIN_RATE_WINDOW_SECONDS: '60' }],
   ])('refuses %j', (extra) => {
     expect(() => readWebConfig({ ...ENV, ...extra })).toThrow();
   });

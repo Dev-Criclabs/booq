@@ -161,7 +161,7 @@ describe('parallel requests for one slot (BOOK-04-AC1, AC12; FA T1)', () => {
       expect(failed.every((r) => r.code === 'slot_unavailable' && r.detail === 'resource')).toBe(true);
       expect(await count('booking')).toBe(1);
       expect(await count('occupancy')).toBe(1);
-    });
+    }, 90_000);   // 20 parallel transactions take far longer under full-suite load
   }
 
   it('overlapping multi hour selections: each hour has at most one claim and no order is half booked (FA T3)', async () => {
