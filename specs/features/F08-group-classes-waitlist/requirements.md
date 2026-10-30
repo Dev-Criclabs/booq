@@ -1,6 +1,6 @@
 # F08 Group classes and waitlist · Requirements
 
-Status: **DRAFT for approval (gate 1).** Drafted 30 Oct 2026. Nothing here is approved until a person says so. No design or code follows until then.
+Status: **Approved 30 Oct 2026** (gate 1). Recorded in `docs/decisions.md`, round 10 ("approve all"): the F13, F09, F07 and F08 drafts and the answers D118 to D121 were approved by the user. Revision 2 applies D84, D115 and D121. Changes after approval go PRD, then hand-off, then this file. No design or code follows until the design gate.
 
 Feature: F08 Group classes and waitlist. Depends on: F06. Requirement IDs: CLASS-01, CLASS-02, WAIT-01 (F03 shows Join waitlist on a taken court slot; F08 owns the waitlist rules, D44). Wave 4.
 
@@ -10,7 +10,7 @@ Feature: F08 Group classes and waitlist. Depends on: F06. Requirement IDs: CLASS
 |---|---|---|
 | PRD | `specs/product/prd-v1.2.md` | Group classes and waitlist; Pricing and packages (group class lines); Payments (Credits and wallet); Customer app pages C7, C8, C8b (pack choice), C13 (Waitlist tab), C16; Admin A8; LINE notifications; Key flows C and I |
 | HO | `specs/product/handoff-v1.2.md` | Business rules as requirements (CLASS-01, CLASS-02, WAIT-01, BOOK-04, BOOK-06); Data model (Class template and session, Waitlist entry) |
-| Decisions | `docs/decisions.md` | D19, D25, D44, D45, D48, D49, D59, D62; LINE-07 (D17, D29) |
+| Decisions | `docs/decisions.md` | D19, D25, D44, D45, D48, D49, D59, D62, D84, D121; LINE-07 (D17, D29) |
 | Gaps | `docs/canvas-gaps.md` | A5, B1, B2 |
 | QA | `docs/qa/traceability.md`, `open-questions.md`, `concurrency-tests.md` (branch `qa/test-strategy`) | CLASS rows; Q-06, Q-07; CONC-22 |
 | Other features | F03, F04, F06, F07, F09, F10, F11 | Court hold, price, credits, coach, cancel, messages, A8 |
@@ -52,21 +52,21 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 **Acceptance criteria.**
 
 - CLASS-01-AC1. Given an owner creates a class template in A8 (name in Thai and English, audience Adult or Student, level, coach, court, weekday and time, duration, minimum and maximum players), when it is saved, then the duration is 60 minutes (a template with any other duration is refused) and the players are 4 to 6 by default (the PRD default; owner may change them).
-- CLASS-01-AC2. Given a template, when it is saved, then sessions are generated from it for the weeks ahead. How far ahead is Q1.
+- CLASS-01-AC2. Given a template, when it is saved, then sessions are generated for the whole booking window (D121).
 - CLASS-01-AC3. Given a session, when it exists, then its court and its coach are reserved for that hour (CC-4): a template that clashes with a court booking, another session or the coach's availability, leave or rest cap (F07) is refused when saved, and a session that cannot be generated is reported to the owner, not skipped silently.
 - CLASS-01-AC4. Given a session, when a player books a seat, then the seat count never exceeds the maximum (the server refuses the last seat if full).
-- CLASS-01-AC5. Given a Student player (under 18) and an Adult class (or an Adult player and a Student class), when the schedule loads or a seat is requested, then the class is not shown and the request is refused by the server, not only filtered in the screen (CLASS-01, PRD). See Q2 for D62.
+- CLASS-01-AC5. Given a player, when the schedule loads or a seat is requested, then they see and may book the classes of their own price group (by the date of birth on file) and the classes that match the group credits they hold, for example a player who is now 18 or older with a Student group credit still sees the Student classes that credit was bought for (D121, D84, D62). A class outside both is not shown and a request for it is refused by the server, not only filtered in the screen (CLASS-01, PRD).
 - CLASS-01-AC6. Given the schedule (C7), when it loads, then it shows the week, filterable by level, with class cards (coach, court, time, spots left), Full plus Waitlist for a full class, and only the customer's audience.
 - CLASS-01-AC7. Given class detail (C8), when it loads, then it shows level, audience, date and time, duration, coach, court, players booked against the maximum, the minimum to run, and the credit or drop in price.
-- CLASS-01-AC8. Given a guest, when they browse C7 and C8, then it loads without sign in, with the Adult schedule by default (a guest has no audience yet; see Q3); booking starts sign in (F02).
+- CLASS-01-AC8. Given a guest, when they browse C7 and C8, then it loads without sign in and shows the Adult schedule (D121); booking starts sign in (F02).
 - CLASS-01-AC9. Given a class template with the coach on leave or over the rest cap for a session hour, when the session is generated, then it is flagged for the owner (F07 R6), not removed.
-- CLASS-01-AC10. Given the owner edits a template, when it is saved, then the change applies to sessions not yet generated or not yet booked, and booked sessions keep their details unless the owner changes a single session and players are told. What exactly is Q4.
+- CLASS-01-AC10. Given the owner edits a template, when it is saved, then the change applies to future sessions that have no players; a session that has players keeps its details unless the owner edits that session, in which case its players are messaged and may cancel free (D121).
 - CLASS-01-AC11. Given the owner cancels a template or a session, when it is saved, then it follows CLASS-01-AC13 for booked players.
 - CLASS-01-AC12. Given a group class hour, when the coach's rest run is counted, then it counts until the session is cancelled (D19, F07).
 - CLASS-01-AC13. Given a session is cancelled by staff (below minimum or otherwise), when it is saved, then every player gets full credit back (or the money to the wallet), a LINE message (F10), and the court and coach are freed (PRD; F09 CANCEL-03 style). Waitlist entries for it end.
 - CLASS-01-AC14. Given payment for a seat, when the player books, then they may pay with a group credit for the right audience, a drop in price, or the wallet, in the order of F04 R4 (PRD).
 - CLASS-01-AC15. Given a player with no group credits, when they open class detail, then C8 offers the drop in price or the 8 pack with one session used now (F06 R3-AC3, C8b).
-- CLASS-01-AC16. Given a below minimum session, when it is a set time before start (club setting, TBD and empty by default), then front desk get an alert (Class below minimum, F10). With the setting empty, no alert is sent and the session is not cancelled automatically. If staff cancel it, AC13 applies.
+- CLASS-01-AC16. Given a below minimum session, when the club's below minimum alert time (a club setting, empty by default) has been set and the time before start arrives, then front desk get an alert (Class below minimum, F10). Until the setting is set, a below minimum session runs and no alert is sent (D121). If staff cancel it, AC13 applies.
 - CLASS-01-AC17. Given a seat booked, when it is saved, then it is a booking of type class seat tied to the session (HO Data model) and counted as a one hour booking for its player (BOOK-06); group seats do not count toward the future court hours limit (D59).
 - CLASS-01-AC18. Given the sample sessions on the canvas (Thursday 20:00 "Full 6 of 6" against "3 booked, needs 4"), when tests are written, then they are not used (Gaps B1, B2).
 
@@ -91,7 +91,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 
 - CLASS-02-AC1. Given a full class or a taken court slot, when a signed in player taps Join waitlist, then they are added with a position and nothing is charged or held (WAIT-01, G-C04-Waitlist-joined). A guest signs in first.
 - CLASS-02-AC2. Given a spot opens (a cancel, a released hold, a session cancelled and reopened), when the first in line is next, then they get a LINE offer (Waitlist spot open) with the claim time in minutes (club setting, default 30), and C16 shows a countdown, the spot, the credit to be used, Claim spot or Decline (PRD C16).
-- CLASS-02-AC3. Given the offer, when the player claims within the time, then they pay (a group credit, drop in, wallet or Beam as in F04) and the seat or slot is booked; the claim is atomic under the seat or slot limit (CC-4).
+- CLASS-02-AC3. Given the offer, when the player claims within the time, then the claim is confirmed on the tap when a group credit or the wallet covers it, and when money is due they pay by Beam inside the claim time (D121, F05); the seat or slot is booked atomically under the seat or slot limit (CC-4).
 - CLASS-02-AC4. Given an offer that passes its time, or is declined, when it ends, then it passes to the next person in line and the player gets no further offer for it.
 - CLASS-02-AC5. Given a spot opens less than the cut off (default 2 hours) before the start, when it opens, then no offers are made (PRD).
 - CLASS-02-AC6. Given an offer for a court slot, when the player claims it, then it becomes a hold and a booking under BOOK-03 and BOOK-04; a court slot offer is the same as a class offer (D44). The offer's QR (if Beam is needed) follows F05.
@@ -102,8 +102,9 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 - CLASS-02-AC11. Given the session or slot is cancelled or closed, when it is saved, then waitlist entries end and those players are told (a closure follows D48).
 - CLASS-02-AC12. Given a player already holds a seat in the session, when they try to join its waitlist, then it is refused.
 - CLASS-02-AC13. Given the claim time and the cut off, when the owner changes them, then offers made already keep their end time and new offers use the new values (as D46 for holds).
-- CLASS-02-AC14. Given the spot protected while an offer is open, when another player opens the schedule, then whether they can still take it is Q5 (QA Q-07). Until answered, the offered spot is not offered to others.
-- CLASS-02-AC15. Given an offer open when the 2 hour mark passes, then whether it still stands is Q6.
+- CLASS-02-AC14. Given an offer is open, when another player opens the schedule, then the spot is held for the first in line and is not offered to others until the offer ends (D121).
+- CLASS-02-AC15. Given an offer open when the 2 hour mark passes, then it stands (D121).
+- CLASS-02-AC16. Given a waitlist, when players join, then there is no maximum length (D121).
 
 **Meets.**
 
@@ -128,7 +129,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2- flow copies (not repe
 
 - WAIT-01-AC1. Given a taken court slot, when the player taps Join waitlist, then they are added with a position and nothing is charged (hand-off check, CLASS-02-AC1).
 - WAIT-01-AC2. Given a court slot waitlist, when a booking for that slot is cancelled or its hold is released, then CLASS-02 offer rules apply (claim time, cut off, passing on).
-- WAIT-01-AC3. Given a slot with both a waitlist and an open Join action, when the slot becomes Open, then the first in line is offered it before it shows as Open to others for the claim time. See Q5.
+- WAIT-01-AC3. Given a slot with a waitlist, when the slot becomes Open, then the first in line is offered it and the slot is held for them for the claim time before it shows as Open to others (D121).
 - WAIT-01-AC4. Given a court waitlist entry for a time that passes, when the time passes, then the entry ends.
 - WAIT-01-AC5. Given a court slot that is Held (being paid for), when it is viewed, then whether Join waitlist shows is F03 Q2.
 
@@ -154,12 +155,7 @@ No key is added by this draft.
 
 ## Open questions
 
-1. **How far ahead sessions are generated (CLASS-01-AC2).** The booking window (30 days), or fixed weeks?
-2. **Under 18, Adult classes and Student credits (CLASS-01-AC5).** Two decisions pull against CLASS-01: D62 lets a player under 18 buy Adult items, and D84 lets a player who is now 18 keep using Student credits for Student items, while CLASS-01 shows each audience only its own classes. Can an under 18 player join an Adult class, and can an 18 or older player with a Student group credit still see and book a Student class? (Original wording follows.) D62 lets a player under 18 buy Adult items, but CLASS-01 says students see Student classes only. Is an Adult group class an item an under 18 player may now join, or does CLASS-01 still keep them out?
-3. **A guest's schedule (CLASS-01-AC8).** A guest has no audience. Which schedule shows, Adult (assumed), Student, or a switch?
-4. **Editing a template with booked sessions (CLASS-01-AC10).** What changes apply to sessions that already have players, and are the players told?
-5. **Spot protection during an offer (QA Q-07).** While an offer is open, can another player take the spot from the schedule?
-6. **An offer open at the 2 hour mark (QA Q-07).** Does it still stand?
-7. **Claim means pay?** C16 shows "credit used" and Claim spot. Is the claim confirmed when the player taps (credit or wallet), with Beam needed only when money is due, and does the claim time include the Beam hold?
-8. **Waitlist limits.** Is there a maximum length of a waitlist, and can one player be on several waitlists at once?
-9. **Below minimum cut off.** The time is empty and TBD. Until it is set, is a below minimum session left to run, or must staff decide?
+D121 answers the earlier questions on session generation, the schedule by price group and credits, the guest schedule, template edits, spot protection, the 2 hour mark, claim and payment, waitlist maximum and the below minimum alert time. One remains:
+
+1. **One player on several waitlists.** Can one player be on several waitlists at once, and if two offers arrive at the same time, may they claim both? (D121 sets no maximum length but does not say.)
+2. **Join waitlist on a held slot (F03 Q2).** Does a slot that is only held (being paid for) also show Join waitlist? D44 and WAIT-01 say a taken slot.
