@@ -21,7 +21,10 @@ describe('success while the hold runs (outcome applied)', () => {
     expect(await orderStatus(o)).toBe('paid');
     expect(await pay(p)).toEqual({ status: 'succeeded', outcome: 'applied', qr_image: null, confirmed: true });
     expect((await tdb.query(`select state from public.occupancy where booking_id = (select id from public.booking where order_id = $1)`, [o])).rows[0].state).toBe('confirmed');
-    expect(await log()).toEqual([{ port: 'issue_receipt', args: [o, p, 'order'] }]);
+    expect(await log()).toEqual([
+      { port: 'issue_receipt', args: [o, p, 'order'] },
+      { port: 'enqueue_message', args: ['booking_confirmed', expect.any(String), { order_id: o }, `confirmed:${o}`] },
+    ]);
   });
 
   it('a repeated callback changes nothing and issues no second receipt', async () => {
@@ -76,13 +79,13 @@ describe('success after the hold, slot still open (outcome applied_late)', () =>
     const p = await payment(o);
     await apply(p);
     expect((await tdb.query(`select status from public.promo_redemption where order_id = $1`, [o])).rows[0].status).toBe('counted');
-    expect((await log()).map((l) => l.port)).toEqual(['reserve_credit_and_wallet', 'issue_receipt']);
+    expect((await log()).map((l) => l.port)).toEqual(['reserve_credit_and_wallet', 'issue_receipt', 'enqueue_message']);
   });
 
   it('an order that used no credit or wallet does not call the F06 reserve port', async () => {
     const o = await order('released');
     await apply(await payment(o));
-    expect((await log()).map((l) => l.port)).toEqual(['issue_receipt']);
+    expect((await log()).map((l) => l.port)).toEqual(['issue_receipt', 'enqueue_message']);
   });
 });
 
