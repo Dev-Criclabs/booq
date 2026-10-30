@@ -17,6 +17,8 @@ const DRIVER_ALLOWED_IN = 'packages/db/';
 // Exact module specifiers only: pg, pg/..., pg-pool, pg-native, pg-promise, postgres.
 const DRIVER = /(?:from\s+|require\(\s*|import\(\s*)['"](pg|pg\/[^'"]*|pg-pool|pg-native|pg-promise|postgres)['"]/;
 const SERVICE_ROLE = /service[_-]?role/i;
+// The identity provider's admin key lives in exactly one small app (F01-T17b, SR-06, D124 option 1, D148).
+const SERVICE_ROLE_ALLOWED_IN = 'apps/staff-invite/';
 const SECRETS_ALLOWED_IN = ['packages/secrets/', 'packages/db/'];
 const SECRET_ACCESS = /SECRETS_(PRIVATE|PUBLIC)_KEY|\bread_secret(_worker)?\b|\bwrite_secret\b/;
 
@@ -62,7 +64,7 @@ export function findViolations(path, text) {
   const p = path.split(sep).join('/');
   const out = [];
   text.split('\n').forEach((line, i) => {
-    if (SERVICE_ROLE.test(line)) out.push({ path: p, line: i + 1, rule: 'no-service-role' });
+    if (!p.startsWith(SERVICE_ROLE_ALLOWED_IN) && SERVICE_ROLE.test(line)) out.push({ path: p, line: i + 1, rule: 'no-service-role' });
     if (!p.startsWith(DRIVER_ALLOWED_IN) && DRIVER.test(line)) out.push({ path: p, line: i + 1, rule: 'no-raw-pg' });
     if (!SECRETS_ALLOWED_IN.some((a) => p.startsWith(a)) && SECRET_ACCESS.test(line)) out.push({ path: p, line: i + 1, rule: 'no-secret-access' });
   });

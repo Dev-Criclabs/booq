@@ -9,6 +9,7 @@
     "@booq/db": "workspace:*",
     "@booq/domain": "workspace:*",
     "@booq/line": "workspace:*",
+    "@booq/secrets": "workspace:*",
     "@booq/time": "workspace:*",
     "@line/liff": "2.31.2",
     "next": "16.4.2",
