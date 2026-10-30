@@ -1,6 +1,8 @@
 # BOOQ foundation architecture (proposal)
 
-Status: **DRAFT for approval by a person. Nothing here is approved.** Author role: Architect / data. Branch `architect/foundation`. 30 Oct 2026.
+Status: **DRAFT, revision 2, for approval by a person. Nothing here is approved.** Author role: Architect / data. Branch `architect/foundation`. 30 Oct 2026.
+
+Revision 2 applies the decisions in `docs/decisions.md` (decisions D1 to D15 and round 2b). Those numbers are the decisions log's. This document's own recommendations are numbered R1 to R16 to avoid a clash. Answered questions are listed in section 10.1 and removed from review; the open ones carry a recommendation in section 10.2 so they can be approved in bulk.
 
 This is the shared design every feature relies on. It is not a feature `design.md`. F01's `design.md` comes after F01's requirements are approved, and it will cite this file.
 
@@ -14,63 +16,43 @@ The stack is the one adopted on 30 Oct: Next.js with the LIFF SDK, Postgres (Sup
 
 | # | Decision | Recommendation | Trade-off |
 |---|---|---|---|
-| D1 | Names (Store/Branch vs Club/Location) | Keep the core's physical table names; the code, docs and UI say `club` and `location` through one mapping layer (§1) | Cheap to adopt, but two vocabularies exist until the core is read (Q1, Q2) |
-| D2 | Tenant key | `club_id` on every club table, with composite keys `(club_id, id)` and composite foreign keys, so a row can never point at another club's row | Slightly wider keys and FKs; removes a whole class of leaks |
-| D3 | Database access | Browsers and LIFF never talk to the database. Only our server does, as restricted roles; Supabase's anon/authenticated roles get no grants | We write the API ourselves; no auto REST |
-| D4 | Identity | Players, coaches, staff: our own session from a server-verified LIFF ID token. BOOQ staff: Supabase Auth with MFA (Q16) | Two identity systems, but they cannot be confused |
-| D5 | No double booking | One `occupancy` table; one row claims the court and the coach; two exclusion constraints (`btree_gist`) (§3) | Needs `btree_gist`; the rest rule needs a row lock because a constraint cannot express it |
-| D6 | Transactions | READ COMMITTED, explicit row locks in a fixed order, constraints as the final judge | Needs discipline on lock order; simpler than SERIALIZABLE retries |
-| D7 | Ledgers | Append-only by grants and triggers; balances are derived by SUM; no stored editable number | Reads sum rows (tiny volume at club scale) |
-| D8 | BOOQ staff blindness | Separate DB role with grants only on setup tables (default deny), separate Next.js app with only that role's credentials, aggregate-only usage counters (§4) | Two deployables; worth it because the platform app holds no credential that can read player data |
-| D9 | Jobs | Graphile Worker on Postgres. Time rules live in query predicates (`hold_expires_at <= now()`); jobs only do side effects (§5) | One more process to run; avoids loss of correctness if a job is late |
-| D10 | Beam | Gateway interface; raw-body HMAC check; event table for idempotency; late payment re-attempts the claim, else wallet (§6) | Exact Beam details unknown until docs are read (Q24) |
-| D11 | Time | `timestamptz` for instants, `date`/`time` for wall-clock rules, one `time` package, Thai dates forced to the Gregorian year (§7) | Banned APIs need a lint |
-| D12 | Audit | DB triggers write the diff via a SECURITY DEFINER writer; actor and reason come from transaction-local settings (§8) | Every audited table needs a trigger; CI checks the list |
-| D13 | Repo | pnpm monorepo: `apps/web`, `apps/platform`, `apps/worker`, `packages/*` (§9) | More folders than one app; clean role ownership |
-| D14 | Query layer | Plain SQL migrations (Supabase CLI) and Kysely with generated types | Less magic than an ORM; we write the SQL |
+| R1 | Names | Tables are named `club` and `location` from the first migration. There is no existing Booq core (decisions round 2b), so there is no Store/Branch mapping (§1) | None; the earlier mapping text is removed |
+| R2 | Tenant key | `club_id` on every club table, with composite keys `(club_id, id)` and composite foreign keys, so a row can never point at another club's row | Slightly wider keys and FKs; removes a whole class of leaks |
+| R3 | Database access | Browsers and LIFF never talk to the database. Only our server does, as restricted roles; Supabase's anon/authenticated roles get no grants | We write the API ourselves; no auto REST |
+| R4 | Identity | Players, coaches, staff: our own session from a server-verified LIFF ID token, one LINE provider per club. BOOQ staff: email plus a second factor, separate from LINE (Supabase Auth with TOTP is the recommended implementation) | Two identity systems that cannot be confused. If Postgres is self-hosted in Thailand (hosting risk, §4.1), the BOOQ staff login library is swapped |
+| R5 | No double booking | One `occupancy` table; one row claims the court and the coach; two exclusion constraints (`btree_gist`) (§3) | Needs `btree_gist`; the rest rule needs a row lock because a constraint cannot express it |
+| R6 | Transactions | READ COMMITTED, explicit row locks in a fixed order, constraints as the final judge | Needs discipline on lock order; simpler than SERIALIZABLE retries |
+| R7 | Ledgers | Append-only by grants and triggers; balances are derived by SUM; no stored editable number | Reads sum rows (tiny volume at club scale) |
+| R8 | BOOQ staff blindness | Separate DB role with grants only on setup tables (default deny), separate Next.js app with only that role's credentials, aggregate-only usage counters (§4) | Two deployables; worth it because the platform app holds no credential that can read player data |
+| R9 | Jobs | Graphile Worker on Postgres. Time rules live in query predicates (`hold_expires_at <= now()`); jobs only do side effects (§5) | One more process to run; avoids loss of correctness if a job is late |
+| R10 | Beam | Gateway interface; raw-body HMAC check; event table for idempotency; late payment re-attempts the claim, else wallet (§6) | Exact Beam details unknown until docs are read (Q24) |
+| R11 | Time | `timestamptz` for instants, `date`/`time` for wall-clock rules, one `time` package, Thai dates forced to the Gregorian year (§7) | Banned APIs need a lint |
+| R12 | Audit | DB triggers write the diff via a SECURITY DEFINER writer; actor and reason come from transaction-local settings (§8) | Every audited table needs a trigger; CI checks the list |
+| R13 | Repo | pnpm monorepo: `apps/web`, `apps/platform`, `apps/worker`, `packages/*` (§9) | More folders than one app; clean role ownership |
+| R14 | Query layer | Plain SQL migrations (Supabase CLI) and Kysely with generated types | Less magic than an ORM; we write the SQL |
+| R15 | Roles | A person holds a set of roles (`app_user_role`); permissions are the union (§2.2, §4.3) | Slightly more complex policies than one role column |
+| R16 | Test mode | Rows written while a club is Testing are flagged by trigger, use a non-legal receipt series, and are purged by one guarded function at Go live (§2.6) | The purge is the one deliberate exception to append-only, so it is tightly fenced and tested |
 
-## 1. Mapping the Booq core to Club and Location
+## 1. Naming and the Booq core
 
-### 1.1 What the spec gives us
+### 1.1 Decision
 
-- Hand-off, Architecture: "Booq core naming differs: Notion says Store and Branch, this design says Club and Location. Keep the core's table names and map the labels in the UI."
-- PRD, conflicts with the Notion core, settled 30 Oct: one plan (not Personal/Professional/Business); BOOQ staff never see customer data; booking length fixed at 60 minutes (the core allows 60 or 90).
+Decisions round 2b: there is **no existing Booq core**. Hunter is the first real build and no code or database exists. The Notion "Booq Product Reference" is no longer the source of truth; the PRD, the hand-off and `CLAUDE.md` are. So:
 
-I did not search the Notion workspace. The brief says the "Booq Product Reference" is not in the repo and to state what is needed instead of guessing, so this section is a mapping plus a checklist. It is provisional until Q1 is answered.
+- Tables are named `club` and `location` from the first migration, and the tenant column is `club_id` everywhere. There is no Store/Branch mapping and no alias layer.
+- The hand-off sentence "Keep the core's table names and map the labels in the UI" is superseded. It should be removed from the hand-off by whoever owns it (rule changes start in the PRD, then the hand-off).
+- `docs/core/booq-product-reference-digest.md` is background only. It gives product terms and no table names, tenant column, migration tooling or Beam code, so nothing in this design depends on it.
+- The points where the Notion core differed from the PRD are all settled in the log: one plan, 60-minute bookings, late payment to the wallet, no cash refunds, hold of 10/15/20 minutes (default 15), LINE sign-in for club users and email plus a second factor for BOOQ staff, no check-in, receipts numbered per club, LINE user ID as the player key. This design follows them.
 
-### 1.2 Proposed mapping
+### 1.2 Two meanings of "branch"
 
-| Core (Notion) | This design | Notes |
-|---|---|---|
-| Store | Club | The tenant. Its id is the `club_id` on every row. |
-| Branch | Location | A place with resources. Hunter has one, "Main location · Head office". |
-| (unknown) | Resource | The hand-off says courts are general resources (sport, type, lights, max players). Need to see how the core models bookable things. |
-| Plans table (Personal, Professional, Business) | One plan | Keep the table if it exists; seed one plan; `club.plan_trial_ends_at` and `club.billing_starts_at` are per club (PRD step 2). |
-| Booking duration variants 60/90 | 60 only | Enforce in the database (CHECK in §3), not only in the UI. |
-| Platform admin sees tenant data (if so) | Must not | See §4. If the core lets platform staff read customer data, that path is removed, not hidden. |
+The spec uses the word twice. `club.tax_branch` is the **tax branch** printed on receipts ("head office", สำนักงานใหญ่). `location.label` is a place label ("Main location · Head office"). They are different columns and must not be merged.
 
-Two things that look alike and are different:
+### 1.3 What greenfield changes
 
-- The word **branch** is used twice in the spec. `Club.branch` is the **tax branch** printed on receipts ("head office", สำนักงานใหญ่). `Location.branch label` is a place label. The core's Branch maps to Location, not to the tax branch. Column names: `club.tax_branch`, `location.label`.
-- The core's tenant column is probably `store_id`. If the physical column stays `store_id`, `packages/db` exposes it to the rest of the code as `clubId` (one alias in the query layer, one place in RLS helpers). The words in this document (`club_id`) are the logical name.
-
-### 1.3 Recommendation, and what I need from the core
-
-Decision rule (cannot choose without reading the core):
-
-- If the core is already Postgres, has a tenant key on its tables and its own booking tables: extend it, keeping its table names (D1). Add the tables in §2 beside them.
-- If the core has no tenant key, no RLS, or platform staff read tenant data: do not retrofit. Create the BOOQ schema as new tables with core-compatible names for Store/Branch and write an adapter for whatever must stay shared.
-
-Needed from the Notion "Booq Product Reference" or from whoever owns the core (also Q1):
-
-1. Entity list with physical table and column names, id types, and the tenant key.
-2. How the tenant is enforced today: RLS, app-level filters, or nothing.
-3. Auth model: who signs in how; staff and role tables; whether platform admins can read tenant data.
-4. Booking and slot model: how double booking is prevented today; the 60/90 minute variants; resources.
-5. Payments: the Beam integration as built. The spec says the core "confirms Beam as its gateway with PromptPay refunds". Our rule is wallet or credit only (CANCEL-02, PAY-05), so I need to know if refund code exists.
-6. Plans, billing and the club status field, if present.
-7. Migration tooling, DB host, ORM, job runner, audit log, if any.
-8. Whether the core holds live data (migrate) or is a spec only (greenfield).
+- We choose the tooling (Supabase CLI migrations, Kysely, §9) and there is no old data to migrate. The only inbound data is the owner's CSV import (§4.6).
+- One plan: `club.plan_trial_ends_at` and `club.billing_starts_at` are per club; the plan itself is not editable per club.
+- 60-minute bookings are enforced by a CHECK in the database (§3), not only in the UI.
 
 ## 2. Data model
 
@@ -83,9 +65,9 @@ Needed from the Notion "Booq Product Reference" or from whoever owns the core (a
 - Money: `bigint` satang, columns end in `_satang`, one currency (THB), no floats anywhere. Prices and amounts `check (>= 0)`; ledger deltas are signed. Percentages are integer basis points. Rounding is a question (Q7).
 - Instants are `timestamptz`. Wall-clock rules are `date` and `time` (§7).
 - No hard delete of business records. Status columns and ledger compensation. PDPA deletion is anonymisation (Q27).
-- Defaults live in templates (P5), as data written to the club at creation. There are no default values in code. A setting that is absent is unset (TBD), and the code treats unset as "no limit" or "feature off" only where the spec says so (BOOK-05).
+- Defaults live in templates (P5), as data written to the club at creation. The Tennis template carries the PRD defaults (decision D8): hold 15 minutes with choices 10/15/20, waitlist claim 30 minutes, no offers within 2 hours, rest cap 6, group classes 4 to 6 players. The Blank template starts empty. There are no default values in code. A setting that is absent is unset (TBD), and the code treats unset as "no limit" or "feature off" only where the spec says so (BOOK-05).
 - `created_at` and `updated_at` on every table; `updated_at` set by trigger.
-- `is_test boolean` on bookings, orders, payments and receipts for clubs in Testing (Q9).
+- Test data (decision D4): every table that Testing can write has `is_test boolean not null`, set by a trigger from the club's status at insert time, so code cannot forget it. See §2.6.
 
 ### 2.2 Table inventory and data class
 
@@ -93,7 +75,7 @@ Every table is classified **S** (setup: BOOQ staff may see it in the support vie
 
 | Table | Class | Key and uniqueness | Notable indexes and notes |
 |---|---|---|---|
-| `club` | S | pk `id`; unique `slug`; status in draft/testing/live/paused; `payment_option` in beam/slip; legal name, tax id, `tax_branch`, registered address, `receipt_prefix`, `allow_booq_changes_until`, `paused_at`, `pause_reason`, owner contact (Q20) | RLS: `id = app.club_id()` |
+| `club` | S | pk `id`; unique `slug`; status in draft/testing/live/paused; `payment_option` in beam/slip; legal name, tax id, `tax_branch`, registered address, `receipt_prefix`, `allow_booq_changes_until`, `paused_at`, `pause_reason`, owner contact, visible to BOOQ staff (decision D2) | RLS: `id = app.club_id()` |
 | `club_feature` | S | pk `(club_id, feature_key)` | Switches per club (PLAT-05) |
 | `club_setting` | S | pk `(club_id, key)`; `value jsonb` | Keys come from a typed registry in code: hold minutes, cancel window hours, max future court hours, booking window days, rest cap, waitlist claim minutes, no-offer-within hours, class-below-minimum alert, wallet expiry, VAT switch. Absent means unset |
 | `location` | S | unique `(club_id, id)` | `(club_id, name)` |
@@ -102,7 +84,8 @@ Every table is classified **S** (setup: BOOQ staff may see it in the support vie
 | `price_group`, `court_price_rule`, `coach_tier`, `coach_tier_price`, `package_product`, `add_on` | S | unique `(club_id, id)` | Price snapshots go into order lines, so later edits never change history |
 | `line_connection`, `payment_connection` | S | pk `club_id` | Channel and LIFF ids, OA id; Beam merchant id and mode (sandbox/live). No secrets here |
 | `club_secret` | S, write-only | pk `(club_id, kind)` | LINE tokens, Beam keys and webhook secrets, encrypted; platform role can INSERT/UPDATE but never SELECT (§4.4) |
-| `app_user` | D | unique `(club_id, line_user_id)`; unique `(club_id, id)` | Player, coach, staff in one table. A person at two clubs has two rows. Index `(club_id, phone_normalized)` (not unique) for the self-referral check. Role: Q3 |
+| `app_user` | D | unique `(club_id, line_user_id)`; unique `(club_id, id)` | Player, coach, staff in one table. A person at two clubs has two rows. Phone is typed, never verified by code in v1 (decision D11), stored normalised; index `(club_id, phone_normalized)` is not unique, and clubs with duplicate phones are flagged for referral abuse by a query, not a stored flag. Date of birth may be null: no date of birth means Adult prices (D12) |
+| `app_user_role` | D | pk `(club_id, user_id, role)`; role in player/coach/front_desk/accountant/owner | Roles are a set (decision D1): a coach can also play, an owner can also coach. Permissions are the union of the roles. At least one role per active user |
 | `user_staff_note` | D, staff only | fk user | Split out of `app_user` so a player reading their own row can never receive staff notes (PDPA-01) |
 | `user_consent` | D | `(club_id, user_id, notice_version, accepted_at)` | Append-only (PDPA-01) |
 | `coach`, `coach_availability_rule`, `coach_leave` | D | `coach.id = app_user.id` or fk | Coach profile, pay model and leave contain staff personal data, so D |
@@ -139,7 +122,7 @@ create table credit_ledger (
   club_id     uuid not null,
   package_id  uuid not null,
   change      integer not null,
-  reason      text not null check (reason in ('reserve','return','use','forfeit','expire','adjust')),
+  reason      text not null check (reason in ('reserve','return','use','forfeit','expire','adjust','import')),  -- 'import' per decision D13
   booking_id  uuid,
   staff_id    uuid,
   note        text,
@@ -206,11 +189,19 @@ create table receipt_counter (
 -- insert ... on conflict (club_id, series) do update set last_no = receipt_counter.last_no + 1 returning last_no;
 ```
 
-The increment and the receipt insert share a transaction, so a rollback undoes both and no number is skipped. The row lock serialises issuance per club. This lock is taken **last** in any transaction (lock order, §3.4). Void changes `receipt.status` and adds a reason; the row and number stay. Format `{prefix}-{year}-{000001}` comes from `club.receipt_prefix` (HTC for Hunter). Testing-mode receipts must not consume real numbers (Q9). Whether the counter resets each year, and which payments get a receipt, are questions (Q8).
+The increment and the receipt insert share a transaction, so a rollback undoes both and no number is skipped. The row lock serialises issuance per club. This lock is taken **last** in any transaction (lock order, §3.4). Void changes `receipt.status` and adds a reason; the row and number stay. Format `{prefix}-{year}-{000001}` comes from `club.receipt_prefix` (HTC for Hunter). Numbers are per club (decisions round 2b). Testing-mode receipts use a separate non-legal series, are flagged `is_test` and are purged at Go live, so Hunter's first real receipt is 000001 (decision D4, §2.6). A test receipt's PDF must be visibly marked as a test, which needs a new locale key for the writers. Whether the real counter restarts each Bangkok year, and which payments get a receipt, stays Q8.
 
 ### 2.5 Orders and payments
 
 `orders` holds the frozen result of pricing: `order_line` rows snapshot item, unit price, discount and add-on prices in satang; `amount_due_satang` is computed on the server at Pay time and never recomputed afterwards. The Beam callback compares against this frozen number (§6). `payment` has `method` (beam, slip, cash, credit), `status` (pending, succeeded, expired, failed), `gateway`, `gateway_charge_id`, `amount_satang`, `outcome` (applied, wallet_late, wallet_duplicate, mismatch) and `is_test`. Cash needs a `reason_code` (PAY-06).
+
+### 2.6 Test mode data and the Go live purge (decision D4)
+
+- While a club is Testing, the testers are the owner and named BOOQ testers. A BOOQ tester acts through an ordinary club account in the player app, invited for the purpose, never through the platform console, and the invitation is logged in P6. BOOQ sees pass or fail only (`platform.launch_check`), never the test bookings.
+- A `BEFORE INSERT` trigger sets `is_test = (club.status = 'testing')` on: `app_user` (tester player accounts, Q29), `booking`, `occupancy`, `orders`, `order_line`, `payment`, `payment_event`, `customer_package`, `package_extension`, `credit_ledger`, `wallet_account`, `wallet_ledger`, `receipt`, `audit_entry`, `message_outbox`, `waitlist_entry`, `referral`, `promo_redemption`, `idempotency_key`.
+- Testing uses Beam sandbox keys (`payment_connection.mode`). A test receipt takes its number from the `test` series in `receipt_counter`; a CHECK ties `is_test` to that series, so a test row can never take a real number and a real row can never take a test one.
+- `go_live_purge(club_id)` is a `SECURITY DEFINER` function owned by a dedicated role. It runs only as part of the Go live transition (P4 checks passed), only while the status is `testing`, and deletes `is_test` rows in dependency order in one transaction. The append-only triggers on the ledgers and `audit_entry` allow a `DELETE` only when the purge function has set a transaction-local flag and the row is `is_test`. It writes one non-test audit entry with row counts per table, and one P6 entry.
+- CI tests: the purge removes only `is_test` rows; it refuses to run when the status is not `testing`; real rows survive; a non-test ledger row still cannot be deleted, even inside the purge; a club that never tested purges nothing; after the purge the first real receipt is number 000001.
 
 ## 3. No double booking (BOOK-04, PAY-02, COACH-01)
 
@@ -345,7 +336,7 @@ These run against a real Postgres (the Supabase local stack), not a mock. Each t
 
 ### 4.1 Access path
 
-Per D3 and the hand-off ("the core API owns every rule; the surfaces only show and collect"):
+Per R3 and the hand-off ("the core API owns every rule; the surfaces only show and collect"):
 
 - LIFF pages, the admin console and the coach portal call our Next.js server. Nothing in a browser holds a database credential.
 - `anon` and `authenticated` (Supabase REST roles) have **no grants** on the `public` schema. Data schemas are not exposed through the Supabase REST API. The `service_role` key is not used anywhere in the request path (a lint bans the string).
@@ -357,13 +348,16 @@ Per D3 and the hand-off ("the core API owns every rule; the surfaces only show a
 | `booq_worker` | `apps/worker` | Same tables, still under RLS: each job runs with the job's club context. A separate dispatcher reads only the job queue |
 | `booq_platform` | `apps/platform` | Only the S-class tables and the `platform` schema (§4.4) |
 
-Migrations run as `booq_owner`; tables are owned by it and have `FORCE ROW LEVEL SECURITY`, so even the owner is subject to policies. Supabase pooler note: use `set_config(..., true)` inside each transaction (transaction-local), never session-level settings, because pooled connections are shared. Whether custom roles work through the pooler on the chosen plan is a DevOps spike item (Q23).
+Migrations run as `booq_owner`; tables are owned by it and have `FORCE ROW LEVEL SECURITY`, so even the owner is subject to policies. Supabase pooler note: use `set_config(..., true)` inside each transaction (transaction-local), never session-level settings, because pooled connections are shared. Whether custom roles work through the pooler on the chosen plan is a DevOps spike item (§11).
+
+**Hosting risk (decision D5).** The decision is Supabase in Singapore (the nearest region) with a data-processing agreement. **The user must have a Thai lawyer confirm the cross-border transfer under PDPA.** If it is refused, the alternative is Postgres self-hosted in Thailand. The design keeps that swap bounded by relying on plain Postgres (version 15 or later with `btree_gist`, custom roles, RLS) plus only three Supabase services: Auth for BOOQ staff (swap for an auth library with TOTP), Storage for slips, receipts and exports (swap for an S3-compatible store behind a small `storage` interface), and the pooler (self-hosted PgBouncer follows the same transaction-local rules). It uses no PostgREST, Edge Functions or Realtime, which R3 already avoids. Daily backups (PDPA-01) become DevOps's job in a self-hosted case.
 
 ### 4.2 Request context
 
-Every request resolves a context `{ clubId, userId, role }` from the server session. The club is **never** read from a URL, header, or body parameter sent by the client.
+Every request resolves a context `{ clubId, userId, roles }` from the server session. The roles are read from `app_user_role` on each request (a primary-key lookup), not copied into the cookie, so removing a role or deactivating a person takes effect at once. The club is **never** read from a URL, header, or body parameter sent by the client.
 
-- Player, coach, staff: the LIFF ID token (or the browser LINE login) is verified server-side with LINE (audience = that club's LINE Login channel id). The channel id maps to the club (`line_connection`). We then create our own signed httpOnly session carrying `clubId`, `userId`, `role`. Because the channel id picks the club, a token issued for club A's channel cannot open club B. How the admin console is addressed (one URL per club or one shared URL) is Q18; the design works with either, as the club still comes from the verified token or session, not the URL.
+- Player, coach, staff: the LIFF ID token (or the browser LINE login) is verified server-side with LINE, audience = that club's LINE Login channel id. Each club has its own LINE provider, so a LINE user id differs per club and the key is `(club_id, line_user_id)` (decision D7). We then create our own signed httpOnly session carrying `clubId`, `userId`. A token issued for club A's channel cannot open club B.
+- One shared BOOQ domain with the club in the URL, for example `/c/{slug}/...` (decision D6). The domain is not yet known and is configuration (`APP_BASE_URL`), never written in code. The slug only chooses **which club's LINE channel starts the login**. After login the session's club is the truth; a request whose slug differs from the session's club is refused. Each club's LIFF endpoint URL is its own `/c/{slug}` path.
 - BOOQ staff: separate session, separate app (§4.4).
 
 The server wrapper:
@@ -374,7 +368,7 @@ withClubTx(ctx, async (tx) => { /* all queries here */ })
 //  begin;
 //  select set_config('app.club_id',  $ctx.clubId, true),
 //         set_config('app.user_id',  $ctx.userId, true),
-//         set_config('app.role',     $ctx.role,   true),
+//         set_config('app.roles',    $ctx.roles.join(','), true),
 //         set_config('app.request_id', $reqId,    true);
 //  ... queries ...
 //  commit;
@@ -392,8 +386,10 @@ create function app.club_id() returns uuid language sql stable as
   $$ select nullif(current_setting('app.club_id', true), '')::uuid $$;
 create function app.user_id() returns uuid language sql stable as
   $$ select nullif(current_setting('app.user_id', true), '')::uuid $$;
-create function app.role() returns text language sql stable as
-  $$ select nullif(current_setting('app.role', true), '') $$;
+create function app.roles() returns text[] language sql stable as   -- e.g. 'coach,player'
+  $$ select string_to_array(coalesce(current_setting('app.roles', true), ''), ',') $$;
+create function app.has_any_role(variadic wanted text[]) returns boolean language sql stable as
+  $$ select app.roles() && wanted $$;
 ```
 
 Pattern for every club table: a **restrictive** tenant policy (always ANDed, so nobody can loosen it by adding a permissive policy later) plus permissive policies that say who in the club:
@@ -406,8 +402,8 @@ create policy booking_tenant on booking as restrictive for all to booq_app, booq
   using (club_id = app.club_id()) with check (club_id = app.club_id());
 
 create policy booking_staff   on booking for all    to booq_app
-  using (app.role() in ('owner','front_desk')) with check (app.role() in ('owner','front_desk'));
-create policy booking_finance on booking for select to booq_app using (app.role() = 'accountant');
+  using (app.has_any_role('owner','front_desk')) with check (app.has_any_role('owner','front_desk'));
+create policy booking_finance on booking for select to booq_app using (app.has_any_role('accountant'));
 create policy booking_player  on booking for select to booq_app using (customer_id = app.user_id());
 create policy booking_coach   on booking for select to booq_app using (coach_id = app.user_id());
 ```
@@ -422,7 +418,7 @@ What RLS cannot do, stated plainly:
 - It does not stop arbitrary SQL. A session setting can be changed by anyone who can run SQL as `booq_app`. So queries are parameterised (the query layer builds all SQL, no string concatenation, a lint checks), and `booq_app` cannot run DDL.
 - "Front desk cannot see revenue or coach pay": front desk must read individual payments and orders to take cash, so a row policy cannot hide totals. We enforce it on the server (no aggregate endpoints for that role, report routes require owner or accountant) and mark it for Security review (Q19). Coach pay tables have no policy for front desk at all.
 
-Per-role table access summary (RLS shape; the server adds action checks on top):
+Per-role table access summary (RLS shape; the server adds action checks on top). A person with several roles gets the union of the columns they hold:
 
 | Table group | Player | Coach | Front desk | Accountant | Owner |
 |---|---|---|---|---|---|
@@ -440,13 +436,13 @@ Per-role table access summary (RLS shape; the server adds action checks on top):
 
 The spec: BOOQ staff never see "players, bookings, payments, slips, receipts, wallets or reports", and the support view is setup only. RLS alone is a row filter that a bad policy can open. So this is layered, with the strongest layers being absence of privilege and absence of credential:
 
-1. **Separate identity.** BOOQ staff are not rows in `app_user`. They live in `platform.platform_staff`, authenticated by Supabase Auth with MFA (Q16). They have no `club_id`.
+1. **Separate identity.** BOOQ staff are not rows in `app_user`. They live in `platform.platform_staff` and sign in with email plus a second factor, separate from LINE (decision D3); the recommended implementation is Supabase Auth with TOTP. They have no `club_id`.
 2. **Separate database role with default-deny grants.** `booq_platform` is granted SELECT/INSERT/UPDATE only on the **S** tables in §2.2 (and the `platform` schema). On every **D** table it has no privilege at all, so a query fails with `permission denied`, even if a policy were wrong. New tables are D by default.
 3. **Separate application and credentials.** `apps/platform` is its own Next.js deployment. Its environment has only the `booq_platform` connection string. It does not hold `booq_app` or `booq_worker` credentials and cannot be made to read player data by a coding mistake in a route.
-4. **RLS on the S tables for the platform role**, from the support session: a staff member may touch club X only if they are a platform admin, or an onboarding specialist assigned to X. Writes are allowed only when `club.status in ('draft','testing')` or `club.allow_booq_changes_until > now()` (PLAT-02). Look-only otherwise.
+4. **RLS on the S tables for the platform role**, from the support session: a staff member may touch club X only if they are a platform admin, or an onboarding specialist assigned to X. A specialist can take an assigned club through Draft, Testing and Live; **only a platform admin can pause or resume** a club (decision D15), which the pause function checks by role, not by policy alone. Writes are allowed only when `club.status in ('draft','testing')` or `club.allow_booq_changes_until > now()` (PLAT-02). Look-only otherwise.
 5. **No "log in as".** The support view is a fixed set of routes with fixed projections over S tables. There is no code path that mints a club-user session for BOOQ staff.
 6. **Secrets are write-only.** LINE tokens, Beam keys and webhook secrets sit in `club_secret`. `booq_platform` can `INSERT/UPDATE` them but not `SELECT`. "Test connection" runs server-side and returns pass/fail only.
-7. **Aggregates, not rows, for P1.** P1 shows "bookings in the last 30 days" and "LINE messages used this month". These come from `platform.club_usage_daily` (counts only), incremented by the single `platform.bump_usage()` SECURITY DEFINER function with a fixed search path. The platform role cannot count rows in `booking`. Whether even a count of bookings is acceptable is Q15.
+7. **Aggregates, not rows, for P1.** P1 shows "bookings in the last 30 days" and "LINE messages used this month". These come from `platform.club_usage_daily` (counts only), incremented by the single `platform.bump_usage()` SECURITY DEFINER function with a fixed search path. The platform role cannot count rows in `booking`. Decision D2 allows aggregate counts (bookings in the last 30 days per club) and the owner's contact details, and nothing finer: no per-player or per-booking breakdown, and no count cut by something that identifies a person.
 8. **Tests prove it** (§4.5).
 
 Support-access modes (PLAT-02): Draft/Testing = edit; Live = look only; the owner's "Allow BOOQ to make changes" sets `club.allow_booq_changes_until = now() + 24h` and the policy lets writes through until then. It expires by itself (no job needed; it is a time predicate).
@@ -461,6 +457,12 @@ Platform audit of this access is in §8.
 - **Append-only test.** `UPDATE` and `DELETE` on both ledgers and on `audit_entry` fail for every role including the owner.
 - **No-secrets test.** No column in S tables other than `club_secret` is named like a key, token or secret.
 - **Static checks.** No `service_role`; no import of `pg` outside `packages/db`; no raw SQL string concatenation; every route has `permission`.
+
+### 4.6 CSV import and club data export (decisions D13, D14)
+
+- **Import** (PLAT-06): owner only. The file is parsed into a staging table; every row is validated first and the import is **all or nothing**, with an error report. It imports players, packages and balances, never bookings. Imported players match on phone at their first LINE sign-in. Balances and credits enter through the ledgers with reason `import` (added to the credit ledger reasons in §2.3 and to the wallet list in Q5). How an imported package maps onto `credits_total` is for the F06 design.
+- **Export**: the owner downloads it. BOOQ staff can only start one: they insert a row in `platform.export_request` (club and requester only) and see its status. A worker task runs under that club's context, writes the file to the private storage bucket under `club_id/`, and only the owner receives a short-lived signed link. BOOQ staff never receive the file or its link. Because every query is already club-scoped, export reuses the normal repositories.
+- There is no delete-club feature in v1.
 
 ## 5. Job runner (BOOK-03, LINE-05, PKG-03, CLASS-02)
 
@@ -487,6 +489,7 @@ All LINE pushes go through `message_outbox` (transactional outbox). The business
 - The sender resolves the player's language at send time, builds the text from `locales/*` (text and Flex cards both), and calls LINE with an `X-Line-Retry-Key` (a stable UUID per outbox row) so a retry after a timeout cannot double-send.
 - Preconditions are evaluated at send time: a cancelled or moved booking voids pending reminders; a package with no credits left skips the expiry reminder.
 - A sent message increments `platform.club_usage_daily` (LINE-06). A token failure writes `platform.club_health`. The behaviour at a club's monthly cap is undecided (C3); the sender counts and reports but does not invent a cap rule.
+- **Not a friend** (decision D9): a player who has not added the club's LINE account must never block checkout. A push to such a user is rejected by LINE (exact response to confirm in the F10 design). The sender marks the outbox row `undeliverable`, does not retry it, does not count it as used, and the app shows the confirmation on screen with a prompt to add the account. Friend status is kept current from the follow and unfollow events of each club's LINE webhook, which uses the same raw-body HMAC pattern as §6 with the channel secret.
 - Messages for events the spec lists but has no message for (for example "your late payment went to your wallet", §6.5) need new locale keys; they are flagged to the writers, not written in code.
 
 ### 5.4 Jobs
@@ -593,7 +596,7 @@ Thailand uses UTC+7 all year, no daylight saving, so wall time and instants map 
 | Which day a booking belongs to | The Bangkok date of `start_at`. Index and group on `(start_at at time zone 'Asia/Bangkok')::date` (immutable because the zone is a literal) |
 | Cancel window | `start_at - now() >= interval '12 hours'` (setting). Instants, no zone issue |
 | Booking window "N days ahead" | Last bookable Bangkok date = today + N. Whether day N itself is allowed is Q11 |
-| Age and student price | Computed from `date_of_birth` and the Bangkok date. Pricing on the 18th birthday follows the spec |
+| Age and student price | Computed from `date_of_birth` and the Bangkok date; the price switches on the 18th birthday. No date of birth on file means Adult prices (D12). A Student package already bought stays valid when the holder becomes an Adult (round 1) |
 | Package validity | Purchase date plus calendar months (31 Jan + 1 month = end of Feb, the Postgres rule). A purchase on 5 Jan with 3 months expires 5 Apr, which is the canvas B5 point. Whether the expiry date is usable through the end of that day is Q10 |
 | Daily close, reports, coach month | Bangkok calendar day / month |
 | Receipt year | Bangkok year of `issued_at` |
@@ -642,7 +645,7 @@ Mechanism, recommended: **database triggers** on every audited table call one `S
 - Trade-off against writing audit rows in application code: triggers cannot know a business reason unless the server sets it. So routes that need one (price change, wallet adjust, closure, no-show mark, extension) pass `reason` into `withClubTx`, and the ledger CHECKs already require a note for staff movements.
 - `old_value` and `new_value` hold changed columns only, to keep personal data out where possible. Secret columns (`club_secret`) are never audited.
 - Append-only like the ledgers (revoke, trigger, test).
-- **Registry.** `packages/db/audited-tables.ts` lists audited tables; a CI check fails if one lacks its trigger. The list: `club`, `club_setting`, `club_feature`, `location`, `resource`, `opening_hours`, all price tables and `package_product`, `add_on`, `promo_code`, `app_user` (role and tags), `coach` (tier, price override, pay model), `booking`, `occupancy` via booking, `class_template`, `class_session`, `closure`, `customer_package`, `package_extension`, `credit_ledger`, `wallet_ledger`, `orders`, `payment` (cash with reason code), `receipt` (void). The registry is reviewed per feature design.
+- **Registry.** `packages/db/audited-tables.ts` lists audited tables; a CI check fails if one lacks its trigger. The list: `club`, `club_setting`, `club_feature`, `location`, `resource`, `opening_hours`, all price tables and `package_product`, `add_on`, `promo_code`, `app_user` (including date of birth, which the owner can see changed, decision D12), `app_user_role`, tags, `coach` (tier, price override, pay model), `booking`, `occupancy` via booking, `class_template`, `class_session`, `closure`, `customer_package`, `package_extension`, `credit_ledger`, `wallet_ledger`, `orders`, `payment` (cash with reason code), `receipt` (void). The registry is reviewed per feature design.
 - System actors: jobs (hold release, expiry) are changes to bookings and balances, so they write entries with `actor_type = 'system'` and the job name as label.
 - Read access: Owner only (A17). Whether anyone else reads it is Q28.
 
@@ -692,49 +695,63 @@ Recommendations and trade-offs:
 - **One repo, pnpm workspaces.** One codebase as the hand-off says. `apps/platform` is separate from `apps/web` on purpose (§4.4): it is the strongest structural block for BOOQ staff. Cost: two deployments plus the worker. The alternative, one app with route groups, is simpler to ship but one process then holds credentials for both roles, so the block depends on code review instead of on what the process can do.
 - **SQL-first migrations with the Supabase CLI** (`packages/db/migrations`, also run in CI against the local stack) and **Kysely** with generated types. An ORM such as Prisma fits RLS-by-setting and exclusion constraints poorly. The tool choice follows the core if the core already has one (§1.3 item 7).
 - **Ownership** matches the roles in the development plan: Architect owns `packages/db`, `tools`, `docs/architecture`; booking and commerce back-end own folders under `packages/domain` and `packages/payments`; platform/LINE owns `packages/line`, `apps/platform` API and `apps/worker` tasks for messages; Content owns `locales`, `packages/i18n` and the hard-coded-text lint; DevOps owns CI and deployment files.
-- **API conventions that every feature uses:** errors are typed codes with parameters, never text (TEXT-01); mutating routes take `Idempotency-Key`; every route declares a permission; money in responses is integer satang; timestamps are ISO 8601 with `+07:00`; no club id in request bodies.
+- **API conventions that every feature uses:** errors are typed codes with parameters, never text (TEXT-01); mutating routes take `Idempotency-Key`; every route declares a permission; money in responses is integer satang; timestamps are ISO 8601 with `+07:00`; no club id in request bodies; the club slug in the path only picks the login channel (§4.2).
 
-## 10. Questions
+## 10. Questions and decisions
 
-"Blocks" = must be answered before this document can be approved (A), before the named feature design (F), or can wait (-). Owners are suggestions.
+### 10.1 Answered, no longer for review
 
-| Q | Question | Why it matters | Blocks | Owner |
+| Q | Answer | Source | Applied in |
+|---|---|---|---|
+| Q1, Q2 | There is no existing Booq core; tables are named `club` and `location` from the start | Decisions round 2b | §1 |
+| Q3 | Roles are a set | D1 | §2.2, §4.2, §4.3 |
+| Q8 (part) | Receipt numbers are per club. The yearly restart and which payments get a receipt stay open as Q8 | Round 2b | §2.4 |
+| Q9 | Test data flagged, separate non-legal receipt series, purged at Go live; testers are the owner and named BOOQ testers; BOOQ sees pass or fail | D4 | §2.6 |
+| Q15, Q20 | BOOQ staff may see aggregate counts and the owner's contact details, nothing finer | D2 | §2.2, §4.4 |
+| Q16 | BOOQ staff sign in with email plus a second factor, separate from LINE | D3 | §4.4 |
+| Q17 | One LINE provider per club | D7 | §4.2 |
+| Q18 | One shared domain with the club in the URL; domain supplied later and kept as configuration | D6 | §4.2 |
+| Q23 (hosting part) | Supabase in Singapore with a DPA; a Thai lawyer must confirm the PDPA transfer; alternative is self-hosted Postgres in Thailand. Recorded as a risk. The technical spike stays in §11 | D5 | §4.1 |
+
+Other decisions this revision applies: D8 template defaults (§2.1), D9 a player who is not a LINE friend never blocks checkout (§5.3), D11 phone not verified (§2.2), D12 no date of birth means Adult prices and changes are audited (§2.2, §7, §8), D13 import and D14 export (§4.6), D15 specialist and pause rights (§4.4), and the round 1 rule that a bought Student package stays valid, which closes canvas gap C1.
+
+### 10.2 Open, with a recommendation (approve in bulk or change)
+
+"Blocks" = A (this document), or the feature design that needs it.
+
+| Q | Question | Recommendation | Decides | Blocks |
 |---|---|---|---|---|
-| Q1 | The core's details in §1.3: table and column names, tenant key, auth, booking model, Beam code, migration tooling, whether it holds live data | The mapping and migration plan are provisional until read | A | User / core owner |
-| Q2 | Keep `store`/`branch` as physical names, or rename to `club`/`location` now? | The hand-off says keep; renaming is cheap before the first migration and expensive after | A | User |
-| Q3 | Can one person hold more than one role in a club (a coach who also books as a player, an owner who also coaches)? The spec has one `role` | Decides `app_user.role` single value versus a role set, and RLS | A | Product |
-| Q4 | Credit ledger: do `use` and `forfeit` rows carry change 0 (marking the disposition of a reserve) while `reserve` is -1 and `return` +1? | Defines "balance equals the sum of rows" (PKG-01) | F06 | Product |
-| Q5 | Wallet ledger reasons: the spec lists none. Proposed: refund, late_payment, duplicate_payment, referral_reward, spend, return, adjust, expire (only if wallet expiry is set) | Reports and the customer history screen | F06 | Product |
-| Q6 | Is wallet value applied at Pay reserved by a ledger row and reversed if the hold ends (like credits)? | Prevents spending one balance twice | F04/F06 | Product |
-| Q7 | Rounding for percentage discounts and for VAT, to the satang | Money must be exact | F04 | Product / accountant |
-| Q8 | Receipts: does the number restart each year (HTC-2027-000001)? Is a receipt issued when a payment is covered by credit or wallet only, and for a late payment that goes to the wallet? | Counter design, RCPT-01 | F13 | Product / accountant |
-| Q9 | Testing-mode data: flagged `is_test`, separate non-legal receipt series, purged on go-live? | Real receipt numbers must start clean | F15 | Product |
-| Q10 | Package expiry: usable through the whole expiry date (end of day Bangkok)? | PKG-02 gives a date only | F06 | Product |
-| Q11 | Booking window: is today+30 itself bookable, and is the window by date or by 30×24 hours? | BOOK-01 acceptance test | F03 | Product |
-| Q12 | Multi-hour court selection with a coach: is the solo class only one of the hours, or all? Solo classes are fixed at 60 minutes | The `occupancy` kind check | F03/F07 | Product |
-| Q13 | Class template session versus an existing booking or closure at the same time: which wins? | Session generation | F08 | Product |
-| Q14 | Rest rule: "6 hours in a row" means consecutive back-to-back hours with any gap resetting the run? | The count in `claim_occupancy` | F07 | Product |
-| Q15 | P1 shows bookings in the last 30 days per club. Is an aggregate count acceptable under "BOOQ never sees bookings"? | §4.4 item 7 | A | User |
-| Q16 | BOOQ staff sign-in: Supabase Auth with email and MFA (recommended), or LINE? | Identity separation | A | User |
-| Q17 | One LINE provider for all clubs or one per club? | LINE user ids repeat across clubs in one provider; our key is `(club_id, line_user_id)` either way | F02 | User / DevOps |
-| Q18 | Admin and coach portal address: one address per club, or one shared (C7)? | Where the club is chosen before sign-in | F02 | User |
-| Q19 | Front desk "cannot see revenue" is enforced by the server because RLS cannot hide totals. Acceptable? | Security review | A | Security |
-| Q20 | Owner contact details (name, phone, LINE, email, PRD step 1) are in `club`, visible to BOOQ staff. Confirm this is not "customer data" | S/D classification | A | User |
-| Q21 | Bookings made inside the reminder window: skip the reminder (proposed)? | LINE-05 | F10 | Product |
-| Q22 | Birthday message: what time of day on the 1st? | Job schedule | F14 | Product |
-| Q23 | Hosting region and Supabase plan: Supabase has no Thai region (nearest is Singapore), so cross-border transfer under PDPA, custom roles and `btree_gist` through the pooler, daily backups and per-club export | PDPA, D8 | A | DevOps / Security |
-| Q24 | Beam facts: signature scheme and headers, event id, amount unit, QR expiry control, charge retrieval, retry policy, sandbox, per-club webhook secret, IP list, API shape | §6 adapter | F05 | DevOps / Beam |
-| Q25 | Late payment rules beyond the slot (PAY-03 says "slot still open"): also require the coach, credits, wallet and promo to be re-appliable, else wallet (proposed)? And a package-only order paid after its QR expired? | §6.3 | F05 | Product |
-| Q26 | Wrong-amount payment that really arrived: staff credit the wallet with a reason (proposed). And is writing an event row OK under "changes nothing"? | §6.2 | F05 | Product |
-| Q27 | PDPA delete request versus receipts and audit that must be kept: retention periods and anonymisation of personal fields | Schema for erasure | F01 | Security / legal |
-| Q28 | Who may read the audit log (owner only per A17)? Log BOOQ staff sign-ins? | §8 | F01 | Product |
+| Q4 | Credit ledger sign rules | `reserve` -1, `return` +1, `expire` the negative remainder, `adjust` and `import` signed; `use` and `forfeit` carry change 0 and mark the final fate of a reserve. Credits left = `credits_total` + sum of changes | Product | F06 |
+| Q5 | Wallet ledger reasons | `refund` (cancellation value), `late_payment`, `duplicate_payment`, `referral_reward`, `spend`, `return`, `adjust`, `import`, and `expire` only if the wallet expiry setting is set | Product | F06 |
+| Q6 | Wallet value applied at Pay | Reserve with a ledger row at Pay and reverse it if the hold ends, the same as credits | Product | F04, F06 |
+| Q7 | Rounding to the satang | Percentage discounts computed in basis points and rounded half up per order line, once; VAT, if switched on, computed on the total and rounded half up. Accountant to confirm | Product, accountant | F04 |
+| Q8 | Receipt numbering and which payments get a receipt | One series per club per Bangkok year (HTC-2027-000001 implies it). A receipt for every confirmed order, whatever it was paid with (money, credit, wallet). None for a late payment that went to the wallet, because no sale happened. Accountant to confirm | Product, accountant | F13 |
+| Q10 | Package expiry day | Usable through the whole expiry date in Bangkok (expiry instant is the start of the next day) | Product | F06 |
+| Q11 | Booking window edge | By Bangkok date: today through today + N, both inclusive | Product | F03 |
+| Q12 | Coach on a multi-hour court selection | The coach picker shows only when exactly one hour is selected, matching "coaches available for that exact hour" | Product | F03, F07 |
+| Q13 | Class session versus an existing booking or closure | The booking or closure wins; the session is flagged "needs attention" for the owner | Product | F08 |
+| Q14 | "6 hours in a row" | Back-to-back hours; any gap of a full hour resets the run | Product | F07 |
+| Q19 | Front desk cannot see revenue or coach pay | Enforced on the server (no aggregate routes for that role); RLS cannot hide totals from someone who must read payments. Security to review | Security | A |
+| Q21 | Reminder for a booking made inside the window | Skip any reminder whose time has already passed | Product | F10 |
+| Q22 | Birthday message time | 09:00 Bangkok on the 1st (a proposal; the spec gives no time) | Product | F14 |
+| Q24 | Beam facts: signature scheme and headers, event id, amount unit, QR expiry control, charge retrieval, retry policy, sandbox, per-club webhook secret, API shape | No recommendation possible. Needs Beam's developer docs and sandbox access from the club's merchant onboarding; DevOps fills the adapter checklist in §6 | DevOps, user | F05 |
+| Q25 | Late payment beyond the slot (PAY-03) | Approve only if the whole order can be re-established (slot, coach, credits, wallet, promo); otherwise wallet. A package-only order paid after its QR expired also goes to the wallet | Product | F05 |
+| Q26 | Wrong-amount payment that really arrived | Nothing changes except the immutable event row and a health alert; staff credit the wallet from A6 with a written reason | Product | F05 |
+| Q27 | PDPA deletion versus receipts and audit | Anonymise personal fields (name, phone, date of birth, LINE id, notes) on the user and redact them in audit JSON; keep ledgers, receipts and audit with pseudonymous ids. Retention periods come from the Thai lawyer (the same one as D5) | Security, legal | F01 |
+| Q28 | Who reads the audit log; BOOQ sign-in logging | Owner only (A17). Log BOOQ staff sign-ins and failures in P6 | Product | F01 |
+| Q29 | New (from D4): which accounts the Go live purge removes | Tester player accounts and their data are purged; owner, staff and coach accounts, which come from invitations and setup, are kept | Product | F15 |
 
-Also still open from `docs/canvas-gaps.md` and not repeated here: C1 (date of birth correction versus held student packages, needed before F06), C2, C3, C4/C5, C7 (branches and web address per club).
+### 10.3 Open and not decidable here
+
+- Consent for players under 18 (decision D10, skipped): undecided; needs a Thai legal check before the consent text is final.
+- Behaviour at a club's monthly LINE message cap (gap C3): undecided. The sender counts messages and reports usage, and builds no cap rule.
+- From `docs/canvas-gaps.md`: C2 (are wallets in "owed to customers"), C4 and C5 (rich menu labels, address toggle), C7 (branches per club).
+- The domain name (D6) and Hunter's Beam merchant account and LINE plan (set up by the club).
 
 ## 11. What happens next
 
-1. A person reviews this file. Questions marked A need answers before approval.
-2. After the F01 requirements are approved, `specs/features/F01-platform-foundation/design.md` is drafted from this document: migrations for the S tables, roles and RLS, audit, the table registries.
+1. A person reviews this file. Approving section 10.2 as written, or changing rows, settles all open questions that block this document. Only Q19 blocks approval; the rest block a named feature design.
+2. After the F01 requirements are approved, `specs/features/F01-platform-foundation/design.md` is drafted from this document: migrations for the setup tables, roles and RLS, audit, role set, test-data flags and purge, export and import, the table registries.
 3. The claim function, ledgers and receipts counter get their own design sections in the F03, F06 and F13 designs, each citing the section here and adding a test list.
-4. DevOps spike (small): custom roles through the Supabase pooler, `btree_gist`, a direct connection for the worker, a region decision (Q23).
+4. DevOps spike (small): custom roles through the Supabase pooler, `btree_gist`, a direct connection for the worker, backups. The lawyer's answer on D5 decides between Supabase Singapore and self-hosted Thailand.
 5. No code is written until the relevant requirements and design are approved (CLAUDE.md, rule 5).
