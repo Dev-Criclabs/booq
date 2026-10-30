@@ -30,6 +30,17 @@ const dayList = (v: unknown): SettingCheck => {
   return new Set(v).size === v.length ? good(v) : bad;
 };
 
+// The birthday discount (F04 R5-AC1): { kind, value }, empty until the club (F14) sets it. Same kinds as a promo
+// code: percent in basis points, or a fixed amount in satang.
+const birthdayDiscount = (v: unknown): SettingCheck => {
+  if (typeof v !== 'object' || v === null || Array.isArray(v)) return bad;
+  const o = v as Record<string, unknown>;
+  if (Object.keys(o).sort().join() !== 'kind,value') return bad;
+  if (typeof o.value !== 'number' || !Number.isSafeInteger(o.value) || o.value < 0) return bad;
+  if (o.kind === 'percent') return o.value <= 10000 ? good(v) : bad;
+  return o.kind === 'fixed' ? good(v) : bad;
+};
+
 export const SETTINGS: readonly SettingDef[] = [
   { key: 'hold_minutes', unsetAllowed: false, scope: 'rules', validate: oneOf([10, 15, 20]) },
   { key: 'booking_window_days', unsetAllowed: false, scope: 'rules', validate: wholeAtLeast(1) },
@@ -47,6 +58,7 @@ export const SETTINGS: readonly SettingDef[] = [
   { key: 'vat_enabled', unsetAllowed: false, scope: 'business', validate: bool },
   { key: 'auto_slip_check', unsetAllowed: false, scope: 'rules', slipOnly: true, validate: bool },
   { key: 'resource_label', unsetAllowed: false, scope: 'rules', validate: oneOf(['court', 'table', 'lane']) },
+  { key: 'birthday_discount', unsetAllowed: true, scope: 'rules', validate: birthdayDiscount },
 ];
 
 const BY_KEY = new Map(SETTINGS.map((s) => [s.key, s]));

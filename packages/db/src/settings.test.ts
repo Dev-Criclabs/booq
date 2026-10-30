@@ -26,7 +26,7 @@ describe('the list of setting keys', () => {
   it('holds the settings of design 10 and the sport label, and no key for the booking length', async () => {
     const keys = (await tdb.query(`select setting_key from app.setting_keys order by setting_key`)).rows.map((r) => r.setting_key);
     expect(keys).toEqual([
-      'auto_slip_check', 'below_min_alert_minutes', 'booking_window_days', 'cancel_window_hours', 'group_max_players', 'group_min_players',
+      'auto_slip_check', 'below_min_alert_minutes', 'birthday_discount', 'booking_window_days', 'cancel_window_hours', 'group_max_players', 'group_min_players',
       'hold_minutes', 'max_future_court_hours', 'package_expiry_reminder_days', 'package_qr_minutes', 'resource_label', 'rest_cap_hours',
       'vat_enabled', 'waitlist_claim_minutes', 'waitlist_no_offer_hours', 'wallet_expiry_months',
     ]);
