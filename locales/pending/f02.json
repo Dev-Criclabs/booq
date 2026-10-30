@@ -19,8 +19,6 @@
     "P-new.language": "Language",
     "P-new.lang_th": "ไทย",
     "P-new.lang_en": "EN",
-    "P-new.sign_in_failed": "We could not sign you in with LINE. Nothing was booked or charged.",
-    "P-new.account_inactive": "This account is no longer active at this club. Please contact the club.",
     "P-new.page_not_found": "This page is not available.",
     "P-new.language_toggle_th": "ไทย",
     "P-new.language_toggle_en": "EN"
@@ -44,8 +42,6 @@
     "P-new.language": "ภาษา",
     "P-new.lang_th": "ไทย",
     "P-new.lang_en": "EN",
-    "P-new.sign_in_failed": "เข้าสู่ระบบด้วย LINE ไม่สำเร็จ ยังไม่มีการจองหรือเรียกเก็บเงิน",
-    "P-new.account_inactive": "บัญชีนี้ไม่ได้ใช้งานที่สนามนี้แล้ว กรุณาติดต่อสนาม",
     "P-new.page_not_found": "ไม่พบหน้านี้",
     "P-new.language_toggle_th": "ไทย",
     "P-new.language_toggle_en": "EN"
