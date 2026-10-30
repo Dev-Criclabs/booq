@@ -7,7 +7,8 @@ export type BookingErrorCode =
   | 'outside_window'
   | 'in_the_past'
   | 'not_releasable'
-  | 'club_paused';
+  | 'club_paused'
+  | 'forbidden';
 
 export class BookingError extends Error {
   constructor(readonly code: BookingErrorCode) {
