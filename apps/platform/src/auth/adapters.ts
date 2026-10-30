@@ -1,5 +1,6 @@
+import { createHash } from 'node:crypto';
 import type { PlatformDb } from '@booq/db';
-import type { AuditSink, StaffDirectory, StaffRecord } from './sign-in';
+import type { AuditSink, AuthStore, StaffDirectory, StaffRecord } from './sign-in';
 
 // The database sides of staff sign-in (F01-T17, T18): the staff lookup through the two definer
 // functions that return one row each (sign-in runs before any identity is known), and the P6 writer
@@ -52,4 +53,55 @@ export class IdentityUnavailable extends Error {
   constructor() {
     super('identity_unavailable');
   }
+}
+
+/**
+ * The shared console store over the definer functions of migration 0051. Session and challenge ids are
+ * hashed here before they leave the process, so the tables never hold a usable cookie. Times are
+ * milliseconds since the epoch, from the application clock.
+ */
+export function createDbAuthStore(db: PlatformDb): AuthStore {
+  const hash = (id: string) => createHash('sha256').update(id).digest('hex');
+  const tx = <T>(run: (q: (sql: string, args: unknown[]) => Promise<Record<string, unknown>[]>) => Promise<T>) =>
+    db.withPlatformTx({ staffId: null }, (t) => run(async (sql, args) => (await t.query(sql, args)).rows as Record<string, unknown>[]));
+  const call = (sql: string, args: unknown[]) => tx((q) => q(sql, args));
+  const num = (v: unknown) => Number(v);
+  return {
+    async putChallenge(c) {
+      await call('select platform.console_challenge_put($1, $2, $3)', [hash(c.id), c.staffId, c.expiresAt]);
+    },
+    async getChallenge(id) {
+      const r = (await call('select staff_id, expires_at from platform.console_challenge_get($1)', [hash(id)]))[0];
+      return r ? { id, staffId: String(r['staff_id']), expiresAt: num(r['expires_at']) } : null;
+    },
+    async deleteChallenge(id) {
+      await call('select platform.console_challenge_delete($1)', [hash(id)]);
+    },
+    async putSession(s) {
+      await call('select platform.console_session_put($1, $2, $3, $4, $5)', [hash(s.id), s.staffId, s.createdAt, s.lastSeenAt, s.stepUpAt]);
+    },
+    async getSession(id) {
+      const r = (await call('select staff_id, created_at, last_seen_at, step_up_at from platform.console_session_get($1)', [hash(id)]))[0];
+      return r ? { id, staffId: String(r['staff_id']), createdAt: num(r['created_at']), lastSeenAt: num(r['last_seen_at']), stepUpAt: num(r['step_up_at']) } : null;
+    },
+    async deleteSession(id) {
+      await call('select platform.console_session_delete($1)', [hash(id)]);
+    },
+    async deleteSessionsFor(staffId) {
+      await call('select platform.console_sessions_delete_for($1)', [staffId]);
+    },
+    async addFailure(staffId) {
+      return num((await call('select platform.console_failure_add($1) as n', [staffId]))[0]!['n']);
+    },
+    async clearFailures(staffId) {
+      await call('select platform.console_failure_clear($1)', [staffId]);
+    },
+    async setLockedUntil(staffId, until) {
+      await call('select platform.console_lock_set($1, $2)', [staffId, until]);
+    },
+    async getLockedUntil(staffId) {
+      const v = (await call('select platform.console_lock_get($1) as v', [staffId]))[0]?.['v'];
+      return v === null || v === undefined ? null : num(v);
+    },
+  };
 }
