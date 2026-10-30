@@ -18,6 +18,11 @@ export interface AppCoachRulesHook {
   handler: unknown;
 }
 
+export interface AppCoachRulesMoveHook {
+  only_row: boolean;
+  handler: unknown;
+}
+
 export interface AppDeletionImpactHandlers {
   handler_key: string;
   handler: unknown;
@@ -983,6 +988,7 @@ export interface Tables {
   'app.anonymise_handlers': AppAnonymiseHandlers;
   'app.claim_handlers': AppClaimHandlers;
   'app.coach_rules_hook': AppCoachRulesHook;
+  'app.coach_rules_move_hook': AppCoachRulesMoveHook;
   'app.deletion_impact_handlers': AppDeletionImpactHandlers;
   'app.feature_keys': AppFeatureKeys;
   'app.launch_producers': AppLaunchProducers;

@@ -248,3 +248,52 @@ describe('lockout, session limits and step up (SR-16)', () => {
     expect(await auth.stepUp(c, 'totp-u-admin')).toEqual({ ok: false, code: 'locked' });
   });
 });
+
+describe('provider state between the two steps (D148, D160)', () => {
+  // A provider whose second step only works with the state its first step returned, as Supabase's does.
+  const seen: Array<{ code: string; state: string | undefined }> = [];
+  const stateful: IdentityProvider = {
+    async verifyPassword(email, password) {
+      return email === 'ada@booq.example' && password === 'pw-ada' ? { authUserId: 'u-admin', state: `first-step-${seen.length}` } : null;
+    },
+    async verifyTotp(_id, code, state) {
+      seen.push({ code, state });
+      return state?.startsWith('first-step-') === true && code === '123456';
+    },
+  };
+  const buildStateful = () =>
+    createPlatformAuth({
+      identity: stateful,
+      staff: { findByAuthUser: async (id) => [...staff.values()].find((s) => s.authUserId === id) ?? null, findById: async (id) => staff.get(id) ?? null },
+      audit: { write: async (e) => void audit.push(e) },
+      store: createMemoryAuthStore(),
+      clock,
+      signingKey: KEY,
+    });
+
+  it('the state of the first step goes back with the code of the second, and only through the challenge id', async () => {
+    seen.length = 0;
+    const a = buildStateful();
+    const first = await a.signIn({ email: 'ada@booq.example', password: 'pw-ada' });
+    if (!first.ok) throw new Error(first.code);
+    expect(JSON.stringify(first)).not.toContain('first-step');
+    const wrong = await a.verifySecondFactor({ challengeId: first.challengeId, code: '000000' });
+    expect(wrong).toEqual({ ok: false, code: 'bad_code' });
+    const done = await a.verifySecondFactor({ challengeId: first.challengeId, code: '123456' }); // the same challenge still carries the state
+    expect(done.ok).toBe(true);
+    expect(seen).toEqual([{ code: '000000', state: 'first-step-0' }, { code: '123456', state: 'first-step-0' }]);
+    expect(JSON.stringify(audit)).not.toContain('first-step');
+  });
+
+  it('a step-up has no first step, so the provider is asked without state', async () => {
+    seen.length = 0;
+    const a = buildStateful();
+    const first = await a.signIn({ email: 'ada@booq.example', password: 'pw-ada' });
+    if (!first.ok) throw new Error(first.code);
+    const done = await a.verifySecondFactor({ challengeId: first.challengeId, code: '123456' });
+    if (!done.ok) throw new Error(done.code);
+    seen.length = 0;
+    expect(await a.stepUp(done.cookie, '123456')).toEqual({ ok: false, code: 'bad_code' }); // this provider needs the state
+    expect(seen).toEqual([{ code: '123456', state: undefined }]);
+  });
+});

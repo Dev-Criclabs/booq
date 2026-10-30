@@ -21,6 +21,7 @@ const STATUS: Record<CheckoutErrorCode, number> = {
   selection_invalid: 400,
   price_not_set: 409,
   coach_price_not_set: 409,
+  coach_at_checkout_disabled: 409,
   add_on_not_for_sale: 409,
   code_not_valid: 422,
   code_expired: 422,
