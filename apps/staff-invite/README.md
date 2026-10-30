@@ -31,11 +31,21 @@ pnpm run bootstrap:admin -- --email first.admin@example.com --name "First Admin"
   expires; it is stored only as a hash.
 - It refuses to run while **any active admin exists** (exit 3), or if the email is already a teammate (exit 4). So a second
   run, or a run on a live team, changes nothing.
-  Known gap: if the first link expires before the admin enrols, the record is already an active admin, so the command
-  refuses. There is no automatic re-issue yet. Recover with the database owner: delete the unenrolled admin's
-  `platform.staff_enrolment` and `platform.platform_staff` rows (and the provider user, in the provider's dashboard), then
-  run the command again. Ask the orchestrator to add a re-issue command if this happens more than once.
+  If the first link expires (or is lost) before the admin enrols, use `--reissue` (below), not a second bootstrap.
 - Exit codes: 0 done, 1 failed before finishing (nothing kept; a provider user made on the way is removed), 2 a missing or
-  bad setting or argument, 3 an active admin exists, 4 email already a teammate, 5 the provider failed.
+  bad setting or argument, 3 an active admin exists, 4 email already a teammate, 5 the provider failed, 6 (`--reissue`)
+  no first admin is waiting to enrol.
 - Two runs at the same moment make one admin (the check holds a lock).
 - Keep the database owner's connection and the admin key out of shell history and CI logs.
+
+### A fresh link for the first admin (`--reissue`)
+
+```sh
+pnpm run bootstrap:admin -- --reissue --ttl-hours 24
+```
+
+Same four settings as above; `--ttl-hours` is required and nothing else is accepted (the admin already exists). It voids the
+old link, prints one new single-use link and writes P6 `staff.bootstrap_reissued`. It works only while **no admin has ever
+enrolled**: exactly one active admin, made by the bootstrap, and no `staff.enrolled` in P6 for anyone. Once somebody has
+enrolled it exits 6 and changes nothing; from then on an admin resets a teammate's second factor in the console, which
+issues a new link the same way. The provider user is not touched.

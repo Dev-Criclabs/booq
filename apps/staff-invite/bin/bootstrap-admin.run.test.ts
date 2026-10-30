@@ -29,4 +29,12 @@ describe('bootstrap-admin command', () => {
     expect(r.status).toBe(2);
     expect(r.stderr).toMatch(/number above zero/);
   });
+  it('--reissue needs the link life and nothing else', () => {
+    for (const args of [['--reissue'], ['--reissue', '--email', 'a@b.co', '--ttl-hours', '24'], ['--reissue', '--name', 'A', '--ttl-hours', '24']]) {
+      const r = run(args, FULL);
+      expect(r.status, args.join(' ')).toBe(2);
+      expect(r.stdout).toBe('');
+      expect(r.stderr).toMatch(/--reissue --ttl-hours <hours>/);
+    }
+  });
 });
