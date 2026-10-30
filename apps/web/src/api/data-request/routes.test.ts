@@ -42,6 +42,7 @@ describe('data request staff routes', () => {
   it('declare a permission on every route: staff handle, players own', () => {
     expect(routes().map((r) => `${r.def.method} ${r.def.path} ${r.def.permission}`).sort()).toEqual([
       'GET /data-requests datarequest.handle',
+      'GET /data-requests/:id/impact datarequest.handle',
       'GET /me/data-requests datarequest.own',
       'POST /data-requests/:id/handle datarequest.handle',
       'POST /me/data-requests datarequest.own',
@@ -63,6 +64,13 @@ describe('data request staff routes', () => {
     expect(await find('GET', '/data-requests').handle({ session: s, input: {} }, deps)).toMatchObject({ ok: true, body: [{ id: REQ, kind: 'copy', status: 'requested' }] });
     expect(await find('POST', '/data-requests/:id/handle').handle({ session: s, input: { id: REQ, action: 'done' } }, deps)).toMatchObject({ ok: true, body: { status: 'done', handledBy: DESK } });
     expect(await find('POST', '/data-requests/:id/handle').handle({ session: s, input: { id: REQ, action: 'start' } }, deps)).toMatchObject({ ok: false, status: 409, code: 'bad_transition' });
+  });
+  it('the deletion preview is for a delete request only, and staff only', async () => {
+    const s = session(DESK, ['front_desk', 'player']);
+    expect(await find('GET', '/data-requests/:id/impact').handle({ session: s, input: { id: REQ } }, deps)).toMatchObject({ ok: false, status: 409, code: 'bad_transition' }); // REQ is a copy request
+    await tdb.query(`insert into public.data_request (club_id, id, user_id, kind) values ($1,'dddddddd-0000-4000-8000-000000000002',$2,'delete')`, [A, P1]);
+    expect(await find('GET', '/data-requests/:id/impact').handle({ session: s, input: { id: 'dddddddd-0000-4000-8000-000000000002' } }, deps)).toMatchObject({ ok: true, body: { future_bookings: 0, held_bookings: 0 } });
+    expect(await find('GET', '/data-requests/:id/impact').handle({ session: session(P1, ['player']), input: { id: REQ } }, deps)).toMatchObject({ ok: false, status: 403 });
   });
   it('rejects a bad action or id', async () => {
     const s = session(DESK, ['front_desk', 'player']);

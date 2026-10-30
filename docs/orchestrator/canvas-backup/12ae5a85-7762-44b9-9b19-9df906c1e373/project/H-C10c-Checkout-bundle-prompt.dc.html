@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Checkout with bundle prompt</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=Cormorant+Garamond:wght@500&amp;family=Noto+Sans+Thai:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="--g:#F1F3EC;--cd:#FFFFFF;--ink:#1D241F;--hd:#24392B;--mu:#58635B;--ln:rgba(29,36,31,.12);--dk:#4E6B54;--od:#FFFFFF;--odm:rgba(255,255,255,.88);--ac:#F3D98E;--oac:#24392B;--aci:#FBEFC4;--sel:#3F5E46;--tn:#DDEADB;--tni:#3F5E46;--ht:#F5ECCB;--tk:#E3E7DE;--sh:rgba(36,57,43,.08); width: 375px; height: 812px; box-sizing: border-box; background: var(--g); font-family: 'DM Sans', ui-sans-serif, system-ui, 'Noto Sans Thai', sans-serif; color: var(--ink); display: flex; flex-direction: column; overflow: hidden">
+<header style="height: 56px; flex: none; display: flex; align-items: center; gap: 4px; padding: 0 8px; background: var(--dk); color: var(--od)"><button aria-label="Back" style="width: 44px; height: 44px; border: 0; background: none; color: var(--od); display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></button><span style="font-size: 17px; font-weight: 600">Checkout</span></header><div style="flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 16px; overflow: hidden"><div style="display: flex; flex-direction: column; gap: 10px; padding: 16px; background: var(--cd); border-radius: 18px; box-shadow: 0 2px 10px var(--sh)"><div style="display: flex; gap: 12px; align-items: center"><span style="width: 44px; height: 44px; flex: none; border-radius: 12px; background: var(--tn); color: var(--tni); display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M12 5v14M3 12h18"></path></svg></span><div style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 15px; font-weight: 600; color: var(--hd)">Court 2</span><span style="font-size: 13px; color: var(--mu)">Sat 9 Jan 2027 · 18:00 to 19:00</span></div><b style="font-size: 16px; font-weight: 600; color: var(--hd); white-space: nowrap">฿500</b></div></div><div style="display: flex; flex-direction: column; gap: 10px; padding: 16px; background: var(--dk); color: var(--od); border-radius: 18px"><span style="align-self: flex-start; padding: 2px 9px; border-radius: 999px; background: var(--ac); color: var(--oac); font-size: 11px; font-weight: 600">Save ฿50 an hour</span><b style="font-size: 17px; font-weight: 600">10 hour bundle · ฿4,500</b><span style="font-size: 13px; line-height: 1.45; color: var(--odm)">Use 1 hour on this booking now and keep 9 for later. Valid 3 months.</span><button style="height: 44px; border: 0; border-radius: 999px; background: var(--ac); color: var(--oac); font-family: inherit; font-size: 15px; font-weight: 600">Use a bundle instead</button></div><a href="#" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: var(--cd); border-radius: 18px; text-decoration: none; color: var(--hd); font-size: 15px; font-weight: 500">Add racket, balls (set of 3), towel or water<span style="width: 30px; height: 30px; border-radius: 50%; background: var(--g); display: flex; align-items: center; justify-content: center; font-size: 18px">+</span></a><div style="display: flex; flex-direction: column; gap: 10px; padding: 16px; background: var(--cd); border-radius: 18px; font-size: 15px"><div style="display: flex; justify-content: space-between"><span style="color: var(--mu)">Subtotal</span><span>฿500</span></div><div style="display: flex; justify-content: space-between"><span style="color: var(--mu)">Court credits</span><span>None</span></div><div style="display: flex; justify-content: space-between"><span style="color: var(--mu)">Wallet</span><span>฿0</span></div><div style="display: flex; justify-content: space-between; align-items: baseline; padding-top: 12px; border-top: 1px solid var(--ln)"><span style="font-weight: 600">Amount due</span><span style="font-size: 24px; font-weight: 600; letter-spacing: -0.02em; color: var(--hd)">฿500</span></div></div></div><div style="flex: none; display: flex; flex-direction: column; gap: 8px; padding: 8px 16px 26px"><button style="width: 100%; height: 56px; border: 0; border-radius: 999px; background: var(--hd); color: #FFFFFF; font-family: inherit; font-size: 16px; font-weight: 600">Pay ฿500 with PromptPay</button></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":375,"height":812}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

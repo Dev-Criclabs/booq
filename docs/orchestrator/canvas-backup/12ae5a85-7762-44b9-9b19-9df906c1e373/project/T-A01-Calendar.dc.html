@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Admin calendar, visual direction · Thai</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=Cormorant+Garamond:wght@500&amp;family=Noto+Sans+Thai:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="--yb: var(--hd); --yo: var(--od); --g:#F1F3EC;--cd:#FFFFFF;--ink:#1D241F;--hd:#24392B;--mu:#58635B;--ln:rgba(29,36,31,.12);--dk:#4E6B54;--od:#FFFFFF;--odm:rgba(255,255,255,.88);--ac:#F3D98E;--oac:#24392B;--aci:#FBEFC4;--sel:#3F5E46;--osel:#FFFFFF;--open:#6E9A6E;--tk:#E3E7DE;--cl:#9A4E3E;--tn:#DDEADB;--tni:#3F5E46;--ht:#F5ECCB;--av:#6E8B72;--sh:rgba(36,57,43,.08);width: 100%; min-height: 800px; box-sizing: border-box; display: flex; flex-wrap: wrap; background: var(--g); font-family: 'DM Sans', 'Noto Sans Thai', ui-sans-serif, system-ui, sans-serif; color: var(--ink)">
+<aside style="flex: 1 1 210px; box-sizing: border-box; padding: 24px 14px; background: var(--dk); color: var(--od); display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 0 10px 22px"><span style="font-family: 'Cormorant Garamond', serif; font-weight: 500; font-size: 24px; letter-spacing: 0.16em; line-height: 1">HUNTER</span><span style="font-size: 12px; font-weight: 500; color: var(--aci)">แอดมินคลับ</span></div>
+<a href="#" style="display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 0 12px; border-radius: 12px; background: var(--sel); color: var(--osel); font-size: 14px; font-weight: 600; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>ปฏิทิน</a>
+<a href="#" style="display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 0 12px; border-radius: 12px; color: var(--odm); font-size: 14px; font-weight: 500; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path></svg>ลูกค้า</a>
+<a href="#" style="display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 0 12px; border-radius: 12px; color: var(--odm); font-size: 14px; font-weight: 500; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M4.9 4.9l14.2 14.2"></path></svg>ปิดคอร์ต</a>
+<div style="flex: 1"></div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 14px 10px 0; border-top: 1px solid var(--odm)"><span style="width: 32px; height: 32px; border-radius: 50%; background: var(--av)"></span><div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 500">ชื่อพนักงาน</span><span style="font-size: 12px; color: var(--odm)">หน้าเคาน์เตอร์ · TH | EN</span></div></div>
+</aside>
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 24px 32px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 13px; font-weight: 500; color: var(--mu)">วันนี้ · 7 การจอง · ปิด 1 ช่วงเวลา</span><span style="font-size: 30px; font-weight: 500; letter-spacing: -0.03em; color: var(--hd); line-height: 1.1">วันเสาร์ที่ 9 มกราคม 2027</span></div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px"><button aria-label="วันก่อนหน้า" style="width: 40px; height: 40px; border: 0; border-radius: 12px; background: var(--cd); box-shadow: 0 1px 4px var(--sh); color: var(--hd); display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></button><button style="height: 40px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--cd); box-shadow: 0 1px 4px var(--sh); font-family: inherit; font-size: 14px; font-weight: 500; color: var(--hd)">วันนี้</button><button aria-label="วันถัดไป" style="width: 40px; height: 40px; border: 0; border-radius: 12px; background: var(--cd); box-shadow: 0 1px 4px var(--sh); color: var(--hd); display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button><span style="display: flex; padding: 3px; border-radius: 999px; background: var(--tk)"><button style="height: 34px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--cd); color: var(--hd); font-family: inherit; font-size: 13px; font-weight: 600">วัน</button><button style="height: 34px; padding: 0 16px; border: 0; border-radius: 999px; background: none; color: var(--mu); font-family: inherit; font-size: 13px; font-weight: 500">สัปดาห์</button></span><button style="height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--dk); color: var(--od); font-family: inherit; font-size: 14px; font-weight: 600">จองใหม่</button></div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--mu)"><span style="display: flex; align-items: center; gap: 6px"><span style="width: 14px; height: 10px; border-radius: 3px; background: var(--hd)"></span>ออนไลน์</span><span style="display: flex; align-items: center; gap: 6px"><span style="width: 14px; height: 10px; border-radius: 3px; background: var(--cd); border: 1.5px solid var(--hd); box-sizing: border-box"></span>พนักงาน</span><span style="display: flex; align-items: center; gap: 6px"><span style="width: 14px; height: 10px; border-radius: 3px; background: var(--ht); border: 1px dashed var(--mu); box-sizing: border-box"></span>รอชำระเงิน</span><span style="display: flex; align-items: center; gap: 6px"><span style="width: 14px; height: 10px; border-radius: 3px; background: var(--sel)"></span>คลาสเดี่ยว</span><span style="display: flex; align-items: center; gap: 6px"><span style="width: 14px; height: 10px; border-radius: 3px; background: var(--tn)"></span>คลาสกลุ่ม</span><span style="display: flex; align-items: center; gap: 6px"><span style="width: 14px; height: 10px; border-radius: 3px; border: 1.5px dashed var(--cl); box-sizing: border-box"></span>ปิด</span></div>
+<div style="overflow-x: auto; background: var(--cd); border-radius: 18px; box-shadow: 0 2px 10px var(--sh); padding: 14px 18px 18px">
+<div style="min-width: 560px; display: grid; grid-template-columns: 60px minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: 36px repeat(16, 26px); column-gap: 10px">
+<span style="grid-column: 2; grid-row: 1; font-size: 16px; font-weight: 600; color: var(--hd)">คอร์ต 1</span>
+<span style="grid-column: 3; grid-row: 1; font-size: 16px; font-weight: 600; color: var(--hd)">คอร์ต 2</span>
+<span style="grid-column: 1; grid-row: 2 / 4; font-size: 12px; color: var(--mu)">14:00</span>
+<span style="grid-column: 1; grid-row: 4 / 6; font-size: 12px; color: var(--mu)">15:00</span>
+<span style="grid-column: 1; grid-row: 6 / 8; font-size: 12px; color: var(--mu)">16:00</span>
+<span style="grid-column: 1; grid-row: 8 / 10; font-size: 12px; color: var(--mu)">17:00</span>
+<span style="grid-column: 1; grid-row: 10 / 12; font-size: 12px; color: var(--mu)">18:00</span>
+<span style="grid-column: 1; grid-row: 12 / 14; font-size: 12px; color: var(--mu)">19:00</span>
+<span style="grid-column: 1; grid-row: 14 / 16; font-size: 12px; color: var(--mu)">20:00</span>
+<span style="grid-column: 1; grid-row: 16 / 18; font-size: 12px; color: var(--mu)">21:00</span>
+<div style="grid-column: 2 / 4; grid-row: 2 / 18; border-top: 1px solid var(--ln); background: repeating-linear-gradient(to bottom, transparent 0 51px, var(--ln) 51px 52px)"></div>
+<div style="grid-column: 2; grid-row: 2 / 4; margin: 2px 0; padding: 6px 10px; box-sizing: border-box; border: 1.5px solid var(--hd); border-radius: 10px; background: var(--cd); display: flex; flex-direction: column; gap: 1px"><span style="font-size: 11px; font-weight: 600; color: var(--mu)">พนักงาน · เงินสด</span><span style="font-size: 13px; color: var(--hd)">ชื่อลูกค้า walk-in</span></div>
+<div style="grid-column: 2; grid-row: 6 / 8; margin: 2px 0; padding: 6px 10px; border-radius: 10px; background: var(--yb); color: var(--yo); display: flex; flex-direction: column; gap: 1px"><span style="font-size: 11px; font-weight: 600; color: var(--aci)">ออนไลน์</span><span style="font-size: 13px">Ploy Srisuk</span></div>
+<div style="grid-column: 2; grid-row: 8 / 10; margin: 2px 0; padding: 6px 10px; border-radius: 10px; background: var(--tn); display: flex; flex-direction: column; gap: 1px"><span style="font-size: 11px; font-weight: 600; color: var(--tni)">คลาสกลุ่ม · 5 จาก 6</span><span style="font-size: 13px; color: var(--hd)">คลินิกมือใหม่ผู้ใหญ่</span><span style="font-size: 12px; color: var(--mu)">ชื่อโค้ช · 17:00 ถึง 18:00</span></div>
+<button style="grid-column: 2; grid-row: 12 / 14; margin: 2px 0; border: 1.5px dashed var(--mu); border-radius: 10px; background: none; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--sel)">+ จองใหม่เวลา 19:00</button>
+<div style="grid-column: 2; grid-row: 16 / 18; margin: 2px 0; padding: 6px 10px; box-sizing: border-box; border: 1.5px dashed var(--cl); border-radius: 10px; display: flex; flex-direction: column; gap: 1px"><span style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--cl)"><span style="width: 6px; height: 6px; border-radius: 50%; background: var(--cl)"></span>ปิด</span><span style="font-size: 13px; color: var(--mu)">ซ่อมบำรุง · ไฟ</span></div>
+<div style="grid-column: 3; grid-row: 2 / 4; margin: 2px 0; padding: 6px 10px; border-radius: 10px; background: var(--sel); color: var(--osel); display: flex; flex-direction: column; gap: 1px"><span style="font-size: 11px; font-weight: 600; opacity: .85">คลาสเดี่ยว</span><span style="font-size: 13px">ชื่อโค้ชกับชื่อผู้เล่น</span></div>
+<div style="grid-column: 3; grid-row: 4 / 6; margin: 2px 0; padding: 6px 10px; box-sizing: border-box; border: 1px dashed var(--mu); border-radius: 10px; background: var(--ht); display: flex; flex-direction: column; gap: 1px"><span style="font-size: 11px; font-weight: 600; color: var(--mu)">รอชำระ · กำลังชำระด้วยพร้อมเพย์</span><span style="font-size: 13px; color: var(--hd)">ชื่อผู้เล่น</span></div>
+<div style="grid-column: 3; grid-row: 10 / 12; margin: 2px 0; padding: 6px 10px; border-radius: 10px; background: var(--yb); color: var(--yo); display: flex; flex-direction: column; gap: 1px"><span style="font-size: 11px; font-weight: 600; color: var(--aci)">ออนไลน์ · แพ็กเกจ</span><span style="font-size: 13px">ชื่อผู้เล่น</span></div>
+<div style="grid-column: 3; grid-row: 14 / 16; margin: 2px 0; padding: 6px 10px; box-sizing: border-box; border: 1.5px solid var(--hd); border-radius: 10px; background: var(--cd); display: flex; flex-direction: column; gap: 1px"><span style="font-size: 11px; font-weight: 600; color: var(--mu)">พนักงาน · โทรศัพท์</span><span style="font-size: 13px; color: var(--hd)">ชื่อผู้เล่น</span></div>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"palette":{"editor":"enum","options":["A","B","C","D","E","F","G"],"default":"D"},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+const P = {
+A: '--g:#F5F1E6;--cd:#FFFCF5;--ink:#1C1C1A;--hd:#1A2E1F;--mu:#5A5C52;--ln:rgba(28,28,26,.12);--dk:#1A2E1F;--od:#F5F1E6;--odm:rgba(245,241,230,.72);--ac:#E6C77F;--oac:#1A2E1F;--aci:#E6C77F;--sel:#2F5238;--osel:#F5F1E6;--open:#6B8E5A;--tk:#E8E1CD;--cl:#8C4A3A;--tn:#DCE7D3;--tni:#2F5238;--ht:#F2E6C6;--av:#3A6544;--sh:rgba(26,46,31,.08);',
+B: '--g:#F3F5F0;--cd:#FFFFFF;--ink:#1B211D;--hd:#1F3D2C;--mu:#56605A;--ln:rgba(27,33,29,.12);--dk:#234A36;--od:#F3F5F0;--odm:rgba(243,245,240,.74);--ac:#DDE68A;--oac:#1F3D2C;--aci:#DDE68A;--sel:#2E6B4A;--osel:#FFFFFF;--open:#5E9B6E;--tk:#E4E8E1;--cl:#9A4E3E;--tn:#DCEBDD;--tni:#2E6B4A;--ht:#EEF2C9;--av:#3C7254;--sh:rgba(31,61,44,.08);',
+C: '--g:#F4EEE6;--cd:#FFFAF4;--ink:#221E1A;--hd:#1A2E1F;--mu:#625A50;--ln:rgba(34,30,26,.12);--dk:#1A2E1F;--od:#F4EEE6;--odm:rgba(244,238,230,.72);--ac:#E3A07F;--oac:#1A2E1F;--aci:#EBB396;--sel:#2F5238;--osel:#F4EEE6;--open:#6B8E5A;--tk:#EADFD2;--cl:#7A3E33;--tn:#E3EBDB;--tni:#2F5238;--ht:#F4DDCF;--av:#3A6544;--sh:rgba(26,46,31,.08);',
+D: '--g:#F1F3EC;--cd:#FFFFFF;--ink:#1D241F;--hd:#24392B;--mu:#58635B;--ln:rgba(29,36,31,.12);--dk:#4E6B54;--od:#FFFFFF;--odm:rgba(255,255,255,.88);--ac:#F3D98E;--oac:#24392B;--aci:#FBEFC4;--sel:#3F5E46;--osel:#FFFFFF;--open:#6E9A6E;--tk:#E3E7DE;--cl:#9A4E3E;--tn:#DDEADB;--tni:#3F5E46;--ht:#F5ECCB;--av:#6E8B72;--sh:rgba(36,57,43,.08);',
+E: '--g:#13201A;--cd:#1C2C23;--ink:#E9EDE4;--hd:#F2F4EC;--mu:#A7B2A6;--ln:rgba(233,237,228,.12);--dk:#0E1813;--od:#F2F4EC;--odm:rgba(242,244,236,.7);--ac:#E9CF86;--oac:#13201A;--aci:#E9CF86;--sel:#5FA37A;--osel:#0E1813;--open:#7FB08A;--tk:#26372D;--cl:#D08A74;--tn:#2B4535;--tni:#BFE0C8;--ht:#3A3622;--av:#3D5A47;--sh:rgba(0,0,0,.3);--yb:#E9EDE4;--yo:#13201A;',
+F: '--g:#F3F5F0;--cd:#FFFFFF;--ink:#1C1C1A;--hd:#1A2E1F;--mu:#56605A;--ln:rgba(27,33,29,.12);--dk:#1A2E1F;--od:#F5F6F1;--odm:rgba(245,246,241,.74);--ac:#E6C77F;--oac:#1A2E1F;--aci:#E6C77F;--sel:#2F5238;--osel:#FFFFFF;--open:#6B8E5A;--tk:#E6E9E2;--cl:#8C4A3A;--tn:#DCE7D3;--tni:#2F5238;--ht:#F4EACB;--av:#3A6544;--sh:rgba(26,46,31,.08);',
+G: '--g:#F3F5F0;--cd:#FFFFFF;--ink:#1C1C1A;--hd:#1A2E1F;--mu:#56605A;--ln:rgba(27,33,29,.12);--dk:#1A2E1F;--od:#F5F6F1;--odm:rgba(245,246,241,.74);--ac:#C99A3A;--oac:#1A2E1F;--aci:#C99A3A;--sel:#2F5238;--osel:#FFFFFF;--open:#6B8E5A;--tk:#E6E9E2;--cl:#8C4A3A;--tn:#DCE7D3;--tni:#2F5238;--ht:#F1E3C0;--av:#3A6544;--sh:rgba(26,46,31,.08);'
+};
+const k = this.props.palette ?? 'A';
+return { vars: P[k] || P.A };
+}
+}
+</script>
+</body>
+</html>

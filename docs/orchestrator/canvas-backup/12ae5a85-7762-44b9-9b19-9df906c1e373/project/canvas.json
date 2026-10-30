@@ -1,0 +1,4453 @@
+{
+ "v": 3,
+ "attachments": {},
+ "boards": {
+  "A01-Calendar.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire5",
+   "title": "A1 Calendar",
+   "w": 1280,
+   "x": 0,
+   "y": 0
+  },
+  "A02-Booking-create.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire5",
+   "title": "A2 Booking detail and create",
+   "w": 1280,
+   "x": 1360,
+   "y": 0
+  },
+  "A05-Customers.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire5",
+   "title": "A5 Customers",
+   "w": 1280,
+   "x": 0,
+   "y": 1520
+  },
+  "A06-Customer-profile.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire5",
+   "title": "A6 Customer profile",
+   "w": 1280,
+   "x": 1360,
+   "y": 1520
+  },
+  "A07-Coaches.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire6",
+   "title": "A7 Coaches",
+   "w": 1280,
+   "x": 0,
+   "y": 0
+  },
+  "A08-Group-classes.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire6",
+   "title": "A8 Group classes",
+   "w": 1280,
+   "x": 1360,
+   "y": 0
+  },
+  "A09-Pricing.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire6",
+   "title": "A9 Products and pricing",
+   "w": 1280,
+   "x": 2720,
+   "y": 0
+  },
+  "A10-Promotions.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire6",
+   "title": "A10 Promotions",
+   "w": 1280,
+   "x": 4080,
+   "y": 0
+  },
+  "A12-Closures.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire5",
+   "title": "A12 Closures",
+   "w": 1280,
+   "x": 2720,
+   "y": 1520
+  },
+  "A13-Reports.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire6",
+   "title": "A13 Reports",
+   "w": 1280,
+   "x": 0,
+   "y": 1520
+  },
+  "A14-Receipts.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire6",
+   "title": "A14 Receipts",
+   "w": 1280,
+   "x": 1360,
+   "y": 1520
+  },
+  "A16-Settings.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire6",
+   "title": "A16 Settings",
+   "w": 1280,
+   "x": 4080,
+   "y": 1520
+  },
+  "A17-Staff-audit.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire6",
+   "title": "A17 Staff and audit log",
+   "w": 1280,
+   "x": 5440,
+   "y": 1520
+  },
+  "C01-Welcome.dc.html": {
+   "h": 812,
+   "page": "wire1",
+   "title": "C1 Sign in at checkout",
+   "w": 375,
+   "x": 0,
+   "y": 0
+  },
+  "C02-Profile-setup.dc.html": {
+   "h": 812,
+   "page": "wire1",
+   "title": "C2 Quick profile",
+   "w": 375,
+   "x": 455,
+   "y": 0
+  },
+  "C03-Home.dc.html": {
+   "h": 812,
+   "page": "wire1",
+   "title": "C3 Home",
+   "w": 375,
+   "x": 910,
+   "y": 0
+  },
+  "C04-Book-a-court.dc.html": {
+   "h": 812,
+   "page": "wire1",
+   "title": "C4 Book a court",
+   "w": 375,
+   "x": 1365,
+   "y": 0
+  },
+  "C05-Coaches.dc.html": {
+   "h": 812,
+   "page": "wire2",
+   "title": "C5 Solo classes",
+   "w": 375,
+   "x": 0,
+   "y": 0
+  },
+  "C06-Coach-profile.dc.html": {
+   "h": 812,
+   "page": "wire2",
+   "title": "C6 Coach profile, pick a time",
+   "w": 375,
+   "x": 455,
+   "y": 0
+  },
+  "C07-Group-classes.dc.html": {
+   "h": 812,
+   "page": "wire2",
+   "title": "C7 Group classes",
+   "w": 375,
+   "x": 1365,
+   "y": 0
+  },
+  "C08-Class-detail.dc.html": {
+   "h": 812,
+   "page": "wire2",
+   "title": "C8 Class detail",
+   "w": 375,
+   "x": 1820,
+   "y": 0
+  },
+  "C09-Packages.dc.html": {
+   "h": 812,
+   "page": "wire2",
+   "title": "C9 Packages",
+   "w": 375,
+   "x": 2275,
+   "y": 0
+  },
+  "C10-Checkout.dc.html": {
+   "h": 812,
+   "page": "wire1",
+   "title": "C10 Checkout",
+   "w": 375,
+   "x": 1820,
+   "y": 0
+  },
+  "C10b-Checkout-solo.dc.html": {
+   "h": 812,
+   "page": "wire2",
+   "title": "C10 Checkout, solo class",
+   "w": 375,
+   "x": 910,
+   "y": 0
+  },
+  "C11-PromptPay.dc.html": {
+   "h": 812,
+   "page": "wire1",
+   "title": "C11 Pay by PromptPay",
+   "w": 375,
+   "x": 2275,
+   "y": 0
+  },
+  "C12-Confirmed.dc.html": {
+   "h": 812,
+   "page": "wire1",
+   "title": "C12 Booking confirmed",
+   "w": 375,
+   "x": 2730,
+   "y": 0
+  },
+  "C13-My-bookings.dc.html": {
+   "h": 812,
+   "page": "wire3",
+   "title": "C13 My bookings",
+   "w": 375,
+   "x": 0,
+   "y": 0
+  },
+  "C13b-Cancel-sheet.dc.html": {
+   "h": 812,
+   "page": "wire3",
+   "title": "C13 Cancel sheet",
+   "w": 375,
+   "x": 455,
+   "y": 0
+  },
+  "C14-Credits-wallet.dc.html": {
+   "h": 812,
+   "page": "wire3",
+   "title": "C14 Credits and wallet",
+   "w": 375,
+   "x": 910,
+   "y": 0
+  },
+  "C15-Refer-gift.dc.html": {
+   "h": 812,
+   "page": "wire3",
+   "title": "C15 Refer a friend",
+   "w": 375,
+   "x": 1365,
+   "y": 0
+  },
+  "C16-Waitlist-offer.dc.html": {
+   "h": 812,
+   "page": "wire2",
+   "title": "C16 Waitlist offer",
+   "w": 375,
+   "x": 2730,
+   "y": 0
+  },
+  "C17-Profile-receipts.dc.html": {
+   "h": 812,
+   "page": "wire3",
+   "title": "C17 Profile and receipts",
+   "w": 375,
+   "x": 1820,
+   "y": 0
+  },
+  "Flows-Purchase.dc.html": {
+   "h": 1640,
+   "page": "step0",
+   "title": "Flows H and I · Purchase flows (for approval)",
+   "w": 2000,
+   "x": 4160,
+   "y": 0
+  },
+  "Flows.dc.html": {
+   "h": 2009,
+   "page": "step0",
+   "title": "Step 0 · Flow map",
+   "w": 2000,
+   "x": 2080,
+   "y": 0
+  },
+  "H-C01-Welcome.dc.html": {
+   "h": 812,
+   "page": "hifi1",
+   "title": "C1 Sign in at checkout",
+   "w": 375,
+   "x": 0,
+   "y": 0
+  },
+  "H-C02-Profile-setup.dc.html": {
+   "h": 812,
+   "page": "hifi1",
+   "title": "C2 Quick profile",
+   "w": 375,
+   "x": 455,
+   "y": 0
+  },
+  "H-C03-Home.dc.html": {
+   "h": 812,
+   "page": "hifi1",
+   "title": "C3 Home",
+   "w": 375,
+   "x": 910,
+   "y": 0
+  },
+  "H-C04-Book-a-court.dc.html": {
+   "h": 812,
+   "page": "hifi1",
+   "title": "C4 Book a court",
+   "w": 375,
+   "x": 1365,
+   "y": 0
+  },
+  "H-C05-Solo-classes.dc.html": {
+   "h": 812,
+   "page": "hifi2",
+   "title": "C5 Solo classes",
+   "w": 375,
+   "x": 0,
+   "y": 0
+  },
+  "H-C06-Coach-profile.dc.html": {
+   "h": 812,
+   "page": "hifi2",
+   "title": "C6 Coach profile, pick a time",
+   "w": 375,
+   "x": 455,
+   "y": 0
+  },
+  "H-C07-Group-classes.dc.html": {
+   "h": 812,
+   "page": "hifi2",
+   "title": "C7 Group classes",
+   "w": 375,
+   "x": 1365,
+   "y": 0
+  },
+  "H-C08-Class-detail.dc.html": {
+   "h": 812,
+   "page": "hifi2",
+   "title": "C8 Class detail",
+   "w": 375,
+   "x": 1820,
+   "y": 0
+  },
+  "H-C09-Packages.dc.html": {
+   "h": 812,
+   "page": "hifi4",
+   "title": "C9 Packages · Court bundles",
+   "w": 375,
+   "x": 0,
+   "y": 1100
+  },
+  "H-C10-Checkout.dc.html": {
+   "h": 812,
+   "page": "hifi1",
+   "title": "C10 Checkout",
+   "w": 375,
+   "x": 1820,
+   "y": 0
+  },
+  "H-C10b-Checkout-solo.dc.html": {
+   "h": 812,
+   "page": "hifi2",
+   "title": "C10 Checkout, solo class",
+   "w": 375,
+   "x": 910,
+   "y": 0
+  },
+  "H-C11-PromptPay.dc.html": {
+   "h": 812,
+   "page": "hifi1",
+   "title": "C11 Pay by PromptPay",
+   "w": 375,
+   "x": 2275,
+   "y": 0
+  },
+  "H-C11b-Checking-slip.dc.html": {
+   "h": 812,
+   "page": "hifi1",
+   "title": "C11 · Checking overlay",
+   "w": 375,
+   "x": 2730,
+   "y": 0
+  },
+  "H-C12-Confirmed.dc.html": {
+   "h": 812,
+   "page": "hifi1",
+   "title": "C12 Booking confirmed",
+   "w": 375,
+   "x": 3185,
+   "y": 0
+  },
+  "H-C13-My-bookings.dc.html": {
+   "h": 812,
+   "page": "hifi3",
+   "title": "C13 My bookings",
+   "w": 375,
+   "x": 0,
+   "y": 0
+  },
+  "H-C13b-Cancel-sheet.dc.html": {
+   "h": 812,
+   "page": "hifi3",
+   "title": "C13b Cancel sheet",
+   "w": 375,
+   "x": 455,
+   "y": 0
+  },
+  "H-C14-Credits-wallet.dc.html": {
+   "h": 812,
+   "page": "hifi3",
+   "title": "C14 Credits and wallet",
+   "w": 375,
+   "x": 910,
+   "y": 0
+  },
+  "H-C15-Refer-gift.dc.html": {
+   "h": 812,
+   "page": "hifi3",
+   "title": "C15 Refer a friend",
+   "w": 375,
+   "x": 1365,
+   "y": 0
+  },
+  "H-C16-Waitlist-offer.dc.html": {
+   "h": 812,
+   "page": "hifi2",
+   "title": "C16 Waitlist offer",
+   "w": 375,
+   "x": 2730,
+   "y": 0
+  },
+  "H-C17-Profile-receipts.dc.html": {
+   "h": 812,
+   "page": "hifi3",
+   "title": "C17 Profile and receipts",
+   "w": 375,
+   "x": 1820,
+   "y": 0
+  },
+  "K1-Today.dc.html": {
+   "h": 812,
+   "page": "wire4",
+   "title": "K1 Today",
+   "w": 375,
+   "x": 0,
+   "y": 0
+  },
+  "K2-Schedule.dc.html": {
+   "h": 812,
+   "page": "wire4",
+   "title": "K2 Schedule",
+   "w": 375,
+   "x": 910,
+   "y": 0
+  },
+  "K3-Availability.dc.html": {
+   "h": 812,
+   "page": "wire4",
+   "title": "K3 Availability",
+   "w": 375,
+   "x": 1365,
+   "y": 0
+  },
+  "K4-Leave.dc.html": {
+   "h": 812,
+   "page": "wire4",
+   "title": "K4 Leave",
+   "w": 375,
+   "x": 1820,
+   "y": 0
+  },
+  "K5-Session-detail.dc.html": {
+   "h": 812,
+   "page": "wire4",
+   "title": "K5 Session detail",
+   "w": 375,
+   "x": 455,
+   "y": 0
+  },
+  "K6-Earnings.dc.html": {
+   "h": 812,
+   "page": "wire4",
+   "title": "K6 Earnings",
+   "w": 375,
+   "x": 2275,
+   "y": 0
+  },
+  "Main.dc.html": {
+   "h": 2800,
+   "page": "step0",
+   "title": "Step 0 · Sitemap",
+   "w": 2000,
+   "x": 0,
+   "y": 0
+  },
+  "V-A01-Calendar-B.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "visual",
+   "title": "B · A1 Calendar",
+   "w": 1280,
+   "x": 910,
+   "y": 1300
+  },
+  "V-A01-Calendar-C.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "visual",
+   "title": "C · A1 Calendar",
+   "w": 1280,
+   "x": 910,
+   "y": 2600
+  },
+  "V-A01-Calendar-D.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "visual",
+   "title": "D · A1 Calendar",
+   "w": 1280,
+   "x": 910,
+   "y": 3900
+  },
+  "V-A01-Calendar-E.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "visual",
+   "title": "E · A1 Calendar",
+   "w": 1280,
+   "x": 910,
+   "y": 5200
+  },
+  "V-A01-Calendar-F.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "visual",
+   "title": "F · A1 Calendar",
+   "w": 1280,
+   "x": 910,
+   "y": 6500
+  },
+  "V-A01-Calendar-G.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "visual",
+   "title": "G · A1 Calendar",
+   "w": 1280,
+   "x": 910,
+   "y": 7800
+  },
+  "V-A01-Calendar.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "visual",
+   "title": "Visual · A1 Calendar",
+   "w": 1280,
+   "x": 910,
+   "y": 0
+  },
+  "V-C03-Home-B.dc.html": {
+   "h": 812,
+   "page": "visual",
+   "title": "B · C3 Home",
+   "w": 375,
+   "x": 0,
+   "y": 1300
+  },
+  "V-C03-Home-C.dc.html": {
+   "h": 812,
+   "page": "visual",
+   "title": "C · C3 Home",
+   "w": 375,
+   "x": 0,
+   "y": 2600
+  },
+  "V-C03-Home-D.dc.html": {
+   "h": 812,
+   "page": "visual",
+   "title": "D · C3 Home",
+   "w": 375,
+   "x": 0,
+   "y": 3900
+  },
+  "V-C03-Home-E.dc.html": {
+   "h": 812,
+   "page": "visual",
+   "title": "E · C3 Home",
+   "w": 375,
+   "x": 0,
+   "y": 5200
+  },
+  "V-C03-Home-F.dc.html": {
+   "h": 812,
+   "page": "visual",
+   "title": "F · C3 Home",
+   "w": 375,
+   "x": 0,
+   "y": 6500
+  },
+  "V-C03-Home-G.dc.html": {
+   "h": 812,
+   "page": "visual",
+   "title": "G · C3 Home",
+   "w": 375,
+   "x": 0,
+   "y": 7800
+  },
+  "V-C03-Home.dc.html": {
+   "h": 812,
+   "page": "visual",
+   "title": "Visual · C3 Home",
+   "w": 375,
+   "x": 0,
+   "y": 0
+  },
+  "V-C04-Book-a-court-B.dc.html": {
+   "h": 812,
+   "page": "visual",
+   "title": "B · C4 Book a court",
+   "w": 375,
+   "x": 455,
+   "y": 1300
+  },
+  "V-C04-Book-a-court-C.dc.html": {
+   "h": 812,
+   "page": "visual",
+   "title": "C · C4 Book a court",
+   "w": 375,
+   "x": 455,
+   "y": 2600
+  },
+  "V-C04-Book-a-court-D.dc.html": {
+   "h": 812,
+   "page": "visual",
+   "title": "D · C4 Book a court",
+   "w": 375,
+   "x": 455,
+   "y": 3900
+  },
+  "V-C04-Book-a-court-E.dc.html": {
+   "h": 812,
+   "page": "visual",
+   "title": "E · C4 Book a court",
+   "w": 375,
+   "x": 455,
+   "y": 5200
+  },
+  "V-C04-Book-a-court-F.dc.html": {
+   "h": 812,
+   "page": "visual",
+   "title": "F · C4 Book a court",
+   "w": 375,
+   "x": 455,
+   "y": 6500
+  },
+  "V-C04-Book-a-court-G.dc.html": {
+   "h": 812,
+   "page": "visual",
+   "title": "G · C4 Book a court",
+   "w": 375,
+   "x": 455,
+   "y": 7800
+  },
+  "V-C04-Book-a-court.dc.html": {
+   "h": 812,
+   "page": "visual",
+   "title": "Visual · C4 Book a court",
+   "w": 375,
+   "x": 455,
+   "y": 0
+  },
+  "V-Palettes-2.dc.html": {
+   "h": 812,
+   "page": "visual",
+   "title": "Palettes D to G",
+   "w": 1100,
+   "x": 840,
+   "y": -1211
+  },
+  "V-Palettes.dc.html": {
+   "h": 812,
+   "page": "visual",
+   "title": "Palettes A, B and C",
+   "w": 760,
+   "x": 0,
+   "y": -1211
+  },
+  "C10P-Package-checkout.dc.html": {
+   "h": 812,
+   "page": "wire7",
+   "title": "H · C10P Package checkout",
+   "w": 375,
+   "x": 0,
+   "y": 0
+  },
+  "C12P-Hours-added.dc.html": {
+   "h": 812,
+   "page": "wire7",
+   "title": "H · C12P Hours added",
+   "w": 375,
+   "x": 910,
+   "y": 0
+  },
+  "C10c-Checkout-bundle-prompt.dc.html": {
+   "h": 812,
+   "page": "wire7",
+   "title": "H · C10 Bundle prompt",
+   "w": 375,
+   "x": 1365,
+   "y": 0
+  },
+  "C10P-Bundle-plus-booking.dc.html": {
+   "h": 812,
+   "page": "wire7",
+   "title": "H · C10P Bundle plus booking",
+   "w": 375,
+   "x": 1820,
+   "y": 0
+  },
+  "C08b-Class-pack-choice.dc.html": {
+   "h": 812,
+   "page": "wire7",
+   "title": "I · C8 Pack choice",
+   "w": 375,
+   "x": 910,
+   "y": 1300
+  },
+  "C10P-Pack-plus-class.dc.html": {
+   "h": 812,
+   "page": "wire7",
+   "title": "I · C10P Pack plus class",
+   "w": 375,
+   "x": 1365,
+   "y": 1300
+  },
+  "C12P-Seat-plus-pack.dc.html": {
+   "h": 812,
+   "page": "wire7",
+   "title": "I · C12P Seat plus pack",
+   "w": 375,
+   "x": 1820,
+   "y": 1300
+  },
+  "C11P-Pay-package.dc.html": {
+   "h": 812,
+   "page": "wire7",
+   "title": "H · C11P Pay for a package",
+   "w": 375,
+   "x": 455,
+   "y": 0
+  },
+  "C09b-Packages-solo.dc.html": {
+   "h": 812,
+   "page": "wire7",
+   "title": "Home Packages · Solo tab",
+   "w": 375,
+   "x": 0,
+   "y": 1300
+  },
+  "C09c-Packages-group.dc.html": {
+   "h": 812,
+   "page": "wire7",
+   "title": "Home Packages · Group tab",
+   "w": 375,
+   "x": 455,
+   "y": 1300
+  },
+  "H-C10P-Package-checkout.dc.html": {
+   "h": 812,
+   "page": "hifi4",
+   "title": "H · C10P Package checkout",
+   "w": 375,
+   "x": 0,
+   "y": 0
+  },
+  "H-C11P-Pay-package.dc.html": {
+   "h": 812,
+   "page": "hifi4",
+   "title": "H · C11P Pay for a package",
+   "w": 375,
+   "x": 455,
+   "y": 0
+  },
+  "H-C12P-Hours-added.dc.html": {
+   "h": 812,
+   "page": "hifi4",
+   "title": "H · C12P Hours added",
+   "w": 375,
+   "x": 910,
+   "y": 0
+  },
+  "H-C10c-Checkout-bundle-prompt.dc.html": {
+   "h": 812,
+   "page": "hifi4",
+   "title": "H · C10 Bundle prompt",
+   "w": 375,
+   "x": 1365,
+   "y": 0
+  },
+  "H-C10P-Bundle-plus-booking.dc.html": {
+   "h": 812,
+   "page": "hifi4",
+   "title": "H · C10P Bundle plus booking",
+   "w": 375,
+   "x": 1820,
+   "y": 0
+  },
+  "H-C09b-Packages-solo.dc.html": {
+   "h": 812,
+   "page": "hifi4",
+   "title": "C9 Packages · Solo classes",
+   "w": 375,
+   "x": 455,
+   "y": 1100
+  },
+  "H-C09c-Packages-group.dc.html": {
+   "h": 812,
+   "page": "hifi4",
+   "title": "C9 Packages · Group classes",
+   "w": 375,
+   "x": 910,
+   "y": 1100
+  },
+  "H-C08b-Class-pack-choice.dc.html": {
+   "h": 812,
+   "page": "hifi4",
+   "title": "I · C8 Pack choice",
+   "w": 375,
+   "x": 910,
+   "y": 1100
+  },
+  "H-C10P-Pack-plus-class.dc.html": {
+   "h": 812,
+   "page": "hifi4",
+   "title": "I · C10P Pack plus class",
+   "w": 375,
+   "x": 1365,
+   "y": 1100
+  },
+  "H-C12P-Seat-plus-pack.dc.html": {
+   "h": 812,
+   "page": "hifi4",
+   "title": "I · C12P Seat plus pack",
+   "w": 375,
+   "x": 1820,
+   "y": 1100
+  },
+  "H-K1-Today.dc.html": {
+   "h": 812,
+   "page": "hifi5",
+   "title": "K1 Today",
+   "w": 375,
+   "x": 0,
+   "y": 0
+  },
+  "H-K5-Session-detail.dc.html": {
+   "h": 812,
+   "page": "hifi5",
+   "title": "K5 Session detail",
+   "w": 375,
+   "x": 455,
+   "y": 0
+  },
+  "H-K2-Schedule.dc.html": {
+   "h": 812,
+   "page": "hifi5",
+   "title": "K2 Schedule",
+   "w": 375,
+   "x": 910,
+   "y": 0
+  },
+  "H-K3-Availability.dc.html": {
+   "h": 812,
+   "page": "hifi5",
+   "title": "K3 Availability",
+   "w": 375,
+   "x": 1365,
+   "y": 0
+  },
+  "H-K4-Leave.dc.html": {
+   "h": 812,
+   "page": "hifi5",
+   "title": "K4 Leave",
+   "w": 375,
+   "x": 1820,
+   "y": 0
+  },
+  "H-K6-Earnings.dc.html": {
+   "h": 812,
+   "page": "hifi5",
+   "title": "K6 Earnings",
+   "w": 375,
+   "x": 2275,
+   "y": 0
+  },
+  "H-A01-Calendar.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi6",
+   "title": "A1 Calendar",
+   "w": 1280,
+   "x": 0,
+   "y": 0
+  },
+  "H-A02-Booking-create.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi6",
+   "title": "A2 Booking create",
+   "w": 1280,
+   "x": 1360,
+   "y": 0
+  },
+  "H-A05-Customers.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi6",
+   "title": "A5 Customers",
+   "w": 1280,
+   "x": 0,
+   "y": 1840
+  },
+  "H-A06-Customer-profile.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi6",
+   "title": "A6 Customer profile",
+   "w": 1280,
+   "x": 1360,
+   "y": 1840
+  },
+  "H-A12-Closures.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi6",
+   "title": "A12 Closures",
+   "w": 1280,
+   "x": 0,
+   "y": 2760
+  },
+  "H-A07-Coaches.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi7",
+   "title": "A7 Coaches",
+   "w": 1280,
+   "x": 0,
+   "y": 0
+  },
+  "H-A08-Group-classes.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi7",
+   "title": "A8 Group classes",
+   "w": 1280,
+   "x": 1360,
+   "y": 0
+  },
+  "H-A09-Pricing.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi7",
+   "title": "A9 Products and pricing",
+   "w": 1280,
+   "x": 2720,
+   "y": 0
+  },
+  "H-A10-Promotions.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi7",
+   "title": "A10 Promotions",
+   "w": 1280,
+   "x": 0,
+   "y": 920
+  },
+  "H-A13-Reports.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi7",
+   "title": "A13 Reports",
+   "w": 1280,
+   "x": 1360,
+   "y": 920
+  },
+  "H-A14-Receipts.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi7",
+   "title": "A14 Receipts",
+   "w": 1280,
+   "x": 2720,
+   "y": 920
+  },
+  "H-A16-Settings.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi7",
+   "title": "A16 Settings",
+   "w": 1280,
+   "x": 0,
+   "y": 1840
+  },
+  "H-A17-Staff-audit.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi7",
+   "title": "A17 Staff and audit log",
+   "w": 1280,
+   "x": 1360,
+   "y": 1840
+  },
+  "S-C04-Loading.dc.html": {
+   "h": 812,
+   "page": "states1",
+   "title": "C4 Loading",
+   "w": 375,
+   "x": 0,
+   "y": 0
+  },
+  "S-C04-Day-full.dc.html": {
+   "h": 812,
+   "page": "states1",
+   "title": "C4 Day fully booked",
+   "w": 375,
+   "x": 455,
+   "y": 0
+  },
+  "S-Error-Offline.dc.html": {
+   "h": 812,
+   "page": "states1",
+   "title": "Error · No connection",
+   "w": 375,
+   "x": 910,
+   "y": 0
+  },
+  "S-C11-Time-ran-out.dc.html": {
+   "h": 812,
+   "page": "states1",
+   "title": "C11 Time ran out",
+   "w": 375,
+   "x": 1365,
+   "y": 0
+  },
+  "S-C11b-Rejected.dc.html": {
+   "h": 812,
+   "page": "states1",
+   "title": "C11 · Slip didn't match popup",
+   "w": 375,
+   "x": 1820,
+   "y": 0
+  },
+  "S-C13-Empty.dc.html": {
+   "h": 812,
+   "page": "states1",
+   "title": "C13 No bookings",
+   "w": 375,
+   "x": 2275,
+   "y": 0
+  },
+  "T-C03-Home.dc.html": {
+   "h": 812,
+   "page": "thai1",
+   "title": "C3 Home · Thai",
+   "w": 375,
+   "x": 0,
+   "y": 0
+  },
+  "T-C04-Book-a-court.dc.html": {
+   "h": 812,
+   "page": "thai1",
+   "title": "C4 Book a court · Thai",
+   "w": 375,
+   "x": 455,
+   "y": 0
+  },
+  "T-C10-Checkout.dc.html": {
+   "h": 812,
+   "page": "thai1",
+   "title": "C10 Checkout · Thai",
+   "w": 375,
+   "x": 910,
+   "y": 0
+  },
+  "T-C11-PromptPay.dc.html": {
+   "h": 812,
+   "page": "thai1",
+   "title": "C11 PromptPay · Thai",
+   "w": 375,
+   "x": 1365,
+   "y": 0
+  },
+  "T-C12-Confirmed.dc.html": {
+   "h": 812,
+   "page": "thai1",
+   "title": "C12 Confirmed · Thai",
+   "w": 375,
+   "x": 1820,
+   "y": 0
+  },
+  "L-Rich-menu.dc.html": {
+   "h": 843,
+   "page": "line1",
+   "title": "Rich menu · 2500 × 1686 shown at half size",
+   "w": 1250,
+   "x": 0,
+   "y": 0
+  },
+  "L-Msg-Confirmed.dc.html": {
+   "h": 812,
+   "page": "line1",
+   "title": "LINE · Booking confirmed",
+   "w": 375,
+   "x": 1330,
+   "y": 0
+  },
+  "L-Msg-Reminder.dc.html": {
+   "h": 812,
+   "page": "line1",
+   "title": "LINE · Reminder",
+   "w": 375,
+   "x": 1785,
+   "y": 0
+  },
+  "L-Msg-Waitlist.dc.html": {
+   "h": 812,
+   "page": "line1",
+   "title": "LINE · Waitlist offer",
+   "w": 375,
+   "x": 2240,
+   "y": 0
+  },
+  "R-Receipt-EN.dc.html": {
+   "h": 842,
+   "page": "line1",
+   "title": "PDF receipt · English (A4)",
+   "w": 595,
+   "x": 0,
+   "y": 1300
+  },
+  "R-Receipt-TH.dc.html": {
+   "h": 842,
+   "page": "line1",
+   "title": "PDF receipt · Thai (A4)",
+   "w": 595,
+   "x": 675,
+   "y": 1300
+  },
+  "G-C04-Waitlist-joined.dc.html": {
+   "h": 812,
+   "page": "hifi8",
+   "title": "1 · Waitlist joined",
+   "w": 375,
+   "x": 0,
+   "y": 0
+  },
+  "G-C13-Waitlist-tab.dc.html": {
+   "h": 812,
+   "page": "hifi8",
+   "title": "1 · My bookings, waitlist tab",
+   "w": 375,
+   "x": 455,
+   "y": 0
+  },
+  "G-C10-Credit-covered.dc.html": {
+   "h": 812,
+   "page": "hifi8",
+   "title": "2 · Checkout covered by credit",
+   "w": 375,
+   "x": 910,
+   "y": 0
+  },
+  "G-C12-Add-coach.dc.html": {
+   "h": 812,
+   "page": "hifi8",
+   "title": "3 · Add a coach",
+   "w": 375,
+   "x": 1365,
+   "y": 0
+  },
+  "G-C10-Add-coach-checkout.dc.html": {
+   "h": 812,
+   "page": "hifi8",
+   "title": "3 · Add a coach checkout",
+   "w": 375,
+   "x": 1820,
+   "y": 0
+  },
+  "G-C10b-Solo-with-credit.dc.html": {
+   "h": 812,
+   "page": "hifi8",
+   "title": "4 · Solo class with pack credit",
+   "w": 375,
+   "x": 2275,
+   "y": 0
+  },
+  "G-C13b-Late-cancel.dc.html": {
+   "h": 812,
+   "page": "hifi8",
+   "title": "5 · Late cancel",
+   "w": 375,
+   "x": 2730,
+   "y": 0
+  },
+  "G-C13b-Coach-changed.dc.html": {
+   "h": 812,
+   "page": "hifi8",
+   "title": "5 · Coach changed",
+   "w": 375,
+   "x": 0,
+   "y": 1300
+  },
+  "G-C03-New-player.dc.html": {
+   "h": 812,
+   "page": "hifi8",
+   "title": "7 · Home, new player",
+   "w": 375,
+   "x": 455,
+   "y": 1300
+  },
+  "G-C17-Personal-details.dc.html": {
+   "h": 812,
+   "page": "hifi8",
+   "title": "9 · Personal details",
+   "w": 375,
+   "x": 1365,
+   "y": 1300
+  },
+  "G-C17-Privacy.dc.html": {
+   "h": 812,
+   "page": "hifi8",
+   "title": "9 · Privacy and my data",
+   "w": 375,
+   "x": 1820,
+   "y": 1300
+  },
+  "G-C03-Birthday.dc.html": {
+   "h": 812,
+   "page": "hifi8",
+   "title": "10 · Home, birthday month",
+   "w": 375,
+   "x": 2275,
+   "y": 1300
+  },
+  "G-C10-Referral-discount.dc.html": {
+   "h": 812,
+   "page": "hifi8",
+   "title": "10 · Friend's first checkout",
+   "w": 375,
+   "x": 2730,
+   "y": 1300
+  },
+  "G-A02b-Booking-detail.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi8",
+   "title": "6 · Admin booking detail",
+   "w": 1280,
+   "x": 0,
+   "y": 2600
+  },
+  "G-A02c-Sell-package.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi8",
+   "title": "11 · Sell a package at the counter",
+   "w": 1280,
+   "x": 1360,
+   "y": 2600
+  },
+  "G-A13b-Coach-payouts.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi8",
+   "title": "12 · Reports, coach payouts",
+   "w": 1280,
+   "x": 2720,
+   "y": 2600
+  },
+  "Flows-Platform.dc.html": {
+   "h": 1900,
+   "page": "step0",
+   "title": "Flows J and K · Platform flows (for approval)",
+   "w": 2000,
+   "x": 6240,
+   "y": 0
+  },
+  "A04-Backup-slip-check.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire5",
+   "title": "A4 Backup slip check (only when checking is down)",
+   "w": 1280,
+   "x": 4080,
+   "y": 0
+  },
+  "H-A04-Backup-slip-check.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi6",
+   "title": "A4 Backup slip check (only when checking is down)",
+   "w": 1280,
+   "x": 1360,
+   "y": 920
+  },
+  "S-C11-Checking-delayed.dc.html": {
+   "h": 812,
+   "page": "states1",
+   "title": "C11 Checking delayed (backup mode)",
+   "w": 375,
+   "x": 2730,
+   "y": 0
+  },
+  "P1-Clubs.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire8",
+   "title": "P1 Clubs",
+   "w": 1280,
+   "x": 0,
+   "y": 0
+  },
+  "P2-Step1-Basics.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire8",
+   "title": "P2 New club · 1 Club basics",
+   "w": 1280,
+   "x": 1360,
+   "y": 0
+  },
+  "P2-Step2-Plan.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire8",
+   "title": "P2 New club · 2 Plan",
+   "w": 1280,
+   "x": 2720,
+   "y": 0
+  },
+  "P2-Step3-Courts.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire8",
+   "title": "P2 New club · 3 Courts and hours",
+   "w": 1280,
+   "x": 4080,
+   "y": 0
+  },
+  "P2-Step4-LINE.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire8",
+   "title": "P2 New club · 4 LINE",
+   "w": 1280,
+   "x": 5440,
+   "y": 0
+  },
+  "P2-Step5-Payments.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire8",
+   "title": "P2 New club · 5 Payments · Beam",
+   "w": 1280,
+   "x": 6800,
+   "y": 0
+  },
+  "P3-Club-detail.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire8",
+   "title": "P3 Club detail",
+   "w": 1280,
+   "x": 8160,
+   "y": 0
+  },
+  "A0-Setup-checklist.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire8",
+   "title": "A0 Setup checklist (club owner)",
+   "w": 1280,
+   "x": 9520,
+   "y": 0
+  },
+  "P4-Launch.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire8",
+   "title": "P4 Launch",
+   "w": 1280,
+   "x": 10880,
+   "y": 0
+  },
+  "P3-Club-alert.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire8",
+   "title": "P3 Club detail · LINE alert",
+   "w": 1280,
+   "x": 0,
+   "y": 1400
+  },
+  "P3b-Support-view.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire8",
+   "title": "P3b Support view (setup only)",
+   "w": 1280,
+   "x": 1360,
+   "y": 1400
+  },
+  "P3c-Pause-club.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire8",
+   "title": "P3c Pause a club",
+   "w": 1280,
+   "x": 2720,
+   "y": 1400
+  },
+  "P5-Templates.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire8",
+   "title": "P5 Templates",
+   "w": 1280,
+   "x": 6800,
+   "y": 1400
+  },
+  "P6-Team-audit.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire8",
+   "title": "P6 Platform team and audit log",
+   "w": 1280,
+   "x": 9520,
+   "y": 1400
+  },
+  "P5b-Templates-blank.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire8",
+   "title": "P5 Templates · Blank selected",
+   "w": 1280,
+   "x": 8160,
+   "y": 1400
+  },
+  "H-P1-Clubs.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi9",
+   "title": "P1 Clubs",
+   "w": 1280,
+   "x": 0,
+   "y": 0
+  },
+  "H-P2-Step1-Basics.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi9",
+   "title": "P2 New club · 1 Club basics",
+   "w": 1280,
+   "x": 1360,
+   "y": 0
+  },
+  "H-P2-Step2-Plan.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi9",
+   "title": "P2 New club · 2 Plan",
+   "w": 1280,
+   "x": 2720,
+   "y": 0
+  },
+  "H-P2-Step3-Courts.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi9",
+   "title": "P2 New club · 3 Courts and hours",
+   "w": 1280,
+   "x": 4080,
+   "y": 0
+  },
+  "H-P2-Step4-LINE.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi9",
+   "title": "P2 New club · 4 LINE",
+   "w": 1280,
+   "x": 5440,
+   "y": 0
+  },
+  "H-P2-Step5-Payments.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi9",
+   "title": "P2 New club · 5 Payments · Beam",
+   "w": 1280,
+   "x": 6800,
+   "y": 0
+  },
+  "H-P3-Club-detail.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi9",
+   "title": "P3 Club detail",
+   "w": 1280,
+   "x": 8160,
+   "y": 0
+  },
+  "H-A0-Setup-checklist.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi9",
+   "title": "A0 Setup checklist (club owner)",
+   "w": 1280,
+   "x": 9520,
+   "y": 0
+  },
+  "H-P4-Launch.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi9",
+   "title": "P4 Launch",
+   "w": 1280,
+   "x": 10880,
+   "y": 0
+  },
+  "H-P3-Club-alert.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi9",
+   "title": "P3 Club detail · LINE alert",
+   "w": 1280,
+   "x": 0,
+   "y": 1400
+  },
+  "H-P3b-Support-view.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi9",
+   "title": "P3b Support view (setup only)",
+   "w": 1280,
+   "x": 1360,
+   "y": 1400
+  },
+  "H-P3c-Pause-club.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi9",
+   "title": "P3c Pause a club",
+   "w": 1280,
+   "x": 2720,
+   "y": 1400
+  },
+  "H-P5-Templates.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi9",
+   "title": "P5 Templates",
+   "w": 1280,
+   "x": 6800,
+   "y": 1400
+  },
+  "H-P6-Team-audit.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi9",
+   "title": "P6 Platform team and audit log",
+   "w": 1280,
+   "x": 9520,
+   "y": 1400
+  },
+  "H-P5b-Templates-blank.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi9",
+   "title": "P5 Templates · Blank selected",
+   "w": 1280,
+   "x": 8160,
+   "y": 1400
+  },
+  "S-A01-Paused.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi9",
+   "title": "A1 Calendar · club paused banner",
+   "w": 1280,
+   "x": 4080,
+   "y": 1400
+  },
+  "S-C03-Paused.dc.html": {
+   "h": 812,
+   "page": "hifi9",
+   "title": "C3 Home · booking paused",
+   "w": 375,
+   "x": 4080,
+   "y": 2300
+  },
+  "S-C03-Guest.dc.html": {
+   "h": 812,
+   "page": "hifi1",
+   "title": "C3 Home · guest, not signed in",
+   "w": 375,
+   "x": 910,
+   "y": 940
+  },
+  "G-C10-Coach-picked.dc.html": {
+   "h": 812,
+   "page": "hifi1",
+   "title": "C10 Checkout · coach picked",
+   "w": 375,
+   "x": 1820,
+   "y": 940
+  },
+  "P2-Step5b-Payments-slip.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire8",
+   "title": "P2 New club · 5 Payments · slip checking",
+   "w": 1280,
+   "x": 5440,
+   "y": 1400
+  },
+  "H-P2-Step5b-Payments-slip.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi9",
+   "title": "P2 New club · 5 Payments · slip checking",
+   "w": 1280,
+   "x": 5440,
+   "y": 1400
+  },
+  "H-C11-Beam.dc.html": {
+   "h": 812,
+   "page": "hifi1",
+   "title": "C11 Pay by PromptPay · Beam (Hunter)",
+   "w": 375,
+   "x": 2275,
+   "y": 940
+  },
+  "A09b-Pricing-groups.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "wire6",
+   "title": "A9 Pricing · price groups, court prices, add-ons",
+   "w": 1280,
+   "x": 6800,
+   "y": 0
+  },
+  "H-A09b-Pricing-groups.dc.html": {
+   "expand": "fill",
+   "h": 800,
+   "page": "hifi7",
+   "title": "A9 Pricing · price groups, court prices, add-ons",
+   "w": 1280,
+   "x": 5440,
+   "y": 0
+  },
+  "G-C11P-Beam-package.dc.html": {
+   "h": 812,
+   "page": "hifi1",
+   "title": "C11P Pay for a package · Beam (Hunter)",
+   "w": 375,
+   "x": 2730,
+   "y": 940
+  },
+  "F1-01-L-Chat-Rich-menu.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "F1 · 1 In LINE, taps Book a court on the rich menu",
+   "w": 375,
+   "x": 0,
+   "y": 0,
+   "is_interactive": true
+  },
+  "F1-02-C04-Book-a-court.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "F1 · 2 Lands straight on the court schedule. Picks Court 2, 18:00",
+   "w": 375,
+   "x": 455,
+   "y": 0,
+   "is_interactive": true
+  },
+  "F1-03-C01-Welcome.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "F1 · 3 Sign in at checkout. Silent inside LINE, shown here for a browser",
+   "w": 375,
+   "x": 910,
+   "y": 0,
+   "is_interactive": true
+  },
+  "F1-04-C02-Profile-setup.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "F1 · 4 Quick profile, first time only",
+   "w": 375,
+   "x": 1365,
+   "y": 0,
+   "is_interactive": true
+  },
+  "F1-05-C10-Checkout.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "F1 · 5 Checkout. Tap a coach card to add a coach, or pay for the court only",
+   "w": 375,
+   "x": 1820,
+   "y": 0,
+   "is_interactive": true
+  },
+  "F1-06-C11-Beam.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "F1 · 6 Pays the Beam QR, no slip. Tap Waiting for your payment to continue",
+   "w": 375,
+   "x": 2275,
+   "y": 0,
+   "is_interactive": true
+  },
+  "F1-07-C12-Confirmed.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "F1 · 7 Confirmed by itself. Tap Done to see the LINE chat",
+   "w": 375,
+   "x": 2730,
+   "y": 0,
+   "is_interactive": true
+  },
+  "F1-08-C10-Coach-picked.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "F1 · 8 Optional branch. Coach picked, now a solo class at ฿1,300",
+   "w": 375,
+   "x": 3185,
+   "y": 0,
+   "is_interactive": true
+  },
+  "F1-09-Msg-Confirmed.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "F1 · 9 Booking confirmation rich card arrives in the LINE chat. Tap Book a court to restart",
+   "w": 375,
+   "x": 3640,
+   "y": 0,
+   "is_interactive": true
+  },
+  "F1b-01-C10-Checkout.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "F1b · 1 Checkout at a club that picked slip checking",
+   "w": 375,
+   "x": 0,
+   "y": 1072,
+   "is_interactive": true
+  },
+  "F1b-02-C11-PromptPay.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "F1b · 2 Pays and uploads a slip",
+   "w": 375,
+   "x": 455,
+   "y": 1072,
+   "is_interactive": true
+  },
+  "F1b-03-C11b-Rejected.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "F1b · 3 Wrong slip, popup",
+   "w": 375,
+   "x": 910,
+   "y": 1072,
+   "is_interactive": true
+  },
+  "F1b-04-C11b-Checking-slip.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "F1b · 4 Right slip, checking overlay. Tap Checking to continue",
+   "w": 375,
+   "x": 1365,
+   "y": 1072,
+   "is_interactive": true
+  },
+  "F1b-05-C12-Confirmed.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "F1b · 5 Confirmed. Tap Done to restart",
+   "w": 375,
+   "x": 1820,
+   "y": 1072,
+   "is_interactive": true
+  },
+  "F2-01-C03-Home.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "F2 · 1 Signed in Home",
+   "w": 375,
+   "x": 0,
+   "y": 2144,
+   "is_interactive": true
+  },
+  "F2-02-C09-Packages.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "F2 · 2 Buys the 20 hour bundle",
+   "w": 375,
+   "x": 455,
+   "y": 2144,
+   "is_interactive": true
+  },
+  "F2-03-C10P-Package-checkout.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "F2 · 3 Package checkout",
+   "w": 375,
+   "x": 910,
+   "y": 2144,
+   "is_interactive": true
+  },
+  "F2-04-C11P-Beam-package.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "F2 · 4 Pays the Beam QR, no slip. Tap Waiting for your payment",
+   "w": 375,
+   "x": 1365,
+   "y": 2144,
+   "is_interactive": true
+  },
+  "F2-05-C12P-Hours-added.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "F2 · 5 Hours added",
+   "w": 375,
+   "x": 1820,
+   "y": 2144,
+   "is_interactive": true
+  },
+  "F2-06-C04-Book-a-court.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "F2 · 6 Picks Court 2, 18:00",
+   "w": 375,
+   "x": 2275,
+   "y": 2144,
+   "is_interactive": true
+  },
+  "F2-07-C10-Credit-covered.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "F2 · 7 Bundle hour covers it, ฿0 due",
+   "w": 375,
+   "x": 2730,
+   "y": 2144,
+   "is_interactive": true
+  },
+  "F2-08-C12-Confirmed.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "F2 · 8 Confirmed",
+   "w": 375,
+   "x": 3185,
+   "y": 2144,
+   "is_interactive": true
+  },
+  "F3-01-A01-Calendar.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "F3 · 1 Today on the calendar, walk in at 19:00",
+   "w": 1280,
+   "x": 0,
+   "y": 3216,
+   "is_interactive": true,
+   "expand": "fill"
+  },
+  "F3-02-A02-Booking-create.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "F3 · 2 Walk in booking with cash",
+   "w": 1280,
+   "x": 1360,
+   "y": 3216,
+   "is_interactive": true,
+   "expand": "fill"
+  },
+  "F3-03-A02b-Booking-detail.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "F3 · 3 Booking detail",
+   "w": 1280,
+   "x": 2720,
+   "y": 3216,
+   "is_interactive": true,
+   "expand": "fill"
+  },
+  "F4-01-P1-Clubs.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "F4 · 1 Clubs list",
+   "w": 1280,
+   "x": 0,
+   "y": 4276,
+   "is_interactive": true,
+   "expand": "fill"
+  },
+  "F4-02-P2-Step1-Basics.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "F4 · 2 Step 1 Club basics",
+   "w": 1280,
+   "x": 1360,
+   "y": 4276,
+   "is_interactive": true,
+   "expand": "fill"
+  },
+  "F4-03-P2-Step2-Plan.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "F4 · 3 Step 2 Plan",
+   "w": 1280,
+   "x": 2720,
+   "y": 4276,
+   "is_interactive": true,
+   "expand": "fill"
+  },
+  "F4-04-P2-Step3-Courts.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "F4 · 4 Step 3 Courts and hours",
+   "w": 1280,
+   "x": 4080,
+   "y": 4276,
+   "is_interactive": true,
+   "expand": "fill"
+  },
+  "F4-05-P2-Step4-LINE.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "F4 · 5 Step 4 LINE",
+   "w": 1280,
+   "x": 5440,
+   "y": 4276,
+   "is_interactive": true,
+   "expand": "fill"
+  },
+  "F4-06-P2-Step5-Payments.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "F4 · 6 Step 5 Payments",
+   "w": 1280,
+   "x": 6800,
+   "y": 4276,
+   "is_interactive": true,
+   "expand": "fill"
+  },
+  "F4-07-P3-Club-detail.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "F4 · 7 Club detail, invite the owner",
+   "w": 1280,
+   "x": 8160,
+   "y": 4276,
+   "is_interactive": true,
+   "expand": "fill"
+  },
+  "F4-08-A0-Setup-checklist.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "F4 · 8 Owner finishes brand, products and people",
+   "w": 1280,
+   "x": 9520,
+   "y": 4276,
+   "is_interactive": true,
+   "expand": "fill"
+  },
+  "F4-09-P4-Launch.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "F4 · 9 Test and go live",
+   "w": 1280,
+   "x": 10880,
+   "y": 4276,
+   "is_interactive": true,
+   "expand": "fill"
+  },
+  "F4-10-P1-Clubs.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "F4 · 10 Club is live",
+   "w": 1280,
+   "x": 12240,
+   "y": 4276,
+   "is_interactive": true,
+   "expand": "fill"
+  },
+  "F5a-01-P1-Clubs.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "F5a · 1 Alert on Club B. Tap the red alert",
+   "w": 1280,
+   "x": 0,
+   "y": 5336,
+   "is_interactive": true,
+   "expand": "fill"
+  },
+  "F5a-02-P3-Club-alert.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "F5a · 2 LINE check failed",
+   "w": 1280,
+   "x": 1360,
+   "y": 5336,
+   "is_interactive": true,
+   "expand": "fill"
+  },
+  "F5a-03-P3b-Support-view.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "F5a · 3 Look only support view",
+   "w": 1280,
+   "x": 2720,
+   "y": 5336,
+   "is_interactive": true,
+   "expand": "fill"
+  },
+  "F5a-04-P3-Club-fixed.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "F5a · 4 Owner reconnected, all checks pass",
+   "w": 1280,
+   "x": 4080,
+   "y": 5336,
+   "is_interactive": true,
+   "expand": "fill"
+  },
+  "F5a-05-P1-Clubs-clear.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "F5a · 5 Alert gone. Tap Clubs to restart",
+   "w": 1280,
+   "x": 5440,
+   "y": 5336,
+   "is_interactive": true,
+   "expand": "fill"
+  },
+  "F5b-01-P1-Clubs-clear.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "F5b · 1 Clubs list. Tap Club B",
+   "w": 1280,
+   "x": 0,
+   "y": 6396,
+   "is_interactive": true,
+   "expand": "fill"
+  },
+  "F5b-02-P3-Club-live.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "F5b · 2 Club B detail",
+   "w": 1280,
+   "x": 1360,
+   "y": 6396,
+   "is_interactive": true,
+   "expand": "fill"
+  },
+  "F5b-03-P3c-Pause-club.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "F5b · 3 Pause with a reason",
+   "w": 1280,
+   "x": 2720,
+   "y": 6396,
+   "is_interactive": true,
+   "expand": "fill"
+  },
+  "F5b-04-P1-Clubs-paused.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "F5b · 4 Club B now paused. Tap Clubs to restart",
+   "w": 1280,
+   "x": 4080,
+   "y": 6396,
+   "is_interactive": true,
+   "expand": "fill"
+  },
+  "F5b-preview-A01-Paused.dc.html": {
+   "h": 800,
+   "page": "step6",
+   "title": "Preview · club admin while paused",
+   "w": 1280,
+   "x": 5560,
+   "y": 6396,
+   "expand": "fill"
+  },
+  "F5b-preview-C03-Paused.dc.html": {
+   "h": 812,
+   "page": "step6",
+   "title": "Preview · player app while paused",
+   "w": 375,
+   "x": 6920,
+   "y": 6396
+  },
+  "T-C01-Welcome.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C1 Sign in at checkout · Thai",
+   "w": 375,
+   "x": 0,
+   "y": 0
+  },
+  "T-C02-Profile-setup.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C2 Quick profile · Thai",
+   "w": 375,
+   "x": 455,
+   "y": 0
+  },
+  "T-S-C03-Guest.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C3 Home · guest, not signed in · Thai",
+   "w": 375,
+   "x": 910,
+   "y": 0
+  },
+  "T-C05-Solo-classes.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C5 Solo classes · Thai",
+   "w": 375,
+   "x": 1365,
+   "y": 0
+  },
+  "T-C06-Coach-profile.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C6 Coach profile, pick a time · Thai",
+   "w": 375,
+   "x": 1820,
+   "y": 0
+  },
+  "T-C07-Group-classes.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C7 Group classes · Thai",
+   "w": 375,
+   "x": 2275,
+   "y": 0
+  },
+  "T-C08-Class-detail.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C8 Class detail · Thai",
+   "w": 375,
+   "x": 2730,
+   "y": 0
+  },
+  "T-C08b-Class-pack-choice.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "I · C8 Pack choice · Thai",
+   "w": 375,
+   "x": 3185,
+   "y": 0
+  },
+  "T-C09-Packages.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C9 Packages · Court bundles · Thai",
+   "w": 375,
+   "x": 0,
+   "y": 972
+  },
+  "T-C09b-Packages-solo.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C9 Packages · Solo classes · Thai",
+   "w": 375,
+   "x": 455,
+   "y": 972
+  },
+  "T-C09c-Packages-group.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C9 Packages · Group classes · Thai",
+   "w": 375,
+   "x": 910,
+   "y": 972
+  },
+  "T-C10b-Checkout-solo.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C10 Checkout, solo class · Thai",
+   "w": 375,
+   "x": 1365,
+   "y": 972
+  },
+  "T-C10P-Package-checkout.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "H · C10P Package checkout · Thai",
+   "w": 375,
+   "x": 1820,
+   "y": 972
+  },
+  "T-C10P-Bundle-plus-booking.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "H · C10P Bundle plus booking · Thai",
+   "w": 375,
+   "x": 2275,
+   "y": 972
+  },
+  "T-C10P-Pack-plus-class.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "I · C10P Pack plus class · Thai",
+   "w": 375,
+   "x": 2730,
+   "y": 972
+  },
+  "T-C10c-Checkout-bundle-prompt.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "H · C10 Bundle prompt · Thai",
+   "w": 375,
+   "x": 3185,
+   "y": 972
+  },
+  "T-C11-Beam.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C11 Pay by PromptPay · Beam (Hunter) · Thai",
+   "w": 375,
+   "x": 0,
+   "y": 1944
+  },
+  "T-G-C11P-Beam-package.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C11P Pay for a package · Beam (Hunter) · Thai",
+   "w": 375,
+   "x": 455,
+   "y": 1944
+  },
+  "T-C11P-Pay-package.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "H · C11P Pay for a package · Thai",
+   "w": 375,
+   "x": 910,
+   "y": 1944
+  },
+  "T-C11b-Checking-slip.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C11 · Checking overlay · Thai",
+   "w": 375,
+   "x": 1365,
+   "y": 1944
+  },
+  "T-C12P-Hours-added.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "H · C12P Hours added · Thai",
+   "w": 375,
+   "x": 1820,
+   "y": 1944
+  },
+  "T-C12P-Seat-plus-pack.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "I · C12P Seat plus pack · Thai",
+   "w": 375,
+   "x": 2275,
+   "y": 1944
+  },
+  "T-C13-My-bookings.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C13 My bookings · Thai",
+   "w": 375,
+   "x": 2730,
+   "y": 1944
+  },
+  "T-C13b-Cancel-sheet.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C13b Cancel sheet · Thai",
+   "w": 375,
+   "x": 3185,
+   "y": 1944
+  },
+  "T-C14-Credits-wallet.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C14 Credits and wallet · Thai",
+   "w": 375,
+   "x": 0,
+   "y": 2916
+  },
+  "T-C15-Refer-gift.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C15 Refer a friend · Thai",
+   "w": 375,
+   "x": 455,
+   "y": 2916
+  },
+  "T-C16-Waitlist-offer.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C16 Waitlist offer · Thai",
+   "w": 375,
+   "x": 910,
+   "y": 2916
+  },
+  "T-C17-Profile-receipts.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C17 Profile and receipts · Thai",
+   "w": 375,
+   "x": 1365,
+   "y": 2916
+  },
+  "T-G-C10-Coach-picked.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C10 Checkout · coach picked · Thai",
+   "w": 375,
+   "x": 1820,
+   "y": 2916
+  },
+  "T-G-C03-Birthday.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "10 · Home, birthday month · Thai",
+   "w": 375,
+   "x": 2275,
+   "y": 2916
+  },
+  "T-G-C03-New-player.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "7 · Home, new player · Thai",
+   "w": 375,
+   "x": 2730,
+   "y": 2916
+  },
+  "T-G-C04-Waitlist-joined.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "1 · Waitlist joined · Thai",
+   "w": 375,
+   "x": 3185,
+   "y": 2916
+  },
+  "T-G-C10-Add-coach-checkout.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "3 · Add a coach checkout · Thai",
+   "w": 375,
+   "x": 0,
+   "y": 3888
+  },
+  "T-G-C10-Credit-covered.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "2 · Checkout covered by credit · Thai",
+   "w": 375,
+   "x": 455,
+   "y": 3888
+  },
+  "T-G-C10-Referral-discount.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "10 · Friend's first checkout · Thai",
+   "w": 375,
+   "x": 910,
+   "y": 3888
+  },
+  "T-G-C10b-Solo-with-credit.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "4 · Solo class with pack credit · Thai",
+   "w": 375,
+   "x": 1365,
+   "y": 3888
+  },
+  "T-G-C12-Add-coach.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "3 · Add a coach · Thai",
+   "w": 375,
+   "x": 1820,
+   "y": 3888
+  },
+  "T-G-C13-Waitlist-tab.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "1 · My bookings, waitlist tab · Thai",
+   "w": 375,
+   "x": 2275,
+   "y": 3888
+  },
+  "T-G-C13b-Coach-changed.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "5 · Coach changed · Thai",
+   "w": 375,
+   "x": 2730,
+   "y": 3888
+  },
+  "T-G-C13b-Late-cancel.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "5 · Late cancel · Thai",
+   "w": 375,
+   "x": 3185,
+   "y": 3888
+  },
+  "T-G-C17-Personal-details.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "9 · Personal details · Thai",
+   "w": 375,
+   "x": 0,
+   "y": 4860
+  },
+  "T-G-C17-Privacy.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "9 · Privacy and my data · Thai",
+   "w": 375,
+   "x": 455,
+   "y": 4860
+  },
+  "T-S-C04-Day-full.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C4 Day fully booked · Thai",
+   "w": 375,
+   "x": 910,
+   "y": 4860
+  },
+  "T-S-C04-Loading.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C4 Loading · Thai",
+   "w": 375,
+   "x": 1365,
+   "y": 4860
+  },
+  "T-S-C11-Checking-delayed.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C11 Checking delayed (backup mode) · Thai",
+   "w": 375,
+   "x": 1820,
+   "y": 4860
+  },
+  "T-S-C11-Time-ran-out.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C11 Time ran out · Thai",
+   "w": 375,
+   "x": 2275,
+   "y": 4860
+  },
+  "T-S-C11b-Rejected.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C11 · Slip didn't match popup · Thai",
+   "w": 375,
+   "x": 2730,
+   "y": 4860
+  },
+  "T-S-C13-Empty.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C13 No bookings · Thai",
+   "w": 375,
+   "x": 3185,
+   "y": 4860
+  },
+  "T-S-Error-Offline.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "Error · No connection · Thai",
+   "w": 375,
+   "x": 0,
+   "y": 5832
+  },
+  "T-S-C03-Paused.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "C3 Home · booking paused · Thai",
+   "w": 375,
+   "x": 455,
+   "y": 5832
+  },
+  "T-L-Msg-Confirmed.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "LINE · Booking confirmed · Thai",
+   "w": 375,
+   "x": 910,
+   "y": 5832
+  },
+  "T-L-Msg-Reminder.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "LINE · Reminder · Thai",
+   "w": 375,
+   "x": 1365,
+   "y": 5832
+  },
+  "T-L-Msg-Waitlist.dc.html": {
+   "h": 812,
+   "page": "thai2",
+   "title": "LINE · Waitlist offer · Thai",
+   "w": 375,
+   "x": 1820,
+   "y": 5832
+  },
+  "T-A0-Setup-checklist.dc.html": {
+   "h": 800,
+   "page": "thai3",
+   "title": "A0 Setup checklist (club owner) · Thai",
+   "w": 1280,
+   "x": 0,
+   "y": 0,
+   "expand": "fill"
+  },
+  "T-A01-Calendar.dc.html": {
+   "h": 800,
+   "page": "thai3",
+   "title": "A1 Calendar · Thai",
+   "w": 1280,
+   "x": 1360,
+   "y": 0,
+   "expand": "fill"
+  },
+  "T-A02-Booking-create.dc.html": {
+   "h": 800,
+   "page": "thai3",
+   "title": "A2 Booking create · Thai",
+   "w": 1280,
+   "x": 2720,
+   "y": 0,
+   "expand": "fill"
+  },
+  "T-A04-Backup-slip-check.dc.html": {
+   "h": 800,
+   "page": "thai3",
+   "title": "A4 Backup slip check (only when checking is down) · Thai",
+   "w": 1280,
+   "x": 0,
+   "y": 1000,
+   "expand": "fill"
+  },
+  "T-A05-Customers.dc.html": {
+   "h": 800,
+   "page": "thai3",
+   "title": "A5 Customers · Thai",
+   "w": 1280,
+   "x": 1360,
+   "y": 1000,
+   "expand": "fill"
+  },
+  "T-A06-Customer-profile.dc.html": {
+   "h": 800,
+   "page": "thai3",
+   "title": "A6 Customer profile · Thai",
+   "w": 1280,
+   "x": 2720,
+   "y": 1000,
+   "expand": "fill"
+  },
+  "T-A07-Coaches.dc.html": {
+   "h": 800,
+   "page": "thai3",
+   "title": "A7 Coaches · Thai",
+   "w": 1280,
+   "x": 0,
+   "y": 2000,
+   "expand": "fill"
+  },
+  "T-A08-Group-classes.dc.html": {
+   "h": 800,
+   "page": "thai3",
+   "title": "A8 Group classes · Thai",
+   "w": 1280,
+   "x": 1360,
+   "y": 2000,
+   "expand": "fill"
+  },
+  "T-A09-Pricing.dc.html": {
+   "h": 800,
+   "page": "thai3",
+   "title": "A9 Products and pricing · Thai",
+   "w": 1280,
+   "x": 2720,
+   "y": 2000,
+   "expand": "fill"
+  },
+  "T-A09b-Pricing-groups.dc.html": {
+   "h": 800,
+   "page": "thai3",
+   "title": "A9 Pricing · price groups, court prices, add-ons · Thai",
+   "w": 1280,
+   "x": 0,
+   "y": 3000,
+   "expand": "fill"
+  },
+  "T-A10-Promotions.dc.html": {
+   "h": 800,
+   "page": "thai3",
+   "title": "A10 Promotions · Thai",
+   "w": 1280,
+   "x": 1360,
+   "y": 3000,
+   "expand": "fill"
+  },
+  "T-A12-Closures.dc.html": {
+   "h": 800,
+   "page": "thai3",
+   "title": "A12 Closures · Thai",
+   "w": 1280,
+   "x": 2720,
+   "y": 3000,
+   "expand": "fill"
+  },
+  "T-A13-Reports.dc.html": {
+   "h": 800,
+   "page": "thai3",
+   "title": "A13 Reports · Thai",
+   "w": 1280,
+   "x": 0,
+   "y": 4000,
+   "expand": "fill"
+  },
+  "T-A14-Receipts.dc.html": {
+   "h": 800,
+   "page": "thai3",
+   "title": "A14 Receipts · Thai",
+   "w": 1280,
+   "x": 1360,
+   "y": 4000,
+   "expand": "fill"
+  },
+  "T-A16-Settings.dc.html": {
+   "h": 800,
+   "page": "thai3",
+   "title": "A16 Settings · Thai",
+   "w": 1280,
+   "x": 2720,
+   "y": 4000,
+   "expand": "fill"
+  },
+  "T-A17-Staff-audit.dc.html": {
+   "h": 800,
+   "page": "thai3",
+   "title": "A17 Staff and audit log · Thai",
+   "w": 1280,
+   "x": 0,
+   "y": 5000,
+   "expand": "fill"
+  },
+  "T-G-A02b-Booking-detail.dc.html": {
+   "h": 800,
+   "page": "thai3",
+   "title": "6 · Admin booking detail · Thai",
+   "w": 1280,
+   "x": 1360,
+   "y": 5000,
+   "expand": "fill"
+  },
+  "T-G-A02c-Sell-package.dc.html": {
+   "h": 800,
+   "page": "thai3",
+   "title": "11 · Sell a package at the counter · Thai",
+   "w": 1280,
+   "x": 2720,
+   "y": 5000,
+   "expand": "fill"
+  },
+  "T-G-A13b-Coach-payouts.dc.html": {
+   "h": 800,
+   "page": "thai3",
+   "title": "12 · Reports, coach payouts · Thai",
+   "w": 1280,
+   "x": 0,
+   "y": 6000,
+   "expand": "fill"
+  },
+  "T-S-A01-Paused.dc.html": {
+   "h": 800,
+   "page": "thai3",
+   "title": "A1 Calendar · club paused banner · Thai",
+   "w": 1280,
+   "x": 1360,
+   "y": 6000,
+   "expand": "fill"
+  },
+  "T-K1-Today.dc.html": {
+   "h": 812,
+   "page": "thai4",
+   "title": "K1 Today · Thai",
+   "w": 375,
+   "x": 0,
+   "y": 0
+  },
+  "T-K2-Schedule.dc.html": {
+   "h": 812,
+   "page": "thai4",
+   "title": "K2 Schedule · Thai",
+   "w": 375,
+   "x": 455,
+   "y": 0
+  },
+  "T-K3-Availability.dc.html": {
+   "h": 812,
+   "page": "thai4",
+   "title": "K3 Availability · Thai",
+   "w": 375,
+   "x": 910,
+   "y": 0
+  },
+  "T-K4-Leave.dc.html": {
+   "h": 812,
+   "page": "thai4",
+   "title": "K4 Leave · Thai",
+   "w": 375,
+   "x": 1365,
+   "y": 0
+  },
+  "T-K5-Session-detail.dc.html": {
+   "h": 812,
+   "page": "thai4",
+   "title": "K5 Session detail · Thai",
+   "w": 375,
+   "x": 1820,
+   "y": 0
+  },
+  "T-K6-Earnings.dc.html": {
+   "h": 812,
+   "page": "thai4",
+   "title": "K6 Earnings · Thai",
+   "w": 375,
+   "x": 2275,
+   "y": 0
+  }
+ },
+ "createdOnFiles": {
+  "at": "2026-10-28T09:00:00Z",
+  "v": 1
+ },
+ "designSystems": [
+  {
+   "artifact": "https://claude.ai/code/artifact/4a73138b-0754-40dc-bc6a-e314a027c2a4",
+   "copiedAt": "2026-10-28T09:00:00Z",
+   "namespace": "booq",
+   "title": "BOOQ Booking Platform Design System",
+   "version": null
+  }
+ ],
+ "launch": {
+  "page": "hifi8",
+  "view": "canvas"
+ },
+ "noteOrder": [
+  "w1title",
+  "n01",
+  "n02",
+  "n03",
+  "n04",
+  "n05",
+  "n06",
+  "n08",
+  "w2title",
+  "n21",
+  "n22",
+  "n2b",
+  "n23",
+  "n24",
+  "n26",
+  "n27",
+  "w3title",
+  "n31",
+  "n32",
+  "n33",
+  "n34",
+  "n35",
+  "w4title",
+  "n41",
+  "n42",
+  "n43",
+  "n44",
+  "n45",
+  "n46",
+  "w5title",
+  "n51",
+  "n52",
+  "n53",
+  "n55",
+  "n56",
+  "n57",
+  "w6title",
+  "n61",
+  "n62",
+  "n63",
+  "n64",
+  "n66",
+  "n67",
+  "n69",
+  "n6a",
+  "vtitle",
+  "vtitleB",
+  "vtitleC",
+  "vtitleD",
+  "vtitleE",
+  "vtitleF",
+  "vtitleG",
+  "htitle1",
+  "htitle2",
+  "htitle3",
+  "w7title",
+  "n70",
+  "n71",
+  "n73",
+  "n74",
+  "n75",
+  "n76",
+  "n77",
+  "n79",
+  "n710",
+  "n711",
+  "htitle4",
+  "htitle5",
+  "htitle6",
+  "htitle7",
+  "ns10",
+  "ns11",
+  "ns12",
+  "ns13",
+  "ns15",
+  "ns16",
+  "stitle1",
+  "nt10",
+  "nt11",
+  "nt12",
+  "nt13",
+  "nt14",
+  "ttitle1",
+  "nl0",
+  "nl1",
+  "nl2",
+  "nl3",
+  "nl4",
+  "nl5",
+  "ltitle",
+  "ng0",
+  "ng1",
+  "ng2",
+  "ng3",
+  "ng4",
+  "ng5",
+  "ng6",
+  "ng7",
+  "ng8",
+  "ng9",
+  "ng10",
+  "ng11",
+  "ng12",
+  "ng13",
+  "nga0",
+  "nga1",
+  "nga2",
+  "htitle8",
+  "n54b",
+  "nh6b",
+  "ns17",
+  "w8_P1-Clubs",
+  "w8_P2-Step1-Basics",
+  "w8_P2-Step2-Plan",
+  "w8_P2-Step3-Courts",
+  "w8_P2-Step4-LINE",
+  "w8_P2-Step5-Payments",
+  "w8_P3-Club-detail",
+  "w8_A0-Setup-checklist",
+  "w8_P4-Launch",
+  "w8_P3-Club-alert",
+  "w8_P3b-Support-view",
+  "w8_P3c-Pause-club",
+  "w8_P5-Templates",
+  "w8_P6-Team-audit",
+  "w8title",
+  "w8_P5b-Templates-blank",
+  "h9title",
+  "h9pa",
+  "h9pc",
+  "h1guest",
+  "h1c4entry",
+  "w1c4entry",
+  "h1coach",
+  "w8_P2-Step5b-Payments-slip",
+  "h1beam",
+  "n_A09b-Pricing",
+  "n_H-A09b-Prici",
+  "s6_F1",
+  "s6_F1b",
+  "s6_F2",
+  "s6_F3",
+  "s6_F4",
+  "s6_F5a",
+  "s6_F5b",
+  "s6_prev",
+  "s6title"
+ ],
+ "notes": {
+  "htitle1": {
+   "kind": "title1",
+   "maxW": 3560,
+   "page": "hifi1",
+   "text": "Step 3.1 · Hi-fi · Core booking · Palette D, DM Sans",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "htitle2": {
+   "kind": "title1",
+   "maxW": 3105,
+   "page": "hifi2",
+   "text": "Step 3.2 · Hi-fi · Solo and group classes, packages",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "htitle3": {
+   "kind": "title1",
+   "maxW": 2195,
+   "page": "hifi3",
+   "text": "Step 3.3 · Hi-fi · Account screens",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "n01": {
+   "page": "wire1",
+   "text": "Browse first. A guest sees Home, courts, classes, coaches and packages without signing in. This sheet appears when they tap to book or buy. Inside LINE sign in is silent, so it shows only in a browser. The add friend checkbox is LINE Login's own option.",
+   "w": 375,
+   "x": 0,
+   "y": 872
+  },
+  "n02": {
+   "page": "wire1",
+   "text": "First booking only. Name, phone and consent. Date of birth is asked only for a student price, and level is set later in Profile. Language follows the LINE app.",
+   "w": 375,
+   "x": 455,
+   "y": 872
+  },
+  "n03": {
+   "page": "wire1",
+   "text": "Returning player view. A new player with no booking sees a Book your first hour card in place of Next booking. Birthday banner only shows in the birth month.",
+   "w": 375,
+   "x": 910,
+   "y": 872
+  },
+  "n04": {
+   "page": "wire1",
+   "text": "Every slot state carries a word, never colour alone. Taken slots offer Join waitlist. The summary bar appears once an hour is picked. Multi hour select works by tapping consecutive slots on one court.",
+   "w": 375,
+   "x": 1365,
+   "y": 872
+  },
+  "n05": {
+   "page": "wire1",
+   "text": "Flow 0 has no credits, so the credits row reads None. Add-on prices are TBD in the spec. Birthday discount row only appears in the birth month.",
+   "w": 375,
+   "x": 1820,
+   "y": 872
+  },
+  "n06": {
+   "page": "wire1",
+   "text": "The countdown is the 15 minute slot hold. After upload a small checking overlay sits on this screen (hi-fi). Only a verified slip confirms the booking. If the hold runs out the slot is released and a LINE message tells the player.",
+   "w": 375,
+   "x": 2275,
+   "y": 872
+  },
+  "n08": {
+   "page": "wire1",
+   "text": "Add a coach turns the court hour into a lesson and charges only the difference (Flow A).",
+   "w": 375,
+   "x": 2730,
+   "y": 872
+  },
+  "n21": {
+   "page": "wire2",
+   "text": "Classes tab holds Solo and Group side by side. Card price is the all-in price, coach plus court. Next open time already accounts for an open court. Head Coach price is TBD.",
+   "w": 375,
+   "x": 0,
+   "y": 872
+  },
+  "n22": {
+   "page": "wire2",
+   "text": "One flow, no juggling. Each time row carries its court. Hours when the coach is available but both courts are taken show as Coach available, no court, so the player sees why it can't be picked. Hours that would be the coach's 7th in a row are never offered (rest rule, spec 5.2).",
+   "w": 375,
+   "x": 455,
+   "y": 872
+  },
+  "n23": {
+   "page": "wire2",
+   "text": "Players only see their own audience, so there is no Adult or Student toggle. Full classes show Join waitlist in place of Book. Flow C starts here.",
+   "w": 375,
+   "x": 1365,
+   "y": 872
+  },
+  "n24": {
+   "page": "wire2",
+   "text": "Shows group credit first when the player has one, with drop-in price as the fallback. Group class prices are TBD in the spec.",
+   "w": 375,
+   "x": 1820,
+   "y": 872
+  },
+  "n26": {
+   "page": "wire2",
+   "text": "Final offer (v1.2). 10 hours ฿4,500 and 20 hours ฿8,000, both soft opening special. 5 hour bundle and monthly unlimited dropped. Buying follows Flow H.",
+   "w": 375,
+   "x": 2275,
+   "y": 872
+  },
+  "n27": {
+   "page": "wire2",
+   "text": "Opened from the LINE message. 30 minute claim window by default. Decline or time out passes the spot to the next person.",
+   "w": 375,
+   "x": 2730,
+   "y": 872
+  },
+  "n2b": {
+   "page": "wire2",
+   "text": "Coach and court on one checkout, one PromptPay payment, one hold. Then C11 and C12 as in Batch 1. Coach ฿800 + court ฿500, confirmed. A solo pack credit covers coaching only, so the ฿500 court fee is still paid each booking.",
+   "w": 375,
+   "x": 910,
+   "y": 872
+  },
+  "n31": {
+   "page": "wire3",
+   "text": "Every booking type in one list, each with its status chip. Waitlist tab holds class and court waitlists with queue position.",
+   "w": 375,
+   "x": 0,
+   "y": 872
+  },
+  "n32": {
+   "page": "wire3",
+   "text": "Flow D. The sheet states the outcome before the player confirms. Under 12 hours it reads This credit will be forfeited, with Keep booking as the main button.",
+   "w": 375,
+   "x": 455,
+   "y": 872
+  },
+  "n33": {
+   "page": "wire3",
+   "text": "Balances are a ledger, so every line in history links to its booking or reason. LINE reminders go out 14 and 3 days before a package expires.",
+   "w": 375,
+   "x": 910,
+   "y": 872
+  },
+  "n34": {
+   "page": "wire3",
+   "text": "Flow E. Referral and birthday reward amounts are TBD in the spec, shown as placeholders. Gift vouchers were removed from scope (v1.2).",
+   "w": 375,
+   "x": 1365,
+   "y": 872
+  },
+  "n35": {
+   "page": "wire3",
+   "text": "Language toggle also lives in the Home header. Receipts download as PDF, Thai or English. PDPA data copy and deletion requests start here.",
+   "w": 375,
+   "x": 1820,
+   "y": 872
+  },
+  "n41": {
+   "page": "wire4",
+   "text": "Coach role opens here inside LINE. Sessions in time order with court, type and players. Tap a session to open K5. Coaches never see payments or other coaches.",
+   "w": 375,
+   "x": 0,
+   "y": 872
+  },
+  "n42": {
+   "page": "wire4",
+   "text": "Present or Absent per player. Marking feeds check-in and coach pay, since no-shows still count as delivered. Notes are private to coaches and admins.",
+   "w": 375,
+   "x": 455,
+   "y": 872
+  },
+  "n43": {
+   "page": "wire4",
+   "text": "Week agenda with lessons, classes, leave and blocked court times, each labelled by type, not colour alone.",
+   "w": 375,
+   "x": 910,
+   "y": 872
+  },
+  "n44": {
+   "page": "wire4",
+   "text": "Weekly rules plus one-off changes. Both feed solo class booking straight away, combined with court availability. Rest rule from spec 5.2, at most 6 teaching hours in a row, is applied on top.",
+   "w": 375,
+   "x": 1365,
+   "y": 872
+  },
+  "n45": {
+   "page": "wire4",
+   "text": "Flow G starts here. The form warns when booked sessions fall in the period, so the coach knows a substitute is needed. Leave types are placeholders.",
+   "w": 375,
+   "x": 1820,
+   "y": 872
+  },
+  "n46": {
+   "page": "wire4",
+   "text": "Pay numbers per coach are TBD in the spec, shown as placeholders. Pay counts sessions attended or marked no-show, not ones cancelled within policy.",
+   "w": 375,
+   "x": 2275,
+   "y": 872
+  },
+  "n51": {
+   "page": "wire5",
+   "text": "Day view, two court columns. Each booking type carries a label as well as a fill. Click an empty slot to create (A2), drag to move with a conflict check and a LINE message to the player.",
+   "w": 420,
+   "x": 0,
+   "y": 860
+  },
+  "n52": {
+   "page": "wire5",
+   "text": "Flow F walk-in. Cash needs a reason code because the club is QR first. Adding a coach here also respects the 6 hour rest rule. Existing bookings open in the same panel with history.",
+   "w": 420,
+   "x": 1360,
+   "y": 860
+  },
+  "n53": {
+   "page": "wire5",
+   "text": "Runs on a tablet at reception. Not checked in 15 minutes after start is flagged Late. At the end of the slot it becomes No-show and staff can reverse it with a reason.",
+   "w": 420,
+   "x": 2720,
+   "y": 860
+  },
+  "n55": {
+   "page": "wire5",
+   "text": "Search by name, phone or LINE name. Filters from spec 5.9. Export to CSV.",
+   "w": 420,
+   "x": 0,
+   "y": 2380
+  },
+  "n56": {
+   "page": "wire5",
+   "text": "Every balance change needs a reason and goes to the audit log. Extending a package is Owner only, so front desk sees it disabled.",
+   "w": 420,
+   "x": 1360,
+   "y": 2380
+  },
+  "n57": {
+   "page": "wire5",
+   "text": "Affected bookings are listed before confirming. Confirm cancels them, returns full credit and sends the Club closed this slot LINE message.",
+   "w": 420,
+   "x": 2720,
+   "y": 2380
+  },
+  "n61": {
+   "page": "wire6",
+   "text": "Flow G owner side. Approve leave, then pick a substitute for each flagged session. The substitute list only shows coaches who are available and under their 6 hour limit.",
+   "w": 420,
+   "x": 0,
+   "y": 860
+  },
+  "n62": {
+   "page": "wire6",
+   "text": "Templates generate the weekly sessions. Below minimum alert fires a set time before start. Cancelling returns full credit and messages every player.",
+   "w": 420,
+   "x": 1360,
+   "y": 860
+  },
+  "n63": {
+   "page": "wire6",
+   "text": "Every price is a setting, nothing hard coded. Solo class shows coaching plus court, ฿800 + ฿500, as agreed. TBD prices stay as editable placeholders.",
+   "w": 420,
+   "x": 2720,
+   "y": 860
+  },
+  "n64": {
+   "page": "wire6",
+   "text": "One promo code per order. Each code says whether it stacks with the birthday discount. Partner report lives in Reports.",
+   "w": 420,
+   "x": 4080,
+   "y": 860
+  },
+  "n66": {
+   "page": "wire6",
+   "text": "Owed to customers adds wallet balances to unused package credit. The spec only counts package credit, so this is a suggested change to confirm.",
+   "w": 420,
+   "x": 0,
+   "y": 2380
+  },
+  "n67": {
+   "page": "wire6",
+   "text": "Receipt numbers never get reused. Void needs the Owner and a reason, reprints are marked Copy. Daily close totals match the bank statement.",
+   "w": 420,
+   "x": 1360,
+   "y": 2380
+  },
+  "n69": {
+   "page": "wire6",
+   "text": "All business rules in one place, including the new coach rest rule. Wallet expiry is an open question, shown as TBD.",
+   "w": 420,
+   "x": 4080,
+   "y": 2380
+  },
+  "n6a": {
+   "page": "wire6",
+   "text": "Staff sign in with LINE from an invite link. The audit log is read only and searchable by staff, customer, record type and date.",
+   "w": 420,
+   "x": 5440,
+   "y": 2380
+  },
+  "vtitle": {
+   "kind": "title1",
+   "maxW": 3030,
+   "page": "visual",
+   "text": "Step 2 · Palette A · Clubhouse light",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "vtitleB": {
+   "kind": "title1",
+   "maxW": 2190,
+   "page": "visual",
+   "text": "Palette B · Morning court",
+   "w": 240,
+   "x": 0,
+   "y": 1000
+  },
+  "vtitleC": {
+   "kind": "title1",
+   "maxW": 2190,
+   "page": "visual",
+   "text": "Palette C · Clay court",
+   "w": 240,
+   "x": 0,
+   "y": 2300
+  },
+  "vtitleD": {
+   "kind": "title1",
+   "maxW": 2190,
+   "page": "visual",
+   "text": "Palette D · Sage garden",
+   "w": 240,
+   "x": 0,
+   "y": 3600
+  },
+  "vtitleE": {
+   "kind": "title1",
+   "maxW": 2190,
+   "page": "visual",
+   "text": "Palette E · Twilight court, dark",
+   "w": 240,
+   "x": 0,
+   "y": 4900
+  },
+  "vtitleF": {
+   "kind": "title1",
+   "maxW": 2190,
+   "page": "visual",
+   "text": "Palette F · White clubhouse, B background with A gold",
+   "w": 240,
+   "x": 0,
+   "y": 6200
+  },
+  "vtitleG": {
+   "kind": "title1",
+   "maxW": 2190,
+   "page": "visual",
+   "text": "Palette G · White heritage, B background with original amber",
+   "w": 240,
+   "x": 0,
+   "y": 7500
+  },
+  "w1title": {
+   "kind": "title1",
+   "maxW": 3560,
+   "page": "wire1",
+   "text": "Step 1.1 · Batch 1 · Core booking · Flow 0",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "w2title": {
+   "kind": "title1",
+   "maxW": 3105,
+   "page": "wire2",
+   "text": "Step 1.2 · Batch 2 · Solo and group classes, packages · Flows B and C",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "w3title": {
+   "kind": "title1",
+   "maxW": 2195,
+   "page": "wire3",
+   "text": "Step 1.3 · Batch 3 · Account · Flows D and E",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "w4title": {
+   "kind": "title1",
+   "maxW": 2650,
+   "page": "wire4",
+   "text": "Step 1.4 · Batch 4 · Coach portal · Flow G",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "w5title": {
+   "kind": "title1",
+   "maxW": 5360,
+   "page": "wire5",
+   "text": "Step 1.5 · Batch 5 · Admin front desk · Flow F",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "w6title": {
+   "kind": "title1",
+   "maxW": 6720,
+   "page": "wire6",
+   "text": "Step 1.6 · Batch 6 · Admin owner · Flow G",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "w7title": {
+   "kind": "title1",
+   "maxW": 2650,
+   "page": "wire7",
+   "text": "Step 1.7 · Purchase flows. Top row Flow H court bundle, bottom row Packages tabs and Flow I group pack",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "n70": {
+   "page": "wire7",
+   "text": "Flow H main path, bought from Packages. No date, court or add ons. Validity starts on purchase, expiry date shown up front.",
+   "w": 375,
+   "x": 0,
+   "y": 872
+  },
+  "n71": {
+   "page": "wire7",
+   "text": "Same PromptPay screen as C11, but nothing is held. The QR is valid 15 minutes, then the order is cancelled and nothing is charged.",
+   "w": 375,
+   "x": 455,
+   "y": 872
+  },
+  "n73": {
+   "page": "wire7",
+   "text": "Purchase confirmed. No check in QR because nothing is booked yet. Book a court now opens C4, where checkout uses bundle hours first.",
+   "w": 375,
+   "x": 910,
+   "y": 872
+  },
+  "n74": {
+   "page": "wire7",
+   "text": "Flow H shortcut. Shown only when a player with no court hours pays full price. Use a bundle instead swaps this bill for the one on the right.",
+   "w": 375,
+   "x": 1365,
+   "y": 872
+  },
+  "n75": {
+   "page": "wire7",
+   "text": "One bill, one payment, one 15 minute hold. Pays on the normal C11 (slot held), then ends on C12 with the QR and hours left.",
+   "w": 375,
+   "x": 1820,
+   "y": 872
+  },
+  "n76": {
+   "page": "wire7",
+   "text": "Home quick action Packages opens C9 on Court bundles (Step 1.2). Solo pack covers coaching only, so the court note is always visible.",
+   "w": 375,
+   "x": 0,
+   "y": 2172
+  },
+  "n77": {
+   "page": "wire7",
+   "text": "Flow I alternative path. Buy goes to C10P, C11P and C12P with Find a class in place of Book a court.",
+   "w": 375,
+   "x": 455,
+   "y": 2172
+  },
+  "n79": {
+   "page": "wire7",
+   "text": "Shown when the player has no group credits. Pack is preselected as best value. Students see ฿500 drop in and the ฿3,200 pack.",
+   "w": 375,
+   "x": 910,
+   "y": 2172
+  },
+  "n710": {
+   "page": "wire7",
+   "text": "One bill for the pack and the seat. Pays on the normal C11 with the seat held.",
+   "w": 375,
+   "x": 1365,
+   "y": 2172
+  },
+  "n711": {
+   "page": "wire7",
+   "text": "Booking confirmed with QR, plus the pack meter and expiry.",
+   "w": 375,
+   "x": 1820,
+   "y": 2172
+  },
+  "htitle4": {
+   "kind": "title1",
+   "maxW": 3105,
+   "page": "hifi4",
+   "text": "Step 3.4 · Hi-fi · Purchase flows. Top row Flow H court bundle, bottom row Packages tabs and Flow I group pack",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "htitle5": {
+   "kind": "title1",
+   "maxW": 2650,
+   "page": "hifi5",
+   "text": "Step 3.5 · Hi-fi · Coach portal · Flow G",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "htitle6": {
+   "kind": "title1",
+   "maxW": 2640,
+   "page": "hifi6",
+   "text": "Step 3.6 · Hi-fi · Admin front desk · Flow F",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "htitle7": {
+   "kind": "title1",
+   "maxW": 4000,
+   "page": "hifi7",
+   "text": "Step 3.7 · Hi-fi · Admin owner · Flow G",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "ns10": {
+   "page": "states1",
+   "text": "Skeleton grid while slots load. Shapes match the real grid so nothing jumps when data arrives.",
+   "w": 375,
+   "x": 0,
+   "y": 872
+  },
+  "ns11": {
+   "page": "states1",
+   "text": "Every slot carries a word, never colour alone. The banner points to the next day with open hours.",
+   "w": 375,
+   "x": 455,
+   "y": 872
+  },
+  "ns12": {
+   "page": "states1",
+   "text": "Shared error for any screen. Always says whether anything was booked or charged.",
+   "w": 375,
+   "x": 910,
+   "y": 872
+  },
+  "ns13": {
+   "page": "states1",
+   "text": "15 minute hold expired. The slot is released and the LINE message goes out.",
+   "w": 375,
+   "x": 1365,
+   "y": 872
+  },
+  "ns15": {
+   "page": "states1",
+   "text": "Popup when the automatic check says the slip doesn't match. Nothing is booked. The player uploads the right slip, or taps Chat with us on LINE if they're sure it was right. The club's admin checks it in the LINE OA chat and the front desk books or adds wallet credit (A2 or A6).",
+   "w": 375,
+   "x": 1820,
+   "y": 872
+  },
+  "ns16": {
+   "page": "states1",
+   "text": "First visit or nothing upcoming. Two clear ways to start.",
+   "w": 375,
+   "x": 2275,
+   "y": 872
+  },
+  "stitle1": {
+   "kind": "title1",
+   "maxW": 3105,
+   "page": "states1",
+   "text": "Step 4.1 · States · Core booking · loading, full, error, payment outcomes, empty",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "nt10": {
+   "page": "thai1",
+   "text": "Thai uses Noto Sans Thai with DM Sans for numbers. Dates use the international year, short days as ส. and months as ม.ค.",
+   "w": 375,
+   "x": 0,
+   "y": 872
+  },
+  "nt11": {
+   "page": "thai1",
+   "text": "Slot words stay short (ว่าง, ไม่ว่าง, รอคิว) so both courts fit side by side at 375 px.",
+   "w": 375,
+   "x": 455,
+   "y": 872
+  },
+  "nt12": {
+   "page": "thai1",
+   "text": "Found in the Thai pass. The policy line overflowed and the Apply button wrapped, so both got shorter Thai wording. Rule for build, content areas scroll and buttons never wrap.",
+   "w": 375,
+   "x": 910,
+   "y": 872
+  },
+  "nt13": {
+   "page": "thai1",
+   "text": "Fits as is. Account name placeholder stays until the club confirms the PromptPay account.",
+   "w": 375,
+   "x": 1365,
+   "y": 872
+  },
+  "nt14": {
+   "page": "thai1",
+   "text": "Found in the Thai pass. Taller Thai lines pushed the Add a coach card under the Done button, so the QR is smaller here. Same fix should apply to English.",
+   "w": 375,
+   "x": 1820,
+   "y": 872
+  },
+  "ttitle1": {
+   "kind": "title1",
+   "maxW": 2195,
+   "page": "thai1",
+   "text": "Step 4.2 · Thai · Core booking · Flow 0 in Thai",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "nl0": {
+   "page": "line1",
+   "text": "Six tiles, Thai first with English beneath, so one image works for both languages. Book a court is the butter tile because it is the most used. Export at 2500 × 1686 for LINE Official Account Manager. Each tile opens its page directly inside LINE. Book a court goes straight to C4 Book a court, the court schedule, not Home.",
+   "w": 595,
+   "x": 0,
+   "y": 903
+  },
+  "nl1": {
+   "page": "line1",
+   "text": "Flex Message card sent when payment is confirmed or credit is used. Booking details only, no QR. Wording is fixed in code.",
+   "w": 375,
+   "x": 1330,
+   "y": 872
+  },
+  "nl2": {
+   "page": "line1",
+   "text": "Sent 24 h and 2 h before start. The 2 h version notes that free cancellation has passed.",
+   "w": 375,
+   "x": 1785,
+   "y": 872
+  },
+  "nl3": {
+   "page": "line1",
+   "text": "Claim spot opens C16 inside LINE with the 30 minute countdown. Decline passes the spot on straight away.",
+   "w": 375,
+   "x": 2240,
+   "y": 872
+  },
+  "nl4": {
+   "page": "line1",
+   "text": "Non VAT receipt in an unbroken sequence. Legal name ทีที รีครีเอชั่น จำกัด and tax ID 0135569018041 are set. Address and branch are still placeholders.",
+   "w": 595,
+   "x": 0,
+   "y": 2202
+  },
+  "nl5": {
+   "page": "line1",
+   "text": "Same layout in Thai. Customers pick the language when downloading from Profile and receipts.",
+   "w": 595,
+   "x": 675,
+   "y": 2202
+  },
+  "ltitle": {
+   "kind": "title1",
+   "maxW": 2615,
+   "page": "line1",
+   "text": "Step 5 · LINE rich menu, message cards and PDF receipt",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "ng0": {
+   "page": "hifi8",
+   "text": "Flow C. Sheet after tapping Waitlist on a court slot or full class. Nothing charged, place in line, 30 minute claim window.",
+   "w": 375,
+   "x": 0,
+   "y": 872
+  },
+  "ng1": {
+   "page": "hifi8",
+   "text": "Every waitlist the player is in, with place in line and Leave waitlist.",
+   "w": 375,
+   "x": 455,
+   "y": 872
+  },
+  "ng2": {
+   "page": "hifi8",
+   "text": "Flow A. Bundle hours cover the booking, ฿0 due, Confirm booking skips payment.",
+   "w": 375,
+   "x": 910,
+   "y": 872
+  },
+  "ng3": {
+   "page": "hifi8",
+   "text": "Flow A step 5. Opens from C12. Only coaches available at that hour and under the 6 hour limit. Pays the coaching part only.",
+   "w": 375,
+   "x": 1365,
+   "y": 872
+  },
+  "ng4": {
+   "page": "hifi8",
+   "text": "The court booking becomes a solo class. Example uses ฿500 wallet, ฿300 left by PromptPay.",
+   "w": 375,
+   "x": 1820,
+   "y": 872
+  },
+  "ng5": {
+   "page": "hifi8",
+   "text": "Solo credit covers coaching. The ฿500 court fee is paid by a bundle hour here, or wallet or PromptPay (your decision).",
+   "w": 375,
+   "x": 2275,
+   "y": 872
+  },
+  "ng6": {
+   "page": "hifi8",
+   "text": "Under 12 hours. States the forfeit first, Keep booking is the main button.",
+   "w": 375,
+   "x": 2730,
+   "y": 872
+  },
+  "ng7": {
+   "page": "hifi8",
+   "text": "Flow G player side. Opens from the Coach changed LINE message. Free cancel even inside 12 hours.",
+   "w": 375,
+   "x": 0,
+   "y": 2172
+  },
+  "ng8": {
+   "page": "hifi8",
+   "text": "No bookings or credits yet. First hour card, friend's code banner when they came from a referral link.",
+   "w": 375,
+   "x": 455,
+   "y": 2172
+  },
+  "ng9": {
+   "page": "hifi8",
+   "text": "Full screen check in QR from My bookings or Home, brightness up.",
+   "w": 375,
+   "x": 910,
+   "y": 2172
+  },
+  "ng10": {
+   "page": "hifi8",
+   "text": "Date of birth is locked for players because it sets Adult or Student pricing. My suggestion, please confirm.",
+   "w": 375,
+   "x": 1365,
+   "y": 2172
+  },
+  "ng11": {
+   "page": "hifi8",
+   "text": "PDPA copy and deletion requests, handled by the front desk and logged.",
+   "w": 375,
+   "x": 1820,
+   "y": 2172
+  },
+  "ng12": {
+   "page": "hifi8",
+   "text": "Banner on the 1st of the birth month, tracks the one package and one solo class discount.",
+   "w": 375,
+   "x": 2275,
+   "y": 2172
+  },
+  "ng13": {
+   "page": "hifi8",
+   "text": "Referral code pre-applied on the friend's first purchase. Counts as the one promo code.",
+   "w": 375,
+   "x": 2730,
+   "y": 2172
+  },
+  "nga0": {
+   "page": "hifi8",
+   "text": "View, move, change coach, add an add on, or cancel with wallet return or forfeit and a reason.",
+   "w": 600,
+   "x": 0,
+   "y": 3460
+  },
+  "nga1": {
+   "page": "hifi8",
+   "text": "Front desk sells a bundle or pack, paid by counter QR, wallet or cash with reason.",
+   "w": 600,
+   "x": 1360,
+   "y": 3460
+  },
+  "nga2": {
+   "page": "hifi8",
+   "text": "Required by the spec. Sessions per coach, adjustments, Mark paid.",
+   "w": 600,
+   "x": 2720,
+   "y": 3460
+  },
+  "htitle8": {
+   "kind": "title1",
+   "maxW": 3900,
+   "page": "hifi8",
+   "text": "Step 3.8 · Hi-fi · The 12 gaps from the full flow review, numbered as in the review",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "n54b": {
+   "page": "wire5",
+   "text": "Backup only. This page appears in the menu only while automatic slip checking is down or the owner has turned it off in Settings. Holds stretch to 60 minutes. Staff tick all four lines, including checking the money arrived in the club bank app, before Approve unlocks. Doesn't match sends the player the same popup as C11, with Chat with us on LINE.",
+   "w": 420,
+   "x": 4080,
+   "y": 860
+  },
+  "nh6b": {
+   "page": "hifi6",
+   "text": "Backup only. This page appears in the menu only while automatic slip checking is down or the owner has turned it off in Settings. Holds stretch to 60 minutes. Staff tick all four lines, including checking the money arrived in the club bank app, before Approve unlocks. Doesn't match sends the player the same popup as C11, with Chat with us on LINE.",
+   "w": 420,
+   "x": 2680,
+   "y": 920
+  },
+  "ns17": {
+   "page": "states1",
+   "text": "Backup mode. The checker is down, so the hold stretches to 60 minutes and the front desk checks the slip by hand in A4. The result comes in LINE.",
+   "w": 375,
+   "x": 2730,
+   "y": 872
+  },
+  "w8_P1-Clubs": {
+   "page": "wire8",
+   "text": "Start of Flow J and Flow K. Alerts sort to the top. New club opens the P2 wizard.",
+   "w": 420,
+   "x": 0,
+   "y": 840
+  },
+  "w8_P2-Step1-Basics": {
+   "page": "wire8",
+   "text": "Legal name, tax ID, branch and address print on receipts. The owner LINE ID is where the invite goes.",
+   "w": 420,
+   "x": 1360,
+   "y": 840
+  },
+  "w8_P2-Step2-Plan": {
+   "page": "wire8",
+   "text": "One BOOQ plan at ฿1,900 a month for every club, shown read only. Only trial end and billing start are set here. More plans can come later.",
+   "w": 420,
+   "x": 2720,
+   "y": 840
+  },
+  "w8_P2-Step3-Courts": {
+   "page": "wire8",
+   "text": "Sport sets the labels players see. Each court is a resource with a sport, type, lights and players, so other sports fit later. A club can add more locations. Bookings stay 60 minutes on the hour for every club.",
+   "w": 420,
+   "x": 4080,
+   "y": 840
+  },
+  "w8_P2-Step4-LINE": {
+   "page": "wire8",
+   "text": "Each value has its own Test. A club can't go to Testing until all pass.",
+   "w": 420,
+   "x": 5440,
+   "y": 840
+  },
+  "w8_P2-Step5-Payments": {
+   "page": "wire8",
+   "text": "Each club picks Beam or slip checking. Beam shown here, with a connection test. Money goes straight to the club.",
+   "w": 420,
+   "x": 6800,
+   "y": 840
+  },
+  "w8_P3-Club-detail": {
+   "page": "wire8",
+   "text": "Shows what is missing and who owes it. Owner invite and live checks sit beside the checklist.",
+   "w": 420,
+   "x": 8160,
+   "y": 840
+  },
+  "w8_A0-Setup-checklist": {
+   "page": "wire8",
+   "text": "New club admin page for the owner, shown until the club is live. Steps 7 and 8 open the existing Pricing (A9) and Coaches (A7) pages.",
+   "w": 420,
+   "x": 9520,
+   "y": 840
+  },
+  "w8_P4-Launch": {
+   "page": "wire8",
+   "text": "Step 9. Test mode first, then the go live checklist. Go live clears test bookings.",
+   "w": 420,
+   "x": 10880,
+   "y": 840
+  },
+  "w8_P3-Club-alert": {
+   "page": "wire8",
+   "text": "Flow K step 2. A failed check names the cause and what players lose.",
+   "w": 420,
+   "x": 0,
+   "y": 2240
+  },
+  "w8_P3b-Support-view": {
+   "page": "wire8",
+   "text": "Live clubs are look only. Draft and Testing clubs open in edit mode. A live club owner can allow changes for 24 hours in Settings. Every visit and change is logged.",
+   "w": 420,
+   "x": 1360,
+   "y": 2240
+  },
+  "w8_P3c-Pause-club": {
+   "page": "wire8",
+   "text": "Platform admin only. Reason required. Players can still use existing bookings, expiry dates move forward, new booking and buying turn off.",
+   "w": 420,
+   "x": 2720,
+   "y": 2240
+  },
+  "w8_P5-Templates": {
+   "page": "wire8",
+   "text": "Sport templates. Tennis is Hunter's setup with the final offer. Padel and pickleball are still to build. Editing a template never changes a club that already used it.",
+   "w": 420,
+   "x": 6800,
+   "y": 2240
+  },
+  "w8_P6-Team-audit": {
+   "page": "wire8",
+   "text": "Platform roles and a log of every platform action.",
+   "w": 420,
+   "x": 9520,
+   "y": 2240
+  },
+  "w8title": {
+   "kind": "title1",
+   "maxW": 4000,
+   "page": "wire8",
+   "text": "Step 1.8 · Platform console wireframes. Top row Flow J onboard a new club, bottom row Flow K support a live club, then P5 Templates and P6 Team and audit log",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "w8_P5b-Templates-blank": {
+   "page": "wire8",
+   "text": "Clicking Blank shows an empty product list. The club starts with no products and the owner adds everything in Pricing. Booking length stays fixed. Go live is blocked until there is at least one product and every rule is set.",
+   "w": 420,
+   "x": 8160,
+   "y": 2240
+  },
+  "h9title": {
+   "kind": "title1",
+   "maxW": 4000,
+   "page": "hifi9",
+   "text": "Step 3.9 · Hi-fi · Platform console. Top row Flow J onboard a new club, bottom row Flow K support a live club, then P5 Templates and P6 Team and audit log",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "h9pa": {
+   "page": "hifi9",
+   "text": "While a club is paused this banner sits on top of every club admin page. Message BOOQ opens a LINE chat with the BOOQ team.",
+   "w": 420,
+   "x": 4535,
+   "y": 2300
+  },
+  "h9pc": {
+   "page": "hifi9",
+   "text": "Player view while paused. Book, Classes and Packages are off everywhere they appear. Existing bookings still show. The same message shows if a player opens a booking link.",
+   "w": 420,
+   "x": 4535,
+   "y": 2420
+  },
+  "h1guest": {
+   "page": "hifi1",
+   "text": "Browse first. A guest sees the same Home without personal cards. Sign in with LINE comes up at checkout, or from the Sign in button.",
+   "w": 375,
+   "x": 910,
+   "y": 1780
+  },
+  "h1c4entry": {
+   "page": "hifi1",
+   "text": "Entry point. The LINE rich menu Book a court tile opens this court schedule directly, not Home. Home and the Courts tab also lead here.",
+   "w": 375,
+   "x": 1365,
+   "y": 872
+  },
+  "w1c4entry": {
+   "page": "wire1",
+   "text": "Entry point. The LINE rich menu Book a court tile opens this page directly, not Home.",
+   "w": 375,
+   "x": 1365,
+   "y": 1080
+  },
+  "h1coach": {
+   "page": "hifi1",
+   "text": "Add a coach at checkout. Shows only coaches available at this exact hour (working, not on leave, under their 6 hour limit), with each coach's price for the player type. Profile opens the coach profile. Picking one turns the court hour into a solo class: court ฿500 plus coaching. Skipping it keeps a court only booking.",
+   "w": 375,
+   "x": 1820,
+   "y": 1780
+  },
+  "w8_P2-Step5b-Payments-slip": {
+   "page": "wire8",
+   "text": "Same step with PromptPay and slip checking chosen. The slip test uses a sample slip. Backup slip check (A4) only applies to this option.",
+   "w": 420,
+   "x": 5440,
+   "y": 2240
+  },
+  "h1beam": {
+   "page": "hifi1",
+   "text": "Clubs on the Beam option. The QR is made by Beam for this booking, so there is no slip to upload. The booking confirms by itself when the payment arrives. Clubs on slip checking use C11 above.",
+   "w": 375,
+   "x": 2275,
+   "y": 1780
+  },
+  "n_A09b-Pricing": {
+   "page": "wire6",
+   "text": "Platform settings every club fills in. Price groups replace fixed Adult and Student, court prices allow peak and weekend rates, and each club keeps its own add-ons. Hunter keeps Adult and Student and one ฿500 price.",
+   "w": 420,
+   "x": 6800,
+   "y": 840
+  },
+  "n_H-A09b-Prici": {
+   "page": "hifi7",
+   "text": "Platform settings every club fills in. Price groups replace fixed Adult and Student, court prices allow peak and weekend rates, and each club keeps its own add-ons. Hunter keeps Adult and Student and one ฿500 price.",
+   "w": 420,
+   "x": 5440,
+   "y": 840
+  },
+  "s6_F1": {
+   "page": "step6",
+   "text": "F1 · Hunter player books a court and pays with Beam. Press Play on screen 1 and tap the main button on each screen.",
+   "w": 420,
+   "x": 0,
+   "y": 842
+  },
+  "s6_F1b": {
+   "page": "step6",
+   "text": "F1b · Player at a club on slip checking pays and uploads a slip. Press Play on screen 1 and tap the main button on each screen.",
+   "w": 420,
+   "x": 0,
+   "y": 1914
+  },
+  "s6_F2": {
+   "page": "step6",
+   "text": "F2 · Player buys a package, then books with it. Press Play on screen 1 and tap the main button on each screen.",
+   "w": 420,
+   "x": 0,
+   "y": 2986
+  },
+  "s6_F3": {
+   "page": "step6",
+   "text": "F3 · Front desk morning. Press Play on screen 1 and tap the main button on each screen.",
+   "w": 420,
+   "x": 0,
+   "y": 4046
+  },
+  "s6_F4": {
+   "page": "step6",
+   "text": "F4 · BOOQ onboards a new club. Press Play on screen 1 and tap the main button on each screen.",
+   "w": 420,
+   "x": 0,
+   "y": 5106
+  },
+  "s6_F5a": {
+   "page": "step6",
+   "text": "F5a · BOOQ fixes a LINE alert. Press Play on screen 1 and tap the main button on each screen.",
+   "w": 420,
+   "x": 0,
+   "y": 6166
+  },
+  "s6_F5b": {
+   "page": "step6",
+   "text": "F5b · BOOQ pauses a club. Press Play on screen 1 and tap the main button on each screen.",
+   "w": 420,
+   "x": 0,
+   "y": 7226
+  },
+  "s6_prev": {
+   "page": "step6",
+   "text": "What the club and players see while a club is paused. These two are previews, not part of the clickable flow.",
+   "w": 420,
+   "x": 5560,
+   "y": 7236
+  },
+  "s6title": {
+   "kind": "title1",
+   "maxW": 4000,
+   "page": "step6",
+   "text": "Step 6 · Clickable flows. Five prototypes built from the hi-fi screens. Each row is one flow, play it from screen 1",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  }
+ },
+ "order": [
+  "C01-Welcome.dc.html",
+  "C02-Profile-setup.dc.html",
+  "C03-Home.dc.html",
+  "C04-Book-a-court.dc.html",
+  "C10-Checkout.dc.html",
+  "C11-PromptPay.dc.html",
+  "C12-Confirmed.dc.html",
+  "C05-Coaches.dc.html",
+  "C06-Coach-profile.dc.html",
+  "C10b-Checkout-solo.dc.html",
+  "C07-Group-classes.dc.html",
+  "C08-Class-detail.dc.html",
+  "C09-Packages.dc.html",
+  "C16-Waitlist-offer.dc.html",
+  "C13-My-bookings.dc.html",
+  "C13b-Cancel-sheet.dc.html",
+  "C14-Credits-wallet.dc.html",
+  "C15-Refer-gift.dc.html",
+  "C17-Profile-receipts.dc.html",
+  "K1-Today.dc.html",
+  "K5-Session-detail.dc.html",
+  "K2-Schedule.dc.html",
+  "K3-Availability.dc.html",
+  "K4-Leave.dc.html",
+  "K6-Earnings.dc.html",
+  "A01-Calendar.dc.html",
+  "A02-Booking-create.dc.html",
+  "A05-Customers.dc.html",
+  "A06-Customer-profile.dc.html",
+  "A12-Closures.dc.html",
+  "A07-Coaches.dc.html",
+  "A08-Group-classes.dc.html",
+  "A09-Pricing.dc.html",
+  "A10-Promotions.dc.html",
+  "A13-Reports.dc.html",
+  "A14-Receipts.dc.html",
+  "A16-Settings.dc.html",
+  "A17-Staff-audit.dc.html",
+  "V-C03-Home.dc.html",
+  "V-C04-Book-a-court.dc.html",
+  "V-A01-Calendar.dc.html",
+  "V-Palettes.dc.html",
+  "V-C03-Home-B.dc.html",
+  "V-C04-Book-a-court-B.dc.html",
+  "V-A01-Calendar-B.dc.html",
+  "V-C03-Home-C.dc.html",
+  "V-C04-Book-a-court-C.dc.html",
+  "V-A01-Calendar-C.dc.html",
+  "V-Palettes-2.dc.html",
+  "V-C03-Home-D.dc.html",
+  "V-C04-Book-a-court-D.dc.html",
+  "V-A01-Calendar-D.dc.html",
+  "V-C03-Home-E.dc.html",
+  "V-C04-Book-a-court-E.dc.html",
+  "V-A01-Calendar-E.dc.html",
+  "V-C03-Home-F.dc.html",
+  "V-C04-Book-a-court-F.dc.html",
+  "V-A01-Calendar-F.dc.html",
+  "V-C03-Home-G.dc.html",
+  "V-C04-Book-a-court-G.dc.html",
+  "V-A01-Calendar-G.dc.html",
+  "H-C01-Welcome.dc.html",
+  "H-C02-Profile-setup.dc.html",
+  "H-C03-Home.dc.html",
+  "H-C04-Book-a-court.dc.html",
+  "H-C10-Checkout.dc.html",
+  "H-C11-PromptPay.dc.html",
+  "H-C11b-Checking-slip.dc.html",
+  "H-C12-Confirmed.dc.html",
+  "H-C05-Solo-classes.dc.html",
+  "H-C06-Coach-profile.dc.html",
+  "H-C10b-Checkout-solo.dc.html",
+  "H-C07-Group-classes.dc.html",
+  "H-C08-Class-detail.dc.html",
+  "H-C09-Packages.dc.html",
+  "H-C16-Waitlist-offer.dc.html",
+  "H-C13-My-bookings.dc.html",
+  "H-C13b-Cancel-sheet.dc.html",
+  "H-C14-Credits-wallet.dc.html",
+  "H-C15-Refer-gift.dc.html",
+  "H-C17-Profile-receipts.dc.html",
+  "Main.dc.html",
+  "Flows.dc.html",
+  "Flows-Purchase.dc.html",
+  "C10P-Package-checkout.dc.html",
+  "C12P-Hours-added.dc.html",
+  "C10c-Checkout-bundle-prompt.dc.html",
+  "C10P-Bundle-plus-booking.dc.html",
+  "C08b-Class-pack-choice.dc.html",
+  "C10P-Pack-plus-class.dc.html",
+  "C12P-Seat-plus-pack.dc.html",
+  "C11P-Pay-package.dc.html",
+  "C09b-Packages-solo.dc.html",
+  "C09c-Packages-group.dc.html",
+  "H-C10P-Package-checkout.dc.html",
+  "H-C11P-Pay-package.dc.html",
+  "H-C12P-Hours-added.dc.html",
+  "H-C10c-Checkout-bundle-prompt.dc.html",
+  "H-C10P-Bundle-plus-booking.dc.html",
+  "H-C09b-Packages-solo.dc.html",
+  "H-C09c-Packages-group.dc.html",
+  "H-C08b-Class-pack-choice.dc.html",
+  "H-C10P-Pack-plus-class.dc.html",
+  "H-C12P-Seat-plus-pack.dc.html",
+  "H-K1-Today.dc.html",
+  "H-K5-Session-detail.dc.html",
+  "H-K2-Schedule.dc.html",
+  "H-K3-Availability.dc.html",
+  "H-K4-Leave.dc.html",
+  "H-K6-Earnings.dc.html",
+  "H-A01-Calendar.dc.html",
+  "H-A02-Booking-create.dc.html",
+  "H-A05-Customers.dc.html",
+  "H-A06-Customer-profile.dc.html",
+  "H-A12-Closures.dc.html",
+  "H-A07-Coaches.dc.html",
+  "H-A08-Group-classes.dc.html",
+  "H-A09-Pricing.dc.html",
+  "H-A10-Promotions.dc.html",
+  "H-A13-Reports.dc.html",
+  "H-A14-Receipts.dc.html",
+  "H-A16-Settings.dc.html",
+  "H-A17-Staff-audit.dc.html",
+  "S-C04-Loading.dc.html",
+  "S-C04-Day-full.dc.html",
+  "S-Error-Offline.dc.html",
+  "S-C11-Time-ran-out.dc.html",
+  "S-C11b-Rejected.dc.html",
+  "S-C13-Empty.dc.html",
+  "T-C03-Home.dc.html",
+  "T-C04-Book-a-court.dc.html",
+  "T-C10-Checkout.dc.html",
+  "T-C11-PromptPay.dc.html",
+  "T-C12-Confirmed.dc.html",
+  "L-Rich-menu.dc.html",
+  "L-Msg-Confirmed.dc.html",
+  "L-Msg-Reminder.dc.html",
+  "L-Msg-Waitlist.dc.html",
+  "R-Receipt-EN.dc.html",
+  "R-Receipt-TH.dc.html",
+  "G-C04-Waitlist-joined.dc.html",
+  "G-C13-Waitlist-tab.dc.html",
+  "G-C10-Credit-covered.dc.html",
+  "G-C12-Add-coach.dc.html",
+  "G-C10-Add-coach-checkout.dc.html",
+  "G-C10b-Solo-with-credit.dc.html",
+  "G-C13b-Late-cancel.dc.html",
+  "G-C13b-Coach-changed.dc.html",
+  "G-C03-New-player.dc.html",
+  "G-C17-Personal-details.dc.html",
+  "G-C17-Privacy.dc.html",
+  "G-C03-Birthday.dc.html",
+  "G-C10-Referral-discount.dc.html",
+  "G-A02b-Booking-detail.dc.html",
+  "G-A02c-Sell-package.dc.html",
+  "G-A13b-Coach-payouts.dc.html",
+  "Flows-Platform.dc.html",
+  "A04-Backup-slip-check.dc.html",
+  "H-A04-Backup-slip-check.dc.html",
+  "S-C11-Checking-delayed.dc.html",
+  "P1-Clubs.dc.html",
+  "P2-Step1-Basics.dc.html",
+  "P2-Step2-Plan.dc.html",
+  "P2-Step3-Courts.dc.html",
+  "P2-Step4-LINE.dc.html",
+  "P2-Step5-Payments.dc.html",
+  "P3-Club-detail.dc.html",
+  "A0-Setup-checklist.dc.html",
+  "P4-Launch.dc.html",
+  "P3-Club-alert.dc.html",
+  "P3b-Support-view.dc.html",
+  "P3c-Pause-club.dc.html",
+  "P5-Templates.dc.html",
+  "P6-Team-audit.dc.html",
+  "P5b-Templates-blank.dc.html",
+  "H-P1-Clubs.dc.html",
+  "H-P2-Step1-Basics.dc.html",
+  "H-P2-Step2-Plan.dc.html",
+  "H-P2-Step3-Courts.dc.html",
+  "H-P2-Step4-LINE.dc.html",
+  "H-P2-Step5-Payments.dc.html",
+  "H-P3-Club-detail.dc.html",
+  "H-A0-Setup-checklist.dc.html",
+  "H-P4-Launch.dc.html",
+  "H-P3-Club-alert.dc.html",
+  "H-P3b-Support-view.dc.html",
+  "H-P3c-Pause-club.dc.html",
+  "H-P5-Templates.dc.html",
+  "H-P6-Team-audit.dc.html",
+  "H-P5b-Templates-blank.dc.html",
+  "S-A01-Paused.dc.html",
+  "S-C03-Paused.dc.html",
+  "S-C03-Guest.dc.html",
+  "G-C10-Coach-picked.dc.html",
+  "P2-Step5b-Payments-slip.dc.html",
+  "H-P2-Step5b-Payments-slip.dc.html",
+  "H-C11-Beam.dc.html",
+  "A09b-Pricing-groups.dc.html",
+  "H-A09b-Pricing-groups.dc.html",
+  "G-C11P-Beam-package.dc.html",
+  "F1-01-L-Chat-Rich-menu.dc.html",
+  "F1-02-C04-Book-a-court.dc.html",
+  "F1-03-C01-Welcome.dc.html",
+  "F1-04-C02-Profile-setup.dc.html",
+  "F1-05-C10-Checkout.dc.html",
+  "F1-06-C11-Beam.dc.html",
+  "F1-07-C12-Confirmed.dc.html",
+  "F1-08-C10-Coach-picked.dc.html",
+  "F1-09-Msg-Confirmed.dc.html",
+  "F1b-01-C10-Checkout.dc.html",
+  "F1b-02-C11-PromptPay.dc.html",
+  "F1b-03-C11b-Rejected.dc.html",
+  "F1b-04-C11b-Checking-slip.dc.html",
+  "F1b-05-C12-Confirmed.dc.html",
+  "F2-01-C03-Home.dc.html",
+  "F2-02-C09-Packages.dc.html",
+  "F2-03-C10P-Package-checkout.dc.html",
+  "F2-04-C11P-Beam-package.dc.html",
+  "F2-05-C12P-Hours-added.dc.html",
+  "F2-06-C04-Book-a-court.dc.html",
+  "F2-07-C10-Credit-covered.dc.html",
+  "F2-08-C12-Confirmed.dc.html",
+  "F3-01-A01-Calendar.dc.html",
+  "F3-02-A02-Booking-create.dc.html",
+  "F3-03-A02b-Booking-detail.dc.html",
+  "F4-01-P1-Clubs.dc.html",
+  "F4-02-P2-Step1-Basics.dc.html",
+  "F4-03-P2-Step2-Plan.dc.html",
+  "F4-04-P2-Step3-Courts.dc.html",
+  "F4-05-P2-Step4-LINE.dc.html",
+  "F4-06-P2-Step5-Payments.dc.html",
+  "F4-07-P3-Club-detail.dc.html",
+  "F4-08-A0-Setup-checklist.dc.html",
+  "F4-09-P4-Launch.dc.html",
+  "F4-10-P1-Clubs.dc.html",
+  "F5a-01-P1-Clubs.dc.html",
+  "F5a-02-P3-Club-alert.dc.html",
+  "F5a-03-P3b-Support-view.dc.html",
+  "F5a-04-P3-Club-fixed.dc.html",
+  "F5a-05-P1-Clubs-clear.dc.html",
+  "F5b-01-P1-Clubs-clear.dc.html",
+  "F5b-02-P3-Club-live.dc.html",
+  "F5b-03-P3c-Pause-club.dc.html",
+  "F5b-04-P1-Clubs-paused.dc.html",
+  "F5b-preview-A01-Paused.dc.html",
+  "F5b-preview-C03-Paused.dc.html",
+  "T-C01-Welcome.dc.html",
+  "T-C02-Profile-setup.dc.html",
+  "T-S-C03-Guest.dc.html",
+  "T-C05-Solo-classes.dc.html",
+  "T-C06-Coach-profile.dc.html",
+  "T-C07-Group-classes.dc.html",
+  "T-C08-Class-detail.dc.html",
+  "T-C08b-Class-pack-choice.dc.html",
+  "T-C09-Packages.dc.html",
+  "T-C09b-Packages-solo.dc.html",
+  "T-C09c-Packages-group.dc.html",
+  "T-C10b-Checkout-solo.dc.html",
+  "T-C10P-Package-checkout.dc.html",
+  "T-C10P-Bundle-plus-booking.dc.html",
+  "T-C10P-Pack-plus-class.dc.html",
+  "T-C10c-Checkout-bundle-prompt.dc.html",
+  "T-C11-Beam.dc.html",
+  "T-G-C11P-Beam-package.dc.html",
+  "T-C11P-Pay-package.dc.html",
+  "T-C11b-Checking-slip.dc.html",
+  "T-C12P-Hours-added.dc.html",
+  "T-C12P-Seat-plus-pack.dc.html",
+  "T-C13-My-bookings.dc.html",
+  "T-C13b-Cancel-sheet.dc.html",
+  "T-C14-Credits-wallet.dc.html",
+  "T-C15-Refer-gift.dc.html",
+  "T-C16-Waitlist-offer.dc.html",
+  "T-C17-Profile-receipts.dc.html",
+  "T-G-C10-Coach-picked.dc.html",
+  "T-G-C03-Birthday.dc.html",
+  "T-G-C03-New-player.dc.html",
+  "T-G-C04-Waitlist-joined.dc.html",
+  "T-G-C10-Add-coach-checkout.dc.html",
+  "T-G-C10-Credit-covered.dc.html",
+  "T-G-C10-Referral-discount.dc.html",
+  "T-G-C10b-Solo-with-credit.dc.html",
+  "T-G-C12-Add-coach.dc.html",
+  "T-G-C13-Waitlist-tab.dc.html",
+  "T-G-C13b-Coach-changed.dc.html",
+  "T-G-C13b-Late-cancel.dc.html",
+  "T-G-C17-Personal-details.dc.html",
+  "T-G-C17-Privacy.dc.html",
+  "T-S-C04-Day-full.dc.html",
+  "T-S-C04-Loading.dc.html",
+  "T-S-C11-Checking-delayed.dc.html",
+  "T-S-C11-Time-ran-out.dc.html",
+  "T-S-C11b-Rejected.dc.html",
+  "T-S-C13-Empty.dc.html",
+  "T-S-Error-Offline.dc.html",
+  "T-S-C03-Paused.dc.html",
+  "T-L-Msg-Confirmed.dc.html",
+  "T-L-Msg-Reminder.dc.html",
+  "T-L-Msg-Waitlist.dc.html",
+  "T-A0-Setup-checklist.dc.html",
+  "T-A01-Calendar.dc.html",
+  "T-A02-Booking-create.dc.html",
+  "T-A04-Backup-slip-check.dc.html",
+  "T-A05-Customers.dc.html",
+  "T-A06-Customer-profile.dc.html",
+  "T-A07-Coaches.dc.html",
+  "T-A08-Group-classes.dc.html",
+  "T-A09-Pricing.dc.html",
+  "T-A09b-Pricing-groups.dc.html",
+  "T-A10-Promotions.dc.html",
+  "T-A12-Closures.dc.html",
+  "T-A13-Reports.dc.html",
+  "T-A14-Receipts.dc.html",
+  "T-A16-Settings.dc.html",
+  "T-A17-Staff-audit.dc.html",
+  "T-G-A02b-Booking-detail.dc.html",
+  "T-G-A02c-Sell-package.dc.html",
+  "T-G-A13b-Coach-payouts.dc.html",
+  "T-S-A01-Paused.dc.html",
+  "T-K1-Today.dc.html",
+  "T-K2-Schedule.dc.html",
+  "T-K3-Availability.dc.html",
+  "T-K4-Leave.dc.html",
+  "T-K5-Session-detail.dc.html",
+  "T-K6-Earnings.dc.html"
+ ],
+ "pages": [
+  {
+   "id": "step0",
+   "name": "Step 0 · Sitemap and flows"
+  },
+  {
+   "id": "wire1",
+   "name": "Step 1.1 · Wireframes · Core booking"
+  },
+  {
+   "id": "wire2",
+   "name": "Step 1.2 · Wireframes · Solo and group classes"
+  },
+  {
+   "id": "wire3",
+   "name": "Step 1.3 · Wireframes · Account"
+  },
+  {
+   "id": "wire4",
+   "name": "Step 1.4 · Wireframes · Coach portal"
+  },
+  {
+   "id": "wire5",
+   "name": "Step 1.5 · Wireframes · Admin front desk"
+  },
+  {
+   "id": "wire6",
+   "name": "Step 1.6 · Wireframes · Admin owner"
+  },
+  {
+   "id": "wire7",
+   "name": "Step 1.7 · Wireframes · Purchase flows H and I"
+  },
+  {
+   "id": "wire8",
+   "name": "Step 1.8 · Wireframes · Platform console"
+  },
+  {
+   "id": "visual",
+   "name": "Step 2 · Visual direction"
+  },
+  {
+   "id": "hifi1",
+   "name": "Step 3.1 · Hi-fi · Core booking"
+  },
+  {
+   "id": "hifi2",
+   "name": "Step 3.2 · Hi-fi · Classes and packages"
+  },
+  {
+   "id": "hifi3",
+   "name": "Step 3.3 · Hi-fi · Account"
+  },
+  {
+   "id": "hifi4",
+   "name": "Step 3.4 · Hi-fi · Purchase flows H and I"
+  },
+  {
+   "id": "hifi5",
+   "name": "Step 3.5 · Hi-fi · Coach portal"
+  },
+  {
+   "id": "hifi6",
+   "name": "Step 3.6 · Hi-fi · Admin front desk"
+  },
+  {
+   "id": "hifi7",
+   "name": "Step 3.7 · Hi-fi · Admin owner"
+  },
+  {
+   "id": "hifi8",
+   "name": "Step 3.8 · Hi-fi · Gaps from the review"
+  },
+  {
+   "id": "hifi9",
+   "name": "Step 3.9 · Hi-fi · Platform console"
+  },
+  {
+   "id": "states1",
+   "name": "Step 4.1 · States · Core booking"
+  },
+  {
+   "id": "thai1",
+   "name": "Step 4.2 · Thai · Core booking"
+  },
+  {
+   "id": "thai2",
+   "name": "Step 4.3 · Thai · Player app"
+  },
+  {
+   "id": "thai3",
+   "name": "Step 4.4 · Thai · Club admin"
+  },
+  {
+   "id": "thai4",
+   "name": "Step 4.5 · Thai · Coach portal"
+  },
+  {
+   "id": "line1",
+   "name": "Step 5 · LINE rich menu, messages and receipt"
+  },
+  {
+   "id": "step6",
+   "name": "Step 6 · Clickable flows"
+  }
+ ],
+ "title": "BOOQ Booking Platform"
+}
