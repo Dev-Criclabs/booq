@@ -1,0 +1,23 @@
+{
+  "_note": "Proposed by BE-P for F13 (D51), the receipt PDF (RCPT-01-AC11, AC15, RCPT-02-AC11). Numbers to be assigned by Content; wording drafted, writers own it. Existing receipt keys are reused: L-0012, L-0017, L-0044 to L-0054, L-0056 to L-0061.",
+  "en": {
+    "L-new.receipt_tax_id": "Tax ID {taxId}",
+    "L-new.receipt_branch": "Branch {branch}",
+    "L-new.receipt_copy_mark": "COPY",
+    "L-new.receipt_void_mark": "VOID · {reason}",
+    "L-new.receipt_test_mark": "TEST RECEIPT · NOT A LEGAL RECEIPT",
+    "L-new.receipt_method_cash": "Cash",
+    "L-new.receipt_credit_used": "Credit used",
+    "L-new.receipt_wallet_credited": "Money received and credited to the wallet"
+  },
+  "th": {
+    "L-new.receipt_tax_id": "เลขประจำตัวผู้เสียภาษี {taxId}",
+    "L-new.receipt_branch": "สาขา {branch}",
+    "L-new.receipt_copy_mark": "สำเนา",
+    "L-new.receipt_void_mark": "ยกเลิก · {reason}",
+    "L-new.receipt_test_mark": "ใบเสร็จทดสอบ · ไม่ใช่ใบเสร็จตามกฎหมาย",
+    "L-new.receipt_method_cash": "เงินสด",
+    "L-new.receipt_credit_used": "ใช้เครดิต",
+    "L-new.receipt_wallet_credited": "รับเงินแล้วและเพิ่มเข้ายอดวอลเล็ต"
+  }
+}

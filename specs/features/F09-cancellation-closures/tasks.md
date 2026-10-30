@@ -14,7 +14,7 @@ Depends on: F01 (`cancel_window_hours`, `booking_window_days`, route wrapper T13
   Tests first: update and delete fail for every role; a confirmed booking whose slot has ended reads Played with no job; another club's rows are not reachable.
 - [x] **F09-T02** Migration 1002: `closure`, `closure_resource`, the foreign key from `occupancy.closure_id`. IDs: CANCEL-03-AC1, AC9, AC13. Role: BE-B · Deps F03 `occupancy` · Size: S
   Tests first: a closure row carries the exclusion constraint with bookings and holds; a repeat rule is stored; another club's closure is not reachable.
-- [ ] **F09-T03** Migration 1003: the registry `app.cancel_handlers (ord, handler)`, same pattern as `release_handlers`. IDs: CANCEL-01-AC13, AC17, AC19. Role: BE-B · Deps T01 · Size: S
+- [x] **F09-T03** Migration 1003: the registry `app.cancel_handlers (ord, handler)`, same pattern as `release_handlers`. IDs: CANCEL-01-AC13, AC17, AC19. Role: BE-B · Deps T01 · Size: S
   Tests first: handlers run in `ord` order inside the cancel transaction; an unregistered handler is absent; a handler failure rolls the cancel back.
 
 ## B. Functions
