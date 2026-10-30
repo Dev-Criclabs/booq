@@ -46,18 +46,29 @@ export function checkNames(names) {
   return problems;
 }
 
-/** Names of the functions and views a migration defines (created or replaced), lower case, as written. */
+/**
+ * What a migration defines or redefines, lower case, as written: functions and views (create, create or replace, drop),
+ * and per table the constraints, policies and triggers it adds or drops (decision D159). Two files naming the same
+ * object are a redefinition; the later one must have the higher number.
+ */
 export function definedObjects(sql) {
   const out = new Set();
-  const stripped = sql.replace(/--.*$/gm, '');
-  for (const m of stripped.matchAll(/create\s+(?:or\s+replace\s+)?(?:function|view)\s+((?:[a-z0-9_]+\.)?[a-z0-9_]+)/gi)) out.add(m[1].toLowerCase());
+  const text = sql.replace(/--.*$/gm, '');
+  for (const m of text.matchAll(/(?:create\s+(?:or\s+replace\s+)?|drop\s+(?:if\s+exists\s+)?)(?:function|view)\s+((?:[a-z0-9_]+\.)?[a-z0-9_]+)/gi)) out.add(`${/function/i.test(m[0]) ? 'function' : 'view'} ${m[1].toLowerCase()}`);
+  for (const stmt of text.split(';')) {
+    const t = /alter\s+table\s+(?:only\s+)?(?:if\s+exists\s+)?((?:[a-z0-9_]+\.)?[a-z0-9_]+)/i.exec(stmt);
+    if (t) for (const m of stmt.matchAll(/(?:add|drop)\s+constraint\s+(?:if\s+exists\s+)?([a-z0-9_]+)/gi)) out.add(`constraint ${t[1].toLowerCase()}.${m[1].toLowerCase()}`);
+  }
+  for (const m of text.matchAll(/(?:create|drop)\s+policy\s+(?:if\s+exists\s+)?([a-z0-9_]+)\s+on\s+((?:[a-z0-9_]+\.)?[a-z0-9_]+)/gi)) out.add(`policy ${m[2].toLowerCase()}.${m[1].toLowerCase()}`);
+  for (const m of text.matchAll(/(?:create|drop)\s+trigger\s+(?:if\s+exists\s+)?([a-z0-9_]+)[\s\S]*?\bon\s+((?:[a-z0-9_]+\.)?[a-z0-9_]+)/gi)) out.add(`trigger ${m[2].toLowerCase()}.${m[1].toLowerCase()}`);
   return out;
 }
 
 /**
- * The migrator applies a file numbered below the highest applied one (feature blocks interleave over time). That is
- * safe unless the late file redefines a function or view that a higher numbered file already on the base redefines:
- * on a database that has the higher file, the late one would overwrite it; on a fresh one it would not. Returns the
+ * The migrator applies a file numbered below the highest applied one (feature blocks interleave over time), and a fresh
+ * database applies in number order, so a migration that redefines an object must be numbered above every earlier
+ * definition of it (decision D159): a late file that redefines something a higher numbered file already on the base
+ * defines would overwrite it on a database that has the higher file, and be overwritten on a fresh one. Returns the
  * problems: a file that is new (not on the base) defines an object that a file on the base with a higher number defines.
  */
 export function checkLateRedefinitions(base, current) {
@@ -69,7 +80,7 @@ export function checkLateRedefinitions(base, current) {
     for (const [other, objs] of baseDefs) {
       if (other <= name) continue;
       for (const o of mine) {
-        if (objs.has(o)) problems.push(`${name}: redefines ${o}, which ${other} (higher number, already on the base branch) also defines; a database that has ${other} would be overwritten. Write the change in a number above ${other.slice(0, 4)} in your block, or after it.`);
+        if (objs.has(o)) problems.push(`${name}: redefines ${o}, which ${other} (higher number, already on the base branch) also defines (D159: number above every earlier definition). Renumber it above ${other.slice(0, 4)}.`);
       }
     }
   }
