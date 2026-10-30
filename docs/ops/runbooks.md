@@ -145,7 +145,7 @@ Once per environment that has a console (staging, production), **before the 7 De
 4. **Copy the printed link once** and send it to the named person by a **different channel** from the one used to ask for it. Never paste it into chat or a ticket. It works once, expires, and is stored only as a hash.
 5. The person opens the link, sets a password and enrols their authenticator. Confirm they can sign in with the second factor.
 6. **Prove it refuses:** run the same command again; it must exit **3** and change nothing.
-7. **Close the window:** unset the variables, close the shell, and **rotate the `booq_owner` password and the Supabase admin key if the run was on a machine that is not locked down** (when in doubt, rotate; `secrets.md`). Remove the ticket's access. Record the date, who ran it, who was created, that the link was used.
+7. **Close the window:** unset the variables, close the shell, and **always rotate the `booq_owner` password and the Supabase service-role key** (D165: the bootstrap is the single planned exception to SR-21 and D148, and rotation afterwards is part of the exception; `secrets.md`). Remove the ticket's access. Record the date, who ran it, who was created, that the link was used.
 8. The new admin sets `console_enrolment_ttl_hours` in the console (`PUT /config/console_enrolment_ttl_hours`) **before inviting anyone else** (`platform.md`).
 
 **Exit codes:** 0 done; 1 failed before finishing (nothing kept; a provider user made on the way is removed); 2 a missing or bad setting or argument; 3 an active admin already exists; 4 the email is already a teammate; 5 the identity provider failed. Safe to run again after 1, 2 or 5; nothing was kept.
