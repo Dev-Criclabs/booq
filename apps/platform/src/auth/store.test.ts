@@ -155,3 +155,28 @@ describe('two processes, one store', () => {
     }
   });
 });
+
+describe('the provider state through the shared store', () => {
+  it('a state made in one process is used for the code in another, and is sealed in the table', async () => {
+    const clock = new ControllableClock('2026-12-01T03:00:00Z');
+    const provider: IdentityProvider = {
+      async verifyPassword(email, password) {
+        return email === 'ada@booq.example' && password === 'pw-ada' ? { authUserId: AUTH_USER, state: 'provider-token-xyz' } : null;
+      },
+      async verifyTotp(_id, code, state) {
+        return state === 'provider-token-xyz' && code === '123456';
+      },
+    };
+    const make = (db: PlatformDb) => createPlatformAuth({ identity: provider, staff: createDbStaffDirectory(db), audit: createDbAuditSink(db), store: createDbAuthStore(db, { sealKey: SEAL }), clock, signingKey: KEY });
+    const second = createPlatformDb({ connectionString: tdb.url, max: 2 });
+    try {
+      const first = await make(pdb).signIn({ email: 'ada@booq.example', password: 'pw-ada' });
+      if (!first.ok) throw new Error(first.code);
+      expect(JSON.stringify((await tdb.query('select * from platform.console_challenge')).rows)).not.toContain('provider-token-xyz');
+      expect((await make(second).verifySecondFactor({ challengeId: first.challengeId, code: '123456' })).ok).toBe(true);
+      expect((await tdb.query('select count(*)::int as n from platform.console_challenge')).rows[0].n).toBe(0);
+    } finally {
+      await second.end();
+    }
+  });
+});

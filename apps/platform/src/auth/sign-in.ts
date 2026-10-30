@@ -21,10 +21,17 @@ export interface StaffRecord {
 }
 
 export interface IdentityProvider {
-  /** Email plus password. Returns the auth user, or null when either is wrong. */
-  verifyPassword(email: string, password: string): Promise<{ authUserId: string } | null>;
-  /** A time-based code from an authenticator app. Never SMS or email (SR-16). */
-  verifyTotp(authUserId: string, code: string): Promise<boolean>;
+  /**
+   * Email plus password. Returns the auth user, or null when either is wrong. `state` is whatever the provider needs to
+   * check the second factor afterwards (its first-step token and factor id); the console keeps it on the server under
+   * the challenge id, sealed at rest, and never puts it in an answer or a log.
+   */
+  verifyPassword(email: string, password: string): Promise<{ authUserId: string; state?: string } | null>;
+  /**
+   * A time-based code from an authenticator app. Never SMS or email (SR-16). `state` is what verifyPassword returned
+   * for this sign-in. A step-up has none (there is no first step), so an adapter that needs it answers false.
+   */
+  verifyTotp(authUserId: string, code: string, state?: string): Promise<boolean>;
 }
 
 export interface StaffDirectory {
@@ -164,9 +171,9 @@ export function createPlatformAuth(deps: PlatformAuthDeps) {
   }
 
   /** Checks a code for a staff member; counts failures and applies the lockout. */
-  async function checkCode(who: StaffRecord, code: string): Promise<'ok' | 'bad_code' | 'locked'> {
+  async function checkCode(who: StaffRecord, code: string, state?: string): Promise<'ok' | 'bad_code' | 'locked'> {
     if (await isLocked(who.id)) return 'locked';
-    if (await identity.verifyTotp(who.authUserId, code)) {
+    if (await identity.verifyTotp(who.authUserId, code, state)) {
       await store.clearFailures(who.id);
       return 'ok';
     }
@@ -195,7 +202,7 @@ export function createPlatformAuth(deps: PlatformAuthDeps) {
       return { ok: false, code: 'invalid_credentials' };
     }
     const challengeId = newId();
-    await store.putChallenge({ id: challengeId, staffId: who.id, expiresAt: now() + policy.challengeMs });
+    await store.putChallenge({ id: challengeId, staffId: who.id, expiresAt: now() + policy.challengeMs, ...(found.state === undefined ? {} : { providerToken: found.state }) });
     return { ok: true, challengeId };
   }
 
@@ -212,7 +219,7 @@ export function createPlatformAuth(deps: PlatformAuthDeps) {
       await failed('deactivated', who);
       return { ok: false, code: 'challenge_invalid' };
     }
-    const result = await checkCode(who, input.code);
+    const result = await checkCode(who, input.code, challenge.providerToken);
     if (result === 'locked') {
       await failed('locked', who);
       return { ok: false, code: 'locked' };
