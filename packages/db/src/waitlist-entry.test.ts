@@ -112,7 +112,7 @@ describe('waitlist_entry (CLASS-02-AC1, AC16; WAIT-01-AC1)', () => {
     const again = (await join(P1, { session: s1 })).rows[0].id as string;
     await tdb.query(`update public.waitlist_entry set status = 'declined' where id = $1`, [again]);
     const third = (await join(P1, { session: s1 })).rows[0].id as string;
-    const bk = await heldBooking(P1);
+    const bk = await heldBooking(P1, third);   // the offer's own booking names the entry
     await tdb.query(`update public.waitlist_entry set status = 'offered', offer_no = 1, offered_at = app.now(), offer_expires_at = app.now() + interval '30 minutes', offer_booking_id = $2 where id = $1`, [third, bk]);
     await expect(join(P1, { session: s1 })).rejects.toThrow(/waitlist_entry_one_live_session/);
   });
