@@ -17,7 +17,7 @@ export interface StatusActor {
 export type StatusResult =
   | { ok: true; from: string; to: string }
   | { ok: false; code: 'not_found' | 'forbidden' | 'use_pause' | 'invalid' | 'step_up_required' | 'transition_not_allowed' }
-  | { ok: false; code: 'blocked'; missing: Array<{ item: string; result: string }> };
+  | { ok: false; code: 'blocked'; missing: Array<{ item: string; owed_by?: string; result?: string }> };
 
 const STATUSES = ['draft', 'testing', 'live', 'paused'];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -88,7 +88,7 @@ export function createStatusService(deps: { db: PlatformDb }) {
       if (err.code !== 'P0001' || !m) throw e;
       const code = m[1] as string;
       if (code === 'blocked') {
-        const missing = JSON.parse(err.detail ?? '[]') as Array<{ item: string; result: string }>;
+        const missing = JSON.parse(err.detail ?? '[]') as Array<{ item: string; owed_by?: string; result?: string }>;
         return refuse(staff, clubId, clubId, to, { ok: false, code: 'blocked', missing }, 'blocked');
       }
       if (code === 'transition_not_allowed') return refuse(staff, clubId, clubId, to, { ok: false, code }, code);

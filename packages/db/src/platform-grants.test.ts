@@ -186,13 +186,14 @@ describe('platform schema (P6, team, usage, templates)', () => {
 
   it('only an admin changes the team or config; everyone active reads templates and config', async () => {
     await tdb.query(`insert into platform.config (key, value) values ('support_window_hours', '24')`);
+    const configRows = (await tdb.query(`select count(*)::int as n from platform.config`)).rows[0].n as number; // includes the seeded launch check list
     const t = await tdb.query(`insert into platform.template (key, name) values ('tennis', 'Tennis') returning id`);
-    expect((await rows(spec, `select key from platform.config`)).length).toBe(1);
+    expect((await rows(spec, `select key from platform.config`)).length).toBe(configRows);
     expect((await rows(spec, `select key from platform.template`)).length).toBe(1);
     const upd = await pdb.withPlatformTx(as(spec), (tx) => tx.query(`update platform.config set value = '48'`));
     expect(upd.rowCount).toBe(0);
     const upd2 = await pdb.withPlatformTx(as(admin), (tx) => tx.query(`update platform.config set value = '48'`));
-    expect(upd2.rowCount).toBe(1);
+    expect(upd2.rowCount).toBe(configRows);
     await expect(pdb.withPlatformTx(as(admin), (tx) => tx.query(`insert into platform.template (key, name) values ('x', 'x')`))).rejects.toThrow(/permission denied/i);
     const self = await pdb.withPlatformTx(as(spec), (tx) => tx.query(`update platform.platform_staff set role = 'platform_admin' where id = $1`, [spec]));
     expect(self.rowCount).toBe(0);
