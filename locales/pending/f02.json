@@ -21,7 +21,8 @@
     "P-new.language_toggle_th": "ไทย",
     "P-new.language_toggle_en": "EN",
     "P-new.notice_unavailable": "This document is not published yet. Please check again later.",
-    "P-new.notice_version": "Version {version}"
+    "P-new.notice_version": "Version {version}",
+    "P-new.notice_updated": "The privacy notice or terms have changed. Please read them and agree again."
   },
   "th": {
     "P-new.signin_failed": "เข้าสู่ระบบด้วย LINE ไม่สำเร็จ กรุณาลองอีกครั้ง",
@@ -44,6 +45,7 @@
     "P-new.language_toggle_th": "ไทย",
     "P-new.language_toggle_en": "EN",
     "P-new.notice_unavailable": "เอกสารนี้ยังไม่ได้เผยแพร่ กรุณากลับมาดูอีกครั้งภายหลัง",
-    "P-new.notice_version": "ฉบับ {version}"
+    "P-new.notice_version": "ฉบับ {version}",
+    "P-new.notice_updated": "ประกาศความเป็นส่วนตัวหรือข้อกำหนดมีการเปลี่ยนแปลง กรุณาอ่านและยอมรับอีกครั้ง"
   }
 }

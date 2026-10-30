@@ -28,6 +28,18 @@ describe('privacy and terms (D152)', () => {
     await context.close();
   });
 
+  it('a published notice shows its title, version and text in the page language, as plain text', async () => {
+    const notice = { privacy: { en: { version: 'v2', language: 'en', title: 'Privacy at Hunter', body: 'First paragraph.\n\nSecond <b>paragraph</b>.' } } };
+    const { page, context } = await openPage(browser, { lang: 'en', notice });
+    await page.goto(`${app.base}/c/hunter/privacy`);
+    await page.getByTestId('notice').waitFor();
+    assert.equal(await page.locator('h1').innerText(), 'Privacy at Hunter');
+    assert.match(await page.getByTestId('notice').innerText(), /Version v2/);
+    assert.equal(await page.locator('.notice-section p').count(), 2);
+    assert.equal(await page.locator('.notice-section b').count(), 0, 'never rendered as HTML');
+    await context.close();
+  });
+
   it('the terms page loads for a guest in English', async () => {
     const { page, context, calls } = await openPage(browser, { lang: 'en' });
     await page.goto(`${app.base}/c/hunter/terms`);
