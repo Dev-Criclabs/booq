@@ -56,5 +56,11 @@ export async function startWorker(options: WorkerOptions): Promise<RunningWorker
     noHandleSignals: true,
     taskList,
   });
-  return { stop: () => runner.stop() };
+  return {
+    async stop() {
+      await runner.stop();
+      // stop() resolves when work has stopped; `promise` when the queue's connections are closed too.
+      await runner.promise.catch(() => undefined);
+    },
+  };
 }

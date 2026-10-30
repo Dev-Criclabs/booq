@@ -6,6 +6,7 @@
   "main": "src/index.ts",
   "dependencies": {
     "@booq/db": "workspace:*",
-    "graphile-worker": "^0.18.0"
+    "graphile-worker": "^0.18.0",
+    "@booq/domain": "workspace:*"
   }
 }
