@@ -48,6 +48,14 @@ When an account is ready, the **You** or **Club** person adds DevOps as a member
 
 ## F02-T00: LINE test setup (exact list)
 
+**Progress (30 Oct 2026):** LINE test steps 1 to 4: in progress 30 Oct (the user is creating the test provider, channels and LIFF app). The LIFF endpoint URL waits for the staging address below.
+
+**Fastest way to a stable HTTPS address.** Nothing hosts yet, so no address exists. The Supabase staging project is not needed for this. In order:
+1. **You** create the hosting account and team (row 4 above; Vercel is the recommendation, still open) with two-factor on, and invite DevOps.
+2. **You** create a project named `booq-staging` from this repository with **Root Directory** `infra/line-parity`. The address is then assigned by the host, and will look like `https://booq-staging.vercel.app` (the exact name depends on what is free). Tell DevOps the address.
+3. **DevOps** makes the random path token (`openssl rand -hex 24`) and hands you the project variables to set: `PARITY_TOKEN`, `LIFF_ID`, `LINE_CHANNEL_SECRET`. You enter `LINE_CHANNEL_SECRET` yourself in the host's settings; no one pastes it into chat.
+4. This address is only a stopgap for the check. When the real staging app is deployed, the LIFF endpoint is edited to `https://{address}/c/{club-slug}` and the throwaway project is deleted. The BOOQ domain (D6) replaces the address later.
+
 Why: F02-T00 checks that the user ID from LINE Login is the same ID the Messaging API uses to push to that person (design Q33, LINE-01-AC5), and that the Add friend option works as decided (D38). If the IDs differ, the F02 design reopens, so do this before F02 is built.
 
 **You do** (a company LINE Business ID, not a personal one; names in the LINE consoles may differ a little from these):
@@ -55,14 +63,16 @@ Why: F02-T00 checks that the user ID from LINE Login is the same ID the Messagin
 2. In that provider, create **one LINE Login channel**. Note its **channel ID** and **channel secret**.
 3. In the same provider, create **one Messaging API channel** (it comes with an Official Account) and link it to the Login channel. Note its **channel secret** and issue a **channel access token**. Pick the language of the account; make it Thai.
 4. In the Login channel, create **one LIFF app**:
-   - Endpoint URL: `https://{domain}/c/{slug}` as in the task. The domain is not decided yet (D6), so use the staging address DevOps gives you (a stable HTTPS address from the hosting provider). The URL can be edited later.
+   - Endpoint URL: for the check, `https://{address}/c/parity/{token}` (the address from the fast path above and the token DevOps gives you). The real form is `https://{address}/c/{club-slug}` (F02 design); edit it after the check. The domain is not decided yet (D6).
    - Scope: the profile and OpenID scopes the F02 design asks for (`openid`, `profile`).
+   - **LINE Login channel Callback URL:** the F02 design signs in through LIFF (`liff.login`), not through a separate web callback route, so no callback route exists. If the console asks for a Callback URL, enter the same LIFF endpoint URL. This is my reading of the design, not something I confirmed in the console.
+   - **Messaging API channel Webhook URL:** `https://{address}/hook/{token}` for the check (turn Use webhook on and press Verify). The real route later is `https://{address}/api/webhooks/line/{club-token}` (F02 design 5.4).
    - **Add friend option: On (normal)** (D38).
    - Note the **LIFF ID**.
 5. Choose **one test user**: a real LINE account of someone on the team. They **add the test Official Account as a friend**, and open the LIFF app once from the phone.
 6. Give **DevOps** the values through the safe route (`secrets.md`). Never paste channel secrets or tokens into chat or the repo.
 
-**DevOps does:** set the Messaging API webhook URL to a throwaway receiver that records only `source.userId`, no message text (a small script in `infra/`, not written yet because it needs your staging address); sign in through LIFF as the test user and compare the Login `sub` with the webhook `source.userId`; send one push to that ID and confirm it arrives; write the result (IDs match, or not) into `design.md` section 3.3 of F02; delete the throwaway receiver and rotate the test channel token afterwards.
+**DevOps does:** run the throwaway receiver (`infra/line-parity/`, written and tested locally; it verifies `x-line-signature` and records only user IDs, no message text); sign in through LIFF as the test user and compare the Login `sub` with the webhook `source.userId`; send one push to that ID and confirm it arrives; write the result (IDs match, or not) into `design.md` section 3.3 of F02; delete the throwaway receiver and rotate the test channel token afterwards.
 
 **Done when:** a note in F02 `design.md` section 3.3 says the IDs match. If they do not, stop and tell the Orchestrator.
 
