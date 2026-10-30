@@ -35,20 +35,22 @@ async function call(f: Fetch, method: string, path: string, body?: unknown): Pro
   }
 }
 
-export type ListOutcome = { kind: 'ok'; team: Member[] } | { kind: 'error'; key: string };
+export type ListOutcome = { kind: 'ok'; team: Member[] } | { kind: 'error'; key: string; signIn?: boolean };
 export async function loadTeam(f: Fetch): Promise<ListOutcome> {
   const r = await call(f, 'GET', '/staff');
   if (!r) return { kind: 'error', key: 'X-new.staff_unavailable' };
   if (r.status === 200 && Array.isArray(r.json['team'])) return { kind: 'ok', team: r.json['team'] as Member[] };
-  return { kind: 'error', key: errorKey(r.status, r.json['code'] as string | undefined) };
+  return { kind: 'error', key: errorKey(r.status, r.json['code'] as string | undefined), ...(r.status === 401 ? { signIn: true } : {}) };
 }
 
 /** An invite or a reset: the enrolment link comes back once, to be shown once. */
-export type LinkOutcome = { kind: 'link'; link: string } | { kind: 'done' } | { kind: 'error'; key: string };
+/** `stepUp`: the action needs a fresh second factor first (D161); the page asks for it and runs the action again. */
+export type LinkOutcome = { kind: 'link'; link: string } | { kind: 'done' } | { kind: 'error'; key: string; stepUp?: boolean; signIn?: boolean };
 function linked(r: Awaited<ReturnType<typeof call>>): LinkOutcome {
   if (!r) return { kind: 'error', key: 'X-new.staff_unavailable' };
   if (r.status === 200) return typeof r.json['enrolmentLink'] === 'string' ? { kind: 'link', link: r.json['enrolmentLink'] } : { kind: 'done' };
-  return { kind: 'error', key: errorKey(r.status, r.json['code'] as string | undefined) };
+  const code = r.json['code'] as string | undefined;
+  return { kind: 'error', key: errorKey(r.status, code), ...(code === 'step_up_required' ? { stepUp: true } : {}), ...(r.status === 401 ? { signIn: true } : {}) };
 }
 export const invite = async (f: Fetch, input: { email: string; displayName: string; role: Member['role'] }) => linked(await call(f, 'POST', '/staff', input));
 export const resetFactor = async (f: Fetch, id: string) => linked(await call(f, 'POST', `/staff/${encodeURIComponent(id)}/reset-factor`, {}));
