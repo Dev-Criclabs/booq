@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
-import { bootstrapFirstAdmin, type OwnerDb } from './bootstrap-admin';
+import { createPlatformDb } from '@booq/db';
+import { bootstrapFirstAdmin, reissueFirstAdminLink, type OwnerDb } from './bootstrap-admin';
 import type { SupabaseAdmin } from './handler';
 
 // D163: the first admin. Runs as the database owner role, with a fake provider; nothing is created without every argument,
@@ -137,5 +138,67 @@ describe('the first admin', () => {
     await expect(run()).rejects.toThrow();
     expect(calls.map((c) => c.split(':')[0])).toEqual(['invite', 'delete']);
     expect(await staff()).toEqual([]);
+  });
+});
+
+describe('a new link for the first admin (--reissue)', () => {
+  const reissue = (over: Partial<{ ttlHours: number; consoleBaseUrl: string }> = {}) => reissueFirstAdminLink({ db: owner() }, { ttlHours: 12, consoleBaseUrl: 'https://console.example', ...over });
+  const open = async (token: string) => (await tdb.query('select staff_id from platform.staff_enrolment_open($1)', [sha(token)])).rows;
+  const tokenOf = (link: string) => link.split('#')[1]!;
+
+  it('voids the old link, issues one fresh single-use link for the same admin, and writes P6 without the link', async () => {
+    const first = await run();
+    if (!first.ok) throw new Error(first.code);
+    await tdb.advance('2 hours');
+    const again = await reissue();
+    if (!again.ok) throw new Error(again.code);
+    expect(again.staffId).toBe(first.staffId);
+    expect(await open(tokenOf(first.enrolmentLink))).toEqual([]);
+    expect(await open(tokenOf(again.enrolmentLink))).toEqual([{ staff_id: first.staffId }]);
+    expect((await tdb.query('select count(*)::int as n from platform.staff_enrolment')).rows[0].n).toBe(1);
+    expect(again.expiresAt).toBe('2026-12-01T17:00:00.000Z'); // 03:00 + 2 h + 12 h
+    expect((await staff()).length).toBe(1);
+    expect(calls).toEqual(['invite:first@booq.example']); // the provider user is left alone
+    const log = (await tdb.query(`select action, detail from platform.audit_log where action = 'staff.bootstrap_reissued'`)).rows;
+    expect(log).toEqual([{ action: 'staff.bootstrap_reissued', detail: { ttl_hours: 12 } }]);
+    expect(JSON.stringify(log)).not.toContain(tokenOf(again.enrolmentLink));
+  });
+
+  it('also works when the first link has expired', async () => {
+    const first = await run({ ttlHours: 1 });
+    if (!first.ok) throw new Error(first.code);
+    await tdb.advance('3 hours');
+    expect(await open(tokenOf(first.enrolmentLink))).toEqual([]);
+    const again = await reissue();
+    expect(again.ok).toBe(true);
+  });
+
+  it('is refused once any admin has enrolled, and the old state is untouched', async () => {
+    const first = await run();
+    if (!first.ok) throw new Error(first.code);
+    const pdb = createPlatformDb({ connectionString: tdb.url, max: 1 });
+    try {
+      await pdb.withPlatformTx({ staffId: first.staffId, staffLabel: 'First Admin' }, (tx) => tx.query('select platform.staff_enrolment_finish($1)', [sha(tokenOf(first.enrolmentLink))]));
+    } finally {
+      await pdb.end();
+    }
+    expect(await reissue()).toEqual({ ok: false, code: 'nothing_to_reissue' });
+    expect((await tdb.query(`select count(*)::int as n from platform.audit_log where action = 'staff.bootstrap_reissued'`)).rows[0].n).toBe(0);
+  });
+
+  it('is refused when nothing was bootstrapped: no admin, or an admin made some other way', async () => {
+    expect(await reissue()).toEqual({ ok: false, code: 'nothing_to_reissue' });
+    await tdb.query(`insert into platform.platform_staff (auth_user_id, email, display_name, role) values ('99999999-0000-4000-8000-000000000001','made@booq.example','Made Otherwise','platform_admin')`);
+    expect(await reissue()).toEqual({ ok: false, code: 'nothing_to_reissue' });
+    expect((await tdb.query('select count(*)::int as n from platform.staff_enrolment')).rows[0].n).toBe(0);
+  });
+
+  it('needs the link life and the console address: nothing changes without them', async () => {
+    const first = await run();
+    if (!first.ok) throw new Error(first.code);
+    for (const bad of [{ ttlHours: 0 }, { ttlHours: -3 }, { ttlHours: Number.NaN }, { consoleBaseUrl: 'http://console.example' }, { consoleBaseUrl: '' }]) {
+      expect(await reissue(bad), JSON.stringify(bad)).toEqual({ ok: false, code: 'bad_input' });
+    }
+    expect(await open(tokenOf(first.enrolmentLink))).toHaveLength(1);
   });
 });

@@ -57,6 +57,12 @@
     "X-new.stepup_submit": "Confirm",
     "X-new.stepup_cancel": "Cancel",
     "X-new.stepup_failed": "The password or the code is not right.",
-    "X-new.stepup_session_ended": "Your session has ended. Sign in again."
+    "X-new.stepup_session_ended": "Your session has ended. Sign in again.",
+    "X-new.nav_label": "Console sections",
+    "X-new.clubs_empty": "There are no clubs yet.",
+    "X-new.clubs_filter_empty": "No clubs have this status.",
+    "X-new.clubs_unavailable": "The club list is not available right now. Try again in a few minutes.",
+    "X-new.clubs_open": "Open {name}",
+    "X-new.clubs_filter_label": "Filter by status"
   }
 }

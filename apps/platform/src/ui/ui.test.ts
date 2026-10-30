@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { checkLink, finishEnrolment, groupSecret, startEnrolment, tokenFromHash } from './enrol';
 import { fill, hasKey, t } from './i18n';
+import { counts, FILTER_KEY, loadClubs, STATUS_KEY, visible, type ClubRow } from './clubs';
 import { safeNext, signInWithCode, signInWithPassword, stepUp } from './auth';
 import { deactivate, errorKey, invite, loadTeam, resetFactor } from './staff';
 
@@ -128,5 +129,29 @@ describe('sign-in', () => {
     expect(await stepUp(reply(423, { code: 'locked' }), 'pw', '1')).toEqual({ kind: 'error', key: 'X-new.signin_locked' });
     expect(await stepUp(reply(401, { code: 'session_invalid' }), 'pw', '1')).toEqual({ kind: 'error', key: 'X-new.stepup_session_ended', signedOut: true });
     expect(await stepUp(reply(401, { code: 'unauthenticated' }), 'pw', '1')).toEqual({ kind: 'error', key: 'X-new.stepup_session_ended', signedOut: true });
+  });
+});
+
+describe('clubs list (P1)', () => {
+  const club = (clubId: string, status: ClubRow['status'], n = 0): ClubRow => ({ clubId, nameTh: 'ก', nameEn: clubId, status, bookingsConfirmed30d: n });
+  const all = [club('a', 'live', 5), club('b', 'live'), club('c', 'testing'), club('d', 'draft'), club('e', 'paused')];
+  it('counts each status and filters', () => {
+    expect(counts(all)).toEqual({ all: 5, live: 2, testing: 1, draft: 1, paused: 1 });
+    expect(visible(all, 'all')).toHaveLength(5);
+    expect(visible(all, 'live').map((c) => c.clubId)).toEqual(['a', 'b']);
+    expect(visible(all, 'paused').map((c) => c.clubId)).toEqual(['e']);
+    expect(counts([])).toEqual({ all: 0, live: 0, testing: 0, draft: 0, paused: 0 });
+  });
+  it('every status and filter has a label key that exists, and the counts fill in', () => {
+    for (const k of [...Object.values(STATUS_KEY), ...Object.values(FILTER_KEY)]) expect(hasKey(k), k).toBe(true);
+    expect(t(FILTER_KEY.live, { count: 2 })).toBe('Live · 2');
+    expect(t(FILTER_KEY.all, { count: 5 })).toBe('All · 5');
+  });
+  it('loads the list, or says why not', async () => {
+    expect(await loadClubs(reply(200, { clubs: all }))).toEqual({ kind: 'ok', clubs: all });
+    expect(await loadClubs(reply(401, { code: 'unauthenticated' }))).toEqual({ kind: 'error', key: 'X-new.staff_sign_in_required', signIn: true });
+    expect(await loadClubs(reply(403, { code: 'forbidden' }))).toEqual({ kind: 'error', key: 'X-new.staff_forbidden' });
+    expect(await loadClubs(reply(500, {}))).toEqual({ kind: 'error', key: 'X-new.clubs_unavailable' });
+    expect(await loadClubs((async () => { throw new Error('offline'); }) as unknown as typeof fetch)).toEqual({ kind: 'error', key: 'X-new.clubs_unavailable' });
   });
 });
