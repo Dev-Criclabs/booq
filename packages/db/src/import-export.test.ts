@@ -226,3 +226,10 @@ describe('worker heartbeat (F01-T34)', () => {
     }
   });
 });
+
+describe('platform config keys with no default (migration 0016)', () => {
+  it('the import limits exist and are null, so they read as not configured', async () => {
+    const r = await tdb.query(`select key, value from platform.config where key in ('import_max_rows', 'import_staging_hours') order by key`);
+    expect(r.rows).toEqual([{ key: 'import_max_rows', value: null }, { key: 'import_staging_hours', value: null }]);
+  });
+});
