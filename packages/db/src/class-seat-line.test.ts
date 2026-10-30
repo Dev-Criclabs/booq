@@ -30,6 +30,7 @@ afterEach(async () => {
 
 /** An order with one booking of the given type; the order's amounts are those of one line of `net` satang. */
 async function build(opts: { type: 'class_seat' | 'court'; kind: string; withBooking?: boolean; net?: number; credit?: number; wallet?: number }) {
+  const session = opts.type === 'class_seat' ? await tdb.seedClassSession(A, RES) : null;
   const net = opts.net ?? 40000;
   const credit = opts.credit ?? 0;
   const wallet = opts.wallet ?? 0;
@@ -39,9 +40,9 @@ async function build(opts: { type: 'class_seat' | 'court'; kind: string; withBoo
     await c.query('begin');
     const o = (await c.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'online') returning id`, [A, PLAYER])).rows[0].id as string;
     const b = (await c.query(
-      `insert into public.booking (club_id, order_id, type, resource_id, start_at, end_at, customer_id, status, source, created_by, hold_expires_at)
-       values ($1,$2,$3,$4, date_trunc('hour', now()) + interval '50 hours', date_trunc('hour', now()) + interval '51 hours', $5,'awaiting_payment','online',$5, now() + interval '10 minutes') returning id`,
-      [A, o, opts.type, RES, PLAYER])).rows[0].id as string;
+      `insert into public.booking (club_id, order_id, type, resource_id, class_session_id, start_at, end_at, customer_id, status, source, created_by, hold_expires_at)
+       values ($1,$2,$3,$4,$6, date_trunc('hour', now()) + interval '50 hours', date_trunc('hour', now()) + interval '51 hours', $5,'awaiting_payment','online',$5, now() + interval '10 minutes') returning id`,
+      [A, o, opts.type, RES, PLAYER, session])).rows[0].id as string;
     await c.query(`update public.orders set price_group_snapshot='{}', subtotal_satang=$2, discount_satang=0, total_satang=$2, credit_value_satang=$3, wallet_satang=$4, money_satang=$5, quote_hash=repeat('a',64), priced_at=now() where id=$1`, [o, net, credit, wallet, money]);
     await c.query(
       `insert into public.order_line (club_id, order_id, position, kind, booking_id, description_key, name_th, name_en, unit_price_satang, discount_satang, net_satang, credit_value_satang, wallet_satang, money_satang)
@@ -75,9 +76,9 @@ describe('a class_seat order line', () => {
       await c.query('begin');
       const o = (await c.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'online') returning id`, [A, PLAYER])).rows[0].id as string;
       const b = (await c.query(
-        `insert into public.booking (club_id, order_id, type, resource_id, start_at, end_at, customer_id, status, source, created_by, hold_expires_at)
-         values ($1,$2,'class_seat',$3, date_trunc('hour', now()) + interval '60 hours', date_trunc('hour', now()) + interval '61 hours', $4,'awaiting_payment','online',$4, now() + interval '10 minutes') returning id`,
-        [A, o, RES, PLAYER])).rows[0].id as string;
+        `insert into public.booking (club_id, order_id, type, resource_id, class_session_id, start_at, end_at, customer_id, status, source, created_by, hold_expires_at)
+         values ($1,$2,'class_seat',$3,$5, date_trunc('hour', now()) + interval '60 hours', date_trunc('hour', now()) + interval '61 hours', $4,'awaiting_payment','online',$4, now() + interval '10 minutes') returning id`,
+        [A, o, RES, PLAYER, await tdb.seedClassSession(A, RES)])).rows[0].id as string;
       await expect(c.query(
         `insert into public.order_line (club_id, order_id, position, kind, booking_id, description_key, name_th, name_en, unit_price_satang, discount_satang, net_satang, credit_value_satang, wallet_satang, money_satang)
          values ($1,$2,1,'class_seat',$3,'k','ก','x',40000,0,40000,10000,10000,10000)`, [A, o, b])).rejects.toThrow(/order_line_split/);
