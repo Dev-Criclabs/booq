@@ -5,6 +5,8 @@ import {
   type BookingErrorCode,
   courtsFor,
   getBooking,
+  moveStaffBooking,
+  releaseStaffHold,
   releaseOwnHold,
   requestHash,
   scheduleDays,
@@ -132,5 +134,24 @@ export function playerBookingRoutes(deps: BookingRouteDeps): BookingRoute<unknow
       const hash = hashOf('POST', '/bookings/:id/release', ctx);
       return inTx(deps.db, c, (tx) => withIdempotency(tx, key, hash, () => releaseOwnHold(tx, viewerOf(c), inputOf(ctx)['id'])));
     }),
+  ];
+}
+
+/**
+ * F03-T22 (move and release): PUT /staff/bookings/:id/move and POST /staff/bookings/:id/release (design 5.3).
+ * Front desk and owner only, declared with booking.write (the hand-off roles row; the same two roles as the
+ * design's booking.move and booking.create.staff). In a Paused club only the owner may act (D60).
+ */
+export function staffBookingRoutes(deps: BookingRouteDeps): BookingRoute<unknown>[] {
+  const staff = <T>(method: 'PUT' | 'POST', path: string, fn: (tx: Tx, c: ClubContext, input: Record<string, unknown>) => Promise<T>) =>
+    route({ method, path, permission: 'booking.write' }, async (ctx) => {
+      const c = await sessionContext(deps, ctx, 'admin');
+      const key = idempotencyKeyOf(ctx);
+      const hash = hashOf(method, path, ctx);
+      return inTx(deps.db, c, (tx) => withIdempotency(tx, key, hash, () => fn(tx, c, inputOf(ctx))));
+    });
+  return [
+    staff('PUT', '/staff/bookings/:id/move', (tx, c, i) => moveStaffBooking(tx, viewerOf(c), i['id'], { courtId: i['courtId'], start: i['start'] })),
+    staff('POST', '/staff/bookings/:id/release', (tx, c, i) => releaseStaffHold(tx, viewerOf(c), i['id'])),
   ];
 }
