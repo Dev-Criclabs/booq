@@ -4,7 +4,7 @@ Reviewer: Architect role, 30 Oct 2026. Against SR-02, SR-03, SR-06, D27, F01 des
 
 ## Verdict: approve. Merge it. One follow-up of mine after it lands (item 1).
 
-The ten class P tables are the ones the design lists, with the right keys and CHECKs; nothing is granted to `booq_platform`, `booq_app`, `booq_worker` or the public roles, so the default is no access and T18 writes the grants and policies in one place. The two foreign keys 0002 left open are closed. P6 `audit_log` is append-only (row and truncate guards). `app.bump_usage` is a definer function with a fixed search path, takes no club argument, fails with no club context, and cannot be run by `booq_platform`. 31 tests in `platform.test.ts` cover this, and the suite passes with 0005 and 0006 merged in.
+The ten class P tables are the ones the design lists, with the right keys and CHECKs; nothing is granted to `booq_platform`, `booq_app`, `booq_worker` or the public roles, so the default is no access and T18 writes the grants and policies in one place. The two foreign keys 0002 left open are closed. P6 `audit_log` is append-only (row and truncate guards). `app.bump_usage` is a definer function with a fixed search path, takes no club argument, fails with no club context, and cannot be run by `booq_platform`. `platform.test.ts` has 19 tests covering this. I read the migration and the test titles; I did not run the branch, and it has not been tried with 0006 (test mode) merged in. CI on `main` after the merge is the check for that.
 
 ## Checked against the reviews
 
