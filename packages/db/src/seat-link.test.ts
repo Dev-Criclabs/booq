@@ -62,9 +62,8 @@ describe('a seat names its session (CLASS-01-AC4)', () => {
     await expect(seat(P1, { class_session_id: '99999999-9999-4999-8999-999999999999' })).rejects.toThrow(/booking_class_session_fk/);
   });
 
-  it('a seat keeps the waitlist entry it came from (the key to the entry comes with the waitlist table)', async () => {
-    const w = '88888888-8888-4888-8888-888888888888';
-    expect((await seat(P1, { waitlist_entry_id: w })).rows[0].waitlist_entry_id).toBe(w);
+  it('a seat that names a waitlist entry that does not exist is refused (the key came with 0904)', async () => {
+    await expect(seat(P1, { waitlist_entry_id: '88888888-8888-4888-8888-888888888888' })).rejects.toThrow(/booking_waitlist_entry_fk/);
   });
 
   it('existing court and solo bookings are unchanged: both new columns are null', async () => {
