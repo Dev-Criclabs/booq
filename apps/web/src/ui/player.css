@@ -108,3 +108,12 @@ body { background: var(--g); color: var(--ink); font-family: var(--font); -webki
 .consent-links a { color: var(--sel); font-weight: 600; }
 .info-card { margin: 0; padding: 12px 14px; border-radius: 14px; background: var(--cd); font-size: 13px; line-height: 1.5; color: var(--mu); }
 .form-foot { flex: none; padding: 14px 20px calc(26px + env(safe-area-inset-bottom)); }
+
+/* Privacy notice and terms (D152). Long text: the page scrolls, lines wrap. */
+.notice { padding: 24px 20px calc(32px + env(safe-area-inset-bottom)); gap: 12px; overflow-wrap: anywhere; }
+.notice-title { margin: 0; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.25; color: var(--hd); }
+.notice-title::first-letter { text-transform: uppercase; }
+.notice-version { margin: 0; font-size: 13px; color: var(--mu); }
+.notice-empty { margin: 8px 0 0; padding: 14px 16px; border-radius: 14px; background: var(--cd); font-size: 15px; line-height: 1.5; color: var(--mu); }
+.notice-section h2 { margin: 16px 0 6px; font-size: 18px; font-weight: 600; color: var(--hd); }
+.notice-section p { margin: 0 0 10px; font-size: 15px; line-height: 1.6; color: var(--ink); }

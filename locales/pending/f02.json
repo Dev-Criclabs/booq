@@ -19,7 +19,9 @@
     "P-new.language": "Language",
     "P-new.lang_th": "ไทย",
     "P-new.lang_en": "EN",
-    "P-new.page_not_found": "This page is not available."
+    "P-new.page_not_found": "This page is not available.",
+    "P-new.notice_unavailable": "This document is not published yet. Please check again later.",
+    "P-new.notice_version": "Version {version}"
   },
   "th": {
     "P-new.signin_failed": "เข้าสู่ระบบด้วย LINE ไม่สำเร็จ กรุณาลองอีกครั้ง",
@@ -40,6 +42,8 @@
     "P-new.language": "ภาษา",
     "P-new.lang_th": "ไทย",
     "P-new.lang_en": "EN",
-    "P-new.page_not_found": "ไม่พบหน้านี้"
+    "P-new.page_not_found": "ไม่พบหน้านี้",
+    "P-new.notice_unavailable": "เอกสารนี้ยังไม่ได้เผยแพร่ กรุณากลับมาดูอีกครั้งภายหลัง",
+    "P-new.notice_version": "ฉบับ {version}"
   }
 }
