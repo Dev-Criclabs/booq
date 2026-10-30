@@ -20,7 +20,8 @@
     "P-new.rest_rule": "The coach needs a rest between sessions. Pick another time.",
     "P-new.coach_rules_not_installed": "Booking with a coach is not available yet.",
     "P-new.order_not_found": "We could not find this booking. Please start again.",
-    "P-new.forbidden": "You cannot do this."
+    "P-new.forbidden": "You cannot do this.",
+    "P-new.idempotency_key_reused": "This request was already used. Please try again."
   },
   "th": {
     "P-new.hold_setting_unset": "ยังจองแบบชำระเงินไม่ได้ในขณะนี้ กรุณาติดต่อสนามกีฬา",
@@ -42,6 +43,7 @@
     "P-new.rest_rule": "โค้ชต้องพักระหว่างคลาส กรุณาเลือกเวลาอื่น",
     "P-new.coach_rules_not_installed": "ยังจองพร้อมโค้ชไม่ได้ในขณะนี้",
     "P-new.order_not_found": "ไม่พบการจองนี้ กรุณาเริ่มใหม่อีกครั้ง",
-    "P-new.forbidden": "คุณไม่มีสิทธิ์ทำรายการนี้"
+    "P-new.forbidden": "คุณไม่มีสิทธิ์ทำรายการนี้",
+    "P-new.idempotency_key_reused": "คำขอนี้ถูกใช้ไปแล้ว กรุณาลองใหม่อีกครั้ง"
   }
 }

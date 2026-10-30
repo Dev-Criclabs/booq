@@ -48,7 +48,7 @@ Depends on F01 tasks: T03 to T07 (database, context, tenant suite), T10 and T11 
 
 ## C. Price group and profile
 
-- [ ] **F02-T13** `price_group_for(dob, on_date)` and the Student-item eligibility check used by F04 and F06. IDs: AUTH-02-AC10 to AC14, AC17. Role: BE-P · Size: S
+- [x] **F02-T13** `price_group_for(dob, on_date)` and the Student-item eligibility check used by F04 and F06. IDs: AUTH-02-AC10 to AC14, AC17. Role: BE-P · Size: S
   Tests first: no date of birth gives Adult; 17 years 364 days is Student, the 18th birthday in Bangkok switches to Adult; a Student item with no date of birth returns the ask code; 18 or older is refused for a Student item.
 - [ ] **F02-T14** `PUT /me/profile`: name, phone, date of birth (not future), level, language; never locked; audited. IDs: AUTH-02-AC15 to AC23, AC29. Role: BE-P · Deps T08, F01-T10 · Size: M
   Tests first: unlimited changes; future date refused; an adult adds a date of birth with no price effect; a bought Student package stays valid (assertion contract with F06); each change has an audit entry with old and new.

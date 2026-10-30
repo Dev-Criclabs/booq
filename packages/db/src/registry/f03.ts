@@ -7,4 +7,5 @@ export const tables: Fragment = {
   'public.occupancy': { class: 'D' },               // F03-T02 (0203); audited through its booking
   'app.release_handlers': { class: 'infra' },        // F03-T06 (0210)
   'app.coach_rules_hook': { class: 'infra' },        // F03-T09 (0213)
+  'public.idempotency_key': { class: 'D' },          // F03-T11 (0215)
 };
