@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
-import { pendingFeatureSources, type CodeInput, type QuoteSources } from '@booq/domain';
+import { pendingFeatureSources, quoteSources, type CodeInput, type QuoteSources } from '@booq/domain';
 import { checkoutRoutes } from './routes';
 
 // F04-T11 POST /checkout/quote (R1 to R4, R8-AC4, PROMO-01-AC9, CC-1, CC-2; design 4.2, 5.1). Real club data in
@@ -162,5 +162,40 @@ describe('POST /checkout/quote', () => {
     expect(await ask(body({ hours: ['2026-12-02T18:30:00+07:00'] }))).toEqual({ ok: false, status: 400, code: 'selection_invalid' });
     expect(await ask(body({ courtId: OFF_COURT }))).toEqual({ ok: false, status: 409, code: 'resource_inactive' });
     expect(await quote().handle({ session: me, input: { slug: 'club-b' }, body: body() }, deps)).toEqual({ ok: false, status: 404, code: 'not_found' });
+  });
+});
+
+describe('POST /checkout/quote with the club reads (0315, 0316)', () => {
+  const real = () => checkoutRoutes({ db, clubBySlug: async (s) => (SLUGS[s] ? { clubId: SLUGS[s]! } : null), sources: { ...quoteSources, coach: sources.coach } }).find((r) => r.def.path === '/checkout/quote')!;
+  const askReal = (b: unknown, session = me) => real().handle({ session, input: { slug: 'club-a' }, body: b }, deps);
+  const addCode = (club: string, code: string, extra: { active?: boolean; totalCap?: number } = {}) =>
+    tdb.query(
+      `insert into public.promo_code (club_id, code_upper, kind, value, applies_to, active, total_cap) values ($1,$2,'percent',1000,array['court_hour'],$3,$4) returning id`,
+      [club, code, extra.active ?? true, extra.totalCap ?? null],
+    );
+
+  it("a code of this club applies; the same text in another club answers as a missing code (PROMO-01-AC9, CC-1)", async () => {
+    await addCode(B, 'BONLY');
+    await addCode(A, 'TEN');
+    expect(await askReal(body({ code: 'bonly' }))).toEqual({ ok: false, status: 422, code: 'code_not_valid' });
+    expect(await askReal(body({ code: 'nothing' }))).toEqual({ ok: false, status: 422, code: 'code_not_valid' });
+    const r = await askReal(body({ code: ' ten ' }));
+    expect(r).toMatchObject({ ok: true, body: { totalSatang: 45000 } });
+  });
+
+  it('an inactive code is not valid; a used up cap is code_used_up from the counted redemptions', async () => {
+    await addCode(A, 'OFF', { active: false });
+    expect(await askReal(body({ code: 'OFF' }))).toMatchObject({ ok: false, code: 'code_not_valid' });
+    const id = (await addCode(A, 'ONCE', { totalCap: 1 })).rows[0].id as string;
+    const order = (await tdb.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'online') returning id`, [A, KID])).rows[0].id as string;
+    await tdb.query(`insert into public.promo_redemption (club_id, code_id, order_id, customer_id) values ($1,$2,$3,$4)`, [A, id, order, KID]);
+    expect(await askReal(body({ code: 'ONCE' }))).toMatchObject({ ok: false, code: 'code_used_up' });
+  });
+
+  it("the club's cancel window and birthday discount come from its settings; unset reads as null (R4-AC5, R5-AC1, AC2)", async () => {
+    const unset = await askReal(body({ coachId: COACH }));
+    expect(unset).toMatchObject({ ok: true, body: { cancelWindowHours: null, birthdayEntitlement: null, totalSatang: 130000 } });
+    await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1,'cancel_window_hours','12'), ($1,'birthday_discount','{"kind":"percent","value":1000}')`, [A]);
+    expect(await askReal(body({ coachId: COACH }))).toMatchObject({ ok: true, body: { cancelWindowHours: 12, birthdayEntitlement: 'solo_class', totalSatang: 117000 } });
   });
 });

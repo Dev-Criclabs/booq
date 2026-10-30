@@ -1,4 +1,4 @@
-import { createClaimService, createDataRequestService, createImportService, createProfileEditService, interimQuoteSources, normalizePhone } from '@booq/domain';
+import { createClaimService, createDataRequestService, createImportService, createProfileEditService, quoteSources, normalizePhone } from '@booq/domain';
 import type { Route } from '@booq/auth';
 import type { Db } from '@booq/db';
 import { bangkokDate } from '@booq/time';
@@ -40,5 +40,5 @@ export const mounts: readonly Mount[] = [
   (m) => dataRequestRoutes({ db: m.db, service: () => createDataRequestService() }),
   (m) => [publicScheduleRoutes, playerBookingRoutes, staffBookingRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
   (m) => profileRoutes({ db: m.db, service: () => createProfileEditService({ today: () => bangkokDate(m.now()) }) }),
-  (m) => checkoutRoutes({ db: m.db, clubBySlug: m.clubBySlug, sources: interimQuoteSources }),
+  (m) => checkoutRoutes({ db: m.db, clubBySlug: m.clubBySlug, sources: quoteSources }),
 ];

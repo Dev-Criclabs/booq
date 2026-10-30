@@ -161,10 +161,62 @@ export const pendingFeatureSources: Pick<QuoteSources, 'referralCode' | 'coach' 
   walletBalance: async () => 0,
 };
 
-/** Until the Architect's definer reads exist (quote_promo_code; the birthday discount and cancel window
- *  for a player): every code answers code_not_valid and both settings read as unset. Never a discount. */
-export const interimQuoteSources: QuoteSources = {
-  ...pendingFeatureSources,
-  promoCode: async () => null,
-  clubTerms: async () => ({ birthdayDiscount: null, cancelWindowHours: null }),
+interface PromoRow {
+  id: string;
+  kind: 'percent' | 'fixed';
+  value: number;
+  applies_to: CodeInput['appliesTo'];
+  includes_add_ons: boolean;
+  audience: CodeInput['audience'];
+  starts_on: string | null;
+  ends_on: string | null;
+  first_time_only: boolean;
+  total_cap: number | null;
+  per_customer_cap: number | null;
+  min_spend_satang: number | null;
+  stackable_with_birthday: boolean;
+  partner_id: string | null;
+  active: boolean;
+  uses_counted: number;
+  customer_uses_counted: number;
+  customer_has_paid_booking: boolean;
+}
+
+/** The club's own reads: app.quote_promo_code (0315) and public.public_booking_config (0316). */
+export const clubQuoteReads: Pick<QuoteSources, 'promoCode' | 'clubTerms'> = {
+  async promoCode(tx, code, customerId) {
+    const r = one(await tx.query<{ c: PromoRow | null }>('select app.quote_promo_code($1, $2) as c', [code, customerId]));
+    const c = r?.c;
+    if (!c) return null;
+    return {
+      source: 'promo',
+      id: c.id,
+      kind: c.kind,
+      value: c.value,
+      appliesTo: c.applies_to,
+      includesAddOns: c.includes_add_ons,
+      audience: c.audience,
+      startsOn: c.starts_on,
+      endsOn: c.ends_on,
+      firstTimeOnly: c.first_time_only,
+      totalCap: c.total_cap,
+      perCustomerCap: c.per_customer_cap,
+      minSpendSatang: c.min_spend_satang,
+      stackableWithBirthday: c.stackable_with_birthday,
+      partnerId: c.partner_id,
+      active: c.active,
+      usesCounted: Number(c.uses_counted),
+      customerUsesCounted: Number(c.customer_uses_counted),
+      customerHasPaidBooking: c.customer_has_paid_booking,
+    };
+  },
+  async clubTerms(tx) {
+    const r = one(await tx.query<{ cancel_window_hours: number | null; birthday_discount: { kind: 'percent' | 'fixed'; value: number } | null }>(
+      'select cancel_window_hours, birthday_discount from public.public_booking_config',
+    ));
+    return { birthdayDiscount: r?.birthday_discount ?? null, cancelWindowHours: r?.cancel_window_hours ?? null };
+  },
 };
+
+/** The quote's sources today: the club's own reads, and the ports of F06, F07 and F14 until they exist. */
+export const quoteSources: QuoteSources = { ...pendingFeatureSources, ...clubQuoteReads };
