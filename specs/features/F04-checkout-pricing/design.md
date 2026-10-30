@@ -1,6 +1,6 @@
 # F04 Checkout, pricing, add-ons and promo codes · Design
 
-Status: **DRAFT for approval (gate 2).** Drafted 30 Oct 2026 by the Architect role from the approved F04 requirements (`requirements.md`, approved 30 Oct 2026, `docs/decisions.md` round 8) with decisions D18 to D37 and D62 to D70 applied. Nothing here is approved until a person says so. No tasks and no code follow until then.
+Status: **Approved 30 Oct 2026** (gate 2; decision D82, with all assumptions). Drafted 30 Oct 2026 by the Architect role from the approved F04 requirements (`requirements.md`, approved 30 Oct 2026, `docs/decisions.md` round 8) with decisions D18 to D37 and D62 to D70 applied. Tasks (gate 3) are written next; a change to anything below goes through the PRD, then the hand-off, then this file.
 
 Feature: F04 Checkout, pricing, add-ons and promo codes. Requirement IDs: PAY-07, PROMO-01, and the checkout rules R1 to R8 (local to the requirements file; the hand-off has no IDs for them). Uses COACH-02 to COACH-04 (F07 owns them) and BOOK-06. Depends on F03. Wave 2.
 
