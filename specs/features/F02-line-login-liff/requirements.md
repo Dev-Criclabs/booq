@@ -1,8 +1,8 @@
 # F02 LINE Login, LIFF and first sign in · Requirements
 
-Status: **DRAFT v2 for approval (gate 1).** Drafted 30 Oct 2026, revised 30 Oct 2026 after the user's answers (decisions D1 to D15 in `docs/decisions.md`). Nothing here is approved until a person says so. No design or code follows until then.
+Status: **Approved 30 Oct 2026** (gate 1), except the consent text for players under 18, which stays **pending legal** (D10, left open by the user). Recorded in `docs/decisions.md`, round 4: "F01 and F02 requirements were approved by the user on 30 Oct 2026". Revision 3 (30 Oct 2026) applies decisions D18 to D31 and the PRD and hand-off updates that followed. Changes after approval go PRD, then hand-off, then this file. No design or code follows until the design gate.
 
-Revision 2 turns each decision into a requirement and removes the answered questions. **The consent text is pending a legal check**: D10 (consent for players under 18) was deliberately skipped by the user, so it stays open and the consent screen and notice cannot be final until a Thai lawyer has looked at them. D12 is in `docs/decisions.md` only; the PRD and hand-off are not yet updated for it.
+Revision history: v1 draft, v2 applied D1 to D15, v3 applies D18 to D31. D11 and D12 are now in HO AUTH-02, and LINE-07 (message cap) is in the hand-off (F10 owns it).
 
 Feature: F02 LINE Login, LIFF and first sign in. Depends on: F01. Requirement IDs: AUTH-01, AUTH-02, LINE-01. Wave 1.
 
@@ -15,7 +15,8 @@ Feature: F02 LINE Login, LIFF and first sign in. Depends on: F01. Requirement ID
 | Plan | `docs/DEVELOPMENT-PLAN.md` | Section 4 |
 | Gaps | `docs/canvas-gaps.md` | A9 (date of birth shown as locked), C1 (corrected date of birth and student packages), section C "Date of birth" |
 | F01 | `specs/features/F01-platform-foundation/requirements.md` | Roles (ROLE-01 a person holds a set of roles), CC rules, PDPA-01, PLAT-07 test mode |
-| Decisions | `docs/decisions.md` | D1, D4, D6, D7, D9, D10 (open), D11, D12; round 1 (Student package stays valid, message cap undecided). PRD change log row "Decisions 30 Oct (2)", PRD Credits and wallet, HO PKG-02 |
+| Decisions | `docs/decisions.md` | D1, D4, D6, D7, D9, D10 (open), D11, D12, D27, D31; round 1 (Student package stays valid). PRD change log rows "Decisions 30 Oct (2)", "(3)", "(4)", PRD Credits and wallet, HO AUTH-02, PKG-02, LINE-07 |
+| QA traceability | `docs/qa/traceability.md` (branch `qa/test-strategy`) | AUTH-02 thin, LINE-01 gap; proposed checks reused below |
 
 The spec wins over the canvas. Where the canvas shows something the spec does not say, it is listed in Open questions, not built.
 
@@ -53,7 +54,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin (every English board has a T- t
 
 **CC-6 Other platform rules.** All times Asia/Bangkok. Never invent a rule: where the spec is silent it is a question below.
 
-Keys found in the locale files for these screens: P-0001 to P-0005 (C1), P-0009, P-0010 to P-0016 (C2), P-0250 Personal details, P-0261 and P-0405 Date of birth, P-0413 and P-0414 and P-0419 and P-0422 (Privacy and my data). These are confirmed by name, not yet by screen, because `copy-index.csv` is not in the repo.
+Key lookup by screen waits for `locales/copy-index.csv`, generated from the canvas by the i18n role, read only (D31). Keys found in the locale files for these screens: P-0001 to P-0005 (C1), P-0009, P-0010 to P-0016 (C2), P-0250 Personal details, P-0261 and P-0405 Date of birth, P-0413 and P-0414 and P-0419 and P-0422 (Privacy and my data). These are confirmed by name, not yet by screen, because `copy-index.csv` is not in the repo.
 
 ---
 
@@ -78,7 +79,7 @@ Keys found in the locale files for these screens: P-0001 to P-0005 (C1), P-0009,
 - AUTH-01-AC9. Given a guest who opens a page that needs a person (My bookings, Credits and wallet, Refer a friend, Profile), when it loads, then LINE Login starts first and the player lands back on that page. The spec lists only booking and buying as the sign in moment; this is the minimum for these pages to work. See Q4.
 - AUTH-01-AC10. Given the rich menu tile Book a court, when a guest taps it, then C4 opens directly as a guest page with no sign in (BOOK-02; Home is skipped). A tile that opens a page needing a person (My bookings, Refer a friend) starts sign in first (AC9).
 - AUTH-01-AC11. Given a club that is Paused, when a guest or player opens the app, then browsing and sign in still work and the paused pages are shown as paused (PLAT-03 in F01).
-- AUTH-01-AC13. Given the app address, when it is opened, then the club comes from the URL on the one shared BOOQ domain (for example the club's name or ID in the path), in LINE and in a browser (D6). The domain itself is a configuration value and is not hard coded, because the user will supply it later (D6). An unknown or not live club in the URL shows not found, never another club's data.
+- AUTH-01-AC13. Given the app address, when it is opened, then the club comes from the URL on the one shared BOOQ domain (for example the club's name or ID in the path), in LINE and in a browser (D6). The domain itself is a configuration value and is not hard coded, because the user will supply it later (D6). An unknown or not live club in the URL answers 404 (not found), never another club's data (D27 uses the same 404 rule for records outside a caller's reach).
 - AUTH-01-AC14. Given a deep link (rich menu tile, shared link, LINE message button), when it is opened, then it contains the club in the same way (D6), so the right club is chosen before any data is read or sign in starts. A link for club A never signs a player in to club B (CC-1).
 - AUTH-01-AC15. Given a club in Draft or Testing, when someone opens its URL, then only the testers can sign in: the club owner and named BOOQ testers (D4, F01 PLAT-07). Everyone else sees not found. A BOOQ tester signs in with LINE as a test player.
 - AUTH-01-AC12. Given a guest who cancels or fails LINE Login (they close the LINE consent screen, the network drops), when it ends, then they return to where they were with nothing created, and an offline error uses the existing key (P-0327 "Check your internet and try again. Nothing was booked or charged.", P-0328 "Try again"). Other failure text is a new key.
@@ -215,8 +216,7 @@ No key is added by this draft.
 
 - **D10 consent for players under 18: pending legal.** Left open on purpose. A Thai lawyer must say whether a guardian's consent is needed for minors, and how, before the consent text and the privacy notice are final. The text must be final before 7 Dec 2026 (HO Text and language files). AUTH-02-AC9 stays marked pending.
 - **D6 domain.** The user will supply the shared BOOQ domain later. Built as a configuration value.
-- **Club LINE message cap behaviour.** Undecided (decisions log round 1, Gaps C3). Not blocking F02.
-- **PRD and hand-off updates.** D12 (no date of birth means Adult, voluntary date of birth, audited and visible to the owner) and D11 (phone typed, duplicates flagged) are in the decisions log but not yet in the PRD or hand-off (HO AUTH-02). This draft does not edit them.
+- **Club LINE message cap.** Decided as LINE-07 (F10). For F02 it matters only in that a non friend or capped club still gets the in app confirmation (LINE-01-AC8).
 
 ## Open questions
 
@@ -241,3 +241,14 @@ Answered questions are removed (D4, D6, D9, D11, D12 and the Student package dec
 14. **Cookies and analytics.** The spec says nothing about cookies, analytics or tracking for guests. Do we add none (assumed)?
 15. **Deleted players.** After a deletion request is carried out, the same LINE user signs in again: is it a brand new player with a new consent and no history (assumed)? How does that sit with a club that must keep receipts (F01 Q22)?
 17. **Pre filled slot after sign in.** When the guest chose several hours (multi hour select) before sign in, are all kept? Confirm the choice is kept only in the app and rechecked on return (AUTH-01-AC4).
+
+## Proposed acceptance checks for the hand-off (QA gap list)
+
+QA found LINE-01 has no acceptance check and AUTH-02's check is thin (`docs/qa/traceability.md`). These are proposals for a person to add to the hand-off, PRD first. No rule is added; the full criteria are above.
+
+| ID | Proposed acceptance check | Full criteria |
+|---|---|---|
+| LINE-01 | Given the app opened inside LINE, when sign in starts, then it finishes with no tap; given a browser, then Log in with LINE shows once and sign in returns the player to where they were; given the friend box ticked, then LINE asks to add the Official Account and a refusal does not block booking | LINE-01-AC1, AC2, AC6, AC7 |
+| AUTH-02 (adds) | Given a player picks a Student item with no date of birth on file, then the date of birth field shows and a date making them 18 or older refuses the item; given a signed in player in Profile, then the date of birth can be edited any number of times and each change is audited and visible to the owner | AUTH-02-AC11, AC12, AC19, AC21 |
+| AUTH-02 (adds) | Given a player with no date of birth on file, when a price depends on age, then Adult prices apply; given a phone already used at the club, then the duplicate is flagged and nothing is blocked | AUTH-02-AC14, AC28 |
+| AUTH-01 (adds) | Given a guest on any browse page, then it loads without a session and write routes answer 401; given a guest request to hold a slot, then it is refused | AUTH-01-AC1, AC3 |
