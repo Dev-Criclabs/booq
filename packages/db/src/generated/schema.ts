@@ -594,6 +594,15 @@ export interface PublicMessageOutbox {
   created_at: string;
 }
 
+export interface PublicNotificationPref {
+  club_id: string;
+  id: string;
+  user_id: string;
+  reminders: boolean;
+  promotions: boolean;
+  is_test: boolean;
+}
+
 export interface PublicOccupancy {
   club_id: string;
   id: string;
@@ -925,6 +934,7 @@ export interface Tables {
   'public.line_connection': PublicLineConnection;
   'public.location': PublicLocation;
   'public.message_outbox': PublicMessageOutbox;
+  'public.notification_pref': PublicNotificationPref;
   'public.occupancy': PublicOccupancy;
   'public.opening_hours': PublicOpeningHours;
   'public.order_line': PublicOrderLine;
