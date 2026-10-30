@@ -21,10 +21,19 @@ export interface StaffRecord {
 }
 
 export interface IdentityProvider {
-  /** Email plus password. Returns the auth user, or null when either is wrong. */
-  verifyPassword(email: string, password: string): Promise<{ authUserId: string } | null>;
-  /** A time-based code from an authenticator app. Never SMS or email (SR-16). */
-  verifyTotp(authUserId: string, code: string): Promise<boolean>;
+  /**
+   * Email plus password. Returns the auth user, or null when either is wrong. `state` is whatever the provider needs to
+   * check the second factor afterwards (its first-step token and factor id); the console keeps it on the server under
+   * the challenge id, sealed at rest, and never puts it in an answer or a log.
+   */
+  verifyPassword(email: string, password: string): Promise<{ authUserId: string; state?: string } | null>;
+  /**
+   * The same check for a person already known by their auth user (a step-up, D161): the password of that user, and a
+   * fresh state for the code that follows. Null when the password is wrong. The console never holds an email for this.
+   */
+  verifyPasswordFor(authUserId: string, password: string): Promise<{ authUserId: string; state?: string } | null>;
+  /** A time-based code from an authenticator app. Never SMS or email (SR-16). `state` is what the password step returned. */
+  verifyTotp(authUserId: string, code: string, state?: string): Promise<boolean>;
 }
 
 export interface StaffDirectory {
@@ -164,9 +173,9 @@ export function createPlatformAuth(deps: PlatformAuthDeps) {
   }
 
   /** Checks a code for a staff member; counts failures and applies the lockout. */
-  async function checkCode(who: StaffRecord, code: string): Promise<'ok' | 'bad_code' | 'locked'> {
+  async function checkCode(who: StaffRecord, verify: () => Promise<boolean>): Promise<'ok' | 'bad_code' | 'locked'> {
     if (await isLocked(who.id)) return 'locked';
-    if (await identity.verifyTotp(who.authUserId, code)) {
+    if (await verify()) {
       await store.clearFailures(who.id);
       return 'ok';
     }
@@ -195,7 +204,7 @@ export function createPlatformAuth(deps: PlatformAuthDeps) {
       return { ok: false, code: 'invalid_credentials' };
     }
     const challengeId = newId();
-    await store.putChallenge({ id: challengeId, staffId: who.id, expiresAt: now() + policy.challengeMs });
+    await store.putChallenge({ id: challengeId, staffId: who.id, expiresAt: now() + policy.challengeMs, ...(found.state === undefined ? {} : { providerToken: found.state }) });
     return { ok: true, challengeId };
   }
 
@@ -212,7 +221,7 @@ export function createPlatformAuth(deps: PlatformAuthDeps) {
       await failed('deactivated', who);
       return { ok: false, code: 'challenge_invalid' };
     }
-    const result = await checkCode(who, input.code);
+    const result = await checkCode(who, () => identity.verifyTotp(who.authUserId, input.code, challenge.providerToken));
     if (result === 'locked') {
       await failed('locked', who);
       return { ok: false, code: 'locked' };
@@ -262,10 +271,18 @@ export function createPlatformAuth(deps: PlatformAuthDeps) {
     };
   }
 
-  async function stepUp(cookie: string, code: string): Promise<StepUpResult> {
+  /**
+   * A fresh second factor (D161): the password again, which gives the provider a fresh first step, then the code. A
+   * wrong password and a wrong code are one answer and count the same toward the lockout.
+   */
+  async function stepUp(cookie: string, input: { code: string; password: string }): Promise<StepUpResult> {
     const loaded = await load(cookie);
     if (!loaded) return { ok: false, code: 'session_invalid' };
-    const result = await checkCode(loaded.who, code);
+    const result = await checkCode(loaded.who, async () => {
+      const first = await identity.verifyPasswordFor(loaded.who.authUserId, input.password);
+      if (!first || first.authUserId !== loaded.who.authUserId) return false;
+      return identity.verifyTotp(loaded.who.authUserId, input.code, first.state);
+    });
     if (result === 'locked') return { ok: false, code: 'locked' };
     if (result === 'bad_code') {
       await log('auth.step_up_failed', loaded.who);

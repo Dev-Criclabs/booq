@@ -16,6 +16,9 @@ const identity: IdentityProvider = {
     if (email === 'sam@booq.example' && password === 'pw-sam') return { authUserId: '99999999-0000-4000-8000-000000000002' };
     return null;
   },
+  async verifyPasswordFor(authUserId, password) {
+    return (authUserId.endsWith('01') && password === 'pw-ada') || (authUserId.endsWith('02') && password === 'pw-sam') ? { authUserId } : null;
+  },
   async verifyTotp(_id, code) {
     return code === '123456';
   },
@@ -105,8 +108,10 @@ describe('a session', () => {
   it('step up brings freshness back; a wrong code does not', async () => {
     const { cookie } = await signInFully();
     clock.advance(6 * 60_000);
-    expect((await call('POST', '/auth/step-up', { body: { code: '000000' }, cookie })).body).toEqual({ code: 'bad_code' });
-    expect((await call('POST', '/auth/step-up', { body: { code: '123456' }, cookie })).status).toBe(200);
+    expect((await call('POST', '/auth/step-up', { body: { code: '000000', password: 'pw-ada' }, cookie })).body).toEqual({ code: 'bad_code' });
+    expect((await call('POST', '/auth/step-up', { body: { code: '123456', password: 'wrong' }, cookie })).body).toEqual({ code: 'bad_code' });
+    expect((await call('POST', '/auth/step-up', { body: { code: '123456' }, cookie })).status).toBe(400); // the password is required
+    expect((await call('POST', '/auth/step-up', { body: { code: '123456', password: 'pw-ada' }, cookie })).status).toBe(200);
     expect((await call('GET', '/auth/me', { cookie })).body['stepUpFresh']).toBe(true);
   });
   it('sign out ends the session and clears the cookie', async () => {

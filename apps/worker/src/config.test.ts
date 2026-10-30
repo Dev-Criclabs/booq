@@ -8,6 +8,7 @@ const ENV = {
   WORKER_HOUSEKEEPING_CRON: '*/5 * * * *',
   WORKER_IMPORT_SWEEP_CRON: '17 * * * *',
   WORKER_RATE_LIMIT_SWEEP_CRON: '41 * * * *',
+  WORKER_PAY_TAP_PRUNE_CRON: '23 * * * *',
   WORKER_RATE_LIMIT_KEEP_SECONDS: '86400',
   WORKER_CONSOLE_SWEEP_CRON: '53 * * * *',
   WORKER_CONSOLE_SESSION_ABSOLUTE_SECONDS: '43200',
@@ -22,6 +23,7 @@ describe('readWorkerConfig', () => {
       housekeepingCron: '*/5 * * * *',
       importSweepCron: '17 * * * *',
       rateLimitSweepCron: '41 * * * *',
+      payTapPruneCron: '23 * * * *',
       rateLimitKeepSeconds: 86400,
       consoleSweepCron: '53 * * * *',
       consoleSessionAbsoluteSeconds: 43200,
@@ -39,6 +41,7 @@ describe('readWorkerConfig', () => {
     expect(message).toContain('WORKER_HOUSEKEEPING_CRON');
     expect(message).toContain('WORKER_IMPORT_SWEEP_CRON');
     expect(message).toContain('WORKER_RATE_LIMIT_SWEEP_CRON');
+    expect(message).toContain('WORKER_PAY_TAP_PRUNE_CRON');
     expect(message).toContain('WORKER_RATE_LIMIT_KEEP_SECONDS');
     expect(message).toContain('WORKER_CONSOLE_SWEEP_CRON');
     expect(message).toContain('WORKER_CONSOLE_SESSION_ABSOLUTE_SECONDS');
@@ -48,6 +51,7 @@ describe('readWorkerConfig', () => {
   it('refuses a schedule that is not five cron fields', () => {
     expect(() => readWorkerConfig({ ...ENV, WORKER_HOUSEKEEPING_CRON: 'every day' })).toThrow(/WORKER_HOUSEKEEPING_CRON/);
     expect(() => readWorkerConfig({ ...ENV, WORKER_IMPORT_SWEEP_CRON: '* * * *' })).toThrow(/WORKER_IMPORT_SWEEP_CRON/);
+    expect(() => readWorkerConfig({ ...ENV, WORKER_PAY_TAP_PRUNE_CRON: 'hourly' })).toThrow(/WORKER_PAY_TAP_PRUNE_CRON/);
     expect(() => readWorkerConfig({ ...ENV, WORKER_IMPORT_SWEEP_CRON: '* * * * * x\n0 0 * * * evil' })).toThrow(/WORKER_IMPORT_SWEEP_CRON/);
   });
 });
@@ -71,7 +75,9 @@ describe('console session limit', () => {
 });
 
 describe('buildCrontab', () => {
-  it('schedules housekeeping, the club dispatch and the two sweeps, one line each', () => {
-    expect(buildCrontab({ housekeepingCron: '*/5 * * * *', importSweepCron: '17 * * * *', rateLimitSweepCron: '41 * * * *', consoleSweepCron: '53 * * * *' })).toBe('*/5 * * * * housekeeping\n17 * * * * import_staging_dispatch\n41 * * * * rate_limit_sweep\n53 * * * * console_session_sweep\n');
+  it('schedules housekeeping, the club dispatches and the two sweeps, one line each', () => {
+    expect(buildCrontab({ housekeepingCron: '*/5 * * * *', importSweepCron: '17 * * * *', rateLimitSweepCron: '41 * * * *', payTapPruneCron: '23 * * * *', consoleSweepCron: '53 * * * *' })).toBe(
+      '*/5 * * * * housekeeping\n17 * * * * import_staging_dispatch\n41 * * * * rate_limit_sweep\n23 * * * * pay_tap_prune_dispatch\n53 * * * * console_session_sweep\n',
+    );
   });
 });

@@ -37,7 +37,7 @@ export interface TestDatabase {
   clearNow(): Promise<void>;
   /** Publishes a placeholder privacy and terms release v1 (D152), so sign-up has a current notice version. */
   seedNotice(): Promise<void>;
-  /** Makes `id` a coach of `club` (F07, migration 0801): the person with the coach and player roles, and the coach row. Safe to repeat. */
+  /** Makes `id` a coach of `club` (F07, migration 0801): the person with the coach and player roles, the coach row and a weekly rule for every hour of every day. Safe to repeat. */
   seedCoach(club: string, id: string): Promise<void>;
   close(): Promise<void>;
 }
@@ -124,6 +124,10 @@ function wrap(name: string): TestDatabase {
         await c.query('insert into public.app_user (club_id, id, line_user_id) values ($1, $2, $3) on conflict do nothing', [club, id, 'coach:' + id]);
         await c.query(`insert into public.app_user_role (club_id, user_id, role) values ($1, $2, 'coach'), ($1, $2, 'player') on conflict do nothing`, [club, id]);
         await c.query('insert into public.coach (club_id, id) values ($1, $2) on conflict do nothing', [club, id]);
+        // Works every hour of every day, so a test that books a coach is not about the coach's calendar (F07 rules, 0803).
+        await c.query(`insert into public.coach_availability_rule (club_id, coach_id, kind, weekday, start_time, end_time)
+                       select $1, $2, 'weekly', d, '00:00', '24:00' from generate_series(0, 6) d
+                        where not exists (select 1 from public.coach_availability_rule where club_id = $1 and coach_id = $2)`, [club, id]);
         await c.query('commit');
       } catch (e) {
         await c.query('rollback');

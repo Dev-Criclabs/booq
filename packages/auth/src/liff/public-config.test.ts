@@ -28,13 +28,19 @@ describe('public config', () => {
   it('a live club answers its name, default language, status and LIFF id, and the languages offered', async () => {
     expect(await svc.get('a')).toEqual({
       ok: true,
-      config: { nameTh: 'ก', nameEn: 'Club A', defaultLanguage: 'th', status: 'live', liffId: 'liffA', languages: ['th', 'en'] },
+      config: { nameTh: 'ก', nameEn: 'Club A', defaultLanguage: 'th', status: 'live', liffId: 'liffA', languages: ['th', 'en'], noticeVersion: null },
     });
+  });
+  it('carries the current notice release, so a sign-up consents to it (D152, migration 0048)', async () => {
+    expect(await svc.get('a')).toMatchObject({ ok: true, config: { noticeVersion: null } });
+    await tdb.seedNotice();
+    expect(await svc.get('a')).toMatchObject({ ok: true, config: { noticeVersion: 'v1' } });
+    expect(await svc.get('b')).toMatchObject({ ok: true, config: { noticeVersion: 'v1' } });
   });
   it('a Draft club answers the same minimal config and nothing more (D102)', async () => {
     const r = await svc.get('b');
     expect(r).toMatchObject({ ok: true, config: { status: 'draft', liffId: 'liffB' } });
-    expect(Object.keys((r as { config: object }).config).sort()).toEqual(['defaultLanguage', 'languages', 'liffId', 'nameEn', 'nameTh', 'status']);
+    expect(Object.keys((r as { config: object }).config).sort()).toEqual(['defaultLanguage', 'languages', 'liffId', 'nameEn', 'nameTh', 'noticeVersion', 'status']);
   });
   it('a paused club still answers (AUTH-01-AC11)', async () => {
     await tdb.query(`update public.club set status = 'paused' where id = $1`, [A]);

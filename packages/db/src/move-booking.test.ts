@@ -173,6 +173,7 @@ describe('coach rules on a move (design 4.3)', () => {
   beforeEach(async () => {
     await tdb.query(`create function public.t_rules(p_club uuid, p_coach uuid, p_resource uuid, p_starts timestamptz[]) returns void language plpgsql as $$ begin if p_starts[1] = '${H(22)}'::timestamptz then perform app.refuse('rest_rule'); end if; end $$`);
     await tdb.query(`select app.register_coach_rules('public.t_rules'::regproc)`);
+    await tdb.query('delete from app.coach_rules_move_hook');   // F07 registers its own move handler (0803): this test uses a stand-in
   });
 
   it('a solo class is checked by the coach rules at the new time', async () => {

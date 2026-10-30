@@ -5,6 +5,8 @@ import type { SignInDirectory } from './session';
 // signed in may learn about a club: name, default language, status and LIFF id (so liff.init can
 // run), and the languages offered. It is the same minimal answer for Draft, Testing, Live and
 // Paused; the catalogue behind it is a separate gate. No secrets, no player data, no owner contact.
+// It also carries the current privacy notice and terms release (D152, migration 0048), which a new
+// player's consent names in POST /auth/profile; null when none is published.
 
 export interface PublicConfig {
   nameTh: string;
@@ -13,6 +15,7 @@ export interface PublicConfig {
   status: string;
   liffId: string | null;
   languages: ['th', 'en'];
+  noticeVersion: string | null;
 }
 export type PublicConfigResult = { ok: true; config: PublicConfig } | { ok: false; status: 404; code: 'not_found' };
 
@@ -26,13 +29,13 @@ export function createPublicConfigService(deps: { db: Db; directory: SignInDirec
       if (!club) return { ok: false, status: 404, code: 'not_found' };
       const row = (
         await deps.db.withClubTx({ clubId: club.clubId, userId: null, roles: ['guest'], source: 'player_app' }, (tx) =>
-          tx.query('select name_th, name_en, default_language, status, liff_id from public.public_club_config'),
+          tx.query('select name_th, name_en, default_language, status, liff_id, notice_version from public.public_club_config'),
         )
-      ).rows[0] as { name_th: string; name_en: string; default_language: string; status: string; liff_id: string | null } | undefined;
+      ).rows[0] as { name_th: string; name_en: string; default_language: string; status: string; liff_id: string | null; notice_version: string | null } | undefined;
       if (!row) return { ok: false, status: 404, code: 'not_found' };
       return {
         ok: true,
-        config: { nameTh: row.name_th, nameEn: row.name_en, defaultLanguage: row.default_language, status: row.status, liffId: row.liff_id, languages: ['th', 'en'] },
+        config: { nameTh: row.name_th, nameEn: row.name_en, defaultLanguage: row.default_language, status: row.status, liffId: row.liff_id, languages: ['th', 'en'], noticeVersion: row.notice_version },
       };
     },
   };
