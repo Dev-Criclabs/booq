@@ -8,4 +8,5 @@ export const tables: Fragment = {
   'public.coach_price_override': { class: 'D', audited: true },        // F07-T01 (0801): one nullable price per price group
   'public.coach_pay': { class: 'D', audited: true },                    // F07-T02 (0802): owner only
   'public.booking_coach_add': { class: 'D', audited: true },            // F07-T06 (0806): the add order's hold on a coach
+  'public.coach_substitution': { class: 'D', audited: true },           // F07-T07 (0807): append only, who changed a solo class's coach
 };
