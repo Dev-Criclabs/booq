@@ -22,6 +22,7 @@ export const tables: Fragment = {
   'platform.template_item': { class: 'P' },
   'platform.launch_check': { class: 'P' },
   'platform.export_request': { class: 'P' },
+  'platform.worker_heartbeat': { class: 'P' },   // migration 0007; counts only
   // People (F01-T12, migration 0003): club data, BOOQ staff never.
   'public.app_user': { class: 'D', audited: true },
   'public.app_user_role': { class: 'D', audited: true },
@@ -34,6 +35,11 @@ export const tables: Fragment = {
   'public.payment_connection': { class: 'S', audited: true, allowColumns: ['webhook_token_hash_test', 'webhook_token_hash_live'] },
   'public.club_secret': { class: 'S', audited: true },
   'public.club_secret_read': { class: 'D' },
+  // Import staging, exports, data requests (migration 0007)
+  'public.import_job': { class: 'D', audited: true },
+  'public.import_row': { class: 'D' },
+  'public.data_export': { class: 'D', audited: true },
+  'public.data_request': { class: 'D', audited: true },
   // audit (F01-T10)
   'audit.registry': { class: 'infra' },
   'app.test_tables': { class: 'infra' },   // F01-T26

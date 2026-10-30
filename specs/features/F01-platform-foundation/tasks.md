@@ -125,6 +125,7 @@ Roles: **Arch** Architect/data, **BE-P** back end platform and LINE, **DevOps**,
 
 - [ ] **F01-T30** Migration 0007 and the CSV validator for players: parse to staging, per-row error codes, all or nothing. IDs: PLAT-06-AC1, AC2, AC5, AC9, AC10, AC18. Role: BE-P · Deps T12 · Size: M
   Tests first: one bad row saves nothing; a club id column is ignored; amounts read as THB into satang; raw file not kept.
+  - Database part built (Architect): `0007_import_export.sql` (`import_job`, `import_row` staging, `data_export`, `data_request`, owner-only imports, staging removed by trigger when a job is confirmed or cancelled, `app.sweep_import_staging()` for the worker per club, audit registered; raw staging values never audited). Also `platform.worker_heartbeat` for F01-T34 (counts only, worker writes, BOOQ staff read).
 - [ ] **F01-T31** Import routes (owner only), confirm in one transaction, `import_handlers` registry for packages and balances (registered by F06), audit entries, staging clean-up job. IDs: PLAT-06-AC3, AC4, AC6, AC7, AC8. Role: BE-P · Deps T30 · Size: M
   Tests first: non-owner and BOOQ refused; imported players have no LINE id and match on phone at first sign-in (F02); duplicate phones flagged.
   Review amendment: D105 and SR-05 (blocking). Imported players are `unclaimed` with inert balances; nothing is matched silently. Extra tests: an imported record is never visible to a second person typing the same phone; no imported field is pre-filled anywhere.
