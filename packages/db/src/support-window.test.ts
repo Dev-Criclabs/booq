@@ -9,7 +9,7 @@ const USER = '11111111-2222-4333-8444-555555555555';
 
 let tdb: TestDatabase;
 let db: Db;
-const ctx = (clubId: string, roles: string[]) => ({ clubId, userId: USER, roles, requestId: 'r1' });
+const ctx = (clubId: string, roles: string[]) => ({ clubId, userId: USER, roles, requestId: 'r1', source: 'admin' as const });
 const setWindow = (clubId: string, roles: string[], on: boolean) =>
   db.withClubTx(ctx(clubId, roles), (tx) => tx.query(`select app.set_support_window($1) as until`, [on]));
 const windowOf = async (club: string) =>
@@ -74,6 +74,21 @@ describe('app.set_support_window', () => {
     await expect(db.withClubTx(ctx(A, ['owner']), (tx) => tx.query(`update public.club set allow_booq_changes_until = app.now() + interval '1 hour'`))).rejects.toThrow(/permission denied/i);
     const r = await tdb.query(`select has_function_privilege('booq_platform', 'app.set_support_window(boolean)', 'execute') as ok, has_function_privilege('anon', 'app.set_support_window(boolean)', 'execute') as anon`);
     expect(r.rows[0]).toEqual({ ok: false, anon: false });
+  });
+
+  it('refuses a null argument: only an explicit true or false changes the window (review T19 C2)', async () => {
+    await setWindow(A, ['owner'], true);
+    const before = await windowOf(A);
+    await expect(db.withClubTx(ctx(A, ['owner']), (tx) => tx.query(`select app.set_support_window(null)`))).rejects.toThrow(/true or false/i);
+    expect(await windowOf(A)).toEqual(before);
+    expect((await tdb.query(`select count(*)::int as n from public.audit_entry where action = 'support_window.off'`)).rows[0].n).toBe(0);
+  });
+
+  it('does not make up a source: a caller that sets none is refused by the audit writer (review T19 C1)', async () => {
+    await expect(
+      db.withClubTx({ clubId: A, userId: USER, roles: ['owner'] }, (tx) => tx.query(`select app.set_support_window(true)`)),
+    ).rejects.toThrow(/app\.source/);
+    expect((await windowOf(A)).until).toBeNull();
   });
 
   it('with no club in the context it fails', async () => {

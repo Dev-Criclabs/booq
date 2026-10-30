@@ -88,6 +88,13 @@ begin
     raise exception 'club_status:blocked' using errcode = 'P0001', detail = v_blockers::text;
   end if;
 
+  -- Go live deletes the club's test data first, in this transaction: if the purge raises, nothing
+  -- below runs and the club stays in Testing (PLAT-01-AC6, PLAT-07-AC4; review T20 R1). The purge reads
+  -- the same club context, requires the status to still be Testing and writes its own audit and P6 entry.
+  if v_from = 'testing' and p_to = 'live' then
+    perform app.go_live_purge();
+  end if;
+
   -- Go live, pause and resume end any open owner window (SR-02). The audit trigger on club
   -- records this update with the staff member as actor.
   update public.club

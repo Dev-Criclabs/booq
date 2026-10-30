@@ -1,0 +1,11 @@
+{
+  "_note": "Proposed by BE-P for F01 (D51). Numbers to be assigned by Content; wording drafted, writers own it.",
+  "en": {
+    "L-new.club_paused": "Online booking at {clubName} is paused by BOOQ. Reason: {reason}. Existing bookings and reminders are not affected, and package and wallet expiry dates move forward by the length of the pause.",
+    "L-new.club_resumed": "Online booking at {clubName} is open again."
+  },
+  "th": {
+    "L-new.club_paused": "BOOQ หยุดการจองออนไลน์ของ {clubName} ชั่วคราว เหตุผล: {reason} การจองที่มีอยู่และการแจ้งเตือนไม่ได้รับผลกระทบ และวันหมดอายุของแพ็กเกจและกระเป๋าเงินจะเลื่อนออกไปตามระยะเวลาที่หยุด",
+    "L-new.club_resumed": "เปิดให้จองออนไลน์ที่ {clubName} อีกครั้งแล้ว"
+  }
+}

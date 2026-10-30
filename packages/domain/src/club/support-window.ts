@@ -12,7 +12,7 @@ export function supportWindowRoute(db: Db) {
     if (Object.keys(body).length !== 1 || typeof body['on'] !== 'boolean') throw new RouteError(400, 'invalid_input');
     const on = body['on'];
     const until = await db.withClubTx(
-      { clubId: ctx.clubId, userId: ctx.userId, roles: ctx.roles, ...(ctx.requestId ? { requestId: ctx.requestId } : {}) },
+      { clubId: ctx.clubId, userId: ctx.userId, roles: ctx.roles, source: 'admin', ...(ctx.requestId ? { requestId: ctx.requestId } : {}) },
       async (tx) => (await tx.query<{ until: Date | null }>('select app.set_support_window($1) as until', [on])).rows[0]?.until ?? null,
     );
     return { on, until: until ? until.toISOString() : null };

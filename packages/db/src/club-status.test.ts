@@ -225,3 +225,84 @@ describe('pause, resume and the window (PLAT-01-AC7, AC10; SR-02)', () => {
     expect(await statusOf()).toBe('draft');
   });
 });
+
+describe('Go live runs the purge in the same transaction (review T20 R1; PLAT-01-AC6, PLAT-07-AC4)', () => {
+  const OWNER_USER = '11111111-1111-4111-8111-111111111111';
+  const TESTER_USER = '22222222-2222-4222-8222-222222222222';
+  const purgeEntries = async () => (await tdb.query(`select count(*)::int as n from public.audit_entry where club_id = $1 and action = 'go_live.purge'`, [CLUB])).rows[0].n as number;
+
+  async function person(id: string, line: string, roles: string[], test = false) {
+    const c = await tdb.pool.connect();
+    try {
+      await c.query('begin');
+      await c.query('insert into public.app_user (club_id, id, line_user_id, is_test) values ($1,$2,$3,$4)', [CLUB, id, line, test]);
+      for (const r of roles) await c.query('insert into public.app_user_role (club_id, user_id, role) values ($1,$2,$3)', [CLUB, id, r]);
+      await c.query('commit');
+    } finally {
+      c.release();
+    }
+  }
+  async function ledger(name: string, body = '') {
+    await tdb.query(`
+      create table public.${name} (club_id uuid not null references public.club (id), id uuid not null default gen_random_uuid(), amount integer not null, is_test boolean not null default false, primary key (club_id, id));
+      alter table public.${name} enable row level security; alter table public.${name} force row level security;
+      grant all on public.${name} to booq_owner, booq_purge;
+      ${body}
+      select app.register_test_table('public.${name}', 150);`);
+  }
+
+  it('a Testing club with test rows and a tester goes Live: the test rows and tester are gone; the owner, its roles and a setting\'s audit entry stay', async () => {
+    await ledger('t_ledger');
+    await setStatus(admin, 'testing');
+    await person(OWNER_USER, 'L1', ['owner', 'player']);
+    await person(TESTER_USER, 'L2', ['player'], true);
+    await tdb.query(`insert into public.t_ledger (club_id, amount) values ($1, 5), ($1, 7)`, [CLUB]);
+    await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1, 'hold', '15')`, [CLUB]);
+    await addChecks(['pass']);
+    expect((await tdb.query(`select count(*)::int as n from public.t_ledger where is_test`)).rows[0].n).toBe(2);
+
+    expect(await setStatus(admin, 'live')).toBe('live');
+
+    expect((await tdb.query(`select count(*)::int as n from public.t_ledger`)).rows[0].n).toBe(0);
+    expect((await tdb.query('select id from public.app_user order by id')).rows.map((r) => r.id)).toEqual([OWNER_USER]);
+    expect((await tdb.query(`select count(*)::int as n from public.app_user_role where club_id = $1`, [CLUB])).rows[0].n).toBe(2);
+    expect((await tdb.query(`select count(*)::int as n from public.audit_entry where club_id = $1 and record_type = 'club_setting'`, [CLUB])).rows[0].n).toBeGreaterThan(0);
+    expect(await purgeEntries()).toBe(1);
+    expect(await changes()).toHaveLength(2);
+  });
+
+  it('a purge that fails keeps the club in Testing: no status change, no history row, no test row removed', async () => {
+    await ledger('t_ledger');
+    await ledger('t_boom', `create function public.__boom_del() returns trigger language plpgsql as $$ begin raise exception 'purge boom'; end $$;
+                            create trigger t_boom_del before delete on public.t_boom for each row execute function public.__boom_del();`);
+    await setStatus(admin, 'testing');
+    await tdb.query(`insert into public.t_ledger (club_id, amount) values ($1, 5)`, [CLUB]);
+    await tdb.query(`insert into public.t_boom (club_id, amount) values ($1, 1)`, [CLUB]);
+    await addChecks(['pass']);
+    await expect(setStatus(admin, 'live')).rejects.toThrow(/purge boom/);
+    expect(await statusOf()).toBe('testing');
+    expect(await changes()).toHaveLength(1);
+    expect((await tdb.query(`select count(*)::int as n from public.t_ledger`)).rows[0].n).toBe(1);
+    expect(await purgeEntries()).toBe(0);
+  });
+
+  it('a refused Go live (checks not passed) does not purge', async () => {
+    await ledger('t_ledger');
+    await setStatus(admin, 'testing');
+    await tdb.query(`insert into public.t_ledger (club_id, amount) values ($1, 5)`, [CLUB]);
+    await addChecks(['fail']);
+    await expect(setStatus(admin, 'live')).rejects.toThrow(/blocked/);
+    expect((await tdb.query(`select count(*)::int as n from public.t_ledger`)).rows[0].n).toBe(1);
+  });
+
+  it('the purge never runs for Draft to Testing, pause or resume', async () => {
+    await setStatus(admin, 'testing');
+    expect(await purgeEntries()).toBe(0);
+    await addChecks(['pass']);
+    await setStatus(admin, 'live');
+    expect(await purgeEntries()).toBe(1);
+    await apply(admin, 'paused', 'r');
+    await apply(admin, 'live', 'r');
+    expect(await purgeEntries()).toBe(1);
+  });
+});
