@@ -3,6 +3,8 @@
 How we run the build. It follows `CLAUDE.md` and the Developer Hand-off v1.2. It adds the one thing they
 leave open: how several Claude Code sessions (sub-chats) work in parallel without stepping on each other.
 
+Decisions are logged in `docs/decisions.md`. The Notion Booq Product Reference is superseded and is kept only as background (`docs/core/`).
+
 Sources of truth, in order
 1. `specs/product/prd-v1.2.md` : every rule and decision.
 2. `specs/product/handoff-v1.2.md` : requirement IDs (BOOK-03, PAY-02 ...), architecture, data model, feature backlog F01 to F16.
