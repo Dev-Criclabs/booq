@@ -1,4 +1,4 @@
-import { LANG_COOKIE_SECONDS, Reply, route, RouteError, hashToken, serializeLangCookie, type Route, type RouteContext, type createProfileService, type createPublicConfigService, type createSignInService } from '@booq/auth';
+import { LANG_COOKIE_SECONDS, Reply, route, RouteError, hashInviteToken, serializeLangCookie, type Route, type RouteContext, type createProfileService, type createPublicConfigService, type createSignInService } from '@booq/auth';
 
 // Sign-in routes (F02-T05 to T12; design 5): the transport over the sign-in, profile and config
 // services. All are `public`: they are how a guest becomes a person. The club comes from the
@@ -19,7 +19,7 @@ const bad = () => new RouteError(400, 'bad_input');
 function inviteHashOf(raw: unknown): string | undefined {
   if (raw === undefined) return undefined;
   if (typeof raw !== 'string' || raw === '' || raw.length > MAX_INVITE) throw bad();
-  return hashToken(raw);
+  return hashInviteToken(raw);
 }
 
 export function authRoutes(deps: AuthRouteDeps): Route<unknown>[] {

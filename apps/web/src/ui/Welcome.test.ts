@@ -59,7 +59,7 @@ describe('C1 Welcome', () => {
   it('CC-5: nothing on the screen is text outside the language files', () => {
     for (const lang of ['en', 'th'] as const) {
       const t = translator(lang);
-      const allowed = ['P-0001', 'P-0004', 'P-0005', 'P-0006', 'P-0007', 'P-0008', 'P-0009', 'P-new.lang_th', 'P-new.lang_en'].map((k) => t(k));
+      const allowed = ['P-0001', 'P-0004', 'P-0005', 'P-0006', 'P-0007', 'P-0008', 'P-0009', 'P-new.language_toggle_th', 'P-new.language_toggle_en'].map((k) => t(k));
       allowed.push(t('P-0002', { court: '2', date: 'Sat 9 Jan', startTime: '18:00', endTime: '19:00' }), t('P-0003', { clubName: 'Hunter Tennis Club' }), 'Hunter', 'Tennis Club', '|');
       const texts = unescape(render(lang)).replace(/<[^>]+>/g, '\n').split('\n').map((s) => s.trim()).filter(Boolean);
       for (const s of texts) expect(allowed).toContain(s);
