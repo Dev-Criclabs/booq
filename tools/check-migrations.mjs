@@ -28,9 +28,6 @@ export const BLOCKS = [
   { name: 'F14', from: 1401, to: 1499 },
   { name: 'F15', from: 1501, to: 1599 },
   { name: 'F16', from: 1601, to: 1699 },
-  // After the first production deploy the migrator refuses a number below the highest applied one, so blocks end:
-  // every later migration takes the next number from here up, in one sequence (build plan section 4).
-  { name: 'after launch', from: 2001, to: 9999 },
 ];
 const FILE = /^(\d{4})_[a-z0-9]+(_[a-z0-9]+)*\.sql$/;
 
@@ -45,6 +42,36 @@ export function checkNames(names) {
     if (seen.has(n)) problems.push(`${name}: number ${m[1]} is also used by ${seen.get(n)}`);
     seen.set(n, name);
     if (!BLOCKS.some((b) => n >= b.from && n <= b.to)) problems.push(`${name}: number ${m[1]} is in no feature block`);
+  }
+  return problems;
+}
+
+/** Names of the functions and views a migration defines (created or replaced), lower case, as written. */
+export function definedObjects(sql) {
+  const out = new Set();
+  const stripped = sql.replace(/--.*$/gm, '');
+  for (const m of stripped.matchAll(/create\s+(?:or\s+replace\s+)?(?:function|view)\s+((?:[a-z0-9_]+\.)?[a-z0-9_]+)/gi)) out.add(m[1].toLowerCase());
+  return out;
+}
+
+/**
+ * The migrator applies a file numbered below the highest applied one (feature blocks interleave over time). That is
+ * safe unless the late file redefines a function or view that a higher numbered file already on the base redefines:
+ * on a database that has the higher file, the late one would overwrite it; on a fresh one it would not. Returns the
+ * problems: a file that is new (not on the base) defines an object that a file on the base with a higher number defines.
+ */
+export function checkLateRedefinitions(base, current) {
+  const problems = [];
+  const baseDefs = [...base].map(([name, sql]) => [name, definedObjects(sql)]);
+  for (const [name, sql] of current) {
+    if (base.has(name)) continue;
+    const mine = definedObjects(sql);
+    for (const [other, objs] of baseDefs) {
+      if (other <= name) continue;
+      for (const o of mine) {
+        if (objs.has(o)) problems.push(`${name}: redefines ${o}, which ${other} (higher number, already on the base branch) also defines; a database that has ${other} would be overwritten. Write the change in a number above ${other.slice(0, 4)} in your block, or after it.`);
+      }
+    }
   }
   return problems;
 }
@@ -80,7 +107,7 @@ export function run(dir = 'packages/db/migrations', env = process.env) {
   const ref = env.BASE_REF || 'origin/main';
   const base = baseFiles(dir, ref);
   if (base === null) console.log(`::notice::migrations: base ${ref} not available; the never-edited rule was not checked`);
-  else problems.push(...checkImmutable(base, current));
+  else problems.push(...checkImmutable(base, current), ...checkLateRedefinitions(base, current));
   return { problems, count: names.length };
 }
 

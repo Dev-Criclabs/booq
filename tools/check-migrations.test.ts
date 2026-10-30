@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
-import { checkImmutable, checkNames } from './check-migrations.mjs';
+import { checkImmutable, checkLateRedefinitions, checkNames, definedObjects } from './check-migrations.mjs';
 
 describe('F01-T36 migration number check', () => {
   it('accepts well-formed names in a feature block', () => {
@@ -14,8 +14,7 @@ describe('F01-T36 migration number check', () => {
   it('knows every feature block of the build plan, in order, without a catch-all', () => {
     expect(checkNames(['0501_a.sql', '0601_a.sql', '0701_a.sql', '0801_a.sql', '0901_a.sql', '1001_a.sql', '1401_a.sql'])).toEqual([]);
     expect(checkNames(['1301_gap.sql']).join()).toMatch(/no feature block/);
-    expect(checkNames(['1701_after_f16.sql']).join()).toMatch(/no feature block/);
-    expect(checkNames(['2001_first_after_launch.sql'])).toEqual([]);
+    expect(checkNames(['1701_after_f16.sql', '2001_x.sql']).length).toBe(2);
     expect(checkNames(['0600_gap.sql', '0800_gap.sql']).length).toBe(2);
   });
   it('four digit numbers sort after 0999 as strings, so the loader order is the number order', () => {
@@ -26,6 +25,20 @@ describe('F01-T36 migration number check', () => {
     expect(checkImmutable(base, new Map([['0001_a.sql', 'one'], ['0002_b.sql', 'two'], ['0003_c.sql', 'three']]))).toEqual([]);
     expect(checkImmutable(base, new Map([['0001_a.sql', 'ONE'], ['0002_b.sql', 'two']])).join()).toMatch(/edited/);
     expect(checkImmutable(base, new Map([['0001_a.sql', 'one']])).join()).toMatch(/removed or renamed/);
+  });
+  it('reads the functions and views a migration defines, ignoring comments', () => {
+    const sql = "-- create function app.not_this() returns void\ncreate function app.a() returns void language sql as 'select 1';\ncreate or replace function PUBLIC.B(x int) returns int language sql as 'select 1';\ncreate view public.v as select 1;";
+    expect([...definedObjects(sql)].sort()).toEqual(['app.a', 'public.b', 'public.v']);
+  });
+  it('refuses a new late migration that redefines what a higher numbered one on the base already defines', () => {
+    const fn = (n: number) => `create or replace function app.f() returns int language sql as 'select ${n}';`;
+    const base = new Map([['0225_a.sql', fn(1)], ['0801_b.sql', fn(2)]]);
+    // a new 0226 redefining app.f would overwrite 0801 on a database that has it
+    expect(checkLateRedefinitions(base, new Map([...base, ['0226_c.sql', fn(3)]])).join()).toMatch(/0226_c.sql: redefines app.f, which 0801_b.sql/);
+    // above the base file, or an object nobody else defines, or a file already on the base: fine
+    expect(checkLateRedefinitions(base, new Map([...base, ['0802_c.sql', fn(3)]]))).toEqual([]);
+    expect(checkLateRedefinitions(base, new Map([...base, ['0226_c.sql', 'create function app.g() returns int language sql as $$ select 1 $$;']]))).toEqual([]);
+    expect(checkLateRedefinitions(base, base)).toEqual([]);
   });
   it('the repository itself passes (CLI exits 0)', () => {
     const r = spawnSync('node', ['tools/check-migrations.mjs'], { encoding: 'utf8', env: { ...process.env, BASE_REF: 'HEAD' } });

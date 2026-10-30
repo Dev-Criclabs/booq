@@ -49,11 +49,28 @@ describe('migration runner (F01-T02; build plan section 4)', () => {
     await expect(applyMigrations(db.pool, dir)).rejects.toThrow(/changed/i);
   });
 
-  it('refuses a new migration numbered below one already applied', async () => {
-    write({ '0002_b.sql': 'create table b (id int);' });
+  it('applies a new migration numbered below one already applied, once, and says it was out of order', async () => {
+    write({ '0801_f07.sql': 'create table f07 (id int);' });
     await applyMigrations(db.pool, dir);
-    write({ '0001_a.sql': 'create table a (id int);' });
-    await expect(applyMigrations(db.pool, dir)).rejects.toThrow(/out of order/i);
+    write({ '0801_f07.sql': 'create table f07 (id int);', '0225_f03.sql': 'create table f03 (id int);' });
+    const r = await applyMigrations(db.pool, dir);
+    expect(r).toEqual({ applied: ['0225_f03'], outOfOrder: ['0225_f03'] });
+    expect((await db.query("select to_regclass('public.f03') as t")).rows[0].t).not.toBeNull();
+    expect(await applyMigrations(db.pool, dir)).toEqual({ applied: [], outOfOrder: [] });
+  });
+
+  it('several late files in one run go in number order, and an edited applied file is still refused', async () => {
+    write({ '0900_f08.sql': 'create table log (n text);' });
+    await applyMigrations(db.pool, dir);
+    write({
+      '0900_f08.sql': 'create table log (n text);',
+      '0226_b.sql': "insert into log values ('226');",
+      '0225_a.sql': "insert into log values ('225');",
+    });
+    await applyMigrations(db.pool, dir);
+    expect((await db.query('select n from log order by ctid')).rows.map((x) => x.n)).toEqual(['225', '226']);
+    write({ '0900_f08.sql': 'create table log (n text, x int);', '0226_b.sql': "insert into log values ('226');", '0225_a.sql': "insert into log values ('225');" });
+    await expect(applyMigrations(db.pool, dir)).rejects.toThrow(/changed/i);
   });
 
   it('a failing migration rolls back completely and is not recorded', async () => {
