@@ -10,6 +10,12 @@ import { clubRoutes } from '../clubs/routes';
 import { createPauseService, type OwnerNotifier } from '../pause/pause';
 import { createStatusService } from '../status/status';
 import { createUsageService } from '../usage/usage';
+import { createHealthService } from '../health/health';
+import { healthRoutes } from '../health/routes';
+import { createOwnerService, type InviteMailer } from '../owner/owner';
+import { ownerRoutes } from '../owner/routes';
+import { createTesterService } from '../testers/testers';
+import { testerRoutes } from '../testers/routes';
 import type { PlatformRoute, PlatformSource } from '../http/server';
 
 // The platform console's composition root (F01-T17, T18; D148): wires the database role
@@ -22,6 +28,10 @@ export interface PlatformConfig {
   /** Signs the session cookie. At least 32 characters; separate from every club key. */
   signingKey: string;
   maxBodyBytes: number;
+  /** The club app's public address (https), for owner and tester invite links. */
+  appBaseUrl: string;
+  /** The shared token of GET /health for the external monitor. Absent: the route is not mounted. */
+  healthToken: string | null;
   /** Attempts per caller and window on the sign-in routes. Platform config; absent means no limit (set it before launch). */
   signInRateLimit: { limit: number; windowSeconds: number } | null;
 }
@@ -29,11 +39,14 @@ export interface PlatformConfig {
 const WHOLE = /^[1-9][0-9]*$/;
 
 export function readPlatformConfig(env: Record<string, string | undefined>): PlatformConfig & { databaseUrl: string } {
-  const required = ['DATABASE_URL', 'PLATFORM_SIGNING_KEY', 'PLATFORM_MAX_BODY_BYTES'] as const;
+  const required = ['DATABASE_URL', 'PLATFORM_SIGNING_KEY', 'PLATFORM_MAX_BODY_BYTES', 'APP_BASE_URL'] as const;
   const missing = required.filter((n) => !env[n]);
   if (missing.length) throw new Error(`platform settings missing: ${missing.join(', ')}`);
   if (env['PLATFORM_SIGNING_KEY']!.length < 32) throw new Error('PLATFORM_SIGNING_KEY must be at least 32 characters');
   if (!WHOLE.test(env['PLATFORM_MAX_BODY_BYTES']!)) throw new Error('PLATFORM_MAX_BODY_BYTES must be a whole number above zero');
+  if (!/^https:\/\/[^\s/]+(\/.*)?$/.test(env['APP_BASE_URL']!)) throw new Error('APP_BASE_URL must be an https address');
+  const health = env['HEALTH_TOKEN'];
+  if (health !== undefined && health.length < 16) throw new Error('HEALTH_TOKEN must be at least 16 characters');
   const limit = env['PLATFORM_SIGNIN_RATE_LIMIT'];
   const window = env['PLATFORM_SIGNIN_RATE_WINDOW_SECONDS'];
   if ((limit && !window) || (!limit && window)) throw new Error('PLATFORM_SIGNIN_RATE_LIMIT and PLATFORM_SIGNIN_RATE_WINDOW_SECONDS are set together or not at all');
@@ -42,6 +55,8 @@ export function readPlatformConfig(env: Record<string, string | undefined>): Pla
     databaseUrl: env['DATABASE_URL']!,
     signingKey: env['PLATFORM_SIGNING_KEY']!,
     maxBodyBytes: Number(env['PLATFORM_MAX_BODY_BYTES']),
+    appBaseUrl: env['APP_BASE_URL']!.replace(/\/+$/, ''),
+    healthToken: health ?? null,
     signInRateLimit: limit ? { limit: Number(limit), windowSeconds: Number(window) } : null,
   };
 }
@@ -62,12 +77,20 @@ export const outboxNotConnected: OwnerNotifier = {
   },
 };
 
+/** The owner invite email goes through a mail provider that is not chosen yet: the invite is made, the send fails, the route answers 502 mail_failed. */
+export const mailerNotConnected: InviteMailer = {
+  async sendOwnerInvite() {
+    throw new Error('invite mailer is not connected');
+  },
+};
+
 export interface PlatformParts {
   db: PlatformDb;
   clock: Clock;
   identity: IdentityProvider;
   config: PlatformConfig;
   notifier?: OwnerNotifier;
+  mailer?: InviteMailer;
   /** Extra route groups, for tests and for the parts added next. */
   extraRoutes?: readonly PlatformRoute[];
 }
@@ -92,6 +115,9 @@ export function createPlatformTable(parts: PlatformParts): PlatformSource {
         pause: createPauseService({ db, notifier: parts.notifier ?? outboxNotConnected }),
         usage: createUsageService({ db, today: () => bangkokDate(clock.now()) }),
       }),
+      ...ownerRoutes({ owner: createOwnerService({ db, mailer: parts.mailer ?? mailerNotConnected, baseUrl: config.appBaseUrl }) }),
+      ...testerRoutes({ testers: createTesterService({ db, baseUrl: config.appBaseUrl }) }),
+      ...(config.healthToken ? healthRoutes({ health: createHealthService({ db, token: config.healthToken }) }) : []),
       ...(parts.extraRoutes ?? []),
     ],
     deps: {

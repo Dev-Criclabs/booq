@@ -6,11 +6,12 @@ import { servePlatform } from '../http/server';
 import { createPlatformTable, readPlatformConfig, unavailableIdentity } from './context';
 
 // The console's settings and wiring. Required, no defaults, no value printed on failure.
-const ENV = { DATABASE_URL: 'postgres://u:pw@h/db', PLATFORM_SIGNING_KEY: 'k'.repeat(40), PLATFORM_MAX_BODY_BYTES: '100000' };
+const ENV = { DATABASE_URL: 'postgres://u:pw@h/db', PLATFORM_SIGNING_KEY: 'k'.repeat(40), PLATFORM_MAX_BODY_BYTES: '100000', APP_BASE_URL: 'https://app.example' };
 
 describe('readPlatformConfig', () => {
   it('reads the required settings; the rate limit is an optional pair', () => {
-    expect(readPlatformConfig(ENV)).toEqual({ databaseUrl: ENV.DATABASE_URL, signingKey: ENV.PLATFORM_SIGNING_KEY, maxBodyBytes: 100000, signInRateLimit: null });
+    expect(readPlatformConfig(ENV)).toEqual({ databaseUrl: ENV.DATABASE_URL, signingKey: ENV.PLATFORM_SIGNING_KEY, maxBodyBytes: 100000, appBaseUrl: 'https://app.example', healthToken: null, signInRateLimit: null });
+    expect(readPlatformConfig({ ...ENV, APP_BASE_URL: 'https://app.example/', HEALTH_TOKEN: 'h'.repeat(20) })).toMatchObject({ appBaseUrl: 'https://app.example', healthToken: 'h'.repeat(20) });
     expect(readPlatformConfig({ ...ENV, PLATFORM_SIGNIN_RATE_LIMIT: '5', PLATFORM_SIGNIN_RATE_WINDOW_SECONDS: '60' }).signInRateLimit).toEqual({ limit: 5, windowSeconds: 60 });
   });
   it('names missing settings and never prints a value', () => {
@@ -27,6 +28,8 @@ describe('readPlatformConfig', () => {
   it.each([
     [{ PLATFORM_SIGNING_KEY: 'short' }],
     [{ PLATFORM_MAX_BODY_BYTES: '0' }],
+    [{ APP_BASE_URL: 'http://app.example' }],
+    [{ HEALTH_TOKEN: 'short' }],
     [{ PLATFORM_SIGNIN_RATE_LIMIT: '5' }],
     [{ PLATFORM_SIGNIN_RATE_WINDOW_SECONDS: '60' }],
     [{ PLATFORM_SIGNIN_RATE_LIMIT: 'x', PLATFORM_SIGNIN_RATE_WINDOW_SECONDS: '60' }],
@@ -47,7 +50,7 @@ describe('without the password adapter (T17b)', () => {
     await tdb.close();
   });
   it('sign-in answers 503 identity_unavailable, not a wrong-password 401', async () => {
-    const source = createPlatformTable({ db: pdb, clock: new ControllableClock('2026-12-01T03:00:00Z'), identity: unavailableIdentity, config: { signingKey: 'k'.repeat(40), maxBodyBytes: 1000, signInRateLimit: null } });
+    const source = createPlatformTable({ db: pdb, clock: new ControllableClock('2026-12-01T03:00:00Z'), identity: unavailableIdentity, config: { signingKey: 'k'.repeat(40), maxBodyBytes: 1000, appBaseUrl: 'https://app.example', healthToken: null, signInRateLimit: null } });
     const h = servePlatform(source.table, source.deps);
     const r = await h(new Request('https://console.example/api/auth/sign-in', { method: 'POST', body: JSON.stringify({ email: 'a@b.c', password: 'x' }), headers: { 'content-type': 'application/json' } }), { params: Promise.resolve({ path: ['auth', 'sign-in'] }) });
     expect([r.status, await r.json()]).toEqual([503, { code: 'identity_unavailable' }]);
