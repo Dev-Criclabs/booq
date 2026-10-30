@@ -47,6 +47,7 @@ export const tables: Fragment = {
   'app.test_tables': { class: 'infra' },
   'app.anonymise_handlers': { class: 'infra' },          // F01-T33 (0019)
   'app.deletion_impact_handlers': { class: 'infra' },   // F01-T33 (0019)
+  'public.rate_limit_hit': { class: 'D' },               // migration 0027: hashed sign-in counters, no raw address
   'public.audit_entry': { class: 'D' },
   'public.audit_erasure': { class: 'D' },
   // pause and resume (F01-T22): work to run when a club resumes; written only by migrations

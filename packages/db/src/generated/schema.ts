@@ -729,6 +729,13 @@ export interface PublicPromoRedemption {
   is_test: boolean;
 }
 
+export interface PublicRateLimitHit {
+  club_id: string;
+  key_hash: string;
+  window_start: string;
+  hits: number;
+}
+
 export interface PublicResource {
   club_id: string;
   id: string;
@@ -830,6 +837,7 @@ export interface Tables {
   'public.price_group': PublicPriceGroup;
   'public.promo_code': PublicPromoCode;
   'public.promo_redemption': PublicPromoRedemption;
+  'public.rate_limit_hit': PublicRateLimitHit;
   'public.resource': PublicResource;
   'public.user_consent': PublicUserConsent;
   'public.user_staff_note': PublicUserStaffNote;
