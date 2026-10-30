@@ -58,6 +58,7 @@ Migration numbers are 0301 to 0399 and rise with task order (the migrator refuse
   Tests first: credit, then wallet, then money; a failed reservation rolls the whole Pay back; the code use and the entitlement are counted once and restored when the hold ends.
 - [ ] **F04-T12d** Pay, part (d): the zero money path through the claim (no hold, no Beam, confirmed in the same transaction) and the response `{ orderId, holdExpiresAt | null, payment | null, confirmed }`. IDs: PAY-07-AC1 to AC5, PROMO-01-AC13, R7-AC3, decision D64. Role: BE-C · Deps T12c · Size: S
   Tests first: zero money confirms in the same transaction with no charge; a taken slot refuses and nothing is used up; a 100 percent code follows the zero path; any failed step rolls everything back.
+  Receipt: calls `app.issue_receipt` through `app.payment_ports` (the F13 issue_receipt port; a fake until F13 exists), in this task (F13 design; orchestrator 30 Oct).
 - [ ] **F04-T13** `GET /orders/{id}` and the staff routes `POST /staff/orders/quote` and `/pay`. IDs: R7-AC2, ROLE-01-AC4, CC-2. Role: BE-C · Deps T12d · Size: S
   Tests first: own or staff only; the snapshot is unchanged after prices and names change; staff booking as a player pays as a player.
 - [ ] **F04-T14** Owner setup routes `/setup/price-groups`, `/court-prices`, `/coach-tier-prices`, `/add-ons`, `/partners`, `/promo-codes`, audited, new orders only. IDs: R3-AC8, PROMO-01-AC12. Role: BE-C · Deps T05 · Size: M
