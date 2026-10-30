@@ -760,6 +760,7 @@ export interface PublicPayment {
   confirmed_at: string | null;
   is_test: boolean;
   created_at: string;
+  received_satang: number | null;
 }
 
 export interface PublicPaymentConnection {
