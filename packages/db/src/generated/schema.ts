@@ -43,6 +43,12 @@ export interface AppLaunchProducers {
   task: string;
 }
 
+export interface AppMessageKinds {
+  kind: string;
+  cap_class: string;
+  switch_key: string | null;
+}
+
 export interface AppMoveHandlers {
   name: string;
   handler: unknown;
@@ -384,6 +390,23 @@ export interface PublicBooking {
   updated_at: string;
 }
 
+export interface PublicBookingCancel {
+  club_id: string;
+  id: string;
+  booking_id: string;
+  order_id: string;
+  kind: string;
+  outcome: string;
+  version: number;
+  returned: unknown;
+  credit_lost: boolean;
+  reason: string | null;
+  by_user: string | null;
+  closure_id: string | null;
+  created_at: string;
+  is_test: boolean;
+}
+
 export interface PublicBookingCoachAdd {
   club_id: string;
   order_id: string;
@@ -406,6 +429,28 @@ export interface PublicClaimRequest {
   requested_at: string;
   handled_by: string | null;
   handled_at: string | null;
+}
+
+export interface PublicClosure {
+  club_id: string;
+  id: string;
+  reason: string;
+  range_start: string;
+  range_end: string;
+  repeat_rule: unknown | null;
+  status: string;
+  created_by: string;
+  created_at: string;
+  ended_by: string | null;
+  ended_at: string | null;
+  is_test: boolean;
+}
+
+export interface PublicClosureResource {
+  club_id: string;
+  closure_id: string;
+  resource_id: string;
+  is_test: boolean;
 }
 
 export interface PublicClub {
@@ -723,6 +768,7 @@ export interface PublicLineConnection {
   plan_message_limit: number | null;
   secret_last4: unknown;
   tested_at: string | null;
+  webhook_token_hash: string | null;
 }
 
 export interface PublicLocation {
@@ -1086,6 +1132,7 @@ export interface Tables {
   'app.deletion_impact_handlers': AppDeletionImpactHandlers;
   'app.feature_keys': AppFeatureKeys;
   'app.launch_producers': AppLaunchProducers;
+  'app.message_kinds': AppMessageKinds;
   'app.move_handlers': AppMoveHandlers;
   'app.pause_handlers': AppPauseHandlers;
   'app.payment_ports': AppPaymentPorts;
@@ -1122,8 +1169,11 @@ export interface Tables {
   'public.auth_session': PublicAuthSession;
   'public.birthday_entitlement_use': PublicBirthdayEntitlementUse;
   'public.booking': PublicBooking;
+  'public.booking_cancel': PublicBookingCancel;
   'public.booking_coach_add': PublicBookingCoachAdd;
   'public.claim_request': PublicClaimRequest;
+  'public.closure': PublicClosure;
+  'public.closure_resource': PublicClosureResource;
   'public.club': PublicClub;
   'public.club_feature': PublicClubFeature;
   'public.club_invite': PublicClubInvite;

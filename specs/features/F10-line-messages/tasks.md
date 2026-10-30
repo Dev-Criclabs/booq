@@ -23,7 +23,7 @@ Not startable until their lists exist: F10 enqueues are called by F07 (substitut
 
 ## B. Functions and grants
 
-- [ ] **F10-T06** Migration 0605: `app.enqueue_message(...) returns uuid` and its registration as the fifth payment port `enqueue_message` in `app.payment_ports`, `app.void_messages`, `app.cap_state`, `app.mark_undeliverable`. IDs: LINE-03, LINE-05, LINE-07-AC1 to AC4, D96. Role: BE-P · Deps T02 to T05 · Size: M
+- [x] **F10-T06** Migration 0605: `app.enqueue_message(...) returns uuid` and its registration as the fifth payment port `enqueue_message` in `app.payment_ports`, `app.void_messages`, `app.cap_state`, `app.mark_undeliverable`. IDs: LINE-03, LINE-05, LINE-07-AC1 to AC4, D96. Role: BE-P · Deps T02 to T05 · Size: M
   Also in 0605: the anonymise handler that clears `message_outbox.params` for the person, registered in `app.anonymise_handlers` (migration 0019 names it; orchestrator, 30 Oct). IDs: PDPA-01-AC5, CC-3.
   Tests first: the port is registered and `apply_payment` with the port missing fails closed; the same dedupe key enqueues once and returns the same id; `booking_released` is not enqueued for the reason `payment_unavailable`; at 80 percent no reminder row is created and queued reminders are voided with `cap` and never revived; at 100 percent on a free plan a message becomes `undeliverable`; a reminder whose hour has passed is not queued; every row of a Testing club is `is_test`.
 - [ ] **F10-T07** Migration 0606: policies and grants (the sender role, the platform reader). IDs: LINE-03, CC-2, D27. Role: BE-P · Deps T06 · Size: S
