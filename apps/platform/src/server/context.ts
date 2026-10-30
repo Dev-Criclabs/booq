@@ -1,5 +1,5 @@
-import { createMemoryAuthStore, createPlatformAuth, type IdentityProvider } from '../auth/sign-in';
-import { createDbAuditSink, createDbStaffDirectory, IdentityUnavailable } from '../auth/adapters';
+import { createPlatformAuth, type IdentityProvider } from '../auth/sign-in';
+import { createDbAuditSink, createDbAuthStore, createDbStaffDirectory, IdentityUnavailable } from '../auth/adapters';
 import { authRoutes } from '../auth/routes';
 import { createRateLimiter, type RateLimiter } from '@booq/auth';
 import type { PlatformDb } from '@booq/db';
@@ -70,6 +70,9 @@ export const unavailableIdentity: IdentityProvider = {
   async verifyPassword() {
     throw new IdentityUnavailable();
   },
+  async verifyPasswordFor() {
+    throw new IdentityUnavailable();
+  },
   async verifyTotp() {
     throw new IdentityUnavailable();
   },
@@ -108,7 +111,7 @@ export function createPlatformTable(parts: PlatformParts): PlatformSource {
     identity,
     staff: createDbStaffDirectory(db),
     audit: createDbAuditSink(db),
-    store: createMemoryAuthStore(), // sessions live in this process: a durable shared store comes with the hosting choice
+    store: createDbAuthStore(db, { sealKey: config.signingKey }), // shared by every console process (migration 0051)
     clock,
     signingKey: config.signingKey,
   });

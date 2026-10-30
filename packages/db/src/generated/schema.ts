@@ -18,6 +18,11 @@ export interface AppCoachRulesHook {
   handler: unknown;
 }
 
+export interface AppCoachRulesMoveHook {
+  only_row: boolean;
+  handler: unknown;
+}
+
 export interface AppDeletionImpactHandlers {
   handler_key: string;
   handler: unknown;
@@ -933,6 +938,27 @@ export interface PublicResource {
   active: boolean;
 }
 
+export interface PublicRichMenu {
+  club_id: string;
+  id: string;
+  line_rich_menu_id: string | null;
+  image_sha256: string;
+  labels_hash: string;
+  status: string;
+  error: string | null;
+  rendered_at: string | null;
+  uploaded_at: string | null;
+  created_at: string;
+}
+
+export interface PublicRichMenuLabel {
+  club_id: string;
+  id: string;
+  tile: number;
+  label_th: string | null;
+  label_en: string | null;
+}
+
 export interface PublicUserConsent {
   club_id: string;
   id: string;
@@ -983,6 +1009,7 @@ export interface Tables {
   'app.anonymise_handlers': AppAnonymiseHandlers;
   'app.claim_handlers': AppClaimHandlers;
   'app.coach_rules_hook': AppCoachRulesHook;
+  'app.coach_rules_move_hook': AppCoachRulesMoveHook;
   'app.deletion_impact_handlers': AppDeletionImpactHandlers;
   'app.feature_keys': AppFeatureKeys;
   'app.launch_producers': AppLaunchProducers;
@@ -1064,6 +1091,8 @@ export interface Tables {
   'public.promo_redemption': PublicPromoRedemption;
   'public.rate_limit_hit': PublicRateLimitHit;
   'public.resource': PublicResource;
+  'public.rich_menu': PublicRichMenu;
+  'public.rich_menu_label': PublicRichMenuLabel;
   'public.user_consent': PublicUserConsent;
   'public.user_staff_note': PublicUserStaffNote;
   'public.wallet_account': PublicWalletAccount;

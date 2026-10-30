@@ -62,7 +62,11 @@ afterEach(async () => {
   await tdb.close();
 });
 
-describe('until F07 registers the check (assumption A-8)', () => {
+describe('with no rules registered (assumption A-8; F07 registers its own in migration 0803)', () => {
+  beforeEach(async () => {
+    await tdb.query('delete from app.coach_rules_hook');
+    await tdb.query('delete from app.coach_rules_move_hook');
+  });
   it('a coach request is refused and leaves nothing', async () => {
     expect(await reserve(uid(1), await newOrder(uid(1)), COURT1, [H(18)], COACH)).toEqual({ ok: false, code: 'coach_rules_not_installed', detail: undefined });
     expect(await count('booking')).toBe(0);

@@ -58,8 +58,8 @@ export function authRoutes(deps: AuthRouteDeps): PlatformRoute[] {
     }),
 
     platformRoute({ method: 'POST', path: '/auth/step-up', access: 'staff' }, async (ctx) => {
-      const { code } = strings(ctx.body, ['code']);
-      const r = await guarded(() => auth.stepUp(ctx.cookie!, code));
+      const { code, password } = strings(ctx.body, ['code', 'password']);
+      const r = await guarded(() => auth.stepUp(ctx.cookie!, { code, password }));
       if (!r.ok) throw new RouteError(r.code === 'locked' ? 423 : 401, r.code);
       return { ok: true };
     }),
