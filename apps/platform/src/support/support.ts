@@ -1,4 +1,5 @@
 import type { PlatformDb, PlatformTx } from '@booq/db';
+import type { Connections, ConnectionPlan, TestOutcome } from '../connections/connections';
 
 // The support view (F01-T19; PLAT-02-AC2 to AC7, AC9; design 5.2): GET and PUT
 // /clubs/{id}/support/setup and the session behind them. Transport-neutral: the routes call these
@@ -22,8 +23,9 @@ export interface SupportSetup {
 
 export type GetSetupResult = { ok: true; setup: SupportSetup } | { ok: false; code: 'not_found' };
 export type PutSetupResult =
-  | { ok: true; changed: string[]; pendingOwnerContact?: string }
-  | { ok: false; code: 'not_found' | 'look_only' | 'invalid' | 'section_unavailable' };
+  | { ok: true; changed: string[]; pendingOwnerContact?: string; connectionTest?: TestOutcome }
+  | { ok: false; code: 'not_found' | 'look_only' | 'invalid' | 'section_unavailable' | 'step_up_required' };
+export type TestConnectionResult = ({ ok: true } & TestOutcome) | { ok: false; code: 'not_found' | 'invalid' | 'section_unavailable' };
 
 // The club columns the support view shows: setup and the owner contact (decision D2). Not the
 // support window columns and nothing about people.
@@ -37,7 +39,8 @@ const BASICS = ['slug', 'name_th', 'name_en', 'legal_name', 'tax_id', 'tax_branc
   'receipt_prefix', 'default_language', 'owner_name', 'owner_phone', 'owner_line', 'owner_email'] as const;
 const PLAN = ['plan_trial_ends_at', 'billing_starts_at'] as const;
 const SECTIONS = ['basics', 'plan', 'resources-hours', 'line', 'payments', 'features', 'template'] as const;
-const PENDING_SECTIONS = new Set(['line', 'payments']); // F01-T09 adds the secret tables
+// The connection sections write secrets and run tests, so they need the connection service and a fresh second factor (SR-16).
+const CONNECTION_SECTIONS = new Set(['line', 'payments']);
 
 class Invalid extends Error {}
 
@@ -67,14 +70,21 @@ interface Applied {
   detail: Record<string, unknown>;
   /** Set when an owner contact change waits for a second admin (design 7.1). */
   pendingOwnerContact?: string;
+  connectionTest?: TestOutcome;
 }
 
 const OWNER_COLUMNS = ['owner_name', 'owner_phone', 'owner_line', 'owner_email'];
 
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
-async function applySection(tx: PlatformTx, clubId: string, section: string, body: unknown): Promise<Applied> {
+async function applySection(tx: PlatformTx, clubId: string, section: string, body: unknown, connection?: { connections: Connections; plan: ConnectionPlan }): Promise<Applied> {
   switch (section) {
+    case 'line':
+    case 'payments': {
+      if (!connection) throw new Invalid();
+      const a = await connection.connections.apply(tx, clubId, connection.plan);
+      return { changed: a.changed, detail: a.detail, ...(a.connectionTest ? { connectionTest: a.connectionTest } : {}) };
+    }
     case 'basics': {
       const values = pick(body, BASICS);
       // The owner contact is not a plain column write: after an owner invite exists a second admin
@@ -183,7 +193,7 @@ interface StaffRow {
   active: boolean;
 }
 
-export function createSupportService(deps: { db: PlatformDb }) {
+export function createSupportService(deps: { db: PlatformDb; connections?: Connections }) {
   const { db } = deps;
 
   async function loadStaff(staffId: string): Promise<StaffRow | null> {
@@ -255,14 +265,31 @@ export function createSupportService(deps: { db: PlatformDb }) {
     return result ? { ok: true, setup: result } : refused(staff, clubId, 'read');
   }
 
-  async function putSetup(staffId: string, clubId: string, section: string, body: unknown): Promise<PutSetupResult> {
+  async function putSetup(staffId: string, clubId: string, section: string, body: unknown, opts: { stepUpFresh?: boolean } = {}): Promise<PutSetupResult> {
     const staff = validId(staffId) ? await loadStaff(staffId) : null;
     if (!staff) return { ok: false, code: 'not_found' };
     if (!validId(clubId)) return refused(staff, clubId, 'write');
     if (!(SECTIONS as readonly string[]).includes(section)) return { ok: false, code: 'invalid' };
-    if (PENDING_SECTIONS.has(section)) return { ok: false, code: 'section_unavailable' };
 
-    type Outcome = { kind: 'not_found' } | { kind: 'look_only' } | { kind: 'done'; changed: string[]; pending?: string };
+    // Connection sections: secrets and a network test. A fresh second factor is required (SR-16); the
+    // caller must be able to see and edit the club before anything is sent to LINE or Beam.
+    let connection: { connections: Connections; plan: ConnectionPlan } | undefined;
+    if (CONNECTION_SECTIONS.has(section)) {
+      if (!deps.connections) return { ok: false, code: 'section_unavailable' };
+      if (opts.stepUpFresh !== true) return { ok: false, code: 'step_up_required' };
+      const gate = await db.withPlatformTx({ staffId: staff.id, clubId, staffLabel: staff.display_name }, async (tx) => {
+        if (!(await seeClub(tx, clubId))) return 'not_found' as const;
+        return (await tx.query<{ ok: boolean }>('select platform.club_editable($1) as ok', [clubId])).rows[0]?.ok === true ? ('ok' as const) : ('look_only' as const);
+      });
+      if (gate === 'not_found') return refused(staff, clubId, 'write');
+      if (gate === 'ok') {
+        const prepared = await deps.connections.prepare(section as 'line' | 'payments', body);
+        if (!prepared.ok) return { ok: false, code: 'invalid' };
+        connection = { connections: deps.connections, plan: prepared.plan };
+      }
+    }
+
+    type Outcome = { kind: 'not_found' } | { kind: 'look_only' } | { kind: 'done'; changed: string[]; pending?: string; test?: TestOutcome };
     try {
       const outcome = await db.withPlatformTx({ staffId: staff.id, clubId, staffLabel: staff.display_name }, async (tx): Promise<Outcome> => {
         if (!(await seeClub(tx, clubId))) return { kind: 'not_found' };
@@ -274,20 +301,46 @@ export function createSupportService(deps: { db: PlatformDb }) {
           return { kind: 'look_only' };
         }
         const sid = await ensureSession(tx, staff.id, clubId, 'edit');
-        const applied = await applySection(tx, clubId, section, body);
+        const applied = await applySection(tx, clubId, section, body, connection);
         await p6(tx, 'support.setup_changed', clubId, applied.detail, sid);
         await clubNote(tx, 'support.setup_changed', clubId, { section, fields: applied.changed });
-        return { kind: 'done', changed: applied.changed, ...(applied.pendingOwnerContact ? { pending: applied.pendingOwnerContact } : {}) };
+        return {
+          kind: 'done',
+          changed: applied.changed,
+          ...(applied.pendingOwnerContact ? { pending: applied.pendingOwnerContact } : {}),
+          ...(applied.connectionTest ? { test: applied.connectionTest } : {}),
+        };
       });
       if (outcome.kind === 'not_found') return refused(staff, clubId, 'write');
       if (outcome.kind === 'look_only') return { ok: false, code: 'look_only' };
-      return { ok: true, changed: outcome.changed, ...(outcome.pending ? { pendingOwnerContact: outcome.pending } : {}) };
+      return {
+        ok: true,
+        changed: outcome.changed,
+        ...(outcome.pending ? { pendingOwnerContact: outcome.pending } : {}),
+        ...(outcome.test ? { connectionTest: outcome.test } : {}),
+      };
     } catch (e) {
       const code = (e as { code?: string }).code ?? '';
       // Invalid input, or a value the database refuses (check, unique, foreign key, bad text).
       if (e instanceof Invalid || /^(22|23)/.test(code)) return { ok: false, code: 'invalid' };
       throw e;
     }
+  }
+
+  /** "Test connection" (design 5.2): the probe on the values given, nothing written; the result is logged in P6. */
+  async function testConnection(staffId: string, clubId: string, kind: 'line' | 'beam', body: unknown): Promise<TestConnectionResult> {
+    const staff = validId(staffId) ? await loadStaff(staffId) : null;
+    if (!staff) return { ok: false, code: 'not_found' };
+    if (!deps.connections) return { ok: false, code: 'section_unavailable' };
+    if (!validId(clubId)) return refused(staff, clubId, 'test');
+    const visible = await db.withPlatformTx({ staffId: staff.id, clubId, staffLabel: staff.display_name }, async (tx) => (await seeClub(tx, clubId)) !== null);
+    if (!visible) return refused(staff, clubId, 'test');
+    const r = await deps.connections.test(kind, body);
+    if (!r.ok) return r;
+    await db.withPlatformTx({ staffId: staff.id, clubId, staffLabel: staff.display_name }, (tx) =>
+      p6(tx, 'club.connection_tested', clubId, { connection: kind, result: r.result, ...(r.result === 'fail' ? { code: r.code } : {}) }),
+    );
+    return r;
   }
 
   async function closeSession(staffId: string, clubId: string): Promise<{ ok: true } | { ok: false; code: 'not_found' }> {
@@ -307,5 +360,5 @@ export function createSupportService(deps: { db: PlatformDb }) {
     });
   }
 
-  return { getSetup, putSetup, closeSession };
+  return { getSetup, putSetup, closeSession, testConnection };
 }
