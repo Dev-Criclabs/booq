@@ -115,6 +115,26 @@ export interface PlatformAuditLog {
   support_session_id: string | null;
 }
 
+export interface PlatformClubHealth {
+  club_id: string;
+  check_key: string;
+  status: string;
+  reason: string | null;
+  changed_at: string;
+  checked_at: string;
+}
+
+export interface PlatformClubLineUsage {
+  club_id: string;
+  month: string;
+  used: number;
+  line_consumption: number | null;
+  message_limit: number | null;
+  plan_kind: string | null;
+  source: string;
+  synced_at: string | null;
+}
+
 export interface PlatformClubUsageDaily {
   club_id: string;
   day: string;
@@ -362,6 +382,17 @@ export interface PublicBooking {
   is_test: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface PublicBookingCoachAdd {
+  club_id: string;
+  order_id: string;
+  booking_id: string;
+  coach_id: string;
+  status: string;
+  hold_expires_at: string | null;
+  is_test: boolean;
+  created_at: string;
 }
 
 export interface PublicClaimRequest {
@@ -1052,6 +1083,8 @@ export interface Tables {
   'app.test_tables': AppTestTables;
   'audit.registry': AuditRegistry;
   'platform.audit_log': PlatformAuditLog;
+  'platform.club_health': PlatformClubHealth;
+  'platform.club_line_usage': PlatformClubLineUsage;
   'platform.club_usage_daily': PlatformClubUsageDaily;
   'platform.config': PlatformConfig;
   'platform.console_challenge': PlatformConsoleChallenge;
@@ -1076,6 +1109,7 @@ export interface Tables {
   'public.auth_session': PublicAuthSession;
   'public.birthday_entitlement_use': PublicBirthdayEntitlementUse;
   'public.booking': PublicBooking;
+  'public.booking_coach_add': PublicBookingCoachAdd;
   'public.claim_request': PublicClaimRequest;
   'public.club': PublicClub;
   'public.club_feature': PublicClubFeature;

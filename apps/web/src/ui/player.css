@@ -117,3 +117,24 @@ body { background: var(--g); color: var(--ink); font-family: var(--font); -webki
 .notice-empty { margin: 8px 0 0; padding: 14px 16px; border-radius: 14px; background: var(--cd); font-size: 15px; line-height: 1.5; color: var(--mu); }
 .notice-section h2 { margin: 16px 0 6px; font-size: 18px; font-weight: 600; color: var(--hd); }
 .notice-section p { margin: 0 0 10px; font-size: 15px; line-height: 1.6; color: var(--ink); }
+
+/* Top bar with back button (C17 sub-pages, date of birth step) */
+.bar { flex: none; display: flex; align-items: center; gap: 8px; padding: 14px 16px 10px; }
+.bar-title { flex: 1; min-width: 0; margin: 0; font-size: 22px; font-weight: 500; letter-spacing: -0.02em; color: var(--hd); overflow-wrap: anywhere; }
+.bar .lang-toggle { color: var(--hd); flex: none; }
+.icon-btn { flex: none; width: 40px; height: 40px; border: 0; border-radius: 50%; background: var(--cd); color: var(--hd); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.lead-text { margin: 0; font-size: 15px; line-height: 1.5; color: var(--mu); }
+fieldset.field { margin: 0; padding: 0; border: 0; min-width: 0; }
+fieldset.field legend { padding: 0; margin-bottom: 6px; font-size: 13px; font-weight: 500; color: var(--mu); }
+.dob-parts { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr) minmax(0, 1fr); gap: 8px; }
+.dob-parts select, .dob-parts input {
+  height: 50px; padding: 0 10px; border: 1.5px solid var(--cd); border-radius: 14px; background: var(--cd);
+  font: inherit; font-size: 16px; color: var(--ink); min-width: 0; width: 100%;
+}
+.dob-parts [aria-invalid='true'] { border-color: #a4452c; }
+.dob-readout { font-size: 14px; color: var(--hd); font-weight: 500; }
+.field-help { font-size: 13px; font-weight: 400; line-height: 1.5; color: var(--mu); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { height: 40px; padding: 0 14px; border: 1.5px solid var(--ln); border-radius: 999px; background: var(--cd); font: inherit; font-size: 14px; color: var(--ink); white-space: nowrap; cursor: pointer; }
+.chip[aria-checked='true'] { border-color: var(--sel); background: var(--tn); color: var(--sel); font-weight: 600; }
+.form-ok { margin: 0 0 10px; font-size: 13px; font-weight: 500; color: var(--sel); }

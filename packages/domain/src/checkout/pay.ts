@@ -36,8 +36,10 @@ export async function preparePay(tx: Tx, customerId: string, req: PayRequest, so
 // The order is written with its frozen amounts before reserve_court, so a zero money order takes no hold
 // (0304); the lines follow once the bookings exist (the sum check is deferred to commit). The writes go
 // through the Architect's definer functions; the app role has no write on orders or order_line.
-// The lock order of FA 3.4 starts inside reserve_court (customer, then coach); the wallet, package and
-// promo row locks of F04-T12c come after it in this transaction.
+// F04-T12c adds, in this order: the code use (app.count_promo_use, under the promo row lock) and the birthday
+// entitlement before the claim, so the promo lock is never taken while a claim waits on a slot; then, after the
+// lines, F06's reserve_credit_and_wallet, which is keyed by line (F06 design 4.9). The customer's lock is taken
+// inside reserve_court. Any refusal rolls the whole transaction back, so nothing is used up.
 
 export interface PlacedOrder {
   orderId: string;
@@ -77,6 +79,11 @@ async function lineNames(tx: Tx, choice: QuoteRequest, lines: QuoteLine[], sourc
 
 /** Write the priced order, claim its hours, then write its lines. Refusals from the claim arrive as BK001. */
 export async function placeOrder(tx: Tx, customerId: string, choice: QuoteRequest, quote: QuoteView, sources: QuoteSources): Promise<PlacedOrder> {
+  const starts = [...new Set(quote.lines.map((l) => l.startsAt))].sort();
+  // A second tap (D47) returns the caller's live hold before anything is counted, so the order's own code use
+  // or birthday entitlement never refuses it. reserve_court repeats this lookup under the customer lock.
+  const live = await liveHold(tx, choice.courtId, choice.coachId, starts);
+  if (live) return live;
   const names = await lineNames(tx, choice, quote.lines, sources);
   const group = (await tx.query<Names & { id: string }>(`select id, name_th, name_en from public.price_group where club_id = app.club_id() and id = $1`, [quote.priceGroupId])).rows[0];
   await tx.query('savepoint place_order');
@@ -96,7 +103,8 @@ export async function placeOrder(tx: Tx, customerId: string, choice: QuoteReques
     }),
   ]);
   const orderId = created.rows[0]!.id;
-  const starts = [...new Set(quote.lines.map((l) => l.startsAt))].sort();
+  if (quote.promoCodeId !== null) await entitlement(tx, 'select app.count_promo_use($1, $2)', [quote.promoCodeId, orderId]);
+  if (quote.birthdayEntitlement !== null) await entitlement(tx, 'select app.use_birthday_entitlement($1, $2)', [quote.birthdayEntitlement, orderId]);
   const claim = (await tx.query<{ r: { order_id: string; booking_ids: string[]; hold_expires_at: string | null; reused?: boolean } }>(
     'select app.reserve_court($1, $2, $3::timestamptz[], $4) as r',
     [orderId, choice.courtId, starts, choice.coachId],
@@ -132,5 +140,41 @@ export async function placeOrder(tx: Tx, customerId: string, choice: QuoteReques
       })),
     ),
   ]);
+  if (!(await sources.reserveCreditAndWallet(tx, orderId))) throw new CheckoutError('credit_unavailable');
   return { orderId, bookingIds: claim.booking_ids, holdExpiresAt: claim.hold_expires_at, reused: false };
+}
+
+/** The caller's live hold for exactly this selection, if any (D47). The Pay route asks it before repricing. */
+export async function findLiveHold(tx: Tx, choice: QuoteRequest): Promise<PlacedOrder | null> {
+  const starts = choice.hours.map((h) => new Date(h)).filter((d) => !Number.isNaN(d.getTime())).map((d) => d.toISOString()).sort();
+  return liveHold(tx, choice.courtId, choice.coachId, [...new Set(starts)]);
+}
+
+async function liveHold(tx: Tx, courtId: string, coachId: string | null, starts: string[]): Promise<PlacedOrder | null> {
+  const r = (await tx.query<{ order_id: string; booking_ids: string[]; hold_expires_at: string }>(
+    `select b.order_id, array_agg(b.id order by b.start_at) as booking_ids, min(b.hold_expires_at) as hold_expires_at
+       from public.booking b
+      where b.club_id = app.club_id() and b.customer_id = app.user_id() and b.created_by = app.user_id()
+        and b.status = 'awaiting_payment' and b.hold_expires_at > app.now()
+        and b.resource_id = $1 and b.coach_id is not distinct from $2::uuid
+      group by b.order_id
+     having array_agg(b.start_at order by b.start_at) = $3::timestamptz[]
+      limit 1`,
+    [courtId, coachId, starts],
+  )).rows[0];
+  return r ? { orderId: r.order_id, bookingIds: r.booking_ids, holdExpiresAt: new Date(r.hold_expires_at).toISOString(), reused: true } : null;
+}
+
+// The refusals of count_promo_use ('promo:<code>') and use_birthday_entitlement ('birthday:<code>'), P0001.
+const PROMO_CODES = new Set(['code_not_valid', 'code_expired', 'code_used_up', 'code_first_booking_only', 'one_code_per_order']);
+
+async function entitlement(tx: Tx, sql: string, args: unknown[]): Promise<void> {
+  try {
+    await tx.query(sql, args);
+  } catch (e) {
+    const m = /^(promo|birthday):(\w+)$/.exec((e as { message?: string }).message ?? '');
+    if (m?.[1] === 'promo' && PROMO_CODES.has(m[2]!)) throw new CheckoutError(m[2] as 'code_not_valid');
+    if (m?.[1] === 'birthday' && (m[2] === 'not_entitled' || m[2] === 'already_used')) throw new CheckoutError('birthday_not_available');
+    throw e;
+  }
 }

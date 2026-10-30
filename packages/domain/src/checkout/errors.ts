@@ -19,6 +19,9 @@ export const CHECKOUT_TEXT_KEYS = {
   code_first_booking_only: 'P-new.code_first_booking_only',
   code_used_up: 'P-new.code_used_up',
   code_not_for_solo_class: 'P-new.code_not_for_solo_class',
+  one_code_per_order: 'P-new.one_code_per_order',
+  birthday_not_available: 'P-new.birthday_not_available',
+  credit_unavailable: 'P-new.credit_unavailable',
 } as const;
 
 export type CheckoutErrorCode = keyof typeof CHECKOUT_TEXT_KEYS;
