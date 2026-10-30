@@ -8,7 +8,7 @@ Depends on: F01 T03 to T07 (database, context, tenant suite), T08 (settings), T1
 
 ## A. Tables and the claim
 
-- [ ] **F03-T01** Migrations 0201 and 0202: `orders` shell and `booking` with CHECKs (one hour, on the hour in Bangkok), statuses, indexes, test-flag registration, class D registration. IDs: BOOK-06, BOOK-01-AC1, AC2, CC-1. Role: BE-B · Deps F01-T06, T26 · Size: M
+- [x] **F03-T01** Migrations 0201 and 0202: `orders` shell and `booking` with CHECKs (one hour, on the hour in Bangkok), statuses, indexes, test-flag registration, class D registration. IDs: BOOK-06, BOOK-01-AC1, AC2, CC-1. Role: BE-B · Deps F01-T06, T26 · Size: M
   Tests first: a 90 minute row and an 18:30 row are rejected by the database; two hours of one order are two rows; another club's order cannot be referenced.
 - [ ] **F03-T02** Migration 0203: `occupancy` exactly as FA §3.1 with the one-hour CHECK for non-closure kinds and both exclusion constraints. IDs: BOOK-04-AC1, AC2, AC3, AC6. Role: Arch · Deps T01 · Size: M
   Tests first (direct SQL, bypassing the app): an overlapping court row is rejected; an overlapping coach row on another court is rejected; back-to-back hours both succeed; a solo class row with only a court is rejected.
