@@ -33,7 +33,10 @@ F06 uses the number block 0501 to 0599.
 | `0501_package_tables.sql` | `customer_package`, `package_extension`, `wallet_account` (FA §2.3); `package_product` extended with the F06 columns if F04 did not create them (§3.1) |
 | `0502_ledgers.sql` | `credit_ledger` and `wallet_ledger` as FA §2.3; append-only triggers, revoke, deferred balance checks |
 | `0503_balance_views.sql` | `wallet_balance`, `package_balance`, `package_status` views |
-| `0504_functions.sql` | The ledger functions of §4 |
+| `0504_wallet_functions.sql` | The wallet functions of §4.1 |
+| `0511_credit_functions.sql` | The credit functions of §4.2 (written in two parts, 0511 and 0513) |
+| `0512_package_functions.sql` | `grant_package`, expiry arithmetic, `extend_package`, `extend_for_pause`, `wallet_expire` (§4.4, §4.7) |
+| `0513_credit_functions_b.sql` | `credit_use`, `credit_forfeit`, `credit_reverse_forfeit`, `credit_adjust`, `credit_expire` (§4.2) |
 | `0505_release_handler.sql` | `app.release_handlers` registration (F03 §4.5) for F06 |
 | `0506_jobs_support.sql` | Sweep queries as functions; dedupe indexes |
 | `0507_grants_policies.sql` | Policies and grants for the tables, views and functions above |
