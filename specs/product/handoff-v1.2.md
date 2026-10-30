@@ -4,7 +4,7 @@ Oct 30, 2026 · @Criclabs
 
 ## Overview
 
-Build Hunter Tennis Club's booking app as the first club on the existing Booq core, running as a LINE LIFF app, live for public booking on 29 Dec 2026. Hunter testing starts 7 Dec 2026.
+Build Hunter Tennis Club's booking app as the first club on the Booq core. There is no earlier Booq code or database, so Hunter is the first real build and the core is created with it (decision 30 Oct 2026). The Notion Booq Product Reference is superseded by this doc and the PRD, running as a LINE LIFF app, live for public booking on 29 Dec 2026. Hunter testing starts 7 Dec 2026.
 
 | Item         | Value                                                                                                                    |
 |--------------|--------------------------------------------------------------------------------------------------------------------------|
@@ -194,7 +194,7 @@ These are the starting requirements for the feature specs. Each acceptance check
 | COACH-03  | Solo pack credits do not apply to a coach added at court checkout. They apply only when booking through Classes, Solo classes                              | Given a player with solo credits, when they add a coach on C10, then the full coaching price is charged                                     |
 | COACH-04  | With a solo pack credit, the ฿500 court is still paid by a bundle hour, wallet or payment                                                                  | Solo booking with a credit shows the court line due                                                                                         |
 | PKG-01    | Credits and wallet are ledgers. Every movement has a reason and, for staff, a written note                                                                 | Balance always equals the sum of its ledger rows                                                                                            |
-| PKG-02    | Bundles: 10 hours ฿4,500 for 3 months, 20 hours ฿8,000 for 5 months. Class packs are 8 sessions for 3 months                                               | Expiry date = purchase date plus validity                                                                                                   |
+| PKG-02    | Bundles: 10 hours ฿4,500 for 3 months, 20 hours ฿8,000 for 5 months. Class packs are 8 sessions for 3 months                                               | Expiry date = purchase date plus validity. A Student package stays valid after the holder becomes an Adult                                                                                                   |
 | PKG-03    | Expiry reminders 14 and 3 days before. Expired credits are lost unless the owner extends with a reason                                                     |                                                                                                                                             |
 | CANCEL-01 | Cancel 12 hours or more before start returns full value: credit to its package, money to the wallet. Later, or no show, forfeits                           | The cancel sheet states the outcome before confirming                                                                                       |
 | CANCEL-02 | Value never returns as cash. The wallet can't be withdrawn                                                                                                 | No cash refund action exists anywhere                                                                                                       |
