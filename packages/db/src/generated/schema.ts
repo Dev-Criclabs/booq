@@ -132,6 +132,16 @@ export interface PlatformWorkerHeartbeat {
   lag_seconds: number | null;
 }
 
+export interface PublicAddOn {
+  club_id: string;
+  id: string;
+  name_th: string;
+  name_en: string;
+  price_satang: number | null;
+  active: boolean;
+  position: number;
+}
+
 export interface PublicAppUser {
   club_id: string;
   id: string;
@@ -206,6 +216,19 @@ export interface PublicAuthSession {
   last_seen_at: string;
   expires_at: string;
   revoked_at: string | null;
+  is_test: boolean;
+}
+
+export interface PublicBirthdayEntitlementUse {
+  club_id: string;
+  id: string;
+  customer_id: string;
+  year: number;
+  kind: string;
+  order_id: string;
+  status: string;
+  used_at: string;
+  restored_at: string | null;
   is_test: boolean;
 }
 
@@ -348,6 +371,29 @@ export interface PublicClubTester {
   is_test: boolean;
 }
 
+export interface PublicCoachTier {
+  club_id: string;
+  id: string;
+  name_th: string;
+  name_en: string;
+}
+
+export interface PublicCoachTierPrice {
+  club_id: string;
+  tier_id: string;
+  price_group_id: string;
+  price_satang: number | null;
+}
+
+export interface PublicCourtPriceRule {
+  club_id: string;
+  id: string;
+  price_group_id: string;
+  day_type: string;
+  peak: string;
+  price_satang: number;
+}
+
 export interface PublicDataExport {
   club_id: string;
   id: string;
@@ -447,6 +493,31 @@ export interface PublicOpeningHours {
   close: string;
 }
 
+export interface PublicOrderLine {
+  club_id: string;
+  id: string;
+  order_id: string;
+  position: number;
+  kind: string;
+  booking_id: string | null;
+  add_on_id: string | null;
+  package_product_id: string | null;
+  description_key: string;
+  name_th: string;
+  name_en: string;
+  unit_price_satang: number;
+  discount_satang: number;
+  net_satang: number;
+  credit_package_id: string | null;
+  credit_units: number;
+  credit_value_satang: number;
+  wallet_satang: number;
+  money_satang: number;
+  scope: unknown;
+  is_test: boolean;
+  created_at: string;
+}
+
 export interface PublicOrders {
   club_id: string;
   id: string;
@@ -455,6 +526,17 @@ export interface PublicOrders {
   status: string;
   is_test: boolean;
   created_at: string;
+  price_group_snapshot: unknown | null;
+  subtotal_satang: number | null;
+  discount_satang: number | null;
+  total_satang: number | null;
+  credit_value_satang: number | null;
+  wallet_satang: number | null;
+  money_satang: number | null;
+  promo_code_id: string | null;
+  birthday_entitlement: boolean | null;
+  quote_hash: string | null;
+  priced_at: string | null;
 }
 
 export interface PublicOwnerNotice {
@@ -468,6 +550,14 @@ export interface PublicOwnerNotice {
   seen_by: string | null;
 }
 
+export interface PublicPartner {
+  club_id: string;
+  id: string;
+  name: string;
+  type: string | null;
+  contact: string | null;
+}
+
 export interface PublicPaymentConnection {
   club_id: string;
   merchant_id_test: string | null;
@@ -476,6 +566,49 @@ export interface PublicPaymentConnection {
   webhook_token_hash_live: string | null;
   secret_last4: unknown;
   tested_at: string | null;
+}
+
+export interface PublicPriceGroup {
+  club_id: string;
+  id: string;
+  name_th: string;
+  name_en: string;
+  rule: unknown;
+  position: number;
+}
+
+export interface PublicPromoCode {
+  club_id: string;
+  id: string;
+  code_upper: string;
+  kind: string;
+  value: number;
+  applies_to: string[];
+  includes_add_ons: boolean;
+  audience: string;
+  starts_on: string | null;
+  ends_on: string | null;
+  first_time_only: boolean;
+  total_cap: number | null;
+  per_customer_cap: number | null;
+  min_spend_satang: number | null;
+  stackable_with_birthday: boolean;
+  partner_id: string | null;
+  active: boolean;
+  created_at: string;
+}
+
+export interface PublicPromoRedemption {
+  club_id: string;
+  id: string;
+  code_id: string;
+  order_id: string;
+  customer_id: string | null;
+  status: string;
+  counted_at: string;
+  restored_at: string | null;
+  restore_reason: string | null;
+  is_test: boolean;
 }
 
 export interface PublicResource {
@@ -528,11 +661,13 @@ export interface Tables {
   'platform.template': PlatformTemplate;
   'platform.template_item': PlatformTemplateItem;
   'platform.worker_heartbeat': PlatformWorkerHeartbeat;
+  'public.add_on': PublicAddOn;
   'public.app_user': PublicAppUser;
   'public.app_user_role': PublicAppUserRole;
   'public.audit_entry': PublicAuditEntry;
   'public.audit_erasure': PublicAuditErasure;
   'public.auth_session': PublicAuthSession;
+  'public.birthday_entitlement_use': PublicBirthdayEntitlementUse;
   'public.booking': PublicBooking;
   'public.claim_request': PublicClaimRequest;
   'public.club': PublicClub;
@@ -544,6 +679,9 @@ export interface Tables {
   'public.club_setting': PublicClubSetting;
   'public.club_status_change': PublicClubStatusChange;
   'public.club_tester': PublicClubTester;
+  'public.coach_tier': PublicCoachTier;
+  'public.coach_tier_price': PublicCoachTierPrice;
+  'public.court_price_rule': PublicCourtPriceRule;
   'public.data_export': PublicDataExport;
   'public.data_request': PublicDataRequest;
   'public.idempotency_key': PublicIdempotencyKey;
@@ -553,9 +691,14 @@ export interface Tables {
   'public.location': PublicLocation;
   'public.occupancy': PublicOccupancy;
   'public.opening_hours': PublicOpeningHours;
+  'public.order_line': PublicOrderLine;
   'public.orders': PublicOrders;
   'public.owner_notice': PublicOwnerNotice;
+  'public.partner': PublicPartner;
   'public.payment_connection': PublicPaymentConnection;
+  'public.price_group': PublicPriceGroup;
+  'public.promo_code': PublicPromoCode;
+  'public.promo_redemption': PublicPromoRedemption;
   'public.resource': PublicResource;
   'public.user_consent': PublicUserConsent;
   'public.user_staff_note': PublicUserStaffNote;
