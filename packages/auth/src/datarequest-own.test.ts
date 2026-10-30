@@ -13,3 +13,12 @@ describe('datarequest.own', () => {
     expect(can(['player'], 'datarequest.handle')).toBe(false);
   });
 });
+
+// F01-T31b: confirming or rejecting an imported-player claim is for front desk and owner (D105).
+describe('claim.handle', () => {
+  it('front desk and owner hold it; a player, coach and accountant do not', () => {
+    expect(can(['front_desk'], 'claim.handle')).toBe(true);
+    expect(can(['owner'], 'claim.handle')).toBe(true);
+    for (const r of ['player', 'coach', 'accountant'] as const) expect(can([r], 'claim.handle'), r).toBe(false);
+  });
+});
