@@ -549,6 +549,18 @@ export interface PublicCoachPriceOverride {
   is_test: boolean;
 }
 
+export interface PublicCoachSubstitution {
+  club_id: string;
+  id: string;
+  booking_id: string;
+  from_coach_id: string;
+  to_coach_id: string;
+  by_staff_id: string;
+  reason: string;
+  is_test: boolean;
+  created_at: string;
+}
+
 export interface PublicCoachTier {
   club_id: string;
   id: string;
@@ -1052,6 +1064,7 @@ export interface Tables {
   'public.coach_leave': PublicCoachLeave;
   'public.coach_pay': PublicCoachPay;
   'public.coach_price_override': PublicCoachPriceOverride;
+  'public.coach_substitution': PublicCoachSubstitution;
   'public.coach_tier': PublicCoachTier;
   'public.coach_tier_price': PublicCoachTierPrice;
   'public.court_price_rule': PublicCourtPriceRule;
