@@ -32,6 +32,7 @@ as $$
     false)
 $$;
 alter function app.valid_closure_repeat(jsonb) owner to booq_owner;
+revoke all on function app.valid_closure_repeat(jsonb) from public;
 
 create table public.closure (
   club_id uuid not null references public.club (id),
