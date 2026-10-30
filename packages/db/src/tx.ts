@@ -28,16 +28,6 @@ export interface ClubContext {
   reason?: string;
 }
 
-/** A BOOQ staff member acting on one club (support view, setup). Runs as booq_platform. */
-export interface PlatformContext {
-  staffId: string;
-  staffLabel: string;
-  clubId: string;
-  supportSessionId?: string;
-  reason?: string;
-  requestId?: string;
-}
-
 export interface Tx {
   query<R extends pg.QueryResultRow = pg.QueryResultRow>(text: string, params?: unknown[]): Promise<pg.QueryResult<R>>;
 }
@@ -74,21 +64,7 @@ function validate(ctx: ClubContext): void {
   }
 }
 
-function validatePlatform(ctx: PlatformContext): void {
-  if (!UUID.test(ctx.clubId)) throw new Error('withPlatformTx: club id must be a uuid');
-  if (!UUID.test(ctx.staffId)) throw new Error('withPlatformTx: staff id must be a uuid');
-  if (ctx.supportSessionId !== undefined && !UUID.test(ctx.supportSessionId)) throw new Error('withPlatformTx: support session id must be a uuid');
-  if (ctx.staffLabel.trim() === '') throw new Error('withPlatformTx: staff label is required');
-}
-
-/** The platform console's way in (kept apart from Db so club code cannot reach it by type). */
-export interface PlatformDb {
-  /** Runs as booq_platform with the staff member as the audit actor. */
-  withPlatformTx<T>(ctx: PlatformContext, fn: (tx: Tx) => Promise<T>): Promise<T>;
-  end(): Promise<void>;
-}
-
-export function createDb(options: DbOptions): Db & PlatformDb {
+export function createDb(options: DbOptions): Db {
   const role = options.role ?? 'booq_app';
   if (!IDENT.test(role)) throw new Error('createDb: role must be a plain identifier');
   const maxRetries = options.maxRetries ?? 3;
@@ -143,23 +119,6 @@ export function createDb(options: DbOptions): Db & PlatformDb {
           'app.request_id': ctx.requestId ?? '',
           'app.source': ctx.source ?? '',
           'app.actor_label': ctx.actorLabel ?? '',
-          'app.reason': ctx.reason ?? '',
-        },
-        fn,
-      );
-    },
-    async withPlatformTx(ctx, fn) {
-      validatePlatform(ctx);
-      return await run(
-        'booq_platform',
-        {
-          'app.club_id': ctx.clubId,
-          'app.user_id': '',
-          'app.roles': '',
-          'app.request_id': ctx.requestId ?? '',
-          'app.actor_platform_staff_id': ctx.staffId,
-          'app.actor_label': ctx.staffLabel,
-          'app.support_session_id': ctx.supportSessionId ?? '',
           'app.reason': ctx.reason ?? '',
         },
         fn,

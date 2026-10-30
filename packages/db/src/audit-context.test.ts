@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createDb, type Db, type PlatformDb } from './tx';
+import { createDb, type Db } from './tx';
 import { collectRegistry } from './registry';
 import { checkTableClasses } from './registry/check';
 import { createTestDatabase, type TestDatabase } from './testing/harness';
@@ -12,7 +12,7 @@ const STAFF = '77777777-7777-4777-8777-777777777777';
 const SESSION = '88888888-8888-4888-8888-888888888888';
 
 let tdb: TestDatabase;
-let db: Db & PlatformDb;
+let db: Db;
 beforeEach(async () => {
   tdb = await createTestDatabase();
   await tdb.query(`insert into public.club (id, slug, name_th, name_en) values ($1, 'club-a', 'ก', 'A')`, [A]);
@@ -63,31 +63,38 @@ describe('withClubTx sets the audit context (PLAT-04-AC1)', () => {
   });
 });
 
-describe('withPlatformTx names the BOOQ staff member (PLAT-04-AC4)', () => {
+describe('a platform edit names the BOOQ staff member (PLAT-04-AC4)', () => {
+  // withPlatformTx lives in platform-tx.ts (F01-T18, platform lane). Here the same transaction
+  // settings are set by hand to prove what the audit writer does with them.
   beforeEach(async () => {
-    // Platform grants and policies are F01-T18; a fixture grant stands in for them here.
     await tdb.query(`
       grant select, insert, update on public.club_setting to booq_platform;
       create policy t_platform on public.club_setting for all to booq_platform using (club_id = app.club_id()) with check (club_id = app.club_id());`);
   });
-  it('a platform edit is recorded as the staff member, with the support session and reason', async () => {
-    await db.withPlatformTx({ staffId: STAFF, staffLabel: 'BOOQ staff: Mali', clubId: A, supportSessionId: SESSION, reason: 'setup help' }, (tx) =>
-      tx.query(`insert into public.club_setting (club_id, key, value) values ($1, 'k', '1')`, [A]),
-    );
+  const asStaff = async (settings: Record<string, string>) => {
+    const c = await tdb.pool.connect();
+    try {
+      await c.query('begin');
+      await c.query('set local role booq_platform');
+      for (const [k, v] of Object.entries({ 'app.club_id': A, ...settings })) await c.query('select set_config($1, $2, true)', [k, v]);
+      await c.query(`insert into public.club_setting (club_id, key, value) values ($1, 'k', '1')`, [A]);
+      await c.query('commit');
+    } catch (e) {
+      await c.query('rollback');
+      throw e;
+    } finally {
+      c.release();
+    }
+  };
+  it('the entry is the staff member, with the support session and reason', async () => {
+    await asStaff({ 'app.actor_platform_staff_id': STAFF, 'app.actor_label': 'BOOQ staff: Mali', 'app.support_session_id': SESSION, 'app.reason': 'setup help' });
     expect(await last()).toMatchObject({
       actor_type: 'platform_staff', actor_platform_staff_id: STAFF, actor_user_id: null, actor_label: 'BOOQ staff: Mali', support_session_id: SESSION, source: 'platform', reason: 'setup help',
     });
   });
-
-  it('runs as booq_platform, never as an app role, and a platform transaction cannot read audit entries', async () => {
-    const r = await db.withPlatformTx({ staffId: STAFF, staffLabel: 'x', clubId: A }, (tx) => tx.query('select current_user as u'));
-    expect(r.rows[0]?.u).toBe('booq_platform');
-    await expect(db.withPlatformTx({ staffId: STAFF, staffLabel: 'x', clubId: A }, (tx) => tx.query('select * from public.audit_entry'))).rejects.toThrow(/permission denied/);
-  });
-
-  it('needs a staff id and a label', async () => {
-    await expect(db.withPlatformTx({ staffId: 'nope', staffLabel: 'x', clubId: A }, (tx) => tx.query('select 1'))).rejects.toThrow(/staff id/);
-    await expect(db.withPlatformTx({ staffId: STAFF, staffLabel: '', clubId: A }, (tx) => tx.query('select 1'))).rejects.toThrow(/label/);
+  it('a club-user source cannot be claimed by a platform transaction', async () => {
+    await asStaff({ 'app.actor_platform_staff_id': STAFF, 'app.actor_label': 'x', 'app.source': 'player_app' });
+    expect(await last()).toMatchObject({ source: 'platform', actor_type: 'platform_staff' });
   });
 });
 

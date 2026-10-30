@@ -19,6 +19,8 @@ export const REFUSAL_TEXT_KEYS = {
   rest_rule: 'P-new.rest_rule',
   coach_rules_not_installed: 'P-new.coach_rules_not_installed',
   too_many_attempts: 'P-new.too_many_attempts',
+  order_not_found: 'P-new.order_not_found',
+  forbidden: 'P-new.forbidden',
 } as const;
 
 export type BookingRefusal = keyof typeof REFUSAL_TEXT_KEYS;

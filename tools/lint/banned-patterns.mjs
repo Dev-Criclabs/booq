@@ -1,5 +1,7 @@
 // Static checks from FA 4.5 / F01-T01:
 //  - no-service-role: the Supabase service_role key is never used in the request path.
+//  - no-secret-access: only packages/secrets reads the key variables or calls the secret
+//    functions (F01-T09, SR-03). packages/db may name them (its harness and migrations tests).
 //  - no-raw-pg: a Postgres driver is imported only inside packages/db, so every query
 //    goes through withClubTx (F01-T04).
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -13,6 +15,8 @@ const DRIVER_ALLOWED_IN = 'packages/db/';
 // Exact module specifiers only: pg, pg/..., pg-pool, pg-native, pg-promise, postgres.
 const DRIVER = /(?:from\s+|require\(\s*|import\(\s*)['"](pg|pg\/[^'"]*|pg-pool|pg-native|pg-promise|postgres)['"]/;
 const SERVICE_ROLE = /service[_-]?role/i;
+const SECRETS_ALLOWED_IN = ['packages/secrets/', 'packages/db/'];
+const SECRET_ACCESS = /SECRETS_(PRIVATE|PUBLIC)_KEY|\bread_secret(_worker)?\b|\bwrite_secret\b/;
 
 export function isScanned(path) {
   const p = path.split(sep).join('/');
@@ -25,6 +29,7 @@ export function findViolations(path, text) {
   text.split('\n').forEach((line, i) => {
     if (SERVICE_ROLE.test(line)) out.push({ path: p, line: i + 1, rule: 'no-service-role' });
     if (!p.startsWith(DRIVER_ALLOWED_IN) && DRIVER.test(line)) out.push({ path: p, line: i + 1, rule: 'no-raw-pg' });
+    if (!SECRETS_ALLOWED_IN.some((a) => p.startsWith(a)) && SECRET_ACCESS.test(line)) out.push({ path: p, line: i + 1, rule: 'no-secret-access' });
   });
   return out;
 }
