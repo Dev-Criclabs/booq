@@ -38,7 +38,7 @@ Depends on: F01 T09 (setup tables), T12 (people), T13 (route wrapper), T18 (gran
   Tests first: a package at its expiry gets one `expire` row for the unreserved remainder; running the sweep twice writes once.
 - [x] **F06-T11** Migration 0513: policies and grants for the tables, views and functions; the Accountant column limits (names, no phone or date of birth); table class registry entries. IDs: PKG-01, CC-1, CC-3, D35. Role: BE-C · Deps T10, F01-T18 · Size: M
   Tests first: the blind suite shows BOOQ staff read nothing of F06's class D tables; a player reads only their own ledger; the Accountant view has no phone or date of birth; another club answers 404.
-- [ ] **F06-T12** No migration. Settings keys check: the keys already exist (`package_expiry_reminder_days`, Tennis template 14 and 3, and `wallet_expiry_months`, unset allowed, both from F01 migration 0041 and `settings-registry.ts`); F06 reads them and adds none. IDs: PKG-03-AC1, AC10, D116, D89. Role: BE-C · Deps F01 registry · Size: S
+- [x] **F06-T12** No migration. Settings keys check: the keys already exist (`package_expiry_reminder_days`, Tennis template 14 and 3, and `wallet_expiry_months`, unset allowed, both from F01 migration 0041 and `settings-registry.ts`); F06 reads them and adds none. IDs: PKG-03-AC1, AC10, D116, D89. Role: BE-C · Deps F01 registry · Size: S
   Tests first: the registry test lists both keys with their units; `wallet_expire` refuses to run when `wallet_expiry_months` is unset.
 
 ## C. Jobs and reminders
