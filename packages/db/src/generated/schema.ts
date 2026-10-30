@@ -147,6 +147,27 @@ export interface PlatformConfig {
   value: unknown;
 }
 
+export interface PlatformConsoleChallenge {
+  id_hash: string;
+  staff_id: string;
+  expires_at: string;
+  provider_token_enc: string | null;
+}
+
+export interface PlatformConsoleLoginState {
+  staff_id: string;
+  failures: number;
+  locked_until: string | null;
+}
+
+export interface PlatformConsoleSession {
+  id_hash: string;
+  staff_id: string;
+  created_at: string;
+  last_seen_at: string;
+  step_up_at: string;
+}
+
 export interface PlatformExportRequest {
   id: string;
   club_id: string;
@@ -846,6 +867,14 @@ export interface PublicPartner {
   contact: string | null;
 }
 
+export interface PublicPayTap {
+  club_id: string;
+  id: string;
+  user_id: string;
+  at: string;
+  is_test: boolean;
+}
+
 export interface PublicPayment {
   club_id: string;
   id: string;
@@ -1047,6 +1076,9 @@ export interface Tables {
   'platform.club_line_usage': PlatformClubLineUsage;
   'platform.club_usage_daily': PlatformClubUsageDaily;
   'platform.config': PlatformConfig;
+  'platform.console_challenge': PlatformConsoleChallenge;
+  'platform.console_login_state': PlatformConsoleLoginState;
+  'platform.console_session': PlatformConsoleSession;
   'platform.export_request': PlatformExportRequest;
   'platform.launch_check': PlatformLaunchCheck;
   'platform.legal_release': PlatformLegalRelease;
@@ -1105,6 +1137,7 @@ export interface Tables {
   'public.package_extension': PublicPackageExtension;
   'public.package_product': PublicPackageProduct;
   'public.partner': PublicPartner;
+  'public.pay_tap': PublicPayTap;
   'public.payment': PublicPayment;
   'public.payment_connection': PublicPaymentConnection;
   'public.payment_event': PublicPaymentEvent;
