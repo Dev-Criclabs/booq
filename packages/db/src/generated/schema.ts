@@ -7,6 +7,12 @@ export interface AppAnonymiseHandlers {
   created_at: string;
 }
 
+export interface AppCancelHandlers {
+  name: string;
+  handler: unknown;
+  ord: number;
+}
+
 export interface AppClaimHandlers {
   handler_key: string;
   handler: unknown;
@@ -1223,6 +1229,7 @@ export interface PublicWalletLedger {
 
 export interface Tables {
   'app.anonymise_handlers': AppAnonymiseHandlers;
+  'app.cancel_handlers': AppCancelHandlers;
   'app.claim_handlers': AppClaimHandlers;
   'app.coach_rules_hook': AppCoachRulesHook;
   'app.coach_rules_move_hook': AppCoachRulesMoveHook;
