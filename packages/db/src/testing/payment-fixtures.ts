@@ -21,6 +21,7 @@ async function fakePorts(missing: string[] = [], reserveOk = true) {
     reserve_credit_and_wallet: ['(o uuid) returns boolean', `insert into public.__log (port, args) values ('reserve_credit_and_wallet', to_jsonb(o)); select ${reserveOk}`],
     grant_package: ['(o uuid) returns void', `insert into public.__log (port, args) values ('grant_package', to_jsonb(o))`],
     credit_wallet: ['(k text, c uuid, a integer, r text, d text, p uuid) returns uuid', `insert into public.__log (port, args) values ('credit_wallet', jsonb_build_array(k, c, a, r, d, p)); select gen_random_uuid()`],
+    enqueue_message: ['(k text, u uuid, p jsonb, d text, s timestamptz) returns uuid', `insert into public.__log (port, args) values ('enqueue_message', jsonb_build_array(k, u, p, d)); select gen_random_uuid()`],
     issue_receipt: ['(o uuid, p uuid, k text) returns uuid', `insert into public.__log (port, args) values ('issue_receipt', jsonb_build_array(o, p, k)); select gen_random_uuid()`],
   };
   for (const [port, [sig, body]] of Object.entries(defs)) {

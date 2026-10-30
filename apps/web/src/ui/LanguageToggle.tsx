@@ -7,11 +7,11 @@ export function LanguageToggle({ t, lang, onChange }: { t: T; lang: Lang; onChan
   return (
     <div className="lang-toggle" role="group" aria-label={t('P-new.language')}>
       <button type="button" lang="th" aria-pressed={lang === 'th'} onClick={() => onChange('th')}>
-        {t('P-new.lang_th')}
+        {t('P-new.language_toggle_th')}
       </button>
       <span className="sep" aria-hidden="true">|</span>
       <button type="button" lang="en" aria-pressed={lang === 'en'} onClick={() => onChange('en')}>
-        {t('P-new.lang_en')}
+        {t('P-new.language_toggle_en')}
       </button>
     </div>
   );

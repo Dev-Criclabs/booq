@@ -186,15 +186,14 @@ describe('staff booking routes (F03-T22 move and release)', () => {
     expect(await release().handle({ session: as(DESK, 'front_desk', 'player'), input: { id: held.id, idempotencyKey: 's-1' } }, deps)).toEqual({ ok: true, status: 200, body: { orderId: held.order, status: 'released' } });
   });
 
-  it('in a Paused club front desk is refused and the owner can move and release (D60)', async () => {
+  it('in a Paused club front desk and the owner can still move and release existing bookings (D107)', async () => {
     const held = await book(18, P1, false);
     const done = await book(20, P2);
     await tdb.query(`update public.club set status = 'paused' where id = $1`, [A]);
     const desk = as(DESK, 'front_desk', 'player');
     const owner = as(OWNER, 'owner', 'player');
-    expect(await move().handle({ session: desk, input: { id: done.id, courtId: COURT2, start: '2026-12-02T21:00:00+07:00' } }, deps)).toEqual({ ok: false, status: 409, code: 'club_paused' });
-    expect(await release().handle({ session: desk, input: { id: held.id } }, deps)).toEqual({ ok: false, status: 409, code: 'club_paused' });
-    expect(await move().handle({ session: owner, input: { id: done.id, courtId: COURT2, start: '2026-12-02T21:00:00+07:00' } }, deps)).toMatchObject({ ok: true });
-    expect(await release().handle({ session: owner, input: { id: held.id } }, deps)).toMatchObject({ ok: true, body: { status: 'released' } });
+    expect(await move().handle({ session: desk, input: { id: done.id, courtId: COURT2, start: '2026-12-02T21:00:00+07:00' } }, deps)).toMatchObject({ ok: true });
+    expect(await move().handle({ session: owner, input: { id: done.id, courtId: COURT1, start: '2026-12-02T22:00:00+07:00' } }, deps)).toMatchObject({ ok: true });
+    expect(await release().handle({ session: desk, input: { id: held.id } }, deps)).toMatchObject({ ok: true, body: { status: 'released' } });
   });
 });

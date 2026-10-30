@@ -61,6 +61,7 @@ Migration numbers are 0301 to 0399 and rise with task order (the migrator refuse
   Receipt: calls `app.issue_receipt` through `app.payment_ports` (the F13 issue_receipt port; a fake until F13 exists), in this task (F13 design; orchestrator 30 Oct).
 - [ ] **F04-T13** `GET /orders/{id}` and the staff routes `POST /staff/orders/quote` and `/pay`. IDs: R7-AC2, ROLE-01-AC4, CC-2. Role: BE-C · Deps T12d · Size: S
   Tests first: own or staff only; the snapshot is unchanged after prices and names change; staff booking as a player pays as a player.
+  Also (moved from F03-T22, which no longer has `POST /staff/bookings`): a staff booking awaiting payment holds the slot for the hold time (D43).
 - [ ] **F04-T14** Owner setup routes `/setup/price-groups`, `/court-prices`, `/coach-tier-prices`, `/add-ons`, `/partners`, `/promo-codes`, audited, new orders only. IDs: R3-AC8, PROMO-01-AC12. Role: BE-C · Deps T05 · Size: M
   Tests first: owner only; a price in use by a held or paid order cannot be deleted; every write has an audit entry with old and new values.
 - [ ] **F04-T15** Add a coach to an existing booking: the coaching portion is priced as its own order with its own receipt (D111) and the coach is claimed on the booking through F03's `add_coach_to_booking` (F03-T29). IDs: R2-AC9, D111. Role: BE-C · Deps T12d, F03-T29, F07 (coach rules, interface) · Size: M
@@ -83,10 +84,10 @@ Migration numbers are 0301 to 0399 and rise with task order (the migrator refuse
 
 ## Follow-up added by F08 (gate 3 of that feature, 30 Oct 2026)
 
-- [ ] **F04-T22a** Migration 0314: `order_line.kind` gains `class_seat`, with the CHECK that a `class_seat` line names its booking and carries the same allocation columns as a court hour line. IDs: CLASS-01-AC14, AC17, R4 (F04). Role: BE-C · Deps F04-T12 (Pay) · Size: S
+- [ ] **F04-T22a** Migration 0516 (rule D159: it redefines the line kind CHECK of 0303, last redefined by F06-T03b's 0504 that adds `wallet_credit`, so it is numbered above 0504 and builds after F06-T03b; the CHECK lists every prior kind plus `class_seat`): `order_line.kind` gains `class_seat`, with the CHECK that a `class_seat` line names its booking and carries the same allocation columns as a court hour line. IDs: CLASS-01-AC14, AC17, R4 (F04). Role: BE-C · Deps F04-T12d (Pay), F06-T03b · Size: S
   Tests first: a `class_seat` line without a booking is refused; the deferred sum invariant of 0303 holds for a seat line; existing kinds are unchanged.
-- [ ] **F04-T22b** Migration 0315: Pay calls `app.take_seat` (F08-T05b) for a `class_seat` line and prices it from credit, wallet or the class template's drop in price (null means no drop in price, D157), in the order of D22. IDs: CLASS-01-AC14, AC15, R4 (F04), D22, D157. Role: BE-C · Deps F04-T22a, F08-T05b · Size: M
+- [ ] **F04-T22b** No migration (Pay is route code): Pay calls `app.take_seat` (F08-T05b) for a `class_seat` line and prices it from credit, wallet or the class template's drop in price (null means no drop in price, D157), in the order of D22. IDs: CLASS-01-AC14, AC15, R4 (F04), D22, D157. Role: BE-C · Deps F04-T22a, F08-T05b · Size: M
   Tests first: a seat paid by credit, then wallet, then money; a null drop in price needs credit or wallet; a group credit of the wrong audience is refused; a full session refuses the seat and nothing is used up.
-- [ ] **F04-T22c** Migration 0316: Pay accepts a waitlist offer's held booking and order as the claim instead of making a second reservation; an ended offer answers `spot_gone`. IDs: CLASS-02-AC3, AC6, WAIT-01-AC2. Role: BE-C · Deps F04-T22b, F08-T06 · Size: S
+- [ ] **F04-T22c** No migration (Pay is route code): Pay accepts a waitlist offer's held booking and order as the claim instead of making a second reservation; an ended offer answers `spot_gone`. IDs: CLASS-02-AC3, AC6, WAIT-01-AC2. Role: BE-C · Deps F04-T22b, F08-T06 · Size: S
   Tests first: claiming pays the held booking and reserves nothing twice; an expired offer answers `spot_gone` and the hold is already released; two claims for one offer give one success.
 

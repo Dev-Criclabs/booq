@@ -1,5 +1,5 @@
 {
-  "_note": "Proposed by BE-P for F02 (D51). Numbers to be assigned by Content; wording drafted, writers own it. Offline uses the existing P-0327 and P-0328. Error codes from the server map to these keys in the client: invalid_token and offline-free failures -> signin_failed. FE-P adds the language toggle labels and the not-found line; the client maps sign-in refusals to signin_failed and signin_account_inactive.",
+  "_note": "Proposed by BE-P for F02 (D51). Numbers to be assigned by Content; wording drafted, writers own it. Offline uses the existing P-0327 and P-0328. Error codes from the server map to these keys in the client: invalid_token and offline-free failures -> signin_failed. FE-P adds the toggle group label, the not-found line and the notice page keys; the client uses signin_failed, signin_account_inactive and language_toggle_th/en (one key per text).",
   "en": {
     "P-new.signin_failed": "We could not sign you in with LINE. Please try again.",
     "P-new.signin_account_inactive": "This account is not active. Please contact the club.",
@@ -17,11 +17,11 @@
     "P-new.profile_language_invalid": "Please choose Thai or English.",
     "P-new.profile_already_registered": "You already have an account at this club.",
     "P-new.language": "Language",
-    "P-new.lang_th": "ไทย",
-    "P-new.lang_en": "EN",
     "P-new.page_not_found": "This page is not available.",
     "P-new.language_toggle_th": "ไทย",
-    "P-new.language_toggle_en": "EN"
+    "P-new.language_toggle_en": "EN",
+    "P-new.notice_unavailable": "This document is not published yet. Please check again later.",
+    "P-new.notice_version": "Version {version}"
   },
   "th": {
     "P-new.signin_failed": "เข้าสู่ระบบด้วย LINE ไม่สำเร็จ กรุณาลองอีกครั้ง",
@@ -40,10 +40,10 @@
     "P-new.profile_language_invalid": "กรุณาเลือกภาษาไทยหรืออังกฤษ",
     "P-new.profile_already_registered": "คุณมีบัญชีที่สโมสรนี้อยู่แล้ว",
     "P-new.language": "ภาษา",
-    "P-new.lang_th": "ไทย",
-    "P-new.lang_en": "EN",
     "P-new.page_not_found": "ไม่พบหน้านี้",
     "P-new.language_toggle_th": "ไทย",
-    "P-new.language_toggle_en": "EN"
+    "P-new.language_toggle_en": "EN",
+    "P-new.notice_unavailable": "เอกสารนี้ยังไม่ได้เผยแพร่ กรุณากลับมาดูอีกครั้งภายหลัง",
+    "P-new.notice_version": "ฉบับ {version}"
   }
 }
