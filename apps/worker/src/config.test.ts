@@ -28,6 +28,7 @@ const ENV = {
   WORKER_PACKAGE_ORDER_EXPIRY_CRON: '* * * * *',
   WORKER_LINE_USAGE_SYNC_CRON: '*/10 * * * *',
   WORKER_LINE_HEALTH_CRON: '37 20 * * *',
+  WORKER_CLOSURE_ROLL_CRON: '11 17 * * *',
 };
 
 describe('readWorkerConfig', () => {
@@ -58,6 +59,7 @@ describe('readWorkerConfig', () => {
       packageOrderExpiryCron: '* * * * *',
       lineUsageSyncCron: '*/10 * * * *',
       lineHealthCron: '37 20 * * *',
+      closureRollCron: '11 17 * * *',
     });
   });
   it('names every missing setting and never prints a value', () => {
@@ -148,17 +150,26 @@ describe('console session limit', () => {
 });
 
 describe('buildCrontab', () => {
-  it('schedules housekeeping, the club dispatches, the two sweeps, the three F06 sweeps, the two F05 jobs and the two F10 usage jobs, one line each', () => {
+  it('schedules housekeeping, the club dispatches, the two sweeps, the three F06 sweeps, the two F05 jobs and the two F10 usage jobs and the F09 closure roll, one line each', () => {
     expect(buildCrontab({
       housekeepingCron: '*/5 * * * *', importSweepCron: '17 * * * *', rateLimitSweepCron: '41 * * * *', payTapPruneCron: '23 * * * *', classGenerateCron: '5 17 * * *', consoleSweepCron: '53 * * * *',
       packageExpireCron: '*/5 * * * *', walletExpireCron: '7 17 * * *', sessionStartCron: '* * * * *',
       beamReconcileCron: '*/5 * * * *', packageOrderExpiryCron: '* * * * *',
-      lineUsageSyncCron: '*/10 * * * *', lineHealthCron: '37 20 * * *',
+      lineUsageSyncCron: '*/10 * * * *', lineHealthCron: '37 20 * * *', closureRollCron: '11 17 * * *',
     })).toBe(
       '*/5 * * * * housekeeping\n17 * * * * import_staging_dispatch\n41 * * * * rate_limit_sweep\n23 * * * * pay_tap_prune_dispatch\n5 17 * * * class_generate_dispatch\n53 * * * * console_session_sweep\n'
         + '*/5 * * * * package_expire\n7 17 * * * wallet_expire\n* * * * * session_start\n'
         + '*/5 * * * * beam_reconcile\n* * * * * package_order_expiry\n'
-        + '*/10 * * * * line_usage_sync\n37 20 * * * line_health\n',
+        + '*/10 * * * * line_usage_sync\n37 20 * * * line_health\n'
+        + '11 17 * * * closure_roll\n',
     );
+  });
+});
+
+describe('F09 closure roll schedule', () => {
+  it('WORKER_CLOSURE_ROLL_CRON is required and must be five cron fields', () => {
+    const { WORKER_CLOSURE_ROLL_CRON: _gone, ...rest } = ENV as Record<string, string>;
+    expect(() => readWorkerConfig(rest)).toThrow(/WORKER_CLOSURE_ROLL_CRON/);
+    expect(() => readWorkerConfig({ ...ENV, WORKER_CLOSURE_ROLL_CRON: 'daily' })).toThrow(/WORKER_CLOSURE_ROLL_CRON/);
   });
 });
