@@ -6,6 +6,7 @@ import { loadMessageDictionary, type RichMenuApi } from '@booq/line/server';
 import { FakeClock, FakeLine } from '../../../../tests/fakes';
 import { closeTestDatabase } from '../testing/teardown';
 import { buildRichMenu } from './line-rich-menu';
+import { closeTestDatabase } from '../testing/teardown';
 
 // F10-T12 buildRichMenu (F10 design 5.5; LINE-02-AC1, AC4, AC8, PLAT-04): render, create the menu with its six tap areas,
 // upload the image, make it the default, then supersede and delete the old one; a failure keeps the old menu working,

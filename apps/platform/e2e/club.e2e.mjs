@@ -28,12 +28,24 @@ const DETAIL = {
 const SUPPORT = (over = {}) => ({ setup: { mode: 'edit', club: club(), hours: [{ weekday: 1, open: '06:00', close: '22:00' }], locations: [], resources: [{ id: 'r1', name: 'Court 1', sport: 'tennis', active: true }], settings: [], features: [{ feature_key: 'coach_add_at_checkout', enabled: true }], featureKeys: [{ feature_key: 'coach_add_at_checkout', requires_payment_option: null }, { feature_key: 'slip_only_thing', requires_payment_option: 'slip' }], ...over } });
 
 /** A console serving this club to an admin. `over` replaces any answer ("METHOD /path" -> answer or function). */
-const api = ({ role = 'platform_admin', support = SUPPORT(), invite = { status: 'none' }, over = {} } = {}) => (method, path, body) => {
+const SETTINGS = (over = {}) => ({
+  editable: true,
+  settings: [
+    { key: 'hold_minutes', value: null, unset: true, required: true, available: true },
+    { key: 'booking_window_days', value: 30, unset: false, required: true, available: true },
+    { key: 'max_future_court_hours', value: null, unset: true, required: false, available: true },
+    { key: 'auto_slip_check', value: null, unset: true, required: false, available: false },
+  ],
+  ...over,
+});
+
+const api = ({ role = 'platform_admin', settings = SETTINGS(), support = SUPPORT(), invite = { status: 'none' }, over = {} } = {}) => (method, path, body) => {
   const key = `${method} ${path}`;
   if (over[key]) return typeof over[key] === 'function' ? over[key](body) : over[key];
   if (key === 'GET /auth/me') return { status: 200, body: { id: 'a1', role, displayName: 'Ada', stepUpFresh: true } };
   if (key === `GET /clubs/${ID}`) return { status: 200, body: DETAIL };
   if (key === `GET /clubs/${ID}/support/setup`) return { status: 200, body: support };
+  if (key === `GET /clubs/${ID}/settings`) return { status: 200, body: settings };
   if (key === `GET /clubs/${ID}/owner-invite`) return { status: 200, body: { invite } };
   return { status: 404, body: { code: 'not_found' } };
 };
@@ -305,7 +317,7 @@ describe('the club page', () => {
     await context.close();
   });
 
-  it('switches: only a changed one is sent; club settings say they cannot be changed yet', async () => {
+  it('switches: only a changed one is sent', async () => {
     const over = { [`PUT /clubs/${ID}/support/setup/features`]: { status: 200, body: { changed: ['coach_add_at_checkout'] } } };
     const { page, context, calls } = await openPage(browser, api({ over }), { width: 1024, height: 900 });
     await page.goto(`${app.base}/clubs/${ID}`);
@@ -315,7 +327,44 @@ describe('the club page', () => {
     await page.getByTestId('save-features').click();
     await page.getByTestId('notice').waitFor();
     assert.deepEqual(calls.find((c) => c.method === 'PUT').body, { features: { coach_add_at_checkout: false } });
-    assert.match(await page.getByTestId('support-editor').innerText(), /Club settings cannot be changed here yet\./);
+    await context.close();
+  });
+
+  it('settings: nothing is filled in for an unset one; a change is sent alone, a stale second factor asks again, an empty needed one is refused', async () => {
+    let fresh = false;
+    const over = {
+      'POST /auth/step-up': () => ((fresh = true), { status: 200, body: { ok: true } }),
+      [`PUT /clubs/${ID}/settings/hold_minutes`]: () => (fresh ? { status: 200, body: { key: 'hold_minutes', value: 15 } } : { status: 403, body: { code: 'step_up_required' } }),
+    };
+    const { page, context, calls } = await openPage(browser, api({ over }), { width: 1024, height: 900 });
+    await page.goto(`${app.base}/clubs/${ID}`);
+    await page.getByTestId('setting-hold_minutes').waitFor();
+    assert.equal(await page.locator('#s-hold_minutes').inputValue(), '', 'an unset setting stays empty');
+    assert.equal(await page.locator('#s-booking_window_days').inputValue(), '30');
+    assert.equal(await page.locator('#s-auto_slip_check').isDisabled(), true, 'a setting that does not apply cannot be edited');
+    await page.getByTestId('save-setting-hold_minutes').click();
+    assert.match(await page.getByTestId('setting-problem-hold_minutes').innerText(), /cannot be left empty/);
+    assert.equal(calls.filter((c) => c.method === 'PUT').length, 0);
+    await page.locator('#s-hold_minutes').selectOption('15');
+    await page.getByTestId('save-setting-hold_minutes').click();
+    await page.getByTestId('step-up').waitFor();
+    await page.locator('#stepup-password').fill('pw');
+    await page.locator('#stepup-code').fill('123456');
+    await page.getByTestId('step-up-submit').click();
+    await page.getByTestId('notice').getByText('The setting was saved.').waitFor();
+    const puts = calls.filter((c) => c.method === 'PUT');
+    assert.equal(puts.length, 2, 'the same save ran again after the step-up');
+    assert.deepEqual(puts[1].body, { value: 15 });
+    await context.close();
+  });
+
+  it('settings: a club that is look only shows the values and no boxes', async () => {
+    const { page, context } = await openPage(browser, api({ settings: SETTINGS({ editable: false }) }), { width: 1024, height: 900 });
+    await page.goto(`${app.base}/clubs/${ID}`);
+    await page.getByTestId('setting-hold_minutes').waitFor();
+    assert.equal(await page.getByTestId('setting-value-booking_window_days').innerText(), '30');
+    assert.equal(await page.getByTestId('setting-value-hold_minutes').innerText(), 'Not set');
+    assert.equal(await page.getByTestId('save-setting-hold_minutes').count(), 0);
     await context.close();
   });
 
