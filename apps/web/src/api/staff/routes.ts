@@ -1,6 +1,8 @@
 import { hashInviteToken, newInviteToken, route, RouteError, type Route, type RouteContext } from '@booq/auth';
 import type { Db } from '@booq/db';
 
+// POST /staff/invites/:id/cancel ends a pending staff or coach invite (F11 A17). An Owner is never invited here: the owner role comes only from the
+// platform's owner invite (ROLE-02-AC8, D122) and is fixed (staff:owner_fixed).
 // Staff routes (F01-T14; ROLE-01-AC1, AC5, AC6, AC7; design 5.1). The owner lists staff, creates staff and coach
 // invites, sets a person's roles and deactivates a person. The rules live in the database functions of migration 0050,
 // which check the owner role from the context and write the club audit notes; the route reads the body as sent
@@ -56,6 +58,14 @@ export function staffRoutes(deps: StaffRouteDeps): Route<unknown>[] {
       return inClub(ctx, async (q) => {
         const id = (await q('select app.create_staff_invite($1, $2, $3) as id', [b['kind'], roles, hashInviteToken(token)])).rows[0]?.id as string;
         return { id, token };
+      });
+    }),
+    route({ method: 'POST', path: '/staff/invites/:id/cancel', permission: 'staff.manage' }, (ctx) => {
+      const id = (ctx.input as { id?: unknown } | null)?.id;
+      if (typeof id !== 'string' || !UUID.test(id)) throw bad();
+      return inClub(ctx, async (q) => {
+        await q('select app.cancel_staff_invite($1)', [id]);
+        return { ok: true };
       });
     }),
     route({ method: 'PUT', path: '/staff/:userId/roles', permission: 'roles.assign' }, (ctx) => {

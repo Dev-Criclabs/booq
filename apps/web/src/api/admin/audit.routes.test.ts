@@ -88,6 +88,14 @@ describe('GET /staff/audit (owner)', () => {
     }
     expect(await call('GET', '/staff/audit', owner(), { slug: 'club-b' })).toMatchObject({ ok: false, status: 404 });
   });
+  it('GET /staff/audit/record-types lists the audited tables of the club for the filter; owner only', async () => {
+    const r = await call('GET', '/staff/audit/record-types', owner());
+    expect(r.ok).toBe(true);
+    expect(r.body).toEqual(expect.arrayContaining(['booking', 'app_user', 'customer_tag', 'club_setting']));
+    expect([...r.body].sort()).toEqual(r.body);
+    expect(r.body.some((t: string) => t.includes('.'))).toBe(false);
+    for (const s of [desk(), as(ACC, ['accountant', 'player'])]) expect(await call('GET', '/staff/audit/record-types', s)).toMatchObject({ ok: false, status: 403 });
+  });
   it('there is no route that writes or deletes a log entry', () => {
     expect(routes.every((r) => r.def.method === 'GET')).toBe(true);
   });
