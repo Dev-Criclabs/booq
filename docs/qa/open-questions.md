@@ -17,7 +17,6 @@ Questions already open elsewhere are not repeated: `canvas-gaps.md` C1 (correcte
 
 | # | Pri | Req | Question | Waits |
 |---|---|---|---|---|
-| Q-37 | C | CC-5, F02 welcome | Is there a maximum length for the club name (Thai and English)? The spec sets none. The C1 hero clips the last line of an English name of about 100 characters at 320 px (QA-UI-1). A limit in the owner's setup (A0, P2 step 1) would close it; otherwise the hero must grow with the text | QA-UI-1 test |
 
 ## Coaches (F07, F12)
 
@@ -85,6 +84,7 @@ QA tests and the fakes follow these. Wording of the rules is in the decision log
 | Q-22 | PAY-06 | D56 (No banking app, QR failed at the counter, Other with a note; cash allowed for packages; Front desk and Owner only) |
 | Q-25 | RCPT-01, LINE-04 | D106 (numbers per club per Bangkok year, prefix set in P2 step 1), D64 (a receipt for a zero money order, same series), D119 (no credit note when value goes to the wallet) |
 | Q-26 | RCPT-03 | D119 (money methods listed; wallet and credit use as separate non money lines; a closed day is not reopened, a later void shows on the day it is made) |
+| Q-37 | C1 hero, club name length | D179 (no limit: the hero grows with the name) |
 | Q-36 | CANCEL-04-AC9 | D172 (no show timing is not a setting; AC9 withdrawn) |
 | G-02 | ADMIN IDs | D53 (one ADMIN-nn ID per page; ADMIN-01 to ADMIN-17 now in the hand-off) |
 | G-03 | copy-index.csv | D31 (generated from the canvas by the i18n role) |

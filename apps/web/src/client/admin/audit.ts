@@ -81,3 +81,11 @@ export function changeLines(e: Pick<AuditEntry, 'oldValue' | 'newValue' | 'piiFi
   }
   return lines;
 }
+
+/** GET /staff/audit/record-types (owner): the audited table names, sorted; the value to pass as `type`. Empty when it cannot be read, and the page then shows a text box. */
+export const loadRecordTypes = async (slug: string, f: Fetch): Promise<string[]> => {
+  const r = await call<string[] | { types: string[] }>(slug, '/staff/audit/record-types', f);
+  if (r.kind !== 'ok') return [];
+  const list = Array.isArray(r.body) ? r.body : r.body?.types;
+  return Array.isArray(list) ? list.filter((x): x is string => typeof x === 'string') : [];
+};

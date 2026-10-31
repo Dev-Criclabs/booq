@@ -20,3 +20,7 @@ Still open:
 ## Update, 31 Oct (main d709178)
 
 F04-T14 owner setup data routes: R3-AC8 and PROMO-01-AC12 (add-on and code edits audited) are traced to `setup-data.routes.test.ts`. F04-T22c offer Pay (0417) is covered by `offer-pay.routes.test.ts`; QA added `F04-offer-price.new.spec.ts` (the function called directly: only the player of a live offer prices it, once). Open: R2-AC9, R4-AC7, R4-AC11, R6-AC4, R8-AC2, R8-AC3, R8-AC5.
+
+## F04-T21, 31 Oct (main 43b77b0)
+
+`F04-closure.new.spec.ts` closes the sweep with a script: every F04 criterion has a real test (a traced pointer or a QA test, not a generated todo) or is listed with its reason, and a listed criterion that has since gained a test fails as stale. 76 criteria, 68 with a test, 8 listed (the C10 screens, the app money formatter, the F07 coach picker, the credit and wallet ledger rows through the real reserve port). Cross cutting: no Thai text and no English sentence is written in the checkout, pricing or promo code (CC-2: every text comes from the language files; mutation checked with a Thai constant and an English sentence); a Pay request carries no amount (price, total, discount, money sent by a client never reach the parsed request). Test orders excluded from reports: R7-AC4, traced to `promo-and-lines.test.ts`, and F13's `daily-close.test.ts`.
