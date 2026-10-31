@@ -20,7 +20,7 @@ const inputOf = (ctx: RouteContext) => (ctx.input ?? {}) as Record<string, unkno
 
 const STATUS: Record<AdminErrorCode, number> = { bad_input: 400, not_found: 404, forbidden: 403, reason_required: 400, below_zero: 409, customer_not_claimed: 409, duplicate: 409, in_use: 409, peak_not_defined: 400 };
 // A refusal raised by an admin function in the database (BK001, message = the code).
-const DB_STATUS: Record<string, number> = { phone_in_use: 409, reason_required: 400, club_not_available: 409 };
+const DB_STATUS: Record<string, number> = { phone_in_use: 409, reason_required: 400, club_not_available: 409, setting_unset: 409 };
 
 async function inTx<T>(db: Db, c: ClubContext, fn: (tx: Tx) => Promise<T>): Promise<T> {
   try {
@@ -91,7 +91,7 @@ export function customerRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[] {
       ...route({ method: 'GET', path: '/staff/customers', permission: 'customer.contact.read' }, async (ctx) => {
         const c = await sessionContext(deps, ctx);
         const i = inputOf(ctx);
-        return inTx(deps.db, c, (tx) => listCustomers(tx, i['q'], i['tag'], i['cursor']));
+        return inTx(deps.db, c, (tx) => listCustomers(tx, i['q'], i['tag'], i['cursor'], i['status'], i['group']));
       }),
       headers: NO_STORE,
     },
