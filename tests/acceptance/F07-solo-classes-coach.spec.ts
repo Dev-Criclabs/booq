@@ -4,42 +4,15 @@
 // and keep the ID at the start of the title (tests/acceptance/coverage.spec.ts checks every criterion appears).
 import { describe, test } from 'vitest';
 
-describe("F07 COACH-01", () => {
-  // Given a coach on approved leave for that hour, when checkout or the schedule asks for coaches for it, then the coach is not offered, and a direct request for them is refused (hand-off check).
-  test.todo("F07/COACH-01-AC1 Given a coach on approved leave for that hour, when checkout or the schedule asks for coaches for it, then ...");
-  // Given a coach with no availability rule open for that hour (weekly rule or one off open time, or a one off closed time), when coaches are listed, then they are not offered.
-  // F07/COACH-01-AC2: proven by a real or traced test in another file of this folder
-  // Given a coach already booked for that hour (a confirmed solo class, a group class session, a staff booking, or a payment hold), when coaches are listed, then they are not offered (BOOK-04).
-  // F07/COACH-01-AC3: proven by a real or traced test in another file of this folder
-  // Given a coach who has taught 6 hours in a row (back to back hours; a free hour in between resets the count), when the hour would be the 7th, then it is not offered and a direct request is refused (hand-off check, D19).
-  test.todo("F07/COACH-01-AC4 Given a coach who has taught 6 hours in a row (back to back hours; a free hour in between resets the ...");
-  // Given the rest cap setting (default 6), when the owner changes it, then the new value applies to new offers; the setting is read from the club's settings and is audited (PLAT-04).
-  // F07/COACH-01-AC5: proven by a real or traced test in another file of this folder
-  // Given what counts toward the run, then solo classes, group classes and staff bookings all count, unpaid held hours count, and a group class counts until it is cancelled (D19, PRD). There is no override for any role (PRD).
-  // F07/COACH-01-AC6: proven by a real or traced test in another file of this folder
-  // Given the hour changes on checkout, when the player picks a different slot, then the list updates live for that exact hour, and a coach who is no longer free disappears; if a coach becomes unavailable before payment, the card disappears and the player is asked to pick again (PRD).
-  test.todo("F07/COACH-01-AC7 Given the hour changes on checkout, when the player picks a different slot, then the list updates live for ...");
-  // Given a coach whose availability or leave changes after a booking exists, when the change is saved, then existing bookings are not deleted: affected sessions are flagged for the owner (R6).
-  test.todo("F07/COACH-01-AC8 Given a coach whose availability or leave changes after a booking exists, when the change is saved, then ...");
-  // Given a leave request that is pending, when coaches are listed, then the coach is still offered; only approved leave hides a coach (D120).
-  // F07/COACH-01-AC9: proven by a real or traced test in another file of this folder
-  // Given an inactive coach, when coaches are listed, then they are not offered.
-  // F07/COACH-01-AC10: proven by a real or traced test in another file of this folder
-  // Given the rest rule check, when two parallel bookings both try to add the 6th and 7th hour in a row for one coach, then exactly one succeeds (CONC-17).
-  // F07/COACH-01-AC11: proven by a real or traced test in another file of this folder
-  // Given staff move or create a booking in A1 or A2, when the coach would break the rest rule, then it is refused with no override (PRD Front desk rules).
-  // F07/COACH-01-AC12: proven by a real or traced test in another file of this folder
-});
-
 describe("F07 COACH-02", () => {
   // Given a coach picked at court checkout, when the order is priced, then the order becomes a solo class with a court line and a coach line (F04 R2): Adult with a Coach tier coach pays 50000 plus 80000 satang, ฿1,300 (hand-off check); Student pays 50000 plus 70000, ฿1,200.
-  test.todo("F07/COACH-02-AC1 Given a coach picked at court checkout, when the order is priced, then the order becomes a solo class with ...");
+  // F07/COACH-02-AC1: proven by a real or traced test in another file of this folder
   // Given each coach has a rate tier (for example Head Coach, Coach) with an Adult price and a Student price per 60 minutes, when a coach is priced, then the tier's price for the player's price group is used (a player with no date of birth gets Adult, D12).
   // F07/COACH-02-AC2: proven by a real or traced test in another file of this folder
   // Given the owner sets a price override for one coach, when that coach is priced, then the override applies in place of the tier price; it is audited (PLAT-04).
-  test.todo("F07/COACH-02-AC3 Given the owner sets a price override for one coach, when that coach is priced, then the override applies ...");
+  // F07/COACH-02-AC3: proven by a real or traced test in another file of this folder
   // Given a tier or coach with no price (the Head Coach price is empty), when the coach is listed, then the card shows no price and the coach cannot be picked until the owner sets it (F04 R2-AC3).
-  test.todo("F07/COACH-02-AC4 Given a tier or coach with no price (the Head Coach price is empty), when the coach is listed, then the ...");
+  // F07/COACH-02-AC4: proven by a real or traced test in another file of this folder
   // Given the court portion (default ฿500, a club setting), when a solo class is priced, then the court line is the court price rule for that hour (F04 R1) and coach pay is calculated on the coaching portion only (F13).
   test.todo("F07/COACH-02-AC5 Given the court portion (default ฿500, a club setting), when a solo class is priced, then the court line ...");
   // Given each coach card at checkout, then it shows name, tier, specialties, the price for this player (Adult or Student) and a Profile link that opens the coach profile (PRD).
@@ -58,7 +31,7 @@ describe("F07 COACH-03", () => {
   // Given a player with solo credits who books through Classes, then Solo classes (C5, C6), when the order is priced, then a solo pack credit of the right tier and customer type covers the coaching line (F06 R1).
   test.todo("F07/COACH-03-AC2 Given a player with solo credits who books through Classes, then Solo classes (C5, C6), when the order is ...");
   // Given Add a coach after booking (from C12), when it is priced, then only the coaching portion is charged and solo credits do not apply there either (D120); the top up is its own order and its own receipt (D111).
-  test.todo("F07/COACH-03-AC3 Given Add a coach after booking (from C12), when it is priced, then only the coaching portion is charged ...");
+  // F07/COACH-03-AC3: proven by a real or traced test in another file of this folder
   // Given a solo pack credit is tied to a tier, when it is used, then it works with any coach in that tier (PRD).
   // F07/COACH-03-AC4: proven by a real or traced test in another file of this folder
   // Given a solo pack credit is reserved before its package expires, when the session is after the expiry date, then the credit stays valid for that session (D85); a credit of a package bought as Student stays usable for the Student price items it was bought for after the holder turns 18 (D84), and its order of use at checkout is credit, then wallet, then money (D22).
@@ -78,79 +51,62 @@ describe("F07 COACH-04", () => {
 
 describe("F07 R1", () => {
   // Given C5, when it loads, then each card shows photo, name, rate tier, specialties, ages and levels taught, languages, the next open time, and the price for the customer's type including the court (a guest sees the Adult price).
-  test.todo("F07/R1-AC1 Given C5, when it loads, then each card shows photo, name, rate tier, specialties, ages and levels taught, ...");
+  // F07/R1-AC1: proven by a real or traced test in another file of this folder
   // Given C6, when it loads, then it shows bio, background, certifications such as the ITF level, and times by date, each with its assigned court, and a summary bar with the coach price plus the court price.
   test.todo("F07/R1-AC2 Given C6, when it loads, then it shows bio, background, certifications such as the ITF level, and times by ...");
   // Given a time when the coach is available but no court is open, when C6 is shown, then it shows as unavailable ("No court open") and cannot be selected (PRD).
   test.todo("F07/R1-AC3 Given a time when the coach is available but no court is open, when C6 is shown, then it shows as ...");
   // Given a time with the coach free and a court open, when the player picks it, then the system assigns the court already booked for that hour if there is one, otherwise the lowest numbered open court (D120).
-  test.todo("F07/R1-AC4 Given a time with the coach free and a court open, when the player picks it, then the system assigns the ...");
+  // F07/R1-AC4: proven by a real or traced test in another file of this folder
   // Given a solo class is booked through C5 and C6, then court and coach are priced and held together in the same order (F04 R2, BOOK-03).
   test.todo("F07/R1-AC5 Given a solo class is booked through C5 and C6, then court and coach are priced and held together in the ...");
   // Given a guest, when they browse C5 and C6, then it loads without sign in; sign in runs when they continue to book (F02 AUTH-01).
-  test.todo("F07/R1-AC6 Given a guest, when they browse C5 and C6, then it loads without sign in; sign in runs when they continue ...");
+  // F07/R1-AC6: proven by a real or traced test in another file of this folder
   // Given a coach photo, bio or certification set by the club, when it is shown, then it is the Thai or English field for the player's language, and it is published only with the coach's consent, which the club keeps on record (D120).
-  test.todo("F07/R1-AC7 Given a coach photo, bio or certification set by the club, when it is shown, then it is the Thai or ...");
+  // F07/R1-AC7: proven by a real or traced test in another file of this folder
   // Given a Paused club, when C5 loads, then Classes shows as paused (F01 PLAT-03-AC5).
   test.todo("F07/R1-AC8 Given a Paused club, when C5 loads, then Classes shows as paused (F01 PLAT-03-AC5).");
 });
 
 describe("F07 R2", () => {
   // Given a coach in K3, when they save a weekly rule or a one off time, then it is stored for that coach and applies to new offers; the 6 hour rest cap is applied in the view.
-  test.todo("F07/R2-AC1 Given a coach in K3, when they save a weekly rule or a one off time, then it is stored for that coach and ...");
+  // F07/R2-AC1: proven by a real or traced test in another file of this folder
   // Given a coach requests leave (dates, full or half day, type, note) in K4, when it is submitted, then it is Pending and the owner sees it in A7.
-  test.todo("F07/R2-AC2 Given a coach requests leave (dates, full or half day, type, note) in K4, when it is submitted, then it is ...");
+  // F07/R2-AC2: proven by a real or traced test in another file of this folder
   // Given the owner approves or declines, when it is saved, then the coach gets a LINE message (F10) and approved leave blocks the coach for those hours.
-  test.todo("F07/R2-AC3 Given the owner approves or declines, when it is saved, then the coach gets a LINE message (F10) and ...");
+  // F07/R2-AC3: proven by a real or traced test in another file of this folder
   // Given a coach's rules are changed so that a booked hour is no longer open, when it is saved, then the booking stays and is flagged (R6).
-  test.todo("F07/R2-AC4 Given a coach's rules are changed so that a booked hour is no longer open, when it is saved, then the ...");
+  // F07/R2-AC4: proven by a real or traced test in another file of this folder
   // Given availability, leave and decisions, when any is changed, then it is audited (PLAT-04).
-  test.todo("F07/R2-AC5 Given availability, leave and decisions, when any is changed, then it is audited (PLAT-04).");
+  // F07/R2-AC5: proven by a real or traced test in another file of this folder
   // Given a coach, when they view K3 and K4, then they see only their own rules and requests (CC-2).
-  test.todo("F07/R2-AC6 Given a coach, when they view K3 and K4, then they see only their own rules and requests (CC-2).");
+  // F07/R2-AC6: proven by a real or traced test in another file of this folder
   // Given a coach is a person with a user record, when they are created, then they also hold the Player role (D115) and have a language field that defaults to their LINE app language, used for their LINE messages (D95).
   test.todo("F07/R2-AC7 Given a coach is a person with a user record, when they are created, then they also hold the Player role ...");
 });
 
 describe("F07 R3", () => {
   // Given run length is the count of back to back hours around the requested hour, when it would exceed the cap, then the hour is not offered and is refused (COACH-01-AC4).
-  test.todo("F07/R3-AC1 Given run length is the count of back to back hours around the requested hour, when it would exceed the ...");
+  // F07/R3-AC1: proven by a real or traced test in another file of this folder
   // Given a free hour between two teaching hours, when the run is counted, then the count resets (D19).
-  test.todo("F07/R3-AC2 Given a free hour between two teaching hours, when the run is counted, then the count resets (D19).");
+  // F07/R3-AC2: proven by a real or traced test in another file of this folder
   // Given an unpaid held hour, when the run is counted, then it counts (D19).
-  test.todo("F07/R3-AC3 Given an unpaid held hour, when the run is counted, then it counts (D19).");
+  // F07/R3-AC3: proven by a real or traced test in another file of this folder
   // Given a group class, when the run is counted, then it counts until it is cancelled (D19).
   test.todo("F07/R3-AC4 Given a group class, when the run is counted, then it counts until it is cancelled (D19).");
   // Given a staff booking or a move in A1, when it would exceed the cap, then it is refused for every role (no override).
   test.todo("F07/R3-AC5 Given a staff booking or a move in A1, when it would exceed the cap, then it is refused for every role (no ...");
   // Given the cap setting is empty, when F07 reads it, then the default 6 applies; the PRD gives the default and the Blank template starts with it empty (D8), so Go live needs it set (F01 PLAT-01-AC4).
-  test.todo("F07/R3-AC6 Given the cap setting is empty, when F07 reads it, then the default 6 applies; the PRD gives the default ...");
+  // F07/R3-AC6: proven by a real or traced test in another file of this folder
   // Given the run is checked inside the booking transaction, when two bookings race, then exactly one passes (COACH-01-AC11).
-  test.todo("F07/R3-AC7 Given the run is checked inside the booking transaction, when two bookings race, then exactly one passes ...");
-});
-
-describe("F07 R4", () => {
-  // Given a flagged session (approved leave), when the owner opens substitution in A7, then only coaches available at that time are listed (COACH-01 rules apply).
-  test.todo("F07/R4-AC1 Given a flagged session (approved leave), when the owner opens substitution in A7, then only coaches ...");
-  // Given the owner picks a substitute, when it is saved, then the session moves to the new coach in one transaction (court kept, old coach freed, new coach reserved) or not at all (CC-4).
-  test.todo("F07/R4-AC2 Given the owner picks a substitute, when it is saved, then the session moves to the new coach in one ...");
-  // Given a substitution, when it is saved, then each customer gets Coach changed naming the new coach (F10).
-  test.todo("F07/R4-AC3 Given a substitution, when it is saved, then each customer gets Coach changed naming the new coach (F10).");
-  // Given a solo class customer, when the coach is changed, then they may cancel for full credit regardless of the 12 hour rule (F09 applies it).
-  test.todo("F07/R4-AC4 Given a solo class customer, when the coach is changed, then they may cancel for full credit regardless of ...");
-  // Given the session price, when a substitute is assigned, then the customer's price stays the same and coach pay goes to the coach who delivers (F13).
-  test.todo("F07/R4-AC5 Given the session price, when a substitute is assigned, then the customer's price stays the same and coach ...");
-  // Given a substitute, when the owner assigns one, then the rest rule applies to the substitute like any booking; if no substitute is free, the owner cancels the session for full credit (D120, D19).
-  test.todo("F07/R4-AC6 Given a substitute, when the owner assigns one, then the rest rule applies to the substitute like any ...");
-  // Given a substitution, when it is saved, then it is audited (PLAT-04).
-  // F07/R4-AC7: proven by a real or traced test in another file of this folder
+  // F07/R3-AC7: proven by a real or traced test in another file of this folder
 });
 
 describe("F07 R5", () => {
   // Given a solo class booking, when it is stored, then it has both a coach and a court; a record with one and not the other is refused by the database.
-  test.todo("F07/R5-AC1 Given a solo class booking, when it is stored, then it has both a coach and a court; a record with one and ...");
+  // F07/R5-AC1: proven by a real or traced test in another file of this folder
   // Given a two hour solo selection, when it is paid, then it is one order with one solo booking per hour; the rest rule and availability are checked for every hour (BOOK-06).
-  test.todo("F07/R5-AC2 Given a two hour solo selection, when it is paid, then it is one order with one solo booking per hour; the ...");
+  // F07/R5-AC2: proven by a real or traced test in another file of this folder
   // Given a solo class, when it is a future hour, then it counts toward the player's future court hours limit (D49: solo class hours count).
   test.todo("F07/R5-AC3 Given a solo class, when it is a future hour, then it counts toward the player's future court hours limit ...");
   // Given a solo class booked on the schedule, when it is confirmed, then the Booking confirmed card names the coach and court (F10 LINE-04-AC9) and the coach gets New session (F12 CPORT-07).
@@ -159,13 +115,4 @@ describe("F07 R5", () => {
   test.todo("F07/R5-AC5 Given a solo class ends, when its slot ends, then it counts as played (no check in, F09); the coach marks ...");
   // Given a tier or a price changes after a session is booked, when it is saved, then the booked session keeps the price it was booked at (D120, F04 R7-AC2).
   test.todo("F07/R5-AC6 Given a tier or a price changes after a session is booked, when it is saved, then the booked session keeps ...");
-});
-
-describe("F07 R6", () => {
-  // Given approved leave or a closed time over booked sessions, when it is saved, then those sessions are flagged for the owner in A7 and the coach is still shown on them until a substitute is chosen.
-  test.todo("F07/R6-AC1 Given approved leave or a closed time over booked sessions, when it is saved, then those sessions are ...");
-  // Given a flagged session, when no substitute is picked, then the session stays booked; the owner may cancel it with full credit back (F09).
-  test.todo("F07/R6-AC2 Given a flagged session, when no substitute is picked, then the session stays booked; the owner may cancel ...");
-  // Given a coach with future sessions, when the owner tries to deactivate them, then it is refused until the sessions are moved or cancelled (D120).
-  test.todo("F07/R6-AC3 Given a coach with future sessions, when the owner tries to deactivate them, then it is refused until the ...");
 });

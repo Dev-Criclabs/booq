@@ -156,7 +156,7 @@ The route checks `coach.portal`; the function checks again from the context; the
 | A-6 | One coach message per booked, moved or cancelled seat of a group class | Yes, one per event; the owner can ask for a daily digest later. |
 | A-7 | K1 "teaching hours" | The count of that day's sessions (each 60 minutes), so four sessions say 4 hours. |
 | A-8 | Pay terms on K6 | The coach sees their own rate (kind and value) beside the counts, as the board shows. |
-| A-9 | Group percent pay (F13) has no base | K6 shows "not set yet" until the owner decides (F13 flag `group_percent_no_base`). |
+| A-9 | Group percent pay (F13) | Settled by D170: the percentage of the full listed seat price of each seat booked; K6 shows the amount, or "not set yet" when the pay or a session's listed price is unset (F13 flags `group_pay_unset`, `group_price_unset`). |
 | Q-1 | Open question 2: coach pay numbers are empty settings | K6 shows them only after the owner sets them (`amount_satang` null until then). |
 | Q-2 | PDPA data access: may a player ask to see coach notes about them? | **Open, for the user.** Until decided the notes are not in the player's data export and are deleted on anonymisation. |
 | Q-3 | May the owner mark attendance for a coach who forgot? | Not built; the owner adjusts through A2 (no show) as D118 says. |

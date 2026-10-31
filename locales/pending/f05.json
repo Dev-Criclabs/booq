@@ -1,0 +1,11 @@
+{
+  "_note": "Proposed by BE-C for F05 package-only Pay (D81). Numbers to be assigned by Content; wording drafted, writers own it. P-new.package_line labels a package line on C10P, C11P and the receipt (the product's own name is shown beside it). Reused: P-new.student_too_old (locales/pending/f02.json) for a Student package refused by age.",
+  "en": {
+    "P-new.package_line": "Package",
+    "P-new.package_not_for_sale": "This package is not available to buy right now. Please contact the club."
+  },
+  "th": {
+    "P-new.package_line": "แพ็กเกจ",
+    "P-new.package_not_for_sale": "แพ็กเกจนี้ยังไม่เปิดให้ซื้อในขณะนี้ กรุณาติดต่อสโมสร"
+  }
+}

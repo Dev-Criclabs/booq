@@ -1,6 +1,7 @@
 // F04 checkout refusals (design 5.1) and the locale key each one shows. Code never builds text (CC-5).
 // `P-new.*` keys are in locales/pending/f04.json until Content merges them and assigns numbers; then only
-// this table changes. Reused: P-0442 (paused).
+// this table changes. Reused: P-0442 (paused); P-new.student_too_old (locales/pending/f02.json). The package keys are in
+// locales/pending/f05.json.
 export const CHECKOUT_TEXT_KEYS = {
   bad_input: 'P-new.checkout_bad_input',
   club_paused: 'P-0442',
@@ -11,6 +12,8 @@ export const CHECKOUT_TEXT_KEYS = {
   coach_price_not_set: 'P-new.coach_price_not_set',
   coach_at_checkout_disabled: 'P-new.coach_at_checkout_disabled',
   add_on_not_for_sale: 'P-new.add_on_not_for_sale',
+  package_not_for_sale: 'P-new.package_not_for_sale',
+  student_item_not_allowed: 'P-new.student_too_old',
   code_not_valid: 'P-new.code_not_valid',
   code_expired: 'P-new.code_expired',
   code_wrong_audience: 'P-new.code_wrong_audience',
