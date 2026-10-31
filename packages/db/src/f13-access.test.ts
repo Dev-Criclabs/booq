@@ -83,15 +83,15 @@ describe('daily closes', () => {
 describe('BOOQ staff and the platform roles see nothing', () => {
   it('no privilege of any kind on the F13 tables for booq_platform, anon and authenticated; no execute on any F13 function', async () => {
     for (const role of ['booq_platform', 'anon', 'authenticated']) {
-      for (const t of ['receipt', 'receipt_void', 'receipt_counter', 'daily_close']) {
+      for (const t of ['receipt', 'receipt_void', 'receipt_counter', 'daily_close', 'coach_payout', 'coach_payout_adjustment']) {
         const r = await tdb.query(`select has_table_privilege($1, $2, 'select,insert,update,delete,truncate') as ok`, [role, `public.${t}`]);
         expect(r.rows[0].ok, `${role} ${t}`).toBe(false);
       }
     }
     const fns = (await tdb.query(
       `select p.oid::regprocedure::text as f from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-        where n.nspname = 'app' and p.proname in ('issue_receipt', 'void_receipt', 'run_daily_close', 'preview_daily_close', 'daily_close_totals', 'report_cash_by_type', 'report_package_sales', 'report_online_vs_staff', 'report_no_show_rate', 'report_new_vs_returning', 'report_revenue_earned', 'report_value_owed', 'report_occupancy', 'report_partner', 'receipt_for_print', 'audit_report_export')`)).rows.map((r) => r.f as string);
-    expect(fns.length).toBe(16);
+        where n.nspname = 'app' and p.proname in ('issue_receipt', 'void_receipt', 'run_daily_close', 'preview_daily_close', 'daily_close_totals', 'report_cash_by_type', 'report_package_sales', 'report_online_vs_staff', 'report_no_show_rate', 'report_new_vs_returning', 'report_revenue_earned', 'report_value_owed', 'report_occupancy', 'report_partner', 'receipt_for_print', 'audit_report_export', 'compute_payout', 'payout_month', 'add_payout_adjustment', 'mark_payout_paid', 'my_payouts', 'payout_figures', 'payout_store', 'payout_month_ok')`)).rows.map((r) => r.f as string);
+    expect(fns.length).toBe(24);
     for (const f of fns) {
       for (const role of ['booq_platform', 'booq_worker', 'anon', 'authenticated']) {
         expect((await tdb.query(`select has_function_privilege($1, $2, 'execute') as ok`, [role, f])).rows[0].ok, `${role} ${f}`).toBe(false);
@@ -101,10 +101,10 @@ describe('BOOQ staff and the platform roles see nothing', () => {
   it('the app role may run exactly the entry points of the roles (reports, close, void, print), and not issue_receipt or the internal totals', async () => {
     const may = (await tdb.query(
       `select p.oid::regprocedure::text as f from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-        where n.nspname = 'app' and p.proname in ('issue_receipt', 'void_receipt', 'run_daily_close', 'preview_daily_close', 'daily_close_totals', 'report_cash_by_type', 'report_package_sales', 'report_online_vs_staff', 'report_no_show_rate', 'report_new_vs_returning', 'report_revenue_earned', 'report_value_owed', 'report_occupancy', 'report_partner', 'receipt_for_print', 'audit_report_export')
+        where n.nspname = 'app' and p.proname in ('issue_receipt', 'void_receipt', 'run_daily_close', 'preview_daily_close', 'daily_close_totals', 'report_cash_by_type', 'report_package_sales', 'report_online_vs_staff', 'report_no_show_rate', 'report_new_vs_returning', 'report_revenue_earned', 'report_value_owed', 'report_occupancy', 'report_partner', 'receipt_for_print', 'audit_report_export', 'compute_payout', 'payout_month', 'add_payout_adjustment', 'mark_payout_paid', 'my_payouts', 'payout_figures', 'payout_store', 'payout_month_ok')
           and has_function_privilege('booq_app', p.oid, 'execute') order by 1`)).rows.map((r) => r.f);
     expect(may).toEqual([
-      'app.audit_report_export(text,date,date,integer)', 'app.preview_daily_close(date)', 'app.receipt_for_print(uuid)', 'app.report_cash_by_type(date,date)', 'app.report_new_vs_returning(date,date)', 'app.report_no_show_rate(date,date)',
+      'app.add_payout_adjustment(uuid,integer,text)', 'app.audit_report_export(text,date,date,integer)', 'app.compute_payout(uuid,date)', 'app.mark_payout_paid(uuid)', 'app.my_payouts(date)', 'app.payout_month(date)', 'app.preview_daily_close(date)', 'app.receipt_for_print(uuid)', 'app.report_cash_by_type(date,date)', 'app.report_new_vs_returning(date,date)', 'app.report_no_show_rate(date,date)',
       'app.report_occupancy(date,date)', 'app.report_online_vs_staff(date,date)', 'app.report_package_sales(date,date)', 'app.report_partner(date,date)',
       'app.report_revenue_earned(date,date)', 'app.report_value_owed(date)', 'app.run_daily_close(date)', 'app.void_receipt(uuid,text)',
     ]);
@@ -114,7 +114,7 @@ describe('BOOQ staff and the platform roles see nothing', () => {
 describe('no role writes a receipt or a close directly (RCPT-01-AC12)', () => {
   it('the app and worker roles hold no insert, update, delete or truncate on any F13 table', async () => {
     for (const role of ['booq_app', 'booq_worker']) {
-      for (const t of ['receipt', 'receipt_void', 'receipt_counter', 'daily_close']) {
+      for (const t of ['receipt', 'receipt_void', 'receipt_counter', 'daily_close', 'coach_payout', 'coach_payout_adjustment']) {
         expect((await tdb.query(`select has_table_privilege($1, $2, 'insert,update,delete,truncate') as ok`, [role, `public.${t}`])).rows[0].ok, `${role} ${t}`).toBe(false);
       }
     }

@@ -1,0 +1,73 @@
+# F12 Coach portal · Tasks
+
+Status: **DRAFT for a quick check (gate 3).** Drafted 31 Oct 2026 from the draft design (`design.md`, gate 2, waiting for approval) and the approved requirements (`requirements.md`). Nothing here starts before the design is approved. Rules for every task (CLAUDE.md): one task per run; write the tests from the acceptance criteria first, then the code; run tests and type checks before ticking; the commit message starts with the requirement IDs, for example `CPORT-05 mark attendance after the hour has ended`. A merged migration is never edited. New text goes in `locales/pending/F12.json` (D81); no user facing text in code.
+
+Roles: **BE-C** back end (database, functions, routes), **FE-A** front end admin and coach, **QA**, **Content**.
+
+Depends on: F01 (roles, route wrapper, blind suite, anonymise handlers); F07 (`coach`, `coach_availability_rule`, `coach_leave`, `app.set_availability`, `app.request_leave`, routes `/coach/availability` and `/coach/leave`, T12); F08 (`class_session`, seats); F10 (`app.enqueue_message`, `session_change`, `leave_decision`, message facts); F13 (`app.payout_figures`, `app.my_payouts`, T10). Migration numbers 1201 to 1207 (the F12 block), one task per file, rising in task order: T01 1201, T02 1202, T03 1203, T04 1204, T05 1205, T06 1206, T10 1207.
+
+**Cross-feature tasks (named here, owned by other lists, for the orchestrator):** F10 follow up, after T06: `app.message_facts` and the `session_change` builder carry the `change` parameter (`booked`, `moved`, `cancelled`) and the writers give the wording (Content). F01 follow up: the anonymise handler list names `app.f12_anonymise` (T10 does it as a migration of F12's own block, no F01 edit). F11 owns the owner's sidebar; F12 adds no admin page.
+
+## A. Tables and reads
+
+- [ ] **F12-T01** Migration 1201: `coach_attendance` (one row per booking, mark `present` or `absent`) and `coach_note` (session or player note, 2000 characters at most), class D, composite club keys, restrictive tenant policies, no direct write grant (functions only), staff read policies (owner, front desk), audit registration with old and new values, test table order before the coach, registry entries in `packages/db/src/registry/f12.ts`. IDs: CPORT-05, PLAT-04, CC-1, CC-3. Role: BE-C · Deps F07-T01 (0801), F03 `booking` · Size: M
+  Tests first: a coach can not insert or update either table directly; another club's row is invisible; the front desk and owner read, the accountant and a player do not; one note per coach, session and player; a blank or 2001 character body is refused by the database; the audit entry holds the old and new text; test rows are purged at Go live.
+
+- [ ] **F12-T02** Migration 1202: `app.coach_day(date)` and `app.coach_schedule(from, to)`: the coach's own solo classes and group sessions in time order with court, student or class name, level, players and capacity, plus `leave` and `blocked` for the schedule. IDs: CPORT-01, CPORT-02, COACH-01. Role: BE-C · Deps T01, F07-T01, F08 0902 · Size: M
+  Tests first: a coach with three sessions today gets only their own, in time order; another coach's, another club's and a cancelled or released session never; a held solo class is marked held; a substituted class shows for the substitute only; the Bangkok day boundary (23:00 and 00:00); an approved leave day shows and the sessions outside it remain; the range over 14 days is refused; no phone, date of birth or payment field is in any column; a person without the Coach role is `portal:forbidden`.
+
+- [ ] **F12-T03** Migration 1203: `app.coach_session(kind, id)`: header, roster of live confirmed players with name, level, mark and the coach's last earlier note on that player, the session note, `can_mark`, marked count. IDs: CPORT-05. Role: BE-C · Deps T01, T02 · Size: M
+  Tests first: a solo and a group session both return; a held seat is counted in "players" but not listed; the last note comes from this coach only and from another session; another coach's session and another club's are `portal:not_found`; the coach reads nothing else of the player (column list test); `can_mark` is false before the hour ends and after the month is paid.
+
+- [ ] **F12-T04** Migration 1204: `app.mark_attendance(booking, mark)` and `app.save_session_note(kind, id, customer, body)`. IDs: CPORT-05, D118, PLAT-04. Role: BE-C · Deps T01, T03, F13-T10 (payout status) · Size: M
+  Tests first: a mark before the hour has ended is `portal:not_ended`; a mark is saved and audited; the same mark again changes nothing; Present to Absent and back is allowed while the month is open and `portal:month_paid` once F13 marked it paid; an Absent mark leaves `booking.status`, forfeit and the payout figures unchanged (D118); a booking of another coach is `portal:not_found`; an invalid mark is refused; a note is created, replaced (the audit keeps the old text), deleted by a blank body, refused for a customer who is not a seat of that session, and never returned by any player route.
+
+- [ ] **F12-T05** Migration 1205: `app.my_earnings(month)`, `app.my_payout_history()`, `app.my_payout_adjustments(month)`. IDs: CPORT-06, R3, D115. Role: BE-C · Deps F13-T10, F07-T02 · Size: S
+  Tests first: the coach's figures equal the owner's `payout_month` row for the same month and coach; an unset pay gives a null amount and a flag, never zero; the coach sees their own rate and not another coach's; history lists paid months only, newest first; adjustments list with the owner's reason; a person who is not a coach, and any argument naming another coach, reach nothing; no club revenue column anywhere; a bad month is `portal:invalid_month`.
+
+- [ ] **F12-T06** Migration 1206: the coach messages for a class booked, moved or cancelled: one trigger function on `booking` enqueues `session_change` with `change` to the session's coach, deduped by booking, change and start; solo classes and group seats. IDs: CPORT-07, LINE-05. Role: BE-C · Deps F10 (`app.enqueue_message`, 0899), F07-T07 · Size: M
+  Tests first: a solo class that becomes confirmed enqueues one `session_change` (`booked`) to its coach; a move enqueues `moved`; a cancel or late cancel enqueues `cancelled`; a released hold and a booking that stays `awaiting_payment` enqueue nothing; a retry or a second update with the same values enqueues nothing more; a substituted class goes to the substitute (F07 already sends the pair for the substitution itself); a group seat goes to the session's coach; the message is in the coach's language (D95); no F03, F05 or F09 function is redefined.
+
+## B. Routes and permissions
+
+- [ ] **F12-T07** Permissions fragment `packages/auth/src/permissions/f12.ts` (`coach.portal`, `attendance.read`) and the routes `GET /coach/today`, `GET /coach/schedule`, `GET /coach/sessions/{kind}/{id}` with no-store headers; the K3 response also carries `restCapHours`. IDs: CPORT-01, CPORT-02, CPORT-03, CC-2. Role: BE-C · Deps T02, T03 · Size: M
+  Tests first: each route's permission is declared; a player, front desk, accountant and guest get 403 or 401; a coach reads only their own through the route; the dates and kind are validated; the K3 response carries the rest cap and a test saves hours that would make a 7th hour in a row and shows the 7th hour is not offered (CPORT-03); a leave request, approval, the coach's message and the flagged sessions work end to end (CPORT-04).
+
+- [ ] **F12-T08** Routes `PUT /coach/sessions/{kind}/{id}/attendance`, `PUT /coach/sessions/{kind}/{id}/note`, `GET /coach/earnings`, `GET /coach/earnings/history`, `GET /staff/bookings/{id}/attendance`. IDs: CPORT-05, CPORT-06, D118. Role: BE-C · Deps T04, T05, T07 · Size: M
+  Tests first: bodies are validated (exact keys, mark values, 2000 characters); typed codes map to 400, 404 and 409; the staff route is for the owner and front desk only and returns the mark and who marked it; a coach reads no other coach's earnings by any query argument; the earnings route returns no other field than the function's.
+
+## C. Privacy and access
+
+- [ ] **F12-T09** The access suite `packages/db/src/f12-access.test.ts`: which role reads or writes which F12 table and function, the booq_app and booq_worker grants, `booq_platform`, `anon` and `authenticated` hold nothing, and the blind suite covers the two tables. IDs: CC-1, CC-2, PLAT-02. Role: QA · Deps T01 to T05 · Size: S
+  Tests first: the test is the task.
+
+- [ ] **F12-T10** Migration 1207: `app.f12_deletion_impact(club, user)` and `app.f12_anonymise(club, user)` registered with F01's handlers: notes about a customer are deleted and attendance rows keep only the booking link when that customer is anonymised; a coach's own notes and marks stay as records. IDs: CPORT rules (PDPA), PDPA-01. Role: BE-C · Deps T01, F01 anonymise registry · Size: S
+  Tests first: anonymising a customer removes the notes about them and nothing else; the deletion impact lists the counts; anonymising a coach keeps the notes; another club's rows are never touched; the audit log keeps the old text only as F01 says.
+
+## D. Front end
+
+- [ ] **F12-T11** Coach portal shell: the bottom bar (Today, Schedule, Availability, Leave, Earnings), sign in with LINE, the coach's language, states (loading, empty, error, offline), 375 px, longest Thai string. IDs: CPORT rules, TEXT-04. Role: FE-A · Deps T07, F02 · Size: M
+  Tests first: a person without the Coach role cannot open the portal; the bar works with the longest Thai labels without wrapping; every state renders from keys.
+
+- [ ] **F12-T12** K1 Today (H-K1-Today). IDs: CPORT-01. Role: FE-A · Deps T07, T11 · Size: S
+  Tests first: three sessions in time order, Next and Done from the clock, the count and the hours line (assumption A-7), the empty day.
+
+- [ ] **F12-T13** K2 Schedule (H-K2-Schedule). IDs: CPORT-02. Role: FE-A · Deps T07, T11 · Size: M
+  Tests first: a week with day groups, leave and blocked rows, the counts, the week navigation.
+
+- [ ] **F12-T14** K5 Session detail (H-K5-Session-detail): roster rows, Present and Absent, the session note, save, the disabled states with their reasons, "3 of 5 marked", initials for players (A-2). IDs: CPORT-05, D118. Role: FE-A · Deps T08, T11 · Size: M
+  Tests first: marking is disabled before the hour has ended and after the month is paid; a saved mark and note show saved; a failed save keeps the text; the hint wording says staff decide.
+
+- [ ] **F12-T15** K6 Earnings (H-K6-Earnings): the month's breakdown, "not set yet", adjustments with the reason, past payouts. IDs: CPORT-06. Role: FE-A · Deps T08, T11 · Size: M
+  Tests first: a null amount shows "not set yet" and not zero; the breakdown adds up to the total from the function; past payouts list paid months; no other coach's or club's figure is on screen.
+
+- [ ] **F12-T16** K3 Availability and K4 Leave inside the portal shell (the screens are F07-T17): wiring, the rest cap text, the leave list with statuses. IDs: CPORT-03, CPORT-04. Role: FE-A · Deps F07-T17, T11 · Size: S
+  Tests first: the shell shows both; the rest cap line reads the value from the response; a submitted leave appears as pending.
+
+## E. Content and acceptance
+
+- [ ] **F12-T17** Content: `locales/pending/F12.json` (design section 10), existing K keys (K-0001 to K-0112) first, new keys only where none exists (the attendance hint, the disabled reasons, "not set yet", the message `change` wording), the same variables in both languages. IDs: TEXT-01 to TEXT-06, CPORT-07. Role: Content · Deps design approval; before T11 to T16 · Size: S
+  Tests first: the i18n lint and the variable parity test pass; no sample value is typed in any key.
+
+- [ ] **F12-T18** Acceptance sweep and 375 px Playwright pass: every CPORT acceptance check has a named test; the longest Thai string on K1 to K6; the owner-as-coach case (own rows only). IDs: CPORT-01 to CPORT-07. Role: QA · Deps all · Size: M
+  Tests first: the sweep is the task.

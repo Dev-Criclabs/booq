@@ -59,13 +59,14 @@ export const mounts: readonly Mount[] = [
   (m) => lineFriendRoutes({ db: m.db }),
   (m) => receiptRoutes({ db: m.db, pdf: createReceiptPdf(m.config.localesDir ?? null) }),
   (m) => reportRoutes({ db: m.db }),
+  (m) => Object.values(settingsRoutes(m.db)),
   (m) => [publicScheduleRoutes, playerBookingRoutes, staffBookingRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
   (m) => noticeRoutes({ db: m.db, clubBySlug: m.clubBySlug }),
   (m) => [publicClassRoutes, playerClassRoutes, staffClassRoutes].flatMap((f) => f({ db: m.db, now: m.now, clubBySlug: m.clubBySlug })),
   (m) => [publicCoachRoutes, playerCoachRoutes, staffCoachRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
   (m) => [shellRoutes, calendarRoutes, customerRoutes, customerValueRoutes, auditRoutes, setupRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
-  // F11 A16 Settings (F01 routes built in packages/domain/src/club, not mounted until now): settings, opening hours, courts, the support window.
-  (m) => [settingsRoutes(m.db).list, settingsRoutes(m.db).put, hoursRoute(m.db), resourceRoutes(m.db).create, resourceRoutes(m.db).update, supportWindowRoute(m.db)],
+  // F11 A16 Settings: opening hours, courts and the support window (F01 routes in packages/domain/src/club; the settings routes are mounted above).
+  (m) => [hoursRoute(m.db), resourceRoutes(m.db).create, resourceRoutes(m.db).update, supportWindowRoute(m.db)],
   (m) => profileRoutes({ db: m.db, service: () => createProfileEditService({ today: () => bangkokDate(m.now()) }) }),
   (m) => checkoutRoutes({ db: m.db, clubBySlug: m.clubBySlug, sources: quoteSources, payments: { privateKey: () => loadDecryptKey(), gateway: beamGateway, alerts: paymentAlerts, now: m.now } }),
 ];
