@@ -6,6 +6,7 @@ import { fill, hasKey, t } from './i18n';
 import { BASICS_FIELDS, changeStatus, errorKey as clubErrorKey, issueWebhookToken, itemKey, LAUNCH_KEY, loadClub, pauseClub, RESULT_KEY, saveBasics, sendOwnerInvite, SETUP_KEY } from './club';
 import { loadLaunch, MARK_KEY, openChecks, recordResult } from './launch';
 import { isKnown, KNOWN, labelKey, loadConfig, parse, saveValue, show } from './config';
+import { check, emptyTexts, fromCurrent, loadLegal, publish, when, kindKey, languageKey, partKey, KINDS, LANGUAGES, PARTS } from './legal';
 import { counts, FILTER_KEY, loadClubs, STATUS_KEY, visible, type ClubRow } from './clubs';
 import { safeNext, signInWithCode, signInWithPassword, stepUp } from './auth';
 import { deactivate, errorKey, invite, loadTeam, resetFactor } from './staff';
@@ -270,5 +271,59 @@ describe('settings page', () => {
     expect(await saveValue(reply(400, { code: 'invalid' }), 'x', 'number', '1')).toEqual({ kind: 'error', key: 'X-new.config_invalid' });
     expect(await saveValue(reply(403, { code: 'step_up_required' }), 'x', 'number', '1')).toMatchObject({ kind: 'error', stepUp: true });
     expect(await saveValue(reply(403, { code: 'forbidden' }), 'x', 'number', '1')).toEqual({ kind: 'error', key: 'X-new.staff_forbidden' });
+  });
+});
+
+describe('legal page', () => {
+  const full = () => {
+    const x = emptyTexts();
+    for (const k of KINDS) for (const l of LANGUAGES) { x[k][l].title = `T ${k} ${l}`; x[k][l].body = `B ${k} ${l} {clubName} {legalName}`; }
+    return x;
+  };
+  it('writes a date in Bangkok time with the international year', () => {
+    expect(when('2026-12-29T17:05:00Z')).toBe('30 December 2026, 00:05');
+    expect(when('2026-12-29T03:00:00Z')).toBe('29 December 2026, 10:00');
+  });
+  it('every label the page uses has a text key that exists', () => {
+    for (const k of KINDS) expect(hasKey(kindKey(k)), k).toBe(true);
+    for (const l of LANGUAGES) expect(hasKey(languageKey(l)), l).toBe(true);
+    for (const p of PARTS) expect(hasKey(partKey(p)), p).toBe(true);
+  });
+  it('the form starts from the newest version, or empty when nothing is published', () => {
+    expect(fromCurrent({ releases: [], current: null })).toEqual(emptyTexts());
+    const seed = full();
+    expect(fromCurrent({ releases: [{ version: 'v1', publishedAt: '2026-12-01T00:00:00Z', publishedBy: null }], current: { version: 'v1', texts: seed } })).toEqual(seed);
+  });
+  it('checks for an empty field and for a {field} the system does not fill in, before sending', () => {
+    expect(check(full())).toBeNull();
+    const empty = full();
+    empty.terms.th.body = '  ';
+    expect(check(empty)).toEqual({ key: 'X-new.legal_missing', kind: 'terms', language: 'th', part: 'body' });
+    const odd = full();
+    odd.privacy.en.title = 'Hello {playerName}';
+    expect(check(odd)).toEqual({ key: 'X-new.legal_unknown_field', field: 'playerName' });
+  });
+  it('loads what is published, or says why not', async () => {
+    const view = { releases: [{ version: 'v1', publishedAt: '2026-12-01T00:00:00Z', publishedBy: 'Ada' }], current: { version: 'v1', texts: full() } };
+    expect(await loadLegal(reply(200, view))).toEqual({ kind: 'ok', view });
+    expect(await loadLegal(reply(200, { releases: [], current: null }))).toEqual({ kind: 'ok', view: { releases: [], current: null } });
+    expect(await loadLegal(reply(401, {}))).toMatchObject({ kind: 'error', signIn: true });
+    expect(await loadLegal((async () => { throw new Error('offline'); }) as unknown as typeof fetch)).toEqual({ kind: 'error', key: 'X-new.club_unavailable' });
+  });
+  it('publishes the texts as they are; a bad one sends nothing; the API refusals have their text', async () => {
+    const c = calls();
+    expect(await publish(reply(200, { version: 'v3' }), full())).toEqual({ kind: 'published', version: 'v3' });
+    await publish(c.f, full());
+    expect(c.seen[0]!.url).toBe('/api/legal/releases');
+    expect(c.seen[0]!.body).toEqual({ texts: full() });
+    const bad = full();
+    bad.terms.en.title = '';
+    expect(await publish(c.f, bad)).toMatchObject({ kind: 'error', key: 'X-new.legal_missing' });
+    expect(c.seen).toHaveLength(1);
+    expect(await publish(reply(400, { code: 'invalid', reason: 'unknown_field', field: 'x' }), full())).toMatchObject({ kind: 'error', key: 'X-new.legal_unknown_field', problem: { field: 'x' } });
+    expect(await publish(reply(400, { code: 'invalid', reason: 'missing_text', kind: 'terms', language: 'en' }), full())).toMatchObject({ kind: 'error', key: 'X-new.legal_missing' });
+    expect(await publish(reply(400, { code: 'invalid', reason: 'invalid_texts' }), full())).toEqual({ kind: 'error', key: 'X-new.legal_invalid' });
+    expect(await publish(reply(403, { code: 'step_up_required' }), full())).toMatchObject({ kind: 'error', stepUp: true });
+    expect(await publish(reply(403, { code: 'forbidden' }), full())).toEqual({ kind: 'error', key: 'X-new.staff_forbidden' });
   });
 });

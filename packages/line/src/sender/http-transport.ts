@@ -14,7 +14,9 @@ export interface LineHttpTransportOptions {
 }
 
 export function createLineHttpTransport(options: LineHttpTransportOptions): LineTransport {
+  // i18n-ignore configuration error at start up, never shown to anyone
   if (!options.baseUrl) throw new Error('createLineHttpTransport: a base URL is required');
+  // i18n-ignore configuration error at start up, never shown to anyone
   if (!Number.isFinite(options.timeoutMs) || options.timeoutMs <= 0) throw new Error('createLineHttpTransport: a positive timeout is required');
   const base = options.baseUrl.replace(/\/+$/, '');
   const doFetch = options.fetch ?? fetch;

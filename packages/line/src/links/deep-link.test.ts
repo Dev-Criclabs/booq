@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { LinkTarget, MessageLinks } from '../messages/builder';
 import { clubPath, createDeepLinks, DeepLinkError, liffLink, playerPath, type PlayerPage } from './deep-link';
 
 // F02 design 3.1, 6.3; AUTH-01-AC10, AC14; BOOK-02-AC1 to AC3; D6.
@@ -55,20 +56,17 @@ describe('links port for the message builder (F10 LinkTarget)', () => {
   });
 });
 
-// F10's builder (be-l/f10, packages/line/src/messages/builder.ts) takes this port. Its target union is
-// copied here so a change on either side fails the type check until the builder lands on main.
-type F10LinkTarget =
-  | { page: 'booking'; bookingId: string }
-  | { page: 'calendar'; bookingId: string }
-  | { page: 'book' }
-  | { page: 'packages' }
-  | { page: 'offer'; params: Readonly<Record<string, unknown>> };
-interface F10MessageLinks {
-  link(clubId: string, target: F10LinkTarget): string | null;
-}
+// F10's message builder takes this port: a change on either side fails the type check.
 describe('fits the F10 builder', () => {
-  it('createDeepLinks is a MessageLinks', () => {
-    const port: F10MessageLinks = createDeepLinks({ club: () => ({ liffId: LIFF_A }) });
-    expect(port.link('A', { page: 'offer', params: { offerId: 'o1' } })).toBe(`https://liff.line.me/${LIFF_A}/offer?offerId=o1`);
+  it('createDeepLinks is a MessageLinks for every LinkTarget', () => {
+    const port: MessageLinks = createDeepLinks({ club: () => ({ liffId: LIFF_A }) });
+    const targets: LinkTarget[] = [{ page: 'booking', bookingId: 'b1' }, { page: 'calendar', bookingId: 'b1' }, { page: 'book' }, { page: 'packages' }, { page: 'offer', params: { offerId: 'o1' } }];
+    expect(targets.map((t) => port.link('A', t))).toEqual([
+      `https://liff.line.me/${LIFF_A}/bookings/b1`,
+      `https://liff.line.me/${LIFF_A}/bookings/b1/calendar`,
+      `https://liff.line.me/${LIFF_A}/book`,
+      `https://liff.line.me/${LIFF_A}/packages`,
+      `https://liff.line.me/${LIFF_A}/offer?offerId=o1`,
+    ]);
   });
 });

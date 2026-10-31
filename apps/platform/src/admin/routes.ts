@@ -30,6 +30,8 @@ export function adminRoutes(deps: AdminRouteDeps): PlatformRoute[] {
       if (typeof key !== 'string' || !KEY.test(key)) throw new RouteError(404, 'not_found');
       return answer(await admin.setConfig(actorOf(ctx), key, ctx.body));
     }),
+    // The notice: what was published and the newest texts.
+    platformRoute({ method: 'GET', path: '/legal', access: 'staff' }, async (ctx) => answer(await admin.legalOverview(ctx.staff!.id))),
     // The legal notice: a new release of the privacy and terms texts in both languages.
     platformRoute({ method: 'POST', path: '/legal/releases', access: 'admin' }, async (ctx) => answer(await admin.publishLegalRelease(actorOf(ctx), ctx.body))),
   ];
