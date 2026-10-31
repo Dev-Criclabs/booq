@@ -8,6 +8,7 @@ const A = '3f2b8f0e-7c1d-4a55-9d0a-1c2e3f4a5b6c';
 const P1 = '11111111-1111-4111-8111-111111111111';
 const P2 = '22222222-2222-4222-8222-222222222222';
 const DESK = '33333333-3333-4333-8333-333333333333';
+const OWNER_NOT_COACH = '99999999-0000-4999-8999-000000000009';
 const OWNER = '44444444-4444-4444-8444-444444444444';
 const ACC = '55555555-5555-4555-8555-555555555555';
 const C1 = '66666666-6666-4666-8666-666666666661';
@@ -65,7 +66,7 @@ beforeEach(async () => {
   await tdb.setNow('2026-12-10T08:00:00Z');                                 // 15:00 Bangkok on 10 December
   await tdb.query(`insert into public.club (id, slug, name_th, name_en, status) values ($1,'a','ก','A','live')`, [A]);
   for (const [u, roles, name] of [[P1, ['player'], 'Ploy'], [P2, ['player'], 'Ann'], [DESK, ['front_desk', 'player'], 'Desk'], [OWNER, ['owner', 'coach', 'player'], 'Owner Coach'],
-    [ACC, ['accountant', 'player'], 'Acc'], [C1, ['coach', 'player'], 'Coach One'], [C2, ['coach', 'player'], 'Coach Two']] as const) {
+    [ACC, ['accountant', 'player'], 'Acc'], [OWNER_NOT_COACH, ['owner', 'player'], 'Owner only'], [C1, ['coach', 'player'], 'Coach One'], [C2, ['coach', 'player'], 'Coach Two']] as const) {
     const c = await tdb.pool.connect();
     try {
       await c.query('begin');
@@ -119,6 +120,7 @@ describe('who may call (CC-2)', () => {
       expect(await run('PUT', '/coach/sessions/solo/:id/note', s, { id: P1 }, { customerId: null, body: 'x' })).toMatchObject({ ok: false, status: 403 });
     }
     expect(await run('GET', '/coach/today', null)).toMatchObject({ ok: false, status: 401 });
+    expect(await run('GET', '/coach/today', sess(OWNER_NOT_COACH, ['owner', 'player']))).toMatchObject({ ok: false, status: 403 });   // the route lets the owner in, the function wants a coach
     expect(await run('GET', '/coach/today', coach1)).toMatchObject({ ok: true });
     await solo(OWNER, '2026-12-10T05:00:00Z');
     expect(bodyOf(await run('GET', '/coach/today', sess(OWNER, ['owner', 'coach', 'player']), { date: '2026-12-10' })).count).toBe(1);

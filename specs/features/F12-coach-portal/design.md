@@ -112,7 +112,7 @@ Prefix `/api/c/{slug}`. Conventions as FA §9: typed codes, no text, 404 for out
 | `GET /coach/earnings/history` | `coach.portal` | K6 past payouts | `app.my_payout_history` |
 | `GET /staff/bookings/{id}/attendance` | `attendance.read` | A2 hint | `coach_attendance` |
 
-The kind is a literal in the path, so these never clash with F08's `GET /coach/sessions/:id/roster`, which stays for the owner's tools. New permissions in `packages/auth/src/permissions/f12.ts`: `coach.portal` (coach), `attendance.read` (owner, front desk). `coach.self` (coach, owner) stays F07's, because the owner may act for a coach there. Typed codes: `forbidden`, `not_found`, `not_ended`, `month_paid`, `invalid_mark`, `invalid_month`, `invalid_range`, `body_too_long`.
+The kind is a literal in the path, so these never clash with F08's `GET /coach/sessions/:id/roster`, which stays for the owner's tools. New permissions in `packages/auth/src/permissions/f12.ts`: `coach.portal` (coach and owner: the matrix gives the owner every permission, but the functions require the Coach role and a coach row, so an owner who is not a coach is refused with `portal:forbidden`), `attendance.read` (owner, front desk). `coach.self` (coach, owner) stays F07's, because the owner may act for a coach there. Typed codes: `forbidden`, `not_found`, `not_ended`, `month_paid`, `invalid_mark`, `invalid_month`, `invalid_range`, `body_too_long`.
 
 ## 7. Screens and states (375 px, inside LINE)
 

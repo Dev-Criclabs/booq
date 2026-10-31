@@ -88,8 +88,9 @@ export function createDataRequestService() {
     },
 
     /**
-     * The files of a copy request (PDPA-01-AC3): the player's profile and consents. Bookings,
-     * credits and receipts are added by F03, F06 and F13; staff notes are never included (A-17, AC6).
+     * The files of a copy request (PDPA-01-AC3): the player's profile and consents, and the coach's notes about them and the marks
+     * of their bookings (F12, D171). Bookings, credits and receipts are added by F03, F06 and F13; the club staff's own notes
+     * about a player are never included (A-17, AC6).
      * The caller sends them to the player by LINE (F10).
      */
     async copyFile(tx: DataRequestTx, actor: DataRequestActor, id: string): Promise<{ name: string; data: string }[]> {
@@ -112,11 +113,17 @@ export function createDataRequestService() {
           [cur.user_id],
         )
       ).rows;
+      // The coach's notes about the player and the marks of their bookings (F12, D171): the club holds them, so the right of access covers them.
+      const coach = (await tx.query('select app.f12_export($1) as x', [cur.user_id])).rows[0]?.x as { notes: Array<Record<string, string>>; marks: Array<Record<string, string>> };
       const pc = ['id', 'full_name', 'phone', 'date_of_birth', 'language', 'level', 'created_at'];
       const cc = ['notice_version', 'language', 'accepted_at'];
+      const nc = ['date', 'kind', 'note', 'written_at'];
+      const mc = ['date', 'kind', 'mark'];
       return [
         { name: 'profile.csv', data: toCsv(pc, p.map((r) => pc.map((k) => r[k]))) },
         { name: 'consents.csv', data: toCsv(cc, c.map((r) => cc.map((k) => r[k]))) },
+        { name: 'coach-notes.csv', data: toCsv(nc, coach.notes.map((r) => nc.map((k) => r[k]))) },
+        { name: 'attendance.csv', data: toCsv(mc, coach.marks.map((r) => mc.map((k) => r[k]))) },
       ];
     },
 
