@@ -14,6 +14,7 @@ import { profileRoutes } from '../api/profile/routes';
 import { staffRoutes } from '../api/staff/routes';
 import { dobHistoryRoutes } from '../api/dob-history/routes';
 import { lineFriendRoutes } from '../api/line/friend/routes';
+import { notificationPrefRoutes } from '../api/line/prefs/routes';
 import { createReceiptPdf } from '../api/receipts/pdf';
 import { receiptRoutes } from '../api/receipts/routes';
 import { reportRoutes } from '../api/reports/routes';
@@ -56,6 +57,7 @@ export const mounts: readonly Mount[] = [
   (m) => staffRoutes({ db: m.db }),
   (m) => dobHistoryRoutes({ db: m.db }),
   (m) => lineFriendRoutes({ db: m.db }),
+  (m) => notificationPrefRoutes({ db: m.db }),
   (m) => receiptRoutes({ db: m.db, pdf: createReceiptPdf(m.config.localesDir ?? null) }),
   (m) => reportRoutes({ db: m.db }),
   (m) => [publicScheduleRoutes, playerBookingRoutes, staffBookingRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
