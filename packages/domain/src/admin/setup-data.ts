@@ -33,6 +33,8 @@ export interface SetupResource {
   table: string;
   fields: Field[];
   order: string;
+  /** A product is switched off, never deleted: the table grants the app no delete (package products). */
+  noDelete?: boolean;
 }
 
 const bad = (field?: string): never => {
@@ -103,6 +105,21 @@ export const SETUP: Record<string, SetupResource> = {
       { key: 'priceSatang', column: 'price_satang', kind: 'int', nullable: true, min: 0, max: 100_000_000 },
       { key: 'active', column: 'active', kind: 'bool', fallback: true },
       { key: 'position', column: 'position', kind: 'int', min: 0, max: 1000, fallback: 0 },
+    ],
+  },
+  // F06 PKG-02: a package product. The database's checks hold the pairs (a solo pack names a coach tier, solo and group packs a price group).
+  // Price and validity are copied onto each package sold, so a change here never alters packages already sold (PKG-02-AC4).
+  'package-products': {
+    path: 'package-products', table: 'package_product', order: 'credit_type, credits, id', noDelete: true,
+    fields: [
+      ...NAMES,
+      { key: 'creditType', column: 'credit_type', kind: { enum: ['court_hour', 'solo_class', 'group_session'] }, required: true },
+      { key: 'credits', column: 'credits', kind: 'int', required: true, min: 1, max: 1000 },
+      { key: 'validityMonths', column: 'validity_months', kind: 'int', required: true, min: 1, max: 120 },
+      { key: 'priceGroupId', column: 'price_group_id', kind: 'uuid', nullable: true },
+      { key: 'coachTierId', column: 'coach_tier_id', kind: 'uuid', nullable: true },
+      { key: 'priceSatang', column: 'price_satang', kind: 'int', nullable: true, min: 0, max: 100_000_000 },
+      { key: 'active', column: 'active', kind: 'bool', fallback: true },
     ],
   },
   partners: {
