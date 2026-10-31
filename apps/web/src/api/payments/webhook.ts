@@ -15,7 +15,7 @@ import { readSecret } from '@booq/secrets';
 //   4. Decide from Beam's own record, never the body: GET /charges/{id}. Beam unreachable answers 500 so Beam
 //      retries (D73). The amount, currency and reference must match the payment; a validly signed wrong amount is
 //      flagged for the owner, recorded `mismatch`, 200, never confirmed (D36, D77).
-//   5. A succeeded charge goes to app.apply_payment; the event row and the outcome are one transaction, and a
+//   5. A failed charge fails the payment and keeps the hold (D72). A succeeded charge goes to app.apply_payment; the event row and the outcome are one transaction, and a
 //      duplicate (the same charge and event) leaves nothing changed and answers 200 (FA 6.5 step 4).
 // Nothing personal is read or stored: the body is kept only as a hash (D76).
 
@@ -123,18 +123,23 @@ async function decide(
   payment: { id: string; amount_satang: number },
 ): Promise<{ outcome: string }> {
   const apiKey = await readSecret(tx, deps.privateKey(), clubId, set === 'live' ? 'beam_api_key_live' : 'beam_api_key_test', 'worker');
-  if (merchantId === null || apiKey === null) {
-    deps.alerts.p1('beam_keys_missing', clubId);
-    throw new RouteError(500, 'lookup_failed');
-  }
+  if (merchantId === null || apiKey === null) return lookupFailed(deps, clubId, 'beam_keys_missing', 'beam_keys', 'keys_missing');
   let looked;
   try {
     looked = await deps.gateway({ set, merchantId, apiKey }).getCharge(event.chargeId);
   } catch (e) {
-    deps.alerts.p1((e as { kind?: string }).kind === 'unauthorized' ? 'beam_key_check_failed' : 'beam_unreachable', clubId);
-    throw new RouteError(500, 'lookup_failed'); // Beam retries (up to 10 times, stated)
+    return (e as { kind?: string }).kind === 'unauthorized'
+      ? lookupFailed(deps, clubId, 'beam_key_check_failed', 'beam_keys', 'key_refused')
+      : lookupFailed(deps, clubId, 'beam_unreachable', 'beam_charge', 'unreachable');
   }
   const seen = { status: looked.status, amount_satang: looked.amountSatang, reference: looked.referenceId };
+  if (looked.status === 'FAILED') {
+    // A failed charge inside the hold (D72): the payment fails and the hold keeps running, so a second tap makes
+    // a new payment and a new charge in the same hold.
+    await tx.query('select app.fail_payment($1, $2)', [payment.id, 'beam_failed']);
+    await record(tx, event, 'failed', payment.id, seen);
+    return { outcome: 'failed' };
+  }
   if (looked.status !== 'SUCCEEDED') {
     await record(tx, event, 'ignored', payment.id, seen);
     return { outcome: 'ignored' };
@@ -149,4 +154,13 @@ async function decide(
   const applied = (await tx.query<{ r: { outcome: string } }>('select app.apply_payment($1, $2) as r', [payment.id, looked.amountSatang])).rows[0]!.r;
   await record(tx, event, applied.outcome, payment.id, seen);
   return { outcome: applied.outcome };
+}
+
+/** The lookup could not be made: the P1 alert, the failed check on the health tile in its own worker transaction (the
+ *  callback's own one is rolled back), and 500 so Beam retries (up to 10 times, stated; D73). */
+async function lookupFailed(deps: BeamWebhookDeps, clubId: string, alert: PaymentAlertKind, check: 'beam_keys' | 'beam_charge', reason: string): Promise<never> {
+  deps.alerts.p1(alert, clubId);
+  await deps.worker.withClubTx({ clubId, userId: null, roles: [], source: 'webhook', actorLabel: 'beam_webhook' }, (tx) =>
+    tx.query('select app.report_payment_health($1, $2)', [check, reason]));
+  throw new RouteError(500, 'lookup_failed');
 }
