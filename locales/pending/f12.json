@@ -16,7 +16,20 @@
     "K-new.schedule_group_full": "{className} · full",
     "K-new.leave_pending": "Waiting for the owner",
     "K-new.schedule_leave": "{leaveType} · {status}",
-    "K-new.blocked_court": "{court} · {reason} · until {time}"
+    "K-new.blocked_court": "{court} · {reason} · until {time}",
+    "K-new.session_not_found": "This session is not on your schedule.",
+    "K-new.student": "Student",
+    "K-new.held_no_roster": "Waiting for payment. The student appears here once it is paid.",
+    "K-new.no_roster": "No players yet.",
+    "K-new.player_last_note": "{level} · last note, {note}",
+    "K-new.player_last_note_only": "Last note, {note}",
+    "K-new.mark_hint": "Your mark is a hint for the staff. They decide about no shows.",
+    "K-new.mark_not_ended": "You can mark attendance once the hour has ended.",
+    "K-new.mark_month_paid": "This month's pay has been paid, so attendance can no longer change.",
+    "K-new.note_not_started": "You can write a note once the session has started.",
+    "K-new.note_too_long": "The note is too long.",
+    "K-new.save_failed": "Could not save. Nothing was changed.",
+    "K-new.saved": "Saved."
   },
   "th": {
     "K-new.not_coach": "หน้านี้สำหรับโค้ชของสโมสร ขอให้เจ้าของเพิ่มคุณเป็นโค้ช",
@@ -35,6 +48,19 @@
     "K-new.schedule_group_full": "{className} · เต็ม",
     "K-new.leave_pending": "รอเจ้าของพิจารณา",
     "K-new.schedule_leave": "{leaveType} · {status}",
-    "K-new.blocked_court": "{court} · {reason} · ถึง {time}"
+    "K-new.blocked_court": "{court} · {reason} · ถึง {time}",
+    "K-new.session_not_found": "เซสชันนี้ไม่อยู่ในตารางสอนของคุณ",
+    "K-new.student": "นักเรียน",
+    "K-new.held_no_roster": "รอชำระเงิน นักเรียนจะแสดงที่นี่เมื่อชำระแล้ว",
+    "K-new.no_roster": "ยังไม่มีผู้เล่น",
+    "K-new.player_last_note": "{level} · โน้ตล่าสุด {note}",
+    "K-new.player_last_note_only": "โน้ตล่าสุด {note}",
+    "K-new.mark_hint": "การเช็กชื่อของคุณเป็นข้อมูลให้พนักงาน พนักงานเป็นผู้ตัดสินเรื่องการไม่มา",
+    "K-new.mark_not_ended": "เช็กชื่อได้เมื่อชั่วโมงเรียนจบแล้ว",
+    "K-new.mark_month_paid": "จ่ายค่าตอบแทนเดือนนี้แล้ว จึงแก้การเช็กชื่อไม่ได้อีก",
+    "K-new.note_not_started": "เขียนโน้ตได้เมื่อเซสชันเริ่มแล้ว",
+    "K-new.note_too_long": "โน้ตยาวเกินไป",
+    "K-new.save_failed": "บันทึกไม่ได้ ไม่มีการเปลี่ยนแปลงใดๆ",
+    "K-new.saved": "บันทึกแล้ว"
   }
 }
