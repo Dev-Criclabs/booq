@@ -143,7 +143,7 @@ describe("F07 R4", () => {
   // Given a substitute, when the owner assigns one, then the rest rule applies to the substitute like any booking; if no substitute is free, the owner cancels the session for full credit (D120, D19).
   test.todo("F07/R4-AC6 Given a substitute, when the owner assigns one, then the rest rule applies to the substitute like any ...");
   // Given a substitution, when it is saved, then it is audited (PLAT-04).
-  test.todo("F07/R4-AC7 Given a substitution, when it is saved, then it is audited (PLAT-04).");
+  // F07/R4-AC7: proven by a real or traced test in another file of this folder
 });
 
 describe("F07 R5", () => {

@@ -69,7 +69,7 @@ describe("F08 CLASS-02", () => {
   // Given a player already holds a seat in the session, when they try to join its waitlist, then it is refused.
   test.todo("F08/CLASS-02-AC12 Given a player already holds a seat in the session, when they try to join its waitlist, then it is refused.");
   // Given the claim time and the cut off, when the owner changes them, then offers made already keep their end time and new offers use the new values (as D46 for holds).
-  test.todo("F08/CLASS-02-AC13 Given the claim time and the cut off, when the owner changes them, then offers made already keep their end ...");
+  // F08/CLASS-02-AC13: proven by a real or traced test in another file of this folder
   // Given an offer is open, when another player opens the schedule, then the spot is held for the first in line and is not offered to others until the offer ends (D121).
   // F08/CLASS-02-AC14: proven by a real or traced test in another file of this folder
   // Given an offer open when the 2 hour mark passes, then it stands (D121).
