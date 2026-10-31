@@ -25,7 +25,7 @@ const facts = (o: Partial<MessageFacts> = {}): MessageFacts => ({
   firstName: 'Nok',
   hours: [{ bookingId: 'b1', startAt: '2026-12-09T11:00:00Z', endAt: '2026-12-09T12:00:00Z', court: '3', coachName: null, type: 'court' }],
   moneySatang: 50000, walletSatang: 0, creditValueSatang: 0, paidBy: 'beam',
-  receiptNumber: 'HTC-2026-000001', amountSatang: null, coachName: null, package: null, status: null, claimMinutes: null, hoursBefore: null,
+  receiptNumber: 'HTC-2026-000001', amountSatang: null, coachName: null, package: null, status: null, claimMinutes: null, hoursBefore: null, className: null,
   ...o,
 });
 const message = (kind: string, language: MessageLanguage, f: MessageFacts = facts(), params: Record<string, unknown> = {}): OutgoingMessage =>
@@ -37,11 +37,11 @@ const THAI_LETTER = /[\u0E01-\u0E3A\u0E40-\u0E5B]/;
 
 const KINDS = ['booking_confirmed', 'booking_released', 'reminder_24h', 'reminder_2h', 'cancellation_result', 'club_closed_slot', 'coach_changed',
   'waitlist_offer', 'package_expiring', 'birthday_discount', 'referral_reward', 'session_change', 'leave_decision', 'class_below_minimum',
-  'late_payment', 'wrong_amount', 'owner_paused', 'owner_cap_paid_over'];
+  'late_payment', 'wrong_amount', 'owner_paused', 'owner_cap_paid_over', 'waitlist_ended', 'class_session_changed'];
 
 describe('every kind (LINE-05, TEXT-01)', () => {
   it('covers the whole catalogue of design 5.4', () => {
-    expect(KINDS.length).toBe(18);
+    expect(KINDS.length).toBe(20);   // 18 of design 5.4 and the two F08 kinds of the coach message hook
   });
 
   for (const kind of KINDS) {
@@ -160,5 +160,20 @@ describe('no literal user facing text in the templates (TEXT-01, lint)', () => {
     const root = resolve(__dirname, '../../../..');
     const out = execFileSync('node', ['tools/i18n/lint-hardcoded-text.mjs', 'packages/line/src/messages', 'packages/line/src/sender'], { cwd: root, encoding: 'utf8' });
     expect(out).not.toMatch(/error|✗/i);
+  });
+});
+
+describe('class messages (F08, the coach message hook)', () => {
+  const cls = { th: 'ดริลกลาง', en: 'Mid drill' };
+  it('a class message names the class in the message language', () => {
+    for (const kind of ['class_session_changed', 'waitlist_ended', 'cancellation_result', 'session_change', 'waitlist_offer']) {
+      expect(texts(build(kind, 'en', facts({ className: cls }))), kind).toContain('Mid drill');
+      expect(texts(build(kind, 'th', facts({ className: cls }))), kind).toContain('ดริลกลาง');
+    }
+  });
+
+  it('the coach’s message about a session has no booking button', () => {
+    const f = facts({ className: cls, hours: [{ bookingId: null, startAt: '2026-12-10T11:00:00Z', endAt: '2026-12-10T12:00:00Z', court: '2', coachName: 'Coach Bee', type: 'class_session' }] });
+    expect(collectActions(build('session_change', 'en', f)[0])).toEqual([]);
   });
 });
