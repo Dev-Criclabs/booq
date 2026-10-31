@@ -88,7 +88,7 @@ Migration numbers are 0301 to 0399 and rise with task order (the migrator refuse
 
 ## E. Sweep
 
-- [ ] **F04-T21** Acceptance sweep: this task is the tests. It closes every acceptance criterion of `requirements.md` (R1 to R8, PAY-07, PROMO-01) that has no test of its own, with a script that fails for an ID without one; no hard-coded text, no client amount, test orders excluded from reports. IDs: all F04 ACs, CC-2, CC-5, D33. Role: QA · Deps T12d, T14, T15 · Size: M
+- [x] **F04-T21** Acceptance sweep: this task is the tests. It closes every acceptance criterion of `requirements.md` (R1 to R8, PAY-07, PROMO-01) that has no test of its own, with a script that fails for an ID without one; no hard-coded text, no client amount, test orders excluded from reports. IDs: all F04 ACs, CC-2, CC-5, D33. Role: QA · Deps T12d, T14, T15 · Size: M
 
 ## Follow-up added by F08 (gate 3 of that feature, 30 Oct 2026)
 

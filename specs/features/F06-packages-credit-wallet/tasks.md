@@ -70,11 +70,11 @@ Depends on: F01 T09 (setup tables), T12 (people), T13 (route wrapper), T18 (gran
 
 ## F. Cross-checks and sweep
 
-- [ ] **F06-T22** Property and concurrency suite: random movements keep balance equal to the ledger sum and never negative; two spends and two reserves of the last unit; 20 parallel grants of one order; reserve, release, reclaim cycles. IDs: PKG-01-AC1, AC7, AC8. Role: QA · Deps T04 to T09 · Size: M
+- [x] **F06-T22** Property and concurrency suite: random movements keep balance equal to the ledger sum and never negative; two spends and two reserves of the last unit; 20 parallel grants of one order; reserve, release, reclaim cycles. IDs: PKG-01-AC1, AC7, AC8. Role: QA · Deps T04 to T09 · Size: M
   Tests first: this task is the tests; they must fail if the attempt number is removed from the keys.
-- [ ] **F06-T23** Append-only and blind suite for F06: `UPDATE` and `DELETE` as every role on both ledgers and extensions; BOOQ staff read nothing; a withdraw or refund route does not exist. IDs: PKG-01-AC5, AC9, CANCEL-02. Role: QA · Deps T11, T16 · Size: S
+- [x] **F06-T23** Append-only and blind suite for F06: `UPDATE` and `DELETE` as every role on both ledgers and extensions; BOOQ staff read nothing; a withdraw or refund route does not exist. IDs: PKG-01-AC5, AC9, CANCEL-02. Role: QA · Deps T11, T16 · Size: S
   Tests first: the route inventory lists no route that refunds or withdraws.
-- [ ] **F06-T24** Acceptance sweep: run the AC to test table, close gaps, record results against PKG-01 to PKG-03 and R1 to R3. IDs: all F06. Role: QA · Deps all · Size: M
+- [x] **F06-T24** Acceptance sweep: run the AC to test table, close gaps, record results against PKG-01 to PKG-03 and R1 to R3. IDs: all F06. Role: QA · Deps all · Size: M
   Done when: every AC has a passing test or a filed bug naming its ID.
 
 ## Order and size
