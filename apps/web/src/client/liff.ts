@@ -7,6 +7,8 @@ import type { LiffLike } from '@booq/line';
 export interface LiffPort extends LiffLike {
   /** The LINE display name from the ID token, for the C2 greeting only (AUTH-02-AC7); never the full name (LINE-01-AC12). */
   getDisplayName(): string | null;
+  /** Whether the player has added the club's Official Account (needs the profile scope; design 6.5). */
+  getFriendship(): Promise<{ friendFlag: boolean }>;
 }
 
 /** What an e2e run puts on `window.__BOOQ_LIFF_FAKE__` (only read when the build sets NEXT_PUBLIC_LIFF_FAKE=1). */
@@ -16,6 +18,8 @@ export interface LiffFakeState {
   idToken: string | null;
   language: string;
   displayName?: string | null;
+  /** liff.getFriendship(): true when the player is a friend of the Official Account. */
+  friend?: boolean;
   /** `init` fails as LINE being unreachable. */
   offline?: boolean;
 }
@@ -39,6 +43,7 @@ export function fakeLiff(state: LiffFakeState, go: (url: string) => void, store?
     getIDToken: () => (loggedIn() ? state.idToken : null),
     getLanguage: () => state.language,
     getDisplayName: () => state.displayName ?? null,
+    getFriendship: async () => ({ friendFlag: state.friend ?? true }),
   };
 }
 
@@ -56,6 +61,7 @@ async function realLiff(): Promise<LiffPort> {
       const name = liff.getDecodedIDToken()?.name;
       return typeof name === 'string' && name !== '' ? name : null;
     },
+    getFriendship: () => liff.getFriendship(),
   };
 }
 
