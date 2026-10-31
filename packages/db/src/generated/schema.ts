@@ -799,6 +799,15 @@ export interface PublicCustomerPackage {
   created_at: string;
 }
 
+export interface PublicCustomerTag {
+  club_id: string;
+  user_id: string;
+  tag: string;
+  created_by: string;
+  created_at: string;
+  is_test: boolean;
+}
+
 export interface PublicDailyClose {
   club_id: string;
   id: string;
@@ -1008,6 +1017,12 @@ export interface PublicOwnerNotice {
   created_at: string;
   seen_at: string | null;
   seen_by: string | null;
+}
+
+export interface PublicOwnerSetupDone {
+  club_id: string;
+  done_at: string;
+  done_by: string;
 }
 
 export interface PublicPackageExtension {
@@ -1380,6 +1395,7 @@ export interface Tables {
   'public.court_price_rule': PublicCourtPriceRule;
   'public.credit_ledger': PublicCreditLedger;
   'public.customer_package': PublicCustomerPackage;
+  'public.customer_tag': PublicCustomerTag;
   'public.daily_close': PublicDailyClose;
   'public.data_export': PublicDataExport;
   'public.data_request': PublicDataRequest;
@@ -1396,6 +1412,7 @@ export interface Tables {
   'public.orders': PublicOrders;
   'public.owner_flag': PublicOwnerFlag;
   'public.owner_notice': PublicOwnerNotice;
+  'public.owner_setup_done': PublicOwnerSetupDone;
   'public.package_extension': PublicPackageExtension;
   'public.package_product': PublicPackageProduct;
   'public.partner': PublicPartner;

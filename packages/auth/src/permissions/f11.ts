@@ -10,6 +10,8 @@ export const permissions: PermissionFragment = {
   'setup.done': ['owner'],
   'customer.write': ['front_desk', 'owner'],
   'customer.export': ['front_desk', 'owner'],
+  'customer.adjust': ['front_desk', 'owner'],
+  'package.extend': ['owner'],
   'price.read': ['front_desk', 'accountant', 'owner'],
   'closure.write': ['front_desk', 'owner'],
 };

@@ -43,3 +43,12 @@ traced("F10/LINE-07-AC8", "Given the thresholds 70 and 80 percent, when the code
 traced("F10/LINE-07-AC9", "Given the usage is read from LINE, when LINE does not answer, then the check use", [{ file: "packages/db/src/line-usage.test.ts", has: "LINE-07-AC9" }]);
 traced("F10/LINE-07-AC10", "Given the owner upgrades the LINE plan mid month, when the limit changes, then L", [{ file: "packages/db/src/enqueue-message.test.ts", has: "LINE-07-AC10" }]);
 traced("F10/LINE-03-AC11", "Given a message for a Paused club, when the event is a reminder or a cancellatio", [{ file: "apps/worker/src/tasks/line-outbox-sender.test.ts", has: "LINE-03-AC11 a reminder and a cancellation result of an existing booking are still sent while the club is paused" }]);
+traced("F10/LINE-02-AC3", "Given any tile, when it is tapped, then its page opens with the club in the URL ", [{ file: "packages/line/src/links/deep-link.test.ts", has: "a LIFF link carries the path below the club endpoint" }, { file: "packages/line/src/links/deep-link.test.ts", has: "each club gets its own LIFF app" }]);
+traced("F10/LINE-02-AC5", "Given the labels, when the menu is uploaded or redone (P2 step 4 Upload), then t", [{ file: "apps/worker/src/tasks/line-rich-menu.test.ts", has: "the menu becomes the club’s default" }, { file: "packages/line/src/rich-menu/menu.test.ts", has: "an unset label takes the default key of its tile in each language" }]);
+
+// Criteria the lane's tests name by ID (added 31 Oct): the trace checks the ID is still cited in those files.
+traced("F10/LINE-02-AC8", "Given the menu is uploaded, when it fails, then P2 shows the failure (a Test ste", [{ file: "apps/worker/src/tasks/line-rich-menu.test.ts", has: "LINE-02-AC8" }]);
+traced("F10/LINE-05-AC14", "Given the owner's pause or a cap level, when it happens, then the owner gets a m", [{ file: "apps/platform/src/pause/outbox-notifier.test.ts", has: "LINE-05-AC14" }]);
+
+// Added by trace-lane.py: criteria the lane's tests name by ID.
+traced("F10/LINE-05-AC7", "Given a package, when it is 14 days and 3 days before expiry, then the player ge", [{ file: "packages/db/src/package-reminders.test.ts", has: "LINE-05-AC7" }]);

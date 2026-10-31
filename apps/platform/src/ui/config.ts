@@ -15,6 +15,7 @@ export const KNOWN: ReadonlyArray<{ key: string; kind: Kind; fixed?: true }> = [
   { key: 'pay_tap_limit_count', kind: 'number' },
   { key: 'pay_tap_limit_window_seconds', kind: 'number' },
   { key: 'qr_expiry_margin_seconds', kind: 'number' },
+  { key: 'beam_reconcile_age_seconds', kind: 'number' },
   { key: 'line_send_max_attempts', kind: 'number' },
   { key: 'line_send_retry_seconds', kind: 'number' },
   { key: 'line_cap_alert_percent', kind: 'number', fixed: true },

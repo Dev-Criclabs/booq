@@ -56,10 +56,10 @@ export function createSupabaseIdentity(options: SupabaseIdentityOptions): Supaba
     async passwordGrant(email, password) {
       const r = await call('POST', '/token?grant_type=password', { body: { email, password } });
       if (r.status === 400 || r.status === 401 || r.status === 422) return null; // wrong email or password
-      if (r.status !== 200) throw new Error(`identity provider answered ${r.status} for the password grant`);
+      if (r.status !== 200) throw new Error(`identity provider answered ${r.status} for the password grant`);  // i18n-ignore internal error between servers, logged, never shown to a user
       const j = r.json as { access_token?: unknown; user?: { id?: unknown; factors?: Array<{ id?: unknown; factor_type?: unknown; status?: unknown }> } } | null;
       const userId = j?.user?.id;
-      if (typeof j?.access_token !== 'string' || typeof userId !== 'string') throw new Error('identity provider gave no session');
+      if (typeof j?.access_token !== 'string' || typeof userId !== 'string') throw new Error('identity provider gave no session');  // i18n-ignore internal error between servers, logged, never shown to a user
       const factor = (j.user?.factors ?? []).find((f) => f.factor_type === 'totp' && f.status === 'verified' && typeof f.id === 'string');
       // A person with no enrolled authenticator has no second step to take: they sign in no further.
       return { authUserId: userId, ...(factor ? { state: encode({ u: userId, t: j.access_token, f: factor.id as string }) } : {}) };
@@ -67,14 +67,14 @@ export function createSupabaseIdentity(options: SupabaseIdentityOptions): Supaba
     async startEnrolment(email, password) {
       const r = await call('POST', '/token?grant_type=password', { body: { email, password } });
       if (r.status === 400 || r.status === 401 || r.status === 422) return null;
-      if (r.status !== 200) throw new Error(`identity provider answered ${r.status} for the password grant`);
+      if (r.status !== 200) throw new Error(`identity provider answered ${r.status} for the password grant`);  // i18n-ignore internal error between servers, logged, never shown to a user
       const j = r.json as { access_token?: unknown; user?: { id?: unknown } } | null;
       const userId = j?.user?.id;
-      if (typeof j?.access_token !== 'string' || typeof userId !== 'string') throw new Error('identity provider gave no session');
+      if (typeof j?.access_token !== 'string' || typeof userId !== 'string') throw new Error('identity provider gave no session');  // i18n-ignore internal error between servers, logged, never shown to a user
       const f = await call('POST', '/factors', { bearer: j.access_token, body: { factor_type: 'totp', friendly_name: 'BOOQ console', issuer: 'BOOQ' } });
       const factor = f.json as { id?: unknown; totp?: { secret?: unknown; uri?: unknown } } | null;
       if (f.status !== 200 || typeof factor?.id !== 'string' || typeof factor.totp?.secret !== 'string' || typeof factor.totp.uri !== 'string') {
-        throw new Error(`identity provider answered ${f.status} for the factor enrolment`);
+        throw new Error(`identity provider answered ${f.status} for the factor enrolment`);  // i18n-ignore internal error between servers, logged, never shown to a user
       }
       return { authUserId: userId, state: encode({ u: userId, t: j.access_token, f: factor.id }), secret: factor.totp.secret, uri: factor.totp.uri };
     },
@@ -84,10 +84,10 @@ export function createSupabaseIdentity(options: SupabaseIdentityOptions): Supaba
       const challenge = await call('POST', `/factors/${encodeURIComponent(s.f)}/challenge`, { bearer: s.t, body: {} });
       if (challenge.status === 400 || challenge.status === 401 || challenge.status === 403 || challenge.status === 422) return false;
       const challengeId = (challenge.json as { id?: unknown } | null)?.id;
-      if (challenge.status !== 200 || typeof challengeId !== 'string') throw new Error(`identity provider answered ${challenge.status} for the factor challenge`);
+      if (challenge.status !== 200 || typeof challengeId !== 'string') throw new Error(`identity provider answered ${challenge.status} for the factor challenge`);  // i18n-ignore internal error between servers, logged, never shown to a user
       const verified = await call('POST', `/factors/${encodeURIComponent(s.f)}/verify`, { bearer: s.t, body: { challenge_id: challengeId, code } });
       if (verified.status === 400 || verified.status === 401 || verified.status === 403 || verified.status === 422) return false;
-      if (verified.status !== 200) throw new Error(`identity provider answered ${verified.status} for the factor verify`);
+      if (verified.status !== 200) throw new Error(`identity provider answered ${verified.status} for the factor verify`);  // i18n-ignore internal error between servers, logged, never shown to a user
       // The provider now holds a second session we never use: end it so nothing is left open there.
       const token = (verified.json as { access_token?: unknown } | null)?.access_token;
       if (typeof token === 'string') await call('POST', '/logout', { bearer: token }).catch(() => undefined);

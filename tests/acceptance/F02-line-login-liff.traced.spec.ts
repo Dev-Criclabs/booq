@@ -57,3 +57,8 @@ traced("F02/AUTH-02-AC23", "Given a player in Profile, when they set their playi
 traced("F02/AUTH-02-AC24", "Given staff in A6 (customer profile), when they view a player's date of birth an", [{ file: "packages/db/src/customer-dob-for-pricing.test.ts", has: "front desk and owner get the date of birth, or null when none is stored" }, { file: "packages/db/src/audit.test.ts", has: "the owner reads own club entries only" }]);
 traced("F02/AUTH-02-AC25", "Given a first sign in inside LINE, when the player record is created, then the s", [{ file: "packages/auth/src/liff/language.test.ts", has: "AUTH-02-AC25" }, { file: "apps/web/src/client/client-helpers.test.ts", has: "AUTH-02-AC25" }]);
 traced("F02/AUTH-02-AC27", "Given a guest, when they use the toggle on C1, then the choice applies for brows", [{ file: "packages/auth/src/liff/profile.test.ts", has: "AUTH-02-AC27" }]);
+
+// Criteria the lane's tests name by ID (added 31 Oct): the trace checks the ID is still cited in those files.
+traced("F02/AUTH-01-AC8", "Given a guest who opens the Home screen, when the page loads, then it shows the ", [{ file: "apps/web/src/ui/Home.test.ts", has: "AUTH-01-AC8" }, { file: "apps/web/src/client/home.test.ts", has: "AUTH-01-AC8" }]);
+traced("F02/LINE-01-AC8", "Given a player who is not a friend of the club's Official Account (or has blocke", [{ file: "apps/web/src/client/home.test.ts", has: "LINE-01-AC8" }]);
+traced("F02/LINE-01-AC9", "Given a signed in player who is not a friend, when the app shows the confirmatio", [{ file: "apps/web/src/ui/Home.test.ts", has: "LINE-01-AC9" }]);

@@ -22,6 +22,8 @@ export function supportRoutes(deps: SupportRouteDeps): PlatformRoute[] {
       if (typeof section !== 'string') throw new RouteError(404, 'not_found');
       return answer(await support.putSetup(ctx.staff!.id, clubIdOf(ctx), section, ctx.body, { stepUpFresh: ctx.stepUpFresh }));
     }),
+    // "Test all again": asks the worker to recheck the stored values. No secret is read here; a Live club can be asked too (a look only visit).
+    platformRoute({ method: 'POST', path: '/clubs/:id/support/connection-check', access: 'staff' }, async (ctx) => answer(await support.requestConnectionCheck(ctx.staff!.id, clubIdOf(ctx)))),
     platformRoute({ method: 'POST', path: '/clubs/:id/support/close', access: 'staff' }, async (ctx) => answer(await support.closeSession(actorOf(ctx).staffId, clubIdOf(ctx)))),
     // Probe on the values given, nothing written. Needs a fresh second factor like the write (SR-16).
     platformRoute({ method: 'POST', path: '/clubs/:id/connections/:kind/test', access: 'staff' }, async (ctx) => {

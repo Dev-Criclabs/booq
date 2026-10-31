@@ -152,7 +152,7 @@ export function createOwnerService(deps: { db: PlatformDb; mailer: InviteMailer;
     try {
       const r = await db.withPlatformTx(ctx(staff, clubId), async (tx) =>
         (await tx.query<{ r: { applied: boolean; request_id?: string } }>('select platform.change_owner_contact($1, $2::jsonb) as r', [clubId, JSON.stringify(input)])).rows[0]?.r);
-      if (!r) throw new Error('change_owner_contact returned nothing');
+      if (!r) throw new Error('change_owner_contact returned nothing');  // i18n-ignore internal assertion or start up error, logged, never shown to a user
       return r.applied ? { ok: true, applied: true } : { ok: true, applied: false, requestId: r.request_id as string };
     } catch (e) {
       const code = mapError(e);
