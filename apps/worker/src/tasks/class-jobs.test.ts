@@ -153,6 +153,31 @@ describe('offer_expiry (CLASS-02-AC4, AC15; WAIT-01-AC4)', () => {
     expect((await outbox()).filter((m) => m.kind === 'waitlist_offer').every((m) => m.status === 'void')).toBe(true);
   });
 
+  it('an offer whose message is undeliverable at the cap passes to the next at once, once (CLASS-02-AC9)', async () => {
+    await offerOpen();
+    await tdb.query(`update public.message_outbox set status = 'undeliverable', last_error = 'cap' where kind = 'waitlist_offer'`);
+    expect(await runOfferExpiry(worker)).toMatchObject({ passedOn: 1, failed: 0 });
+    expect((await entries()).map((e) => e.status)).toEqual(['expired', 'offered']);
+    expect((await outbox()).filter((m) => m.kind === 'waitlist_offer').map((m) => m.status).sort()).toEqual(['pending', 'undeliverable']);
+    expect(await runOfferExpiry(worker)).toMatchObject({ passedOn: 0 });
+  });
+
+  it('each offer message is queued once by its key; a repeated advance makes no second one (F08-T11)', async () => {
+    await offerOpen();
+    const e = (await tdb.query(`select id, offer_no from public.waitlist_entry where status = 'offered'`)).rows[0];
+    expect((await outbox()).filter((m) => m.kind === 'waitlist_offer').map((m) => m.dedupe_key)).toEqual([`offer:${e.id}:${e.offer_no}`]);
+    await tdb.query(`select app.waitlist_advance($1, null, null)`, [session]).catch(() => undefined);
+    expect((await outbox()).filter((m) => m.kind === 'waitlist_offer')).toHaveLength(1);
+  });
+
+  it('a session that needs attention sends the owner nothing (A-9)', async () => {
+    await tdb.query(`insert into public.coach_leave (club_id, coach_id, start_date, end_date, status, decided_by, decided_at) values ($1,$2,'2026-12-16','2026-12-16','approved',$3,app.now())`, [A, COACH, OWNER]);
+    await tdb.setNow('2026-12-02T17:05:00Z');
+    await worker.withClubTx({ clubId: A, userId: null, roles: [], source: 'job' }, (tx) => tx.query(`select app.generate_sessions_window()`));
+    expect((await tdb.query(`select count(*)::int as n from public.class_session where status = 'needs_attention'`)).rows[0].n).toBe(1);
+    expect(await outbox()).toEqual([]);
+  });
+
   it('records its heartbeat', async () => {
     await runOfferExpiry(worker);
     expect((await tdb.query(`select runs from platform.worker_heartbeat where task_name = $1`, [OFFER_EXPIRY])).rows[0].runs).toBe('1');
