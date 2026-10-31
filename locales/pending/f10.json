@@ -1,5 +1,5 @@
 {
-  "_note": "Proposed by BE-L for F10-T10 and the coach_message_hook kinds (D81, D91): text for the LINE messages that have no board (they use the Booking confirmed card style) and the few lines the boarded cards need beyond the existing L keys. Numbers to be assigned by Content (F10-T20); wording drafted, writers own it. Existing keys reused: L-0001, L-0004, L-0009 to L-0019, L-0021 (now with {hours}, QA-F10-1), L-0024, L-0031 to L-0041, L-0058; from locales/pending/f13.json: L-new.receipt_credit_used. Variables follow locales/README.md.",
+  "_note": "Proposed by BE-L for F10-T10 and the coach_message_hook kinds (D81, D91): text for the LINE messages that have no board (they use the Booking confirmed card style) and the few lines the boarded cards need beyond the existing L keys. Numbers to be assigned by Content (F10-T20); wording drafted, writers own it. Existing keys reused: L-0001, L-0004, L-0009 to L-0019, L-0021 (now with {hours}, QA-F10-1), L-0024, L-0031 to L-0041, L-0058; from locales/pending/f13.json: L-new.receipt_credit_used. Variables follow locales/README.md. session_change: one title per params.change (booked, moved, cancelled; F12-T06, migration 1206); the generic title stays for a change F10 does not know.",
   "en": {
     "L-new.msg_booked_title": "You're booked",
     "L-new.msg_time_range": "{startTime} to {endTime}",
@@ -20,6 +20,9 @@
     "L-new.msg_reward_title": "You earned a referral reward",
     "L-new.msg_reward_body": "Thanks for bringing a friend. Your reward is in your account.",
     "L-new.msg_session_change_title": "Your schedule has changed",
+    "L-new.msg_session_change_booked_title": "A new booking for your class",
+    "L-new.msg_session_change_moved_title": "A class booking has moved",
+    "L-new.msg_session_change_cancelled_title": "A class booking was cancelled",
     "L-new.msg_leave_approved_title": "Your leave is approved",
     "L-new.msg_leave_declined_title": "Your leave is not approved",
     "L-new.msg_below_min_title": "A class is below its minimum",
@@ -56,6 +59,9 @@
     "L-new.msg_reward_title": "คุณได้รับรางวัลแนะนำเพื่อน",
     "L-new.msg_reward_body": "ขอบคุณที่ชวนเพื่อนมา รางวัลเข้าบัญชีของคุณแล้ว",
     "L-new.msg_session_change_title": "ตารางของคุณมีการเปลี่ยนแปลง",
+    "L-new.msg_session_change_booked_title": "มีการจองคลาสของคุณใหม่",
+    "L-new.msg_session_change_moved_title": "มีการเลื่อนการจองคลาสของคุณ",
+    "L-new.msg_session_change_cancelled_title": "มีการยกเลิกการจองคลาสของคุณ",
     "L-new.msg_leave_approved_title": "อนุมัติการลาแล้ว",
     "L-new.msg_leave_declined_title": "ไม่อนุมัติการลา",
     "L-new.msg_below_min_title": "คลาสมีผู้เรียนต่ำกว่าขั้นต่ำ",

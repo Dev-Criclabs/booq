@@ -175,6 +175,17 @@ describe('class messages (F08, the coach message hook)', () => {
     }
   });
 
+  it('session_change says what happened from params.change (booked, moved, cancelled; F12-T06); anything else keeps the generic title', () => {
+    const titles = { booked: 'A new booking for your class', moved: 'A class booking has moved', cancelled: 'A class booking was cancelled' } as const;
+    for (const [change, title] of Object.entries(titles)) {
+      expect(texts(builder.build(message('session_change', 'en', facts({ className: cls }), { booking_id: 'b1', change })) as unknown[]), change).toContain(title);
+      expect(texts(builder.build(message('session_change', 'th', facts({ className: cls }), { booking_id: 'b1', change })) as unknown[]).some((x) => THAI_LETTER.test(x)), change).toBe(true);
+    }
+    for (const change of [undefined, 'renamed', 7]) {
+      expect(texts(builder.build(message('session_change', 'en', facts({ className: cls }), { booking_id: 'b1', change })) as unknown[]), String(change)).toContain('Your schedule has changed');
+    }
+  });
+
   it('the coach’s message about a session has no booking button', () => {
     const f = facts({ className: cls, hours: [{ bookingId: null, startAt: '2026-12-10T11:00:00Z', endAt: '2026-12-10T12:00:00Z', court: '2', coachName: 'Coach Bee', type: 'class_session' }] });
     expect(collectActions(build('session_change', 'en', f)[0])).toEqual([]);

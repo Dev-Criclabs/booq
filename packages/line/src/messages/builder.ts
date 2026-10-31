@@ -98,8 +98,13 @@ function cardFor(m: OutgoingMessage, dict: Dictionary, links: MessageLinks): Car
         rows: [...(f.coachName ? [{ label: t('L-0024'), values: [f.coachName] }] : []), ...hourRows(f.hours, lang, t, { coach: false })],
         buttons: viewBooking,
       };
-    case 'session_change':
-      return { ...base, title: t('L-new.msg_session_change_title'), rows: [...classRow, ...hourRows(f.hours, lang, t)] };
+    case 'session_change': {
+      // What happened, from the row's params (F12-T06, migration 1206: booked, moved or cancelled); a substitution or an
+      // edit (F07, F08) carries no change and keeps the generic title.
+      const change = m.params['change'];
+      const title = change === 'booked' || change === 'moved' || change === 'cancelled' ? `L-new.msg_session_change_${change}_title` : 'L-new.msg_session_change_title';
+      return { ...base, title: t(title), rows: [...classRow, ...hourRows(f.hours, lang, t)] };
+    }
     case 'class_below_minimum':
       return { ...base, title: t('L-new.msg_below_min_title'), rows: [...classRow, ...hourRows(f.hours, lang, t)] };
     case 'class_session_changed':
