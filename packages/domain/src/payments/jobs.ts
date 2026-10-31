@@ -10,7 +10,7 @@ import type { PaymentAlerts } from './start';
 //     look the charge up and act on what Beam holds, exactly as the webhook does: confirm only when the status is succeeded
 //     and the amount, the currency and the reference all match; a wrong amount is flagged, never confirmed; a failed charge
 //     fails the payment and keeps the hold; still pending changes nothing. What it acted on is recorded as a payment_event of
-//     type `reconcile` (the audit "confirmed by lookup"). Nothing is ever refunded.
+//     type `reconcile` (the audit "confirmed by lookup"). No money is ever sent back to Beam.
 //   package_order_expiry: a package order whose QR time ended unpaid is cancelled, its payment expired, no ledger row, no
 //     receipt (PAY-04-AC2); a payment after that goes to the wallet through apply_payment (D74).
 //   qr_image clean-up: a final payment keeps no QR image.
