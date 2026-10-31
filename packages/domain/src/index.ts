@@ -10,4 +10,5 @@ export * from './reports/registry';
 export * from './profile';
 export * from './booking';
 export * from './checkout';
+export * from './classes';
 export * from './payments';
