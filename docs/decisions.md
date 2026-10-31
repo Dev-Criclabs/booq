@@ -50,6 +50,7 @@ Decisions made by the user, newest first. Each is also written into the PRD chan
 | D178 | The "Message BOOQ" button on the paused banner (F11 shell, A-0521, PLAT-03) opens BOOQ's own LINE chat. Its address is a platform config value, booq_support_line_url, with no default; the user supplies it before 7 Dec. It goes to staff through GET /staff/shell, owner only, never in the player-facing public config. While the value is unset, the button is hidden. Settled under D147. |
 | D179 | Club name length (QA Q-37): the PRD sets no maximum, and none is invented. Screens must fit any name: the C1 welcome hero grows with its text instead of clipping (CLAUDE.md, layouts survive longer text). QA-UI-1 is a layout defect for the FE lane. Settled under D147. |
 | D180 | F06 package saving details (D173 follow-up): a product with no price group takes the single price that every group shares, and shows no saving if the groups differ. A saving of zero or less is not shown. At the desk cash package sale no promo code applies, and the wallet is used before cash, as in the player's package Pay. Settled under D147. |
+| D181 | Cash at the front desk covers court bookings and every other desk order, not only packages (user, 31 Oct; matches the PRD front desk role, the A2 "payment incl. cash reason code" and F05 §5.6 POST /staff/orders/{id}/cash with a reason code). The orchestrator's earlier "packages only" answer to lane 2 was wrong and is withdrawn. QR stays first; cash needs a reason code (PRD line 310). |
 
 ## 30 Oct 2026, round 11 (approved as recommended)
 
