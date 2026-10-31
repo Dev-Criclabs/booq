@@ -1,4 +1,4 @@
-import { call, type Outcome } from './api';
+import { call, newKey, type Outcome } from './api';
 import type { Lang } from '../i18n';
 
 // A6 Customer profile (F11-T15; ADMIN-07; board H-A06-Customer-profile), apart from the screen. The reads are GET /staff/customers/:id and
@@ -96,9 +96,9 @@ export const loadValue = (slug: string, id: string, f: Fetch) => call<Value>(slu
 export const addTag = (slug: string, id: string, tag: string, f: Fetch) => call<{ ok: true }>(slug, `/staff/customers/${enc(id)}/tags`, f, { method: 'POST', body: { tag: tag.trim() } });
 export const removeTag = (slug: string, id: string, tag: string, f: Fetch) => call<{ ok: true }>(slug, `/staff/customers/${enc(id)}/tags/${enc(tag)}`, f, { method: 'DELETE' });
 export const addNote = (slug: string, id: string, note: string, f: Fetch) => call<{ noteId: string }>(slug, `/staff/customers/${enc(id)}/notes`, f, { method: 'POST', body: { note: note.trim() } });
-export const adjustWallet = (slug: string, id: string, deltaSatang: number, note: string, f: Fetch) => call<{ ledgerId: string }>(slug, `/staff/customers/${enc(id)}/wallet-adjust`, f, { method: 'POST', body: { deltaSatang, note: note.trim() } });
-export const adjustCredit = (slug: string, id: string, packageId: string, delta: number, note: string, f: Fetch) => call<{ ledgerId: string }>(slug, `/staff/customers/${enc(id)}/credit-adjust`, f, { method: 'POST', body: { packageId, delta, note: note.trim() } });
-export const extendPackage = (slug: string, packageId: string, newExpiresOn: string, reason: string, f: Fetch) => call<{ extensionId: string }>(slug, `/staff/packages/${enc(packageId)}/extend`, f, { method: 'POST', body: { newExpiresOn, reason: reason.trim() } });
+export const adjustWallet = (slug: string, id: string, deltaSatang: number, note: string, f: Fetch, key = newKey()) => call<{ ledgerId: string }>(slug, `/staff/customers/${enc(id)}/wallet-adjust`, f, { method: 'POST', body: { deltaSatang, note: note.trim() }, key });
+export const adjustCredit = (slug: string, id: string, packageId: string, delta: number, note: string, f: Fetch, key = newKey()) => call<{ ledgerId: string }>(slug, `/staff/customers/${enc(id)}/credit-adjust`, f, { method: 'POST', body: { packageId, delta, note: note.trim() }, key });
+export const extendPackage = (slug: string, packageId: string, newExpiresOn: string, reason: string, f: Fetch, key = newKey()) => call<{ extensionId: string }>(slug, `/staff/packages/${enc(packageId)}/extend`, f, { method: 'POST', body: { newExpiresOn, reason: reason.trim() }, key });
 
 /** "+200", "-50.5", "200": baht to integer satang without floating point. Null when it is not a non zero amount of at most two decimals. */
 export function parseBaht(text: string): number | null {

@@ -12,12 +12,12 @@ export type Outcome<T> =
   | { kind: 'refused'; status: number; code: string; params?: Record<string, unknown> }
   | { kind: 'offline' };
 
-export async function call<T>(slug: string, path: string, f: Fetch, init: { method?: string; body?: unknown } = {}): Promise<Outcome<T>> {
+export async function call<T>(slug: string, path: string, f: Fetch, init: { method?: string; body?: unknown; key?: string } = {}): Promise<Outcome<T>> {
   try {
     const res = await f(`/api/c/${encodeURIComponent(slug)}${path}`, {
       method: init.method ?? 'GET',
       credentials: 'same-origin',
-      ...(init.body === undefined ? {} : { headers: { 'content-type': 'application/json' }, body: JSON.stringify(init.body) }),
+      ...(init.body === undefined && init.key === undefined ? {} : { headers: { ...(init.body === undefined ? {} : { 'content-type': 'application/json' }), ...(init.key === undefined ? {} : { 'idempotency-key': init.key }) }, ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }) }),
     });
     if (res.status === 401) return { kind: 'guest' };
     if (res.status === 403) return { kind: 'forbidden' };
@@ -45,3 +45,6 @@ export function formatBaht(satang: number): string {
   const rest = abs % 100;
   return `${sign}฿${baht.toLocaleString('en-US')}${rest === 0 ? '' : `.${String(rest).padStart(2, '0')}`}`;
 }
+
+/** A fresh Idempotency-Key for one change the staff made: the same key repeats the same request safely (a double tap, a retry after a lost answer). */
+export const newKey = (): string => globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;

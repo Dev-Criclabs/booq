@@ -107,3 +107,18 @@ describe('text', () => {
     for (const lang of ['th', 'en'] as const) for (const k of keys) expect(adminHasKey(lang, k), `${lang} ${k}`).toBe(true);
   });
 });
+
+describe('value changes carry an Idempotency-Key (the routes refuse a change without one)', () => {
+  it('wallet, credit and extension each send the header; a retry may pass the same key', async () => {
+    const seen: Array<{ url: string; key: string | undefined }> = [];
+    const f = (async (url: string, init: { headers?: Record<string, string> }) => { seen.push({ url, key: init.headers?.['idempotency-key'] }); return new Response('{}', { status: 200 }); }) as unknown as typeof fetch;
+    const { adjustWallet, adjustCredit, extendPackage } = await import('./profile');
+    await adjustWallet('h', 'c1', 100, 'why', f);
+    await adjustCredit('h', 'c1', 'p1', 1, 'why', f);
+    await extendPackage('h', 'p1', '2027-05-01', 'why', f);
+    await adjustWallet('h', 'c1', 100, 'why', f, 'KEY-1');
+    expect(seen.slice(0, 3).every((s) => /^[\x21-\x7e]{8,200}$/.test(s.key ?? ''))).toBe(true);
+    expect(new Set(seen.slice(0, 3).map((s) => s.key)).size).toBe(3);
+    expect(seen[3]!.key).toBe('KEY-1');
+  });
+});
