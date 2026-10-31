@@ -51,7 +51,7 @@ Not startable until their lists exist: F10 enqueues are called by F07 (substitut
   Tests first: only the owner reaches them; a label save calls the build once; the token is never returned.
 - [ ] **F10-T16** Platform routes: rich menu upload and Redo, connection test, `line-usage` (admin and assigned specialist, audited). IDs: LINE-02-AC8, LINE-06, PLAT-04. Role: BE-P · Deps T12, T13 · Size: M
   Tests first: an unassigned specialist gets 404; the response holds counts and health only; each call is audited.
-- [ ] **F10-T17** Guard test: no route or page edits a message's text or layout. IDs: LINE-03-AC4. Role: QA · Deps T14 to T16 · Size: S
+- [x] **F10-T17** Guard test: no route or page edits a message's text or layout. IDs: LINE-03-AC4. Role: QA · Deps T14 to T16 · Size: S
   Tests first: the test lists every route and page and fails if one edits a message.
 
 ## E. Screens and text
@@ -65,9 +65,9 @@ Not startable until their lists exist: F10 enqueues are called by F07 (substitut
 
 ## F. QA
 
-- [ ] **F10-T21** Cross cutting suite: outbox holds no personal text, a Testing club's messages count to the cap and are flagged, each kind sent once by its dedupe key, a booking, payment and Beam callback are never blocked by the cap (LINE-07-AC7); a message failure never rolls back the booking. IDs: LINE-03, LINE-05, LINE-07-AC7, CC-3, CC-4, D32. Role: QA · Deps T09, T10 · Size: M
+- [x] **F10-T21** Cross cutting suite: outbox holds no personal text, a Testing club's messages count to the cap and are flagged, each kind sent once by its dedupe key, a booking, payment and Beam callback are never blocked by the cap (LINE-07-AC7); a message failure never rolls back the booking. IDs: LINE-03, LINE-05, LINE-07-AC7, CC-3, CC-4, D32. Role: QA · Deps T09, T10 · Size: M
   Tests first: the list above against the fake LINE.
-- [ ] **F10-T22** Sweep: every LINE-02 to LINE-07 acceptance criterion has a named test; walk the F10 canvas boards; file gaps with the ID. IDs: LINE-02 to LINE-07. Role: QA · Deps all · Size: S
+- [x] **F10-T22** Sweep: every LINE-02 to LINE-07 acceptance criterion has a named test; walk the F10 canvas boards; file gaps with the ID. IDs: LINE-02 to LINE-07. Role: QA · Deps all · Size: S
   Tests first: a table of criteria to tests with none empty.
 
 Open question for the orchestrator (Q1): `owner_cap_paid_over` once a month is in the design only. Recommended default: keep once a month; the reviewer asked to confirm or drop it.

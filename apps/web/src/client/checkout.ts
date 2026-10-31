@@ -202,7 +202,7 @@ export function newKey(): string {
 }
 
 /** C11 is the payment page (F05); Pay hands the running order to it by id. */
-export const payPath = (slug: string, orderId: string) => `/c/${slug}/pay/${encodeURIComponent(orderId)}`;
+export const payPath = (slug: string, orderId: string, paymentId: string) => `/c/${slug}/pay/${encodeURIComponent(orderId)}?payment=${encodeURIComponent(paymentId)}`;
 
 /** `{dateYear}`: Sat 9 Jan 2027, with the international year in both languages (CC-5). */
 export function dateYear(day: string, short: string): string {

@@ -28,7 +28,7 @@ Shared decisions are in `docs/architecture/foundation.md`, cited as **FA §n**; 
 
 ## 3. Data and migrations
 
-Migration block 1201 to 1299 (reserved for F12 by the migration plan). One task per file, rising in task order: 1201 tables, 1202 day and week reads, 1203 session detail, 1204 attendance and notes, 1205 earnings reads, 1206 coach messages, 1207 anonymise handlers. Every F12 table is class D (BOOQ staff never, PLAT-02) and is registered in `packages/db/src/registry/f12.ts`; both are test tables (deleted at Go live before the coach they point at).
+Migration block 1201 to 1299 (reserved for F12 by the migration plan). One task per file, rising in task order: 1201 tables, 1202 day and week reads, 1203 session detail, 1204 attendance and notes, 1205 earnings reads, 1206 coach messages, 1207 the rest cap read, 1208 anonymise handlers. Every F12 table is class D (BOOQ staff never, PLAT-02) and is registered in `packages/db/src/registry/f12.ts`; both are test tables (deleted at Go live before the coach they point at).
 
 ### 3.1 `coach_attendance` (CPORT-05)
 
@@ -70,7 +70,7 @@ A week (at most 14 days, a technical bound) of the same session rows as §5.1, p
 
 ### 5.3 K3 Availability (CPORT-03) · existing
 
-`GET /coach/availability` and `PUT /coach/availability` (F07-T12) call `app.set_availability`. The rest cap is not applied at save time but when the hour is offered or booked (`coach_check`, F07 §5.1 step 5): the coach's saved hours are kept as typed and the 7th hour in a row is not offered. F12 adds: the response also carries `restCapHours` from `app.rest_cap()`, so the screen can say "6 in a row", and a test that the 7th hour is not offered after saving (CPORT-03).
+`GET /coach/availability` and `PUT /coach/availability` (F07-T12) call `app.set_availability`. The rest cap is not applied at save time but when the hour is offered or booked (`coach_check`, F07 §5.1 step 5): the coach's saved hours are kept as typed and the 7th hour in a row is not offered. F12 adds `GET /coach/rest-cap` (`app.coach_rest_cap()`, migration 1207, for the Coach role only, because a coach may not read the club settings) so the screen can say "at most N in a row", and a test that the 7th hour is not offered after saving (CPORT-03). F07's availability response stays the array it is.
 
 ### 5.4 K4 Leave (CPORT-04) · existing
 
@@ -104,14 +104,15 @@ Prefix `/api/c/{slug}`. Conventions as FA §9: typed codes, no text, 404 for out
 | `GET /coach/schedule?from=&to=` | `coach.portal` | K2 | `app.coach_schedule` |
 | `GET, PUT /coach/availability` | `coach.self` | K3 | F07 (exists) |
 | `GET, POST /coach/leave` | `coach.self` | K4 | F07 (exists) |
-| `GET /coach/sessions/{kind}/{id}` | `coach.portal` | K5 | `app.coach_session` |
-| `PUT /coach/sessions/{kind}/{id}/attendance` body `{bookingId, mark}` | `coach.portal` | K5 mark | `app.mark_attendance` |
-| `PUT /coach/sessions/{kind}/{id}/note` body `{customerId, body}` | `coach.portal` | K5 note | `app.save_session_note` |
+| `GET /coach/rest-cap` | `coach.portal` | K3 cap | `app.coach_rest_cap` |
+| `GET /coach/sessions/{solo\|group}/{id}` | `coach.portal` | K5 | `app.coach_session` |
+| `PUT /coach/sessions/{solo\|group}/{id}/attendance` body `{mark}` (solo) or `{bookingId, mark}` (group seat) | `coach.portal` | K5 mark | `app.mark_attendance` |
+| `PUT /coach/sessions/{solo\|group}/{id}/note` body `{customerId, body}` | `coach.portal` | K5 note | `app.save_session_note` |
 | `GET /coach/earnings?month=` | `coach.portal` | K6 | `app.my_earnings`, `app.my_payout_adjustments` |
 | `GET /coach/earnings/history` | `coach.portal` | K6 past payouts | `app.my_payout_history` |
 | `GET /staff/bookings/{id}/attendance` | `attendance.read` | A2 hint | `coach_attendance` |
 
-The existing `GET /coach/sessions/:id/roster` (F08) stays for the owner's tools. New permissions in `packages/auth/src/permissions/f12.ts`: `coach.portal` (coach), `attendance.read` (owner, front desk). `coach.self` (coach, owner) stays F07's, because the owner may act for a coach there. Typed codes: `forbidden`, `not_found`, `not_ended`, `month_paid`, `invalid_mark`, `invalid_month`, `invalid_range`, `body_too_long`.
+The kind is a literal in the path, so these never clash with F08's `GET /coach/sessions/:id/roster`, which stays for the owner's tools. New permissions in `packages/auth/src/permissions/f12.ts`: `coach.portal` (coach and owner: the matrix gives the owner every permission, but the functions require the Coach role and a coach row, so an owner who is not a coach is refused with `portal:forbidden`), `attendance.read` (owner, front desk). `coach.self` (coach, owner) stays F07's, because the owner may act for a coach there. Typed codes: `forbidden`, `not_found`, `not_ended`, `month_paid`, `invalid_mark`, `invalid_month`, `invalid_range`, `body_too_long`.
 
 ## 7. Screens and states (375 px, inside LINE)
 

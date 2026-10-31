@@ -83,3 +83,11 @@ Also worth the orchestrator's attention (not a QA finding, a wiring gap): the pl
 ## Update, 31 Oct (main d709178)
 
 F10-T13 usage sync and health (0613) and T14 notification switches: LINE-06-AC1, AC2 and AC6 are traced; LINE-07-AC1 to AC10 were already cited. QA added `F10-cap-below-eighty.new.spec.ts` (at 70 and 79 percent no reminder is voided). The cap thresholds were mutation checked (`mutation-pass.md`). Open: LINE-02-AC7 and AC9, LINE-04-AC4 and AC5, LINE-05-AC3 to AC6, AC10 to AC13 (producers owned by other features).
+
+## F10-T17, T21, T22, 31 Oct (main 43b77b0)
+
+**T17 guard:** LINE-03-AC4 (no route, page or button edits a message) is `F10-line-messages.new.spec.ts`, tightened on 31 Oct to match message editors by name.
+
+**T21 cross cutting** (`F10-cross-cutting.new.spec.ts`): the outbox has no text, name, phone or address column and no free text column; the dedupe key is unique per club; BOOQ staff have no privilege on it; no function outside the message path reads the cap state (so the cap cannot refuse a booking or a payment; a cap check added to a booking function turns it red); `enqueue_message` never raises for the cap. The behaviours are proved by the lane and traced (a Testing club's rows are flagged and counted, one row per dedupe key, undeliverable at 100 percent on the free plan).
+
+**T22 sweep gate** (`F10-gate.new.spec.ts`): 63 criteria, 58 with a real test, 5 listed: LINE-02-AC7 (screen), LINE-04-AC4 (the booking page), LINE-04-AC5 (the late payment confirmation card: the late path writes a late_payment message, not the card), LINE-05-AC3 (Cancellation result: F09-T11 is not built) and LINE-05-AC4 (Club closed slot: the closure does not write it yet). LINE-05-AC13 is traced to the late payment message that `pay_to_wallet` writes.

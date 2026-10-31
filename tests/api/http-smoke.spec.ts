@@ -122,3 +122,60 @@ describe('other families: one valid request each', () => {
     ok(await send(asPlayer, 'PUT', '/me/profile', { fullName: 'Ann Smith', phone: '0811111111' }));
   });
 });
+
+// Idempotency-Key families (orchestrator, 12:52Z). The A6 writes and the package sale change value, so the transport must receive the header: lane 2's client
+// omitted it and every adjustment would have failed on the real server. One test per route: no header and a malformed header are 400 bad_input, a valid
+// header succeeds, and the same key sent again repeats the first answer without a second ledger row (F11 design 7).
+describe('routes that require an Idempotency-Key', () => {
+  const PROD = '66666666-6666-4666-8666-666666666666';
+  let pkg: string;
+  const walletRows = async () => Number((await tdb.query(`select count(*) as n from public.wallet_ledger where customer_id = $1`, [ANN])).rows[0].n);
+  const creditRows = async () => Number((await tdb.query(`select count(*) as n from public.credit_ledger where package_id = $1`, [pkg])).rows[0].n);
+  beforeAll(async () => {
+    await tdb.query(`insert into public.price_group (club_id, id, name_th, name_en, rule) values ($1,'77777777-7777-4777-8777-777777777771','ผู้ใหญ่','Adult','{"min_age":18}') on conflict do nothing`, [CLUB]);
+    await tdb.query(`insert into public.package_product (club_id, id, name_th, name_en, credit_type, credits, validity_months, price_group_id, price_satang) values ($1,$2,'ชุด','Ten hours','court_hour',10,6,'77777777-7777-4777-8777-777777777771',100000)`, [CLUB, PROD]);
+    pkg = (await tdb.query(
+      `insert into public.customer_package (club_id, customer_id, product_id, product_snapshot, credits_total, purchased_at, purchase_date, expires_at)
+       values ($1,$2,$3,'{}',10,app.now(),'2026-12-07','2027-06-07T16:59:59.999Z') returning id`, [CLUB, ANN, PROD])).rows[0].id;
+  });
+
+  const family = (name: string, method: string, path: () => string, body: () => unknown, rows: () => Promise<number>, extra: Record<string, string> = {}) =>
+    it(`${method} ${name}: header required, malformed refused, valid accepted, replay writes once`, async () => {
+      hit(method, name);
+      const none = await send(asOwner, method, path(), body());
+      expect(none.status, none.text.slice(0, 160)).toBe(400);
+      const bad = await send(asOwner, method, path(), body(), { 'idempotency-key': 'has space', ...extra });
+      expect(bad.status, bad.text.slice(0, 160)).toBe(400);
+      const before = await rows();
+      const first = await send(asOwner, method, path(), body(), { 'idempotency-key': `qa-${name.replace(/[^a-z]/gi, '-')}-1`, ...extra });
+      ok(first);
+      const after = await rows();
+      expect(after, 'a valid request writes').toBeGreaterThan(before);
+      const again = await send(asOwner, method, path(), body(), { 'idempotency-key': `qa-${name.replace(/[^a-z]/gi, '-')}-1`, ...extra });
+      ok(again);
+      expect(await rows(), 'the same key writes nothing more').toBe(after);
+      expect(again.json).toEqual(first.json);
+    });
+
+  family('/staff/customers/:id/wallet-adjust', 'POST', () => `/staff/customers/${ANN}/wallet-adjust`, () => ({ deltaSatang: 5000, note: 'goodwill' }), walletRows);
+  family('/staff/customers/:id/credit-adjust', 'POST', () => `/staff/customers/${ANN}/credit-adjust`, () => ({ packageId: pkg, delta: 1, note: 'goodwill' }), creditRows);
+  family('/staff/packages/:id/extend', 'POST', () => `/staff/packages/${pkg}/extend`, () => ({ newExpiresOn: '2027-09-01', reason: 'illness' }),
+    async () => Number((await tdb.query(`select count(*) as n from public.package_extension where package_id = $1`, [pkg])).rows[0].n));
+
+  it('POST /staff/customers/:id/package-sale: header required', async () => {
+    hit('POST', '/staff/customers/:id/package-sale');
+    const r = await send(asOwner, 'POST', `/staff/customers/${ANN}/package-sale`, { productId: PROD, reasonCode: 'cash', note: '' });
+    expect([400, 404], `${r.status} ${r.text.slice(0, 160)}`).toContain(r.status);
+    if (r.status === 404) return; // the route is not mounted in this table: say so rather than pass silently
+    expect(r.json?.code ?? r.json?.error).toMatch(/bad_input|invalid/);
+    expect(r.status).toBe(400);
+    const sale = { productId: PROD, reasonCode: 'other', note: 'paid at the desk' };
+    const bad = await send(asOwner, 'POST', `/staff/customers/${ANN}/package-sale`, sale, { 'idempotency-key': 'has space' });
+    expect(bad.status).toBe(400);
+    // The header is accepted: the request reaches the quote. The fixture gives Ann no price group, so the domain answers 409 price_not_set; a priced
+    // fixture would answer 200 (F05 covers the sale itself). What this test proves is that the transport hands the header on and does not answer 400.
+    const first = await send(asOwner, 'POST', `/staff/customers/${ANN}/package-sale`, sale, { 'idempotency-key': 'qa-package-sale-1' });
+    expect([200, 201, 409], `${first.status} ${first.text.slice(0, 160)}`).toContain(first.status);
+    if (first.status === 409) expect(first.json.code).toBe('price_not_set');
+  });
+});

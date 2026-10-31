@@ -48,3 +48,9 @@ traced("F09/CANCEL-04-AC10", "Given front desk and owner only, when anyone else 
 
 // Added by trace-lane.py: criteria the lane's tests name by ID.
 traced("F09/CANCEL-03-AC11", "Given a closure is removed or shortened, when it is saved, then the slots become", [{ file: "packages/db/src/closure-end-roll.test.ts", has: "CANCEL-03-AC11" }]);
+
+// Sweep T21/T19/T22 (31 Oct): by title.
+traced("F09/CANCEL-02-AC2", "Given a cancel, closure, failed payment or wrong amount, when value returns, the", [{ file: "packages/db/src/return-booking-value.test.ts", has: "a mixed line: credit back to the package, wallet use back, money into the wallet as refund" }]);
+traced("F09/CANCEL-02-AC6", "Given the owner or front desk, when they want to give a player money back, then ", [{ file: "packages/db/src/wallet-functions.test.ts", has: "front desk and owner adjust with a written note; the row names the staff member and is audited" }]);
+traced("F09/CANCEL-03-AC10", "Given the owner wants to change opening hours or remove a court under existing b", [{ file: "packages/db/src/live-occupancy.test.ts", has: "shortening hours over a live booking is refused with the closure hint code" }]);
+traced("F09/CANCEL-04-AC2", "Given a booking that is Awaiting payment, Cancelled or Released, when its slot e", [{ file: "packages/db/src/booking-cancel.test.ts", has: "a cancelled, late cancelled, no show or released booking keeps its stored status after the slot ends" }]);

@@ -20,3 +20,9 @@ Still open:
 | CLASS-01-AC16 | Below minimum alert at the club's alert time: the lane tests the alert being voided when the minimum is reached; the producer job is not built. |
 | CLASS-01-AC18 | Rule for test authors (do not use the canvas samples). Nothing to run. |
 | WAIT-01-AC4 | A court waitlist entry ends when its time passes: the expiry job is not built. |
+
+## F08-T20 and T21, 31 Oct (main 43b77b0)
+
+**T20 concurrency** (`F08-concurrency.new.spec.ts`): a seat freed by a cancel while a walk-in asks for it at the same instant: over 4 rounds the walk-in never gets the seat and the first in line is offered it, and the session never holds more than its maximum (unregistering the waitlist cancel handler turns it red). An offer expiring while its holder confirms the seat: never a confirmed seat on an expired entry. Mutations of `offer_expire` (ignoring the status or the time) stay green: `pass_offer_on` re-checks the status under its own lock, and the time gate does not matter once the offer has ended (equivalent). Already proved by the lane: two takers of the last seat, eight takers of three seats, a held seat counts toward the maximum.
+
+**T21 sweep gate** (`F08-gate.new.spec.ts`): 39 criteria, 37 with a real test, 2 listed (CLASS-01-AC15 the C8 screen and the F06 pack flow; CLASS-01-AC18 a rule for test authors).

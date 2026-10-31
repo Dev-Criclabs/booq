@@ -7,6 +7,7 @@ import { bangkokDate } from '@booq/time';
 import { playerBookingRoutes, publicScheduleRoutes, staffBookingRoutes } from '../api/booking/routes';
 import { checkoutRoutes } from '../api/checkout/routes';
 import { playerClassRoutes, publicClassRoutes, staffClassRoutes } from '../api/classes/routes';
+import { paymentStatusRoutes } from '../api/payments/status';
 import { addOnRoutes } from '../api/add-ons/routes';
 import { setupDataRoutes, setupRoutes, auditRoutes, calendarRoutes, customerRoutes, customerValueRoutes, shellRoutes } from '../api/admin/routes';
 import { playerCoachRoutes, publicCoachRoutes, staffCoachRoutes } from '../api/coaches/routes';
@@ -20,6 +21,7 @@ import { lineFriendRoutes } from '../api/line/friend/routes';
 import { notificationPrefRoutes } from '../api/line/prefs/routes';
 import { createReceiptPdf } from '../api/receipts/pdf';
 import { receiptRoutes } from '../api/receipts/routes';
+import { coachPortalRoutes } from '../api/coach-portal/routes';
 import { reportRoutes } from '../api/reports/routes';
 import { importRoutes } from '../api/import/routes';
 import { noticeRoutes } from '../api/notice/routes';
@@ -81,6 +83,7 @@ export const mounts: readonly Mount[] = [
   (m) => playerPackageRoutes({ db: m.db, clubBySlug: m.clubBySlug }),
   (m) => staffPackageRoutes({ db: m.db, clubBySlug: m.clubBySlug, sources: quoteSources }),
   (m) => reportRoutes({ db: m.db }),
+  (m) => coachPortalRoutes({ db: m.db }),
   (m) => Object.values(settingsRoutes(m.db)),
   (m) => [businessRoute(m.db), clubSetupRoute(m.db)],
   (m) => [publicScheduleRoutes, playerBookingRoutes, staffBookingRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
@@ -91,6 +94,7 @@ export const mounts: readonly Mount[] = [
   // F11 A16 Settings: opening hours, courts and the support window (F01 routes in packages/domain/src/club; the settings routes are mounted above).
   (m) => [hoursRoute(m.db), resourceRoutes(m.db).create, resourceRoutes(m.db).update, supportWindowRoute(m.db)],
   (m) => addOnRoutes({ db: m.db }),
+  (m) => paymentStatusRoutes({ db: m.db }),
   (m) => profileRoutes({ db: m.db, service: () => createProfileEditService({ today: () => bangkokDate(m.now()) }) }),
   (m) => checkoutRoutes({ db: m.db, clubBySlug: m.clubBySlug, sources: quoteSources, payments: { privateKey: () => loadDecryptKey(), gateway: beamGateway, alerts: paymentAlerts, now: m.now } }),
 ];

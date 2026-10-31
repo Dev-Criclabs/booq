@@ -80,6 +80,6 @@ Each FE task builds the page from the hi-fi board, with all states of design §7
 
 - [ ] **F11-T25** Content: `locales/pending/F11.json`, existing A keys first by screen from `copy-index.csv`. IDs: TEXT-01 to TEXT-06. Role: Content · Deps none · Size: S
   Tests first: key sets and variables match in both languages; no existing key edited.
-- [ ] **F11-T26** Acceptance sweep: every ADMIN acceptance check has a named test; walk the boards; confirm A3, A11, A15 and the slip queue do not exist. IDs: ADMIN-01 to ADMIN-17. Role: QA · Deps all · Size: M
+- [x] **F11-T26** Acceptance sweep: every ADMIN acceptance check has a named test; walk the boards; confirm A3, A11, A15 and the slip queue do not exist. IDs: ADMIN-01 to ADMIN-17. Role: QA · Deps all · Size: M
 
 Order: T01, T02, then the reads T03 to T10 in any order, T11, T25 early, then the pages in the order a club needs them (T12, T13, T14, T15, T24, T22, T18, T19, T17, T16, T20, T21, T23), then T26. About 26 tasks.

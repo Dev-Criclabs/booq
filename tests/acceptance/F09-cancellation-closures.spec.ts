@@ -53,63 +53,11 @@ describe("F09 CANCEL-01", () => {
   // F09/CANCEL-01-AC22: proven by a real or traced test in another file of this folder
 });
 
-describe("F09 CANCEL-02", () => {
-  // Given the whole system, when its routes, buttons and admin actions are listed, then none refunds money or withdraws the wallet (route inventory test; hand-off check).
-  // F09/CANCEL-02-AC1: proven by a real or traced test in another file of this folder
-  // Given a cancel, closure, failed payment or wrong amount, when value returns, then it returns as wallet balance or package credit only.
-  test.todo("F09/CANCEL-02-AC2 Given a cancel, closure, failed payment or wrong amount, when value returns, then it returns as wallet ...");
-  // Given Beam, when the app is built, then it has no refund call and a test double fails if one is made (F05 PAY-05-AC3).
-  // F09/CANCEL-02-AC3: proven by a real or traced test in another file of this folder
-  // Given the P2 step 5 Beam text "Refunds go back by PromptPay" and the PRD cost section that repeats it, when F09 is built, then that text is not built and the cancel sheet says wallet or credit (Gaps A3).
-  // F09/CANCEL-02-AC4: proven by a real or traced test in another file of this folder
-  // Given a cash payment taken at the desk, when it is cancelled in time, then the value goes to the wallet, not as cash (D21, F05 PAY-06-AC7).
-  test.todo("F09/CANCEL-02-AC5 Given a cash payment taken at the desk, when it is cancelled in time, then the value goes to the wallet, ...");
-  // Given the owner or front desk, when they want to give a player money back, then the only action is a wallet credit `adjust` with a written reason (F06 PKG-01-AC4).
-  test.todo("F09/CANCEL-02-AC6 Given the owner or front desk, when they want to give a player money back, then the only action is a ...");
-});
-
-describe("F09 CANCEL-03", () => {
-  // Given front desk or the Owner in A12, when they create a closure (courts, start, end, a range, a day or a repeat, a reason), then the page first lists the existing bookings it affects (the preview) and nothing is cancelled until they confirm (PRD).
-  // F09/CANCEL-03-AC1: proven by a real or traced test in another file of this folder
-  // Given the closure is confirmed, when it is saved, then each affected booking is cancelled with full value back whatever the time (not subject to the 12 hour line), as the same returns as CANCEL-01-AC3 to AC7, and each player gets Club closed this slot (LINE-05, F10).
-  // F09/CANCEL-03-AC2: proven by a real or traced test in another file of this folder
-  // Given the closure, when it is saved, then the slots are closed in the same transaction, so no new hold or booking can appear in the closed range between the preview and the confirm; a booking that appeared after the preview is included in the cancel (CC-4).
-  // F09/CANCEL-03-AC3: proven by a real or traced test in another file of this folder
-  // Given a closed slot, when the schedule or coach availability loads, then the slot shows Closed, cannot be booked and disappears from booking and coach availability (PRD).
-  // F09/CANCEL-03-AC4: proven by a real or traced test in another file of this folder
-  // Given a slot in the closed range that is in a payment hold, when the closure is confirmed, then the hold is cancelled, the player is told, and a payment that arrives later follows PAY-03: the value goes to the wallet because the slot is closed (D48, D25).
-  // F09/CANCEL-03-AC5: proven by a real or traced test in another file of this folder
-  // Given a group class session in the closed range, when the closure is confirmed, then the session is cancelled for everyone with full credit back and a message, the waitlist entries end, and the coach is told (F08 CLASS-01-AC13).
-  // F09/CANCEL-03-AC6: proven by a real or traced test in another file of this folder
-  // Given a solo class in the closed range, when the closure is confirmed, then it is cancelled with full value back for the customer and the coach is told (F07).
-  test.todo("F09/CANCEL-03-AC7 Given a solo class in the closed range, when the closure is confirmed, then it is cancelled with full ...");
-  // Given a booking in the closed range that is already played (its slot has ended), when the closure is confirmed, then it is not touched.
-  // F09/CANCEL-03-AC8: proven by a real or traced test in another file of this folder
-  // Given a repeat closure (for example every Monday), when it is confirmed, then it cancels the affected bookings across the whole booking window and the preview lists every one (D118); occurrences beyond the window apply as the window reaches them.
-  // F09/CANCEL-03-AC9: proven by a real or traced test in another file of this folder
-  // Given the owner wants to change opening hours or remove a court under existing bookings, when they try, then it is refused and they use a closure instead (D50).
-  test.todo("F09/CANCEL-03-AC10 Given the owner wants to change opening hours or remove a court under existing bookings, when they try, ...");
-  // Given a closure is removed or shortened, when it is saved, then the slots become Open again; cancelled bookings are not restored.
-  // F09/CANCEL-03-AC11: proven by a real or traced test in another file of this folder
-  // Given a closure cancels a booking whose package has already expired (the credit was reserved before expiry, D85), when it is confirmed, then the credit is returned and the package is listed on the closure screen; the owner extends it with a written reason (D118, F06 PKG-03-AC5).
-  // F09/CANCEL-03-AC12: proven by a real or traced test in another file of this folder
-  // Given a closure over a Paused club, when it is created, then it works as for a Live club (the owner can still manage existing bookings, D60).
-  // F09/CANCEL-03-AC13: proven by a real or traced test in another file of this folder
-  // Given a closure, when it is saved, then it records the courts, range, repeat, reason and the staff member, and is audited (PLAT-04).
-  test.todo("F09/CANCEL-03-AC14 Given a closure, when it is saved, then it records the courts, range, repeat, reason and the staff member, ...");
-  // Given a closure over many bookings, when it is confirmed, then it is applied as one operation: all cancels and returns succeed or none does, and the messages follow once it is committed; a message that fails to send never undoes the cancel (the app shows it in My bookings, D9, LINE-07). The owner gets a list of the players who could not be messaged (D118).
-  // F09/CANCEL-03-AC15: proven by a real or traced test in another file of this folder
-  // Given a closure created while a booking is being created in the same range, when both run, then exactly one outcome stands: the booking is created before the closure and then cancelled by it, or refused because the slot is closed (QA CONC-13).
-  // F09/CANCEL-03-AC16: proven by a real or traced test in another file of this folder
-  // Given Front desk and Owner only, when anyone else tries to create a closure, then the server refuses (HO Roles).
-  // F09/CANCEL-03-AC17: proven by a real or traced test in another file of this folder
-});
-
 describe("F09 CANCEL-04", () => {
   // Given a confirmed booking, when its slot ends (Bangkok time), then its status becomes Played automatically; there is no check in step, no Checked in status, no late flag and no check in page or QR anywhere (Gaps A1).
   // F09/CANCEL-04-AC1: proven by a real or traced test in another file of this folder
   // Given a booking that is Awaiting payment, Cancelled or Released, when its slot ends, then it never becomes Played.
-  test.todo("F09/CANCEL-04-AC2 Given a booking that is Awaiting payment, Cancelled or Released, when its slot ends, then it never becomes ...");
+  // F09/CANCEL-04-AC2: proven by a real or traced test in another file of this folder
   // Given a confirmed booking whose player did not come, when staff mark No show in A2 with a reason, then the status is No show, the credit or payment is forfeited (`forfeit` row, CANCEL-01-AC10) and the reason is audited (PLAT-04). Without a reason the server refuses.
   // F09/CANCEL-04-AC3: proven by a real or traced test in another file of this folder
   // Given a late cancel that happened outside the app (the player phoned the desk), when staff mark Late cancel in A2 with a reason, then it is treated as CANCEL-01-AC10: value is forfeited, the slot is freed if still in the future.
@@ -127,5 +75,5 @@ describe("F09 CANCEL-04", () => {
   // Given the played status, when the referral reward rule reads it (the friend's first paid booking is played, F14), then it uses this status, so a booking reversed to No show does not count as played.
   test.todo("F09/CANCEL-04-AC11 Given the played status, when the referral reward rule reads it (the friend's first paid booking is ...");
   // Given the canvas notes about "Late after 15 minutes" and a check in QR in A01, C12 and My bookings, when F09 is built, then none is built (Gaps A1).
-  test.todo("F09/CANCEL-04-AC12 Given the canvas notes about \"Late after 15 minutes\" and a check in QR in A01, C12 and My bookings, when ...");
+  // F09/CANCEL-04-AC12: proven by a real or traced test in another file of this folder
 });

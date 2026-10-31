@@ -45,7 +45,7 @@ Depends on: F01 (people, roles, settings registry with `rest_cap_hours`, route w
 
 ## B. Wiring in other features (listed, owned by their lists)
 
-- [ ] **F07-T09** Wiring test for F03-T31: `app.move_booking` uses `app.coach_rules_check_move` so a moved booking ignores its own row (design A-3). IDs: COACH-01-AC11, R3. Role: QA · Deps T03, F03-T31 · Size: S
+- [x] **F07-T09** Wiring test for F03-T31: `app.move_booking` uses `app.coach_rules_check_move` so a moved booking ignores its own row (design A-3). IDs: COACH-01-AC11, R3. Role: QA · Deps T03, F03-T31 · Size: S
   Tests first: moving a six hour run by one hour does not count its own row twice; a move that breaks the rest rule is refused.
 - [ ] **F07-T10** F10 follow-up: replace `app.coach_message_hook` with `app.enqueue_message` for `coach_changed` and `session_change` once F10-T06 is merged. IDs: R4-AC5, R5-AC4, LINE-05. Role: BE-B · Deps T07, F10-T06 · Size: S
   Tests first: a substitution enqueues one message for the customer and one for each coach, once, by dedupe key; the confirmed card names coach and court and the coach gets New session (R5-AC4).
@@ -78,9 +78,9 @@ Depends on: F01 (people, roles, settings registry with `rest_cap_hours`, route w
 
 ## E. Cross checks and sweep
 
-- [ ] **F07-T20** Concurrency and no double booking suite: court and coach claimed together or not at all, a loser on the coach leaves nothing on the court, substitution with two coaches locked in id order, add coach racing a staff booking. IDs: COACH-01, COACH-03, R3, R4, BOOK-04, CC-4. Role: QA · Deps T06, T07 · Size: M
+- [x] **F07-T20** Concurrency and no double booking suite: court and coach claimed together or not at all, a loser on the coach leaves nothing on the court, substitution with two coaches locked in id order, add coach racing a staff booking. IDs: COACH-01, COACH-03, R3, R4, BOOK-04, CC-4. Role: QA · Deps T06, T07 · Size: M
   Tests first: the suite is the task (20 parallel requests per case).
-- [ ] **F07-T21** Acceptance sweep: every acceptance criterion of COACH-01 to COACH-04 and R1 to R6 has a named test; walk the F07 boards; file gaps with the ID. IDs: COACH-01 to COACH-04, R1 to R6. Role: QA · Deps all · Size: M
+- [x] **F07-T21** Acceptance sweep: every acceptance criterion of COACH-01 to COACH-04 and R1 to R6 has a named test; walk the F07 boards; file gaps with the ID. IDs: COACH-01 to COACH-04, R1 to R6. Role: QA · Deps all · Size: M
   Tests first: a table of criteria to tests with none empty. R5-AC5 (Played at the end of the slot, K5 attendance) is closed by F09-T01 (Played is derived) and the F12 K5 task; the sweep lists those tests against it.
 
 Order: T01, T02, T03, T04, T05, T06, T07, T08 (migration order), T19 early, then T09, T10, T11, T12, T13, the screens, then E. About 21 tasks, each under a day. F13-T10 and F12 wait for T02.
