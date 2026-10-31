@@ -1,0 +1,24 @@
+{
+  "en": {
+    "K-new.not_coach": "This page is for the club's coaches. Ask the owner to add you as a coach.",
+    "K-new.error": "Something went wrong. Nothing was changed.",
+    "K-new.solo_class_one": "Solo class",
+    "K-new.group_classes": "Group classes",
+    "K-new.today_empty": "No sessions today.",
+    "K-new.held": "Waiting for payment",
+    "K-new.needs_attention": "Owner is checking",
+    "K-new.group_players": "{booked} of {maxPlayers} players",
+    "K-new.group_players_level": "{booked} of {maxPlayers} players · {level}"
+  },
+  "th": {
+    "K-new.not_coach": "หน้านี้สำหรับโค้ชของสโมสร ขอให้เจ้าของเพิ่มคุณเป็นโค้ช",
+    "K-new.error": "เกิดข้อผิดพลาด ไม่มีการเปลี่ยนแปลงใดๆ",
+    "K-new.solo_class_one": "คลาสเดี่ยว",
+    "K-new.group_classes": "คลาสกลุ่ม",
+    "K-new.today_empty": "วันนี้ไม่มีเซสชัน",
+    "K-new.held": "รอชำระเงิน",
+    "K-new.needs_attention": "เจ้าของกำลังตรวจสอบ",
+    "K-new.group_players": "ผู้เล่น {booked} จาก {maxPlayers} คน",
+    "K-new.group_players_level": "ผู้เล่น {booked} จาก {maxPlayers} คน · {level}"
+  }
+}

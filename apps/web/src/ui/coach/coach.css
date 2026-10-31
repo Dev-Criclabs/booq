@@ -1,0 +1,56 @@
+/* Coach portal styles (F12; boards H-K1 to H-K6). Mobile first at 320 to 480 px, inside LINE. Uses the player app's palette and fonts
+   (player.css). Thai runs longer: content areas scroll, buttons never wrap, long names break (CC-5). */
+.coach { height: 100dvh; }
+.coach-head { flex: none; background: var(--dk); color: var(--od); padding: 16px 16px 18px; border-radius: 0 0 28px 28px; display: flex; flex-direction: column; gap: 12px; }
+.coach-head-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.coach-eyebrow { margin: 0; font-size: 13px; opacity: 0.9; min-width: 0; overflow-wrap: anywhere; }
+.coach-title { margin: 2px 0 0; font-size: 30px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.2; overflow-wrap: anywhere; }
+.coach-head .lang-toggle { flex: none; }
+.coach-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.coach-tile { padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, 0.14); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.coach-tile b { font-size: 24px; font-weight: 500; line-height: 1.2; }
+.coach-tile span { font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
+
+.coach-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 10px; }
+.coach-plain-title { flex: none; margin: 0; padding: 18px 16px 6px; font-size: 28px; font-weight: 500; letter-spacing: -0.02em; color: var(--hd); overflow-wrap: anywhere; }
+.coach-lead { margin: 0; font-size: 14px; line-height: 1.5; color: var(--mu); }
+.coach-empty { margin: 8px 0; padding: 16px; border-radius: 16px; background: var(--cd); font-size: 15px; line-height: 1.5; color: var(--mu); text-align: center; }
+.coach-note { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; background: var(--tn); color: var(--hd); font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
+.coach-note.warn { background: #f4ecc9; }
+.coach-note svg { flex: none; margin-top: 2px; }
+
+.srow { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 18px; background: var(--cd); color: var(--ink); text-decoration: none; min-width: 0; border: 2px solid transparent; }
+.srow.done { background: var(--tk); }
+.srow.next { border-color: var(--hd); }
+.srow-time { flex: none; width: 62px; padding: 6px 0; border-radius: 12px; background: var(--g); display: flex; flex-direction: column; align-items: center; line-height: 1.2; }
+.srow.next .srow-time { background: var(--hd); color: #fff; }
+.srow-time b { font-size: 17px; font-weight: 600; }
+.srow-time span { font-size: 11px; opacity: 0.8; white-space: nowrap; }
+.srow-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.srow-kind { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mu); overflow-wrap: anywhere; }
+.srow-title { font-size: 16px; font-weight: 600; color: var(--hd); overflow-wrap: anywhere; }
+.srow-sub { font-size: 13px; color: var(--mu); overflow-wrap: anywhere; }
+.srow-end { flex: none; max-width: 40%; display: flex; align-items: center; }
+.pill { display: inline-block; max-width: 100%; padding: 4px 10px; border-radius: 999px; background: var(--ac); color: var(--hd); font-size: 12px; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; text-align: center; }
+.pill.quiet { background: none; color: var(--mu); padding: 0; font-weight: 600; }
+.pill.warn { background: #f1d3c8; color: #7b3a26; }
+
+.bottom-nav.coach-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.coach-nav a span { overflow-wrap: anywhere; text-align: center; line-height: 1.15; }
+
+/* Schedule (K2) */
+.week-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.week-nav .range { flex: 1; min-width: 0; text-align: center; font-size: 15px; font-weight: 600; color: var(--hd); overflow-wrap: anywhere; }
+.chips-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.count-chip { padding: 4px 10px; border-radius: 999px; background: var(--tn); color: var(--hd); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.count-chip.group { background: var(--hd); color: #fff; }
+.count-chip.leave { background: var(--ac); }
+.day-label { margin: 8px 0 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mu); }
+.item { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 14px; background: var(--cd); color: var(--ink); text-decoration: none; min-width: 0; }
+.item.blocked { background: none; border: 1.5px dashed var(--ln); }
+.item-time { flex: none; width: 48px; font-size: 15px; font-weight: 600; }
+.item-main { flex: 1; min-width: 0; font-size: 14px; overflow-wrap: anywhere; }
+.tag { flex: none; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--tn); color: var(--hd); }
+.tag.group { background: var(--hd); color: #fff; }
+.tag.leave { background: var(--ac); }
+.tag.blocked { background: var(--tk); color: var(--mu); }

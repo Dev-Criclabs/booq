@@ -54,7 +54,7 @@ export const CLUB = { nameTh: 'ฮันเตอร์ เทนนิส ค�
  * function of the calls so far), `notice` GET /public/notice/{kind} as { privacy: { th: doc } }; every API call is recorded,
  * so a test can prove nothing was created.
  */
-export async function openPage(browser, { liff, club = CLUB, session = { status: 200, body: { state: 'active' } }, profile = { status: 200, body: { state: 'active' } }, notice = null, me = undefined, schedule = null, lang, width = 375, height = 812 } = {}) {
+export async function openPage(browser, { liff, club = CLUB, session = { status: 200, body: { state: 'active' } }, profile = { status: 200, body: { state: 'active' } }, notice = null, me = undefined, schedule = null, extra = null, lang, width = 375, height = 812 } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, locale: 'th-TH' });
   if (lang) await context.addCookies([{ name: 'lang', value: lang, url: 'http://localhost' }]);
   const page = await context.newPage();
@@ -98,6 +98,11 @@ export async function openPage(browser, { liff, club = CLUB, session = { status:
       const lang = new URL(req.url()).searchParams.get('lang');
       const doc = notice?.[kind]?.[lang];
       return doc ? route.fulfill({ status: 200, json: doc }) : route.fulfill({ status: 404, json: { code: 'no_notice' } });
+    }
+    // `extra({ method, path, url, body })`: another feature's fakes (the coach portal's); a reply for route.fulfill, or null to fall through.
+    if (extra) {
+      const r = await extra({ method: req.method(), path, url: new URL(req.url()), body: req.postData() ? JSON.parse(req.postData()) : undefined });
+      if (r) return route.fulfill(r);
     }
     return route.fulfill({ status: 404, json: { code: 'not_found' } });
   });
