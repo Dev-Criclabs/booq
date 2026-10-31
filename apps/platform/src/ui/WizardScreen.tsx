@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { ConnectionEditor } from './ConnectionEditor';
 import { ConsoleNav } from './ConsoleNav';
 import { loadClub, type ClubView, type Failure } from './club';
 import { t } from './i18n';
@@ -12,7 +13,8 @@ import {
 
 // /clubs/new and /clubs/{id}/setup?step=n (P2): the five steps of setting up a new club. Step 1 creates the club as a Draft; each
 // later step saves into the draft. The plan text is display copy from the language files; nothing about price is stored.
-// LINE and payment keys cannot be entered here yet (no API); the pages say so. English only; text by key.
+// LINE and Beam values are tested as they are typed and saved only if the check passes, unless the staff member saves anyway (D167).
+// Slip checking details have no API yet. English only; text by key.
 
 type Load = { kind: 'loading' } | { kind: 'error'; key: string; signIn?: boolean } | { kind: 'ready'; club: ClubView };
 type Go = Step | 'stay' | 'finish';
@@ -187,7 +189,7 @@ export function WizardScreen({ id, step }: { id?: string; step: Step }) {
               <section className="card" data-testid="step-line-form">
                 <h2>{t('X-0140')}</h2>
                 <p className="sub">{t('X-0097')}</p>
-                <p className="notice" data-testid="not-available">{t('X-new.wizard_not_available')}</p>
+                <ConnectionEditor id={id!} kind="line" canEdit={!locked} askStepUp={(run) => setPending({ run })} onNotice={setNotice} onSaved={() => { setSaved(clockTime(new Date())); }} />
                 <Buttons plain />
               </section>
             ) : null}
@@ -202,9 +204,13 @@ export function WizardScreen({ id, step }: { id?: string; step: Step }) {
                     {' '}<strong>{t(OPTION_KEY[o].title)}</strong> <span className="sub">{t(OPTION_KEY[o].text)}</span>
                   </label>
                 ))}
-                <p className="notice" data-testid="not-available">{t('X-new.wizard_keys_not_available')}</p>
                 <Buttons last />
               </form>
+            ) : null}
+            {step === 'payments' ? (
+              <section className="card" data-testid="step-payments-keys">
+                <ConnectionEditor id={id!} kind="payments" canEdit={!locked} option={option} askStepUp={(run) => setPending({ run })} onNotice={setNotice} onSaved={() => { setSaved(clockTime(new Date())); void reload(); }} />
+              </section>
             ) : null}
           </>
         ) : null}

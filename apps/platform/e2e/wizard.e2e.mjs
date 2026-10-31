@@ -30,6 +30,7 @@ const api = ({ over = {}, support = SUPPORT() } = {}) => (method, path, body) =>
   if (key === `GET /clubs/${ID}/owner-invite`) return { status: 200, body: { invite: { status: 'none' } } };
   return { status: 404, body: { code: 'not_found' } };
 };
+const PUT_LINE = `PUT /clubs/${ID}/support/setup/line`;
 const puts = (calls) => calls.filter((c) => c.method === 'PUT');
 
 describe('the new club wizard', () => {
@@ -110,7 +111,8 @@ describe('the new club wizard', () => {
     assert.equal(await page.getByTestId('features-form').count(), 0);
     await page.getByTestId('next').click();
     await page.waitForURL('**/setup?step=4');
-    assert.match(await page.getByTestId('not-available').innerText(), /cannot be entered here yet/);
+    await page.getByTestId('conn-line').waitFor();
+    assert.equal(await page.getByTestId('conn-line_channel_token').getAttribute('type'), 'password');
     await page.getByTestId('next').click();
     await page.waitForURL('**/setup?step=5');
     assert.doesNotMatch(await page.getByTestId('step-payments-form').innerText(), /Refunds go back/);
@@ -119,6 +121,47 @@ describe('the new club wizard', () => {
     await page.getByTestId('finish').click();
     await page.waitForURL(`**/clubs/${ID}`);
     assert.deepEqual(puts(calls)[0].body, { payment_option: 'slip' });
+    await context.close();
+  });
+
+  it('step 4: a LINE check that fails saves nothing; save anyway sends it again and says it was saved but failed', async () => {
+    let anyway = false;
+    const over = {
+      [PUT_LINE]: (b) => (b.save_anyway ? ((anyway = true), { status: 200, body: { changed: ['x'], connectionTest: { result: 'fail', code: 'messaging_api_token_rejected' } } }) : { status: 409, body: { code: 'connection_test_failed', connectionTest: { result: 'fail', code: 'messaging_api_token_rejected' } } }),
+    };
+    const { page, context, calls } = await openPage(browser, api({ over }), { width: 1024, height: 1000 });
+    await page.goto(`${app.base}/clubs/${ID}/setup?step=4`);
+    await page.getByTestId('conn-line').waitFor();
+    await page.getByTestId('conn-submit').click();
+    assert.match(await page.getByTestId('conn-problem').innerText(), /Fill in the fields marked as needed/);
+    assert.equal(puts(calls).length, 0);
+    await page.getByTestId('conn-line_channel_token').fill('MARKER-token');
+    await page.getByTestId('conn-liff_id').fill('1650000001-AbCdEfGh');
+    await page.getByTestId('conn-submit').click();
+    await page.getByTestId('conn-failed').waitFor();
+    assert.match(await page.getByTestId('conn-failed').innerText(), /LINE did not accept the channel access token\./);
+    assert.match(await page.getByTestId('conn-failed').innerText(), /Nothing was saved/);
+    assert.equal(anyway, false);
+    assert.deepEqual(puts(calls)[0].body, { liff_id: '1650000001-AbCdEfGh', line_channel_token: 'MARKER-token', test: true });
+    await page.getByTestId('conn-save-anyway').click();
+    await page.getByTestId('notice').getByText(/Saved, but the check failed/).waitFor();
+    assert.equal(puts(calls)[1].body.save_anyway, true);
+    assert.equal(await page.getByTestId('conn-line_channel_token').inputValue(), '', 'a typed secret is cleared once sent');
+    await context.close();
+  });
+
+  it('step 5: Beam keys are tested on the typed values; a pass says so; a slip club has no Beam boxes', async () => {
+    const over = { [`PUT /clubs/${ID}/support/setup/payments`]: { status: 200, body: { changed: ['x'], connectionTest: { result: 'pass' } } } };
+    const { page, context, calls } = await openPage(browser, api({ over }), { width: 1024, height: 1000 });
+    await page.goto(`${app.base}/clubs/${ID}/setup?step=5`);
+    await page.getByTestId('option-slip').check();
+    await page.getByTestId('conn-na').waitFor();
+    await page.getByTestId('option-beam').check();
+    await page.locator('#conn-merchant_id_test').fill('M-1');
+    await page.locator('#conn-beam_api_key_test').fill('MARKER-key');
+    await page.getByTestId('conn-submit').click();
+    await page.getByTestId('notice').getByText('Saved. The check passed.').waitFor();
+    assert.deepEqual(calls.find((c) => c.path.endsWith('/payments')).body, { merchant_id_test: 'M-1', beam_api_key_test: 'MARKER-key', payment_option: 'beam', test_mode: 'test', test: true });
     await context.close();
   });
 

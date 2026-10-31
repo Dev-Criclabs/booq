@@ -368,6 +368,35 @@ describe('the club page', () => {
     await context.close();
   });
 
+  it('connections: LINE is tested as typed; a stale second factor asks again and the same save runs again', async () => {
+    let fresh = false;
+    const over = {
+      'POST /auth/step-up': () => ((fresh = true), { status: 200, body: { ok: true } }),
+      [`PUT /clubs/${ID}/support/setup/line`]: () => (fresh ? { status: 200, body: { changed: ['x'], connectionTest: { result: 'pass' } } } : { status: 403, body: { code: 'step_up_required' } }),
+    };
+    const { page, context, calls } = await openPage(browser, api({ over }), { width: 1024, height: 1000 });
+    await page.goto(`${app.base}/clubs/${ID}`);
+    await page.getByTestId('conn-line').waitFor();
+    await page.getByTestId('conn-line_channel_token').fill('MARKER-token');
+    await page.getByTestId('conn-submit').click();
+    await page.getByTestId('step-up').waitFor();
+    await page.locator('#stepup-password').fill('pw');
+    await page.locator('#stepup-code').fill('123456');
+    await page.getByTestId('step-up-submit').click();
+    await page.getByTestId('notice').getByText('Saved. The check passed.').waitFor();
+    assert.equal(calls.filter((c) => c.path.endsWith('/support/setup/line')).length, 2);
+    await context.close();
+  });
+
+  it('connections: a club that is look only shows no boxes to save', async () => {
+    const { page, context } = await openPage(browser, api({ support: SUPPORT({ mode: 'look' }) }), { width: 1024, height: 1000 });
+    await page.goto(`${app.base}/clubs/${ID}`);
+    await page.getByTestId('conn-line').waitFor();
+    assert.equal(await page.getByTestId('conn-submit').count(), 0);
+    assert.equal(await page.getByTestId('conn-line_channel_token').isDisabled(), true);
+    await context.close();
+  });
+
   it('the API refusing an edit (the owner window closed) is told in words', async () => {
     const over = { [`PUT /clubs/${ID}/support/setup/resources-hours`]: { status: 409, body: { code: 'look_only' } } };
     const { page, context } = await openPage(browser, api({ over }), { width: 1024, height: 900 });

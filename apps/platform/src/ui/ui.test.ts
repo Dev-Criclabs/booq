@@ -1,3 +1,4 @@
+import { buildBody, probeKey, sendConnection } from './connections';
 import { draftOf, loadSettings, parseDraft, saveSetting, type SettingRow } from './settings';
 import { checkBasics, checkPlan, clockTime, createBody, createClub, dayOf, emptyBasics, saveBasics as saveDraftBasics, savePaymentOption, savePlan, slugify, stampOf, stepFromQuery, type BasicValues } from './wizard';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -492,5 +493,38 @@ describe('club settings in the support view', () => {
     const r = await loadSettings(reply(200, { editable: true, settings: [row('hold_minutes')] }), 'c1');
     expect(r).toMatchObject({ kind: 'ok', view: { editable: true, settings: [{ key: 'hold_minutes' }] } });
     expect(await loadSettings(reply(404, { code: 'not_found' }), 'c1')).toMatchObject({ kind: 'error', key: 'X-new.club_not_found' });
+  });
+});
+
+describe('LINE and Beam connections (D167)', () => {
+  const full = { oa_basic_id: '@club', login_channel_id: '1650000001', liff_id: '1650000001-AbCdEfGh', line_channel_token: 'tok' };
+  it('only filled boxes are sent; the token is needed for the test; plan limit is a whole number', () => {
+    expect(buildBody('line', { ...full, line_channel_secret: ' ' }, { planKind: 'paid', limit: '15000' })).toEqual({
+      ok: true, body: { ...full, line_plan_kind: 'paid', plan_message_limit: 15000 },
+    });
+    expect(buildBody('line', { oa_basic_id: '@club' }, {})).toEqual({ ok: false, key: 'X-new.conn_test_needs' });
+    expect(buildBody('line', full, { limit: '0' })).toEqual({ ok: false, key: 'X-new.conn_limit_bad' });
+  });
+  it('Beam: the key set decides the field names; the merchant id and key are needed; the option goes along', () => {
+    expect(buildBody('payments', { merchant_id_live: 'M1', beam_api_key_live: 'k', beam_hmac_key_live: '' }, { mode: 'live', option: 'beam' })).toEqual({
+      ok: true, body: { merchant_id_live: 'M1', beam_api_key_live: 'k', payment_option: 'beam', test_mode: 'live' },
+    });
+    expect(buildBody('payments', { merchant_id_test: 'M1' }, { mode: 'live' })).toEqual({ ok: false, key: 'X-new.conn_test_needs' });
+  });
+  const reply = (status: number, json: unknown) => (async () => new Response(JSON.stringify(json), { status })) as unknown as typeof fetch;
+  it('send: always asks for a test; a pass, a refused test, a stale second factor and an outage answer by outcome', async () => {
+    const seen: unknown[] = [];
+    const f = (async (_u: string, init: { body: string }) => { seen.push(JSON.parse(init.body)); return new Response(JSON.stringify({ changed: ['x'], connectionTest: { result: 'pass' } }), { status: 200 }); }) as unknown as typeof fetch;
+    expect(await sendConnection(f, 'c1', 'line', { a: 1 })).toEqual({ kind: 'saved', tested: 'pass' });
+    await sendConnection(f, 'c1', 'payments', { a: 1 }, { saveAnyway: true });
+    expect(seen).toEqual([{ a: 1, test: true }, { a: 1, test: true, save_anyway: true }]);
+    expect(await sendConnection(reply(409, { code: 'connection_test_failed', connectionTest: { result: 'fail', code: 'key_refused' } }), 'c1', 'payments', {})).toEqual({ kind: 'test_failed', code: 'key_refused' });
+    expect(await sendConnection(reply(403, { code: 'step_up_required' }), 'c1', 'line', {})).toMatchObject({ kind: 'error', stepUp: true });
+    expect(await sendConnection(reply(409, { code: 'look_only' }), 'c1', 'line', {})).toMatchObject({ kind: 'error', key: 'X-new.club_look_only' });
+    expect(await sendConnection((async () => { throw new Error('x'); }) as unknown as typeof fetch, 'c1', 'line', {})).toMatchObject({ kind: 'error', key: 'X-new.club_unavailable' });
+  });
+  it('every known failure code has its own words; an unknown one gets the generic line', () => {
+    for (const c of ['messaging_api_token_rejected', 'liff_not_in_login_channel', 'key_refused', 'hmac_key_invalid']) expect(probeKey(c)).not.toBe('X-new.probe_failed');
+    expect(probeKey('http_418')).toBe('X-new.probe_failed');
   });
 });
