@@ -104,7 +104,7 @@ export async function savePlan(f: Fetch, id: string, now: { trial: string; billi
 
 export const PAYMENT_OPTIONS = ['beam', 'slip'] as const;
 export type PaymentOption = (typeof PAYMENT_OPTIONS)[number];
-// X-0120 says refunds go back by PromptPay (QA-F09-1): value never returns as cash, so the wizard uses its own wording.
+// The shared Beam option text says refunds go back by PromptPay (QA-F09-1): value never returns as cash, so the wizard uses its own wording.
 export const OPTION_KEY: Record<PaymentOption, { title: string; text: string }> = { beam: { title: 'X-0119', text: 'X-new.wizard_option_beam_text' }, slip: { title: 'X-0121', text: 'X-0122' } };
 export const savePaymentOption = (f: Fetch, id: string, option: PaymentOption) => put(f, id, 'basics', { payment_option: option });
 

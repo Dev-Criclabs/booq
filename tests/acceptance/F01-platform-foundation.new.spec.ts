@@ -50,9 +50,9 @@ describe('F01/ROLE-02-AC3', () => {
 });
 
 describe('F01/ROLE-02-AC7', () => {
-  // FINDING QA-F01-1: platform.issue_staff_enrolment (migration 0055) lets an admin issue a 'reset' for their own account.
+  // FINDING QA-F01-1 (fixed in migration 0057): platform.issue_staff_enrolment (0055) let an admin issue a 'reset' for their own account.
   // D123 / ROLE-02-AC7: a second factor is reset only by ANOTHER platform admin.
-  it.fails('F01/ROLE-02-AC7 an admin cannot reset their own second factor', async () => {
+  it('F01/ROLE-02-AC7 an admin cannot reset their own second factor', async () => {
     await tdb.query(`insert into platform.config (key, value) values ('console_enrolment_ttl_hours', '24') on conflict (key) do update set value = excluded.value`);
     await expect(
       pdb.withPlatformTx({ staffId: admin, staffLabel: 'Admin' }, (tx) => tx.query(`select platform.issue_staff_enrolment($1, repeat('c', 64), 'reset')`, [admin])),
