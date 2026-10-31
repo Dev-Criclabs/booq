@@ -14,11 +14,6 @@ describe("F11 ADMIN-03", () => {
   test.todo("F11/ADMIN-03 Given a booking, when staff drag it to a slot where the court is held, then the move is refused and ...");
 });
 
-describe("F11 ADMIN-06", () => {
-  // Given a front desk user, when they press Export CSV, then the file holds only their club's customers and an audit entry is written
-  test.todo("F11/ADMIN-06 Given a front desk user, when they press Export CSV, then the file holds only their club's customers and ...");
-});
-
 describe("F11 ADMIN-10", () => {
   // Given an add-on with no price set, when the owner opens A9, then the field is empty and editable and no default is shown
   test.todo("F11/ADMIN-10 Given an add-on with no price set, when the owner opens A9, then the field is empty and editable and no ...");

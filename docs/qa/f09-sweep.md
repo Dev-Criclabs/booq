@@ -6,6 +6,11 @@ The lane's tests number criteria without the prefix (AC9, AC14, AC21), so ID mat
 
 The cancel session closure of F08 (migration 0919, `cancel_session` with reason `closure`) is covered by `class-cancel-edit.test.ts`, and `record_booking_cancel` (1012) by `record-booking-cancel.test.ts`.
 
-Still todo (waiting on T08 or on a later task): CANCEL-01-AC7, AC12, AC19; CANCEL-02-AC2, AC5, AC6; CANCEL-03-AC7, AC10, AC11, AC14; CANCEL-04-AC2, AC8, AC9, AC11, AC12. CANCEL-02-AC5 (a cash payment cancelled goes to the wallet) and CANCEL-03-AC7 (a solo class in a closure) have a database path that QA can test now; they are next.
+Still todo (waiting on T08 or on a later task): CANCEL-01-AC7, AC12, AC19; CANCEL-02-AC2, AC6; CANCEL-03-AC10, AC11, AC14; CANCEL-04-AC2, AC8, AC11, AC12. 
 
 New question for the product owner (Q-36 in `open-questions.md`): CANCEL-04-AC9 still says the no show timing is read from a club setting, but D118 says staff mark a no show only after the slot ends and nothing else, and the lane test confirms no setting is read. AC9 looks stale.
+
+## Update, 31 Oct (main cee820f)
+
+- **Q-36 settled as D172:** CANCEL-04-AC9 is withdrawn (no show timing setting; D118). It stays as a todo skeleton until the requirement text is removed.
+- **New QA tests** (`F09-cash-and-solo-closure.new.spec.ts`): CANCEL-02-AC5 (also F05 PAY-06-AC7): a booking paid in cash, cancelled in time, returns to the wallet as a refund and changes no payment row. CANCEL-03-AC7: a solo class in a closed range is cancelled with full value even inside the window, and the court and the coach are both free. Both pass.

@@ -62,7 +62,7 @@ describe("F10 LINE-05", () => {
   // Given a spot opens for the first in line (F08), when the offer is made, then they get Waitlist spot open with the claim time (club setting) as `{minutes}`.
   test.todo("F10/LINE-05-AC6 Given a spot opens for the first in line (F08), when the offer is made, then they get Waitlist spot open ...");
   // Given a package, when it is 14 days and 3 days before expiry, then the player gets Package expiring (F06 PKG-03).
-  test.todo("F10/LINE-05-AC7 Given a package, when it is 14 days and 3 days before expiry, then the player gets Package expiring (F06 ...");
+  // F10/LINE-05-AC7: proven by a real or traced test in another file of this folder
   // Given the first day of a player's birth month, a birthday discount set (F14) and the player's Promotions in LINE switch on, when the day arrives, then they get Birthday discount; no discount value set, or the switch off, means no message (D94).
   // F10/LINE-05-AC8: proven by a real or traced test in another file of this folder
   // Given a referral reward is earned (the friend's first booking played, F14) and the referrer's Promotions in LINE switch is on, when it lands, then the referrer gets Referral reward earned; the reward itself is still paid when the switch is off (D94).

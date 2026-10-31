@@ -63,7 +63,7 @@ describe("F09 CANCEL-02", () => {
   // Given the P2 step 5 Beam text "Refunds go back by PromptPay" and the PRD cost section that repeats it, when F09 is built, then that text is not built and the cancel sheet says wallet or credit (Gaps A3).
   // F09/CANCEL-02-AC4: proven by a real or traced test in another file of this folder
   // Given a cash payment taken at the desk, when it is cancelled in time, then the value goes to the wallet, not as cash (D21, F05 PAY-06-AC7).
-  test.todo("F09/CANCEL-02-AC5 Given a cash payment taken at the desk, when it is cancelled in time, then the value goes to the wallet, ...");
+  // F09/CANCEL-02-AC5: proven by a real or traced test in another file of this folder
   // Given the owner or front desk, when they want to give a player money back, then the only action is a wallet credit `adjust` with a written reason (F06 PKG-01-AC4).
   test.todo("F09/CANCEL-02-AC6 Given the owner or front desk, when they want to give a player money back, then the only action is a ...");
 });
@@ -82,7 +82,7 @@ describe("F09 CANCEL-03", () => {
   // Given a group class session in the closed range, when the closure is confirmed, then the session is cancelled for everyone with full credit back and a message, the waitlist entries end, and the coach is told (F08 CLASS-01-AC13).
   // F09/CANCEL-03-AC6: proven by a real or traced test in another file of this folder
   // Given a solo class in the closed range, when the closure is confirmed, then it is cancelled with full value back for the customer and the coach is told (F07).
-  test.todo("F09/CANCEL-03-AC7 Given a solo class in the closed range, when the closure is confirmed, then it is cancelled with full ...");
+  // F09/CANCEL-03-AC7: proven by a real or traced test in another file of this folder
   // Given a booking in the closed range that is already played (its slot has ended), when the closure is confirmed, then it is not touched.
   // F09/CANCEL-03-AC8: proven by a real or traced test in another file of this folder
   // Given a repeat closure (for example every Monday), when it is confirmed, then it cancels the affected bookings across the whole booking window and the preview lists every one (D118); occurrences beyond the window apply as the window reaches them.
@@ -122,8 +122,8 @@ describe("F09 CANCEL-04", () => {
   // F09/CANCEL-04-AC7: proven by a real or traced test in another file of this folder
   // Given a solo class or a class seat, when the coach marks Absent in K5 (F12), then it is a hint shown to staff and does not mark the player's no show or forfeit; staff decide in A2 (D118).
   test.todo("F09/CANCEL-04-AC8 Given a solo class or a class seat, when the coach marks Absent in K5 (F12), then it is a hint shown to ...");
-  // Given the no show timing setting (A16), when staff mark a no show, then it is read from the club's settings; its value is an empty setting until the owner sets it.
-  test.todo("F09/CANCEL-04-AC9 Given the no show timing setting (A16), when staff mark a no show, then it is read from the club's ...");
+  // Withdrawn (D172): no show marking has no timing setting; staff mark a no show any time after the slot ends (D118, AC covered by the staff marks criteria).
+  test.todo("F09/CANCEL-04-AC9 Withdrawn (D172): no show marking has no timing setting; staff mark a no show any time after the slot ends ...");
   // Given front desk and owner only, when anyone else tries to mark or reverse, then the server refuses (HO Roles).
   // F09/CANCEL-04-AC10: proven by a real or traced test in another file of this folder
   // Given the played status, when the referral reward rule reads it (the friend's first paid booking is played, F14), then it uses this status, so a booking reversed to No show does not count as played.

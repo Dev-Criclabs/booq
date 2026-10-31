@@ -67,3 +67,6 @@ traced("F04/R8-AC4", "Given a guest reaches checkout, when they have not signed 
 // Added by trace-lane.py: criteria the lane's tests name by ID.
 traced("F04/R1-AC7", "Given a player under 18, when they buy an Adult item, then it is allowed (D62, H", [{ file: "packages/domain/src/checkout/pricing.test.ts", has: "R1-AC7" }]);
 traced("F04/R3-AC7", "Given the add-on name for balls, when it is shown anywhere, then the English is ", [{ file: "packages/db/src/price-template.test.ts", has: "R3-AC7" }]);
+
+// Added by trace-lane.py: criteria the lane's tests name by ID.
+traced("F04/R1-AC6", "Given a Student item (a package, class or price sold only to under 18) and a pla", [{ file: "packages/domain/src/checkout/package.test.ts", has: "R1-AC6" }, { file: "apps/web/src/api/checkout/package-pay.routes.test.ts", has: "R1-AC6" }]);

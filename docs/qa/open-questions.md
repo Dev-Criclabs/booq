@@ -23,7 +23,6 @@ Questions already open elsewhere are not repeated: `canvas-gaps.md` C1 (correcte
 | # | Pri | Req | Question | Waits |
 |---|---|---|---|---|
 | Q-16 | B | CANCEL-03 | D48 answers a closure over a held slot (the hold is cancelled and the player told; a later payment follows PAY-03) and D118 covers repeat closures and expired packages. **Still open:** a closure over a group session and over a booking already played | CONC-13 |
-| Q-36 | B | CANCEL-04-AC9 | AC9 says the no show timing is read from a club setting (empty until the owner sets it). D118 says staff mark a no show only after the slot ends and nothing else; the lane's test confirms no setting is read. Is AC9 removed? | CANCEL-04-AC9 test |
 | Q-18 | B | PROMO-02 | "Friend's first paid booking is played": does a booking paid with credits or wallet count as paid? If the friend's first booking is cancelled or a no show, does the reward wait for the next one? One reward per referred friend? | PROMO-02 tests |
 
 ## Payments, receipts (F05, F13)
@@ -80,6 +79,7 @@ QA tests and the fakes follow these. Wording of the rules is in the decision log
 | Q-22 | PAY-06 | D56 (No banking app, QR failed at the counter, Other with a note; cash allowed for packages; Front desk and Owner only) |
 | Q-25 | RCPT-01, LINE-04 | D106 (numbers per club per Bangkok year, prefix set in P2 step 1), D64 (a receipt for a zero money order, same series), D119 (no credit note when value goes to the wallet) |
 | Q-26 | RCPT-03 | D119 (money methods listed; wallet and credit use as separate non money lines; a closed day is not reopened, a later void shows on the day it is made) |
+| Q-36 | CANCEL-04-AC9 | D172 (no show timing is not a setting; AC9 withdrawn) |
 | G-02 | ADMIN IDs | D53 (one ADMIN-nn ID per page; ADMIN-01 to ADMIN-17 now in the hand-off) |
 | G-03 | copy-index.csv | D31 (generated from the canvas by the i18n role) |
 
