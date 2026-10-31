@@ -90,7 +90,7 @@ describe("F09 CANCEL-03", () => {
   // Given the owner wants to change opening hours or remove a court under existing bookings, when they try, then it is refused and they use a closure instead (D50).
   test.todo("F09/CANCEL-03-AC10 Given the owner wants to change opening hours or remove a court under existing bookings, when they try, ...");
   // Given a closure is removed or shortened, when it is saved, then the slots become Open again; cancelled bookings are not restored.
-  test.todo("F09/CANCEL-03-AC11 Given a closure is removed or shortened, when it is saved, then the slots become Open again; cancelled ...");
+  // F09/CANCEL-03-AC11: proven by a real or traced test in another file of this folder
   // Given a closure cancels a booking whose package has already expired (the credit was reserved before expiry, D85), when it is confirmed, then the credit is returned and the package is listed on the closure screen; the owner extends it with a written reason (D118, F06 PKG-03-AC5).
   // F09/CANCEL-03-AC12: proven by a real or traced test in another file of this folder
   // Given a closure over a Paused club, when it is created, then it works as for a Live club (the owner can still manage existing bookings, D60).
