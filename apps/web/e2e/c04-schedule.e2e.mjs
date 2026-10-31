@@ -156,3 +156,56 @@ describe('C4 schedule (F03-T24)', () => {
     }
   });
 });
+
+describe('refusals on C4 (F03-T25)', () => {
+  const back = (base, q) => `${base}/c/hunter/book?date=${TODAY}&${q}`;
+
+  it('BOOK-01-AC15, BOOK-04-AC4: a slot taken meanwhile is told in both languages on a fresh grid, and nothing is charged', async () => {
+    for (const lang of ['th', 'en']) {
+      const { page, context, calls } = await openPage(browser, { liff: guest, lang, schedule: schedule() });
+      await page.goto(back(app.base, 'refused=slot_unavailable&by=resource'));
+      await page.getByTestId('refusal').waitFor();
+      await page.getByTestId('grid').waitFor();
+      const text = await page.getByTestId('refusal').innerText();
+      assert.match(text, lang === 'en' ? /no longer available.*Nothing was booked or charged/ : /ไม่ว่างแล้ว.*ยังไม่มีการจองหรือเรียกเก็บเงิน/);
+      assert.ok(calls.some((c) => c.path.endsWith('/schedule')), 'the grid was read again');
+      assert.deepEqual(calls.filter((c) => c.method !== 'GET'), [], 'nothing sent');
+      const u = new URL(page.url());
+      assert.equal(u.searchParams.get('refused'), null, 'the refusal leaves the address');
+      assert.equal(u.searchParams.get('date'), TODAY);
+      assert.equal(await page.locator('[data-state=selected]').count(), 0);
+      await page.screenshot({ path: join(SHOTS, `C4-refused-slot-${lang}.png`) });
+      await context.close();
+    }
+  });
+
+  it('BOOK-05-AC8, D61: the limit names {hours}, too many attempts names {seconds}, the window names its days', async () => {
+    for (const [q, re] of [
+      ['refused=limit_reached&hours=4', /up to 4 hours/],
+      ['refused=too_many_attempts&seconds=30', /30 seconds/],
+      ['refused=outside_window', /up to 6 days ahead/],
+      ['refused=hour_started', /already started/],
+    ]) {
+      const { page, context } = await openPage(browser, { liff: guest, lang: 'en', schedule: schedule() });
+      await page.goto(back(app.base, q));
+      await page.getByTestId('refusal').waitFor();
+      assert.match(await page.getByTestId('refusal').innerText(), re, q);
+      await context.close();
+    }
+  });
+
+  it('an unknown code or a missing value shows nothing, and picking an hour clears the message', async () => {
+    const odd = await openPage(browser, { liff: guest, lang: 'en', schedule: schedule() });
+    await odd.page.goto(back(app.base, 'refused=not_a_code'));
+    await odd.page.getByTestId('grid').waitFor();
+    assert.equal(await odd.page.getByTestId('refusal').count(), 0);
+    await odd.page.goto(back(app.base, 'refused=limit_reached'));
+    await odd.page.getByTestId('grid').waitFor();
+    assert.equal(await odd.page.getByTestId('refusal').count(), 0, 'never a raw {hours}');
+    await odd.page.goto(back(app.base, 'refused=slot_unavailable'));
+    await odd.page.getByTestId('refusal').waitFor();
+    await odd.page.locator('[data-state=open]').first().click();
+    assert.equal(await odd.page.getByTestId('refusal').count(), 0);
+    await odd.context.close();
+  });
+});
