@@ -44,6 +44,17 @@ const BUILT: Record<string, string[]> = {
     'PUT /staff/class-sessions/:id class.session.edit', 'POST /staff/class-sessions/:id/cancel class.session.cancel', 'POST /staff/class-sessions/:id/resolve class.session.edit',
     'GET /staff/class-sessions/:id/roster class.roster.read', 'GET /staff/waitlist class.session.read',
   ],
+  A9: [
+    'GET /staff/setup/price-groups price.read', 'POST /staff/setup/price-groups price.write', 'PUT /staff/setup/price-groups/:id price.write', 'DELETE /staff/setup/price-groups/:id price.write',
+    'GET /staff/setup/court-prices price.read', 'POST /staff/setup/court-prices price.write', 'PUT /staff/setup/court-prices/:id price.write', 'DELETE /staff/setup/court-prices/:id price.write',
+    'GET /staff/setup/coach-tiers price.read', 'POST /staff/setup/coach-tiers price.write', 'PUT /staff/setup/coach-tiers/:id price.write', 'DELETE /staff/setup/coach-tiers/:id price.write',
+    'GET /staff/setup/coach-tier-prices price.read', 'PUT /staff/setup/coach-tier-prices price.write',
+    'GET /staff/setup/add-ons price.read', 'POST /staff/setup/add-ons price.write', 'PUT /staff/setup/add-ons/:id price.write', 'DELETE /staff/setup/add-ons/:id price.write',
+  ],
+  A10: [
+    'GET /staff/setup/partners price.read', 'POST /staff/setup/partners price.write', 'PUT /staff/setup/partners/:id price.write', 'DELETE /staff/setup/partners/:id price.write',
+    'GET /staff/setup/promo-codes price.read', 'POST /staff/setup/promo-codes price.write', 'PUT /staff/setup/promo-codes/:id price.write', 'DELETE /staff/setup/promo-codes/:id price.write',
+  ],
   A13: [
     'GET /staff/coach-pay payout.read', 'GET /staff/coach-pay/csv payout.read', 'POST /staff/coach-pay/:id/adjustments payout.adjust', 'POST /staff/coach-pay/:id/paid payout.pay',
     'GET /staff/reports/:name report.read', 'GET /staff/reports/:name/csv report.read', 'GET /staff/daily-close daily-close.run', 'GET /staff/daily-close/csv daily-close.run', 'POST /staff/daily-close daily-close.run'],
@@ -59,8 +70,7 @@ const BUILT: Record<string, string[]> = {
 // Routes the design needs that another feature owns and that are not mounted yet (F11 design 5; the owner of each is named).
 const GAPS: Record<string, string[]> = {
   A2: ['POST /staff/bookings (F03)', 'GET /staff/bookings/:id/cancel-preview (F09)', 'POST /staff/bookings/:id/cancel (F09)', 'POST /staff/bookings/:id/mark (F09)', 'POST /staff/bookings/:id/mark/reverse (F09)', 'POST /staff/orders/:id/package-sale (F06)'],
-  A9: ['GET /staff/setup/price-groups (F04)', 'GET /staff/setup/court-prices (F04)', 'GET /staff/setup/coach-tier-prices (F04)', 'GET /staff/setup/add-ons (F04)', 'GET /staff/setup/package-products (F06)'],
-  A10: ['GET /staff/setup/promo-codes (F04)', 'GET /staff/setup/partners (F04)'],
+  A9: ['GET /staff/setup/package-products (F06)'],
   A12: ['POST /staff/closures/preview (F09)', 'POST /staff/closures (F09)', 'GET /staff/closures (F09)', 'POST /staff/closures/:id/end (F09)', 'GET /staff/closures/:id/expired-packages (F09)'],
   A13: ['GET /staff/reports/owed (F06)'],
   A16: ['GET /staff/rich-menu (F10)', 'PUT /staff/rich-menu/labels (F10)'],
