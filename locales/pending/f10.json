@@ -33,7 +33,8 @@
     "L-new.msg_cap_paid_over_body": "Your club passed its monthly LINE message limit. LINE bills the club for the extra messages this month.",
     "L-new.msg_waitlist_ended_title": "Your waitlist place has ended",
     "L-new.msg_waitlist_ended_body": "The class was cancelled, so its waitlist is closed.",
-    "L-new.msg_class_changed_title": "Your class has changed"
+    "L-new.msg_class_changed_title": "Your class has changed",
+    "L-new.rich_menu_chat_bar": "Menu"
   },
   "th": {
     "L-new.msg_booked_title": "จองสำเร็จแล้ว",
@@ -68,6 +69,7 @@
     "L-new.msg_cap_paid_over_body": "สโมสรของคุณส่งข้อความ LINE เกินโควตาของเดือนนี้แล้ว LINE จะเรียกเก็บค่าข้อความส่วนเกินจากสโมสร",
     "L-new.msg_waitlist_ended_title": "สิทธิ์ในรายชื่อรอของคุณสิ้นสุดแล้ว",
     "L-new.msg_waitlist_ended_body": "คลาสนี้ถูกยกเลิก รายชื่อรอจึงปิดแล้ว",
-    "L-new.msg_class_changed_title": "คลาสของคุณมีการเปลี่ยนแปลง"
+    "L-new.msg_class_changed_title": "คลาสของคุณมีการเปลี่ยนแปลง",
+    "L-new.rich_menu_chat_bar": "เมนู"
   }
 }
