@@ -8,7 +8,14 @@
     "P-new.checkout_working": "Please wait…",
     "P-new.checkout_back_to_courts": "Back to courts",
     "P-new.checkout_code_hint_not_applied": "Your birthday discount is larger, so the code was not used.",
-    "P-new.checkout_hold_note": "Your hour is held when you tap pay."
+    "P-new.checkout_hold_note": "Your hour is held when you tap pay.",
+    "P-new.pay_expired_text": "The time to pay ran out, so Court {court} at {time} was released. Nothing was charged.",
+    "P-new.pay_failed_title": "The payment did not go through",
+    "P-new.pay_failed_text": "Nothing was charged and your hour was released. Please book again.",
+    "P-new.pay_wallet_title": "Your payment arrived late",
+    "P-new.pay_wallet_text": "The time ran out before the payment arrived, so the court was released. The money is in your wallet.",
+    "P-new.pay_save_qr_hint": "Press and hold the QR to save it, or tap Save QR to photos.",
+    "P-new.pay_open_failed": "We could not check your payment. Check your internet, your hour is still held."
   },
   "th": {
     "P-new.checkout_price_changed": "ราคาเปลี่ยนระหว่างที่คุณดูอยู่ ตรวจยอดใหม่แล้วกดชำระอีกครั้ง",
@@ -18,6 +25,13 @@
     "P-new.checkout_working": "กรุณารอสักครู่…",
     "P-new.checkout_back_to_courts": "กลับไปเลือกคอร์ต",
     "P-new.checkout_code_hint_not_applied": "ส่วนลดวันเกิดของคุณมากกว่า จึงไม่ได้ใช้โค้ด",
-    "P-new.checkout_hold_note": "ระบบจะล็อกชั่วโมงให้เมื่อคุณกดชำระ"
+    "P-new.checkout_hold_note": "ระบบจะล็อกชั่วโมงให้เมื่อคุณกดชำระ",
+    "P-new.pay_expired_text": "หมดเวลาชำระเงิน คอร์ต {court} เวลา {time} จึงถูกปล่อยแล้ว ไม่มีการเรียกเก็บเงิน",
+    "P-new.pay_failed_title": "การชำระเงินไม่สำเร็จ",
+    "P-new.pay_failed_text": "ไม่มีการเรียกเก็บเงิน และเวลาที่จองถูกปล่อยแล้ว กรุณาจองใหม่อีกครั้ง",
+    "P-new.pay_wallet_title": "ชำระเงินล่าช้า",
+    "P-new.pay_wallet_text": "หมดเวลาก่อนที่เงินจะเข้า คอร์ตจึงถูกปล่อยแล้ว เงินจำนวนนี้อยู่ในวอลเล็ตของคุณ",
+    "P-new.pay_save_qr_hint": "กดค้างที่ QR เพื่อบันทึก หรือแตะบันทึก QR ลงอัลบั้ม",
+    "P-new.pay_open_failed": "ตรวจสอบการชำระเงินไม่ได้ กรุณาเช็กอินเทอร์เน็ต เวลาที่จองยังล็อกไว้ให้"
   }
 }
