@@ -12,7 +12,7 @@ import type { PlatformTx } from '@booq/db';
 
 export interface LineProbe {
   /** One authenticated read of the messaging channel. Returns the official account's basic id when it has one. */
-  check(input: { channelAccessToken: string; expectedBasicId?: string | undefined }): Promise<{ ok: true; basicId?: string } | { ok: false; code: string }>;
+  check(input: { channelAccessToken: string; expectedBasicId?: string | undefined; loginChannelId?: string | undefined; liffId?: string | undefined }): Promise<{ ok: true; basicId?: string } | { ok: false; code: string }>;
 }
 
 export interface BeamProbe {
@@ -31,6 +31,8 @@ export interface ConnectionPlan {
   secrets: Array<{ kind: SecretKind; value: string }>;
   /** null when no test was asked for. */
   test: TestOutcome | null;
+  /** The staff member chose to save although the test failed (D167); the failed check is recorded in club_health. */
+  saveAnyway: boolean;
 }
 
 export interface AppliedConnection {
@@ -56,9 +58,9 @@ export interface ConnectionsDeps {
 }
 
 export function createConnections(deps: ConnectionsDeps) {
-  async function runLine(token: string, expectedBasicId?: string): Promise<TestOutcome> {
+  async function runLine(token: string, expectedBasicId?: string, ids: { loginChannelId?: string; liffId?: string } = {}): Promise<TestOutcome> {
     try {
-      const r = await deps.line.check({ channelAccessToken: token, expectedBasicId });
+      const r = await deps.line.check({ channelAccessToken: token, expectedBasicId, ...ids });
       if (!r.ok) return { result: 'fail', code: r.code };
       if (expectedBasicId !== undefined && r.basicId !== undefined && r.basicId !== expectedBasicId) return { result: 'fail', code: 'oa_mismatch' };
       return { result: 'pass' };
@@ -82,13 +84,15 @@ export function createConnections(deps: ConnectionsDeps) {
     if (!isObject(body)) return { ok: false };
     const wantTest = body['test'];
     if (wantTest !== undefined && typeof wantTest !== 'boolean') return { ok: false };
+    const saveAnyway = body['save_anyway'];
+    if (saveAnyway !== undefined && (typeof saveAnyway !== 'boolean' || wantTest !== true)) return { ok: false };
     const fields: readonly string[] = section === 'line' ? LINE_FIELDS : PAY_FIELDS;
     const secretKinds: readonly string[] = section === 'line' ? LINE_SECRETS : PAY_SECRETS;
     const columns: ConnectionPlan['columns'] = {};
     const secrets: ConnectionPlan['secrets'] = [];
     let paymentOption: string | undefined;
     for (const [k, v] of Object.entries(body)) {
-      if (k === 'test') continue;
+      if (k === 'test' || k === 'save_anyway') continue;
       if (fields.includes(k)) {
         if (!text(v)) return { ok: false };
         columns[k] = v.trim();
@@ -110,14 +114,17 @@ export function createConnections(deps: ConnectionsDeps) {
         return { ok: false };
       }
     }
-    if (Object.keys(body).filter((k) => k !== 'test' && k !== 'test_mode').length === 0) return { ok: false };
+    if (Object.keys(body).filter((k) => k !== 'test' && k !== 'test_mode' && k !== 'save_anyway').length === 0) return { ok: false };
 
     let test: TestOutcome | null = null;
     if (wantTest === true) {
       if (section === 'line') {
         const token = body['line_channel_token'];
         if (!text(token)) return { ok: false };
-        test = await runLine(token, typeof columns['oa_basic_id'] === 'string' ? (columns['oa_basic_id'] as string) : undefined);
+        test = await runLine(token, typeof columns['oa_basic_id'] === 'string' ? (columns['oa_basic_id'] as string) : undefined, {
+          ...(typeof columns['login_channel_id'] === 'string' ? { loginChannelId: columns['login_channel_id'] as string } : {}),
+          ...(typeof columns['liff_id'] === 'string' ? { liffId: columns['liff_id'] as string } : {}),
+        });
       } else {
         const mode = body['test_mode'];
         if (mode !== 'test' && mode !== 'live') return { ok: false };
@@ -129,7 +136,7 @@ export function createConnections(deps: ConnectionsDeps) {
     } else if (body['test_mode'] !== undefined) {
       return { ok: false };
     }
-    return { ok: true, plan: { section, columns, ...(paymentOption ? { paymentOption } : {}), secrets, test } };
+    return { ok: true, plan: { section, columns, ...(paymentOption ? { paymentOption } : {}), secrets, test, saveAnyway: saveAnyway === true } };
   }
 
   /** Writes a prepared plan in the caller's transaction. The database checks the staff member, the club and the window. */
@@ -148,9 +155,14 @@ export function createConnections(deps: ConnectionsDeps) {
     );
     if (plan.paymentOption !== undefined) {
       const r = await tx.query('update public.club set payment_option = $2 where id = $1', [clubId, plan.paymentOption]);
-      if (r.rowCount !== 1) throw new Error('connections: the club row was not updated');
+      if (r.rowCount !== 1) throw new Error('connections: the club row was not updated');  // i18n-ignore internal assertion or start up error, logged, never shown to a user
     }
     for (const s of plan.secrets) await writeSecretAsStaff(tx, deps.encryptKey, clubId, s.kind, s.value);
+    // A tested connection leaves its result in club_health: a pass clears an old failure, a failure that was saved anyway shows in P1 (D167).
+    if (plan.test) {
+      const check = healthCheck(plan.section, plan.test);
+      if (check) await tx.query('select platform.record_connection_check($1, $2, $3)', [clubId, check.key, check.reason]);
+    }
 
     const fields = [...cols, ...(plan.paymentOption !== undefined ? ['payment_option'] : [])];
     return {
@@ -174,8 +186,10 @@ export function createConnections(deps: ConnectionsDeps) {
     if (kind === 'line') {
       const token = body['channel_access_token'];
       const basic = body['oa_basic_id'];
-      if (!text(token) || keys.some((k) => k !== 'channel_access_token' && k !== 'oa_basic_id') || (basic !== undefined && !text(basic))) return { ok: false, code: 'invalid' };
-      return { ok: true, ...(await runLine(token, basic as string | undefined)) };
+      const login = body['login_channel_id'];
+      const liff = body['liff_id'];
+      if (!text(token) || keys.some((k) => !['channel_access_token', 'oa_basic_id', 'login_channel_id', 'liff_id'].includes(k)) || (basic !== undefined && !text(basic)) || (login !== undefined && !text(login)) || (liff !== undefined && !text(liff))) return { ok: false, code: 'invalid' };
+      return { ok: true, ...(await runLine(token, basic as string | undefined, { ...(login ? { loginChannelId: login as string } : {}), ...(liff ? { liffId: liff as string } : {}) })) };
     }
     const { mode, api_key: apiKey, merchant_id: merchant } = body;
     if ((mode !== 'test' && mode !== 'live') || !text(apiKey) || !text(merchant) || keys.length !== 3) return { ok: false, code: 'invalid' };
@@ -183,6 +197,17 @@ export function createConnections(deps: ConnectionsDeps) {
   }
 
   return { prepare, apply, test };
+}
+
+/** Which club_health row a probe result belongs to, and its reason (null: ok). A failure with no row of its own (an id of the wrong form) is only logged. */
+export function healthCheck(section: 'line' | 'payments', test: TestOutcome): { key: string; reason: string | null } | null {
+  if (test.result === 'pass') return { key: section === 'line' ? 'line_token' : 'beam_keys', reason: null };
+  const code = test.code;
+  if (section === 'line') return code.startsWith('messaging_api_') ? { key: 'line_token', reason: code.slice('messaging_api_'.length).slice(0, 40) } : null;
+  if (code === 'not_configured') return { key: 'beam_keys', reason: 'keys_missing' };
+  if (code === 'key_refused') return { key: 'beam_keys', reason: 'key_refused' };
+  if (code === 'unreachable') return { key: 'beam_charge', reason: 'unreachable' };
+  return null;
 }
 
 export type Connections = ReturnType<typeof createConnections>;

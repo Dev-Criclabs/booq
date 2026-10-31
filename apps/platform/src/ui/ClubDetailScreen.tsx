@@ -1,5 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { ConnectionEditor } from './ConnectionEditor';
+import { ConnectionHealth } from './ConnectionHealth';
 import { ConsoleNav } from './ConsoleNav';
 import {
   BASICS_FIELDS, changeStatus, issueWebhookToken, itemKey, LAUNCH_KEY, loadClub, pauseClub, RESULT_KEY, resumeClub, saveBasics, sendOwnerInvite, SETUP_KEY, WEBHOOK_KINDS,
@@ -245,7 +247,6 @@ export function ClubDetailScreen({ id }: { id: string }) {
                     <button key={k} type="button" className="btn secondary" disabled={busy || mode === 'look'} onClick={() => onWebhook(k)} data-testid={`webhook-${k}`}>{t(`X-new.webhook_${k}`)}</button>
                   ))}
                 </div>
-                <p className="sub">{t('X-new.support_connections_note')}</p>
               </section>
             ) : null}
 
@@ -287,6 +288,12 @@ export function ClubDetailScreen({ id }: { id: string }) {
               )}
               <h3>{t('X-new.support_settings')}</h3>
               <SettingsEditor id={id} canEdit={mode === 'edit'} askStepUp={(run) => setPending({ run })} onNotice={setNotice} />
+              <h3>{t('X-new.health_title')}</h3>
+              <ConnectionHealth id={id} support={club.support} reload={reload} onNotice={setNotice} />
+              <h3>{t('X-0140')}</h3>
+              <ConnectionEditor id={id} kind="line" canEdit={mode === 'edit'} askStepUp={(run) => setPending({ run })} onNotice={setNotice} onSaved={reload} />
+              <h3>{t('X-0038')}</h3>
+              <ConnectionEditor id={id} kind="payments" canEdit={mode === 'edit'} option={club.support.club['payment_option'] === 'beam' || club.support.club['payment_option'] === 'slip' ? club.support.club['payment_option'] : ''} askStepUp={(run) => setPending({ run })} onNotice={setNotice} onSaved={reload} />
             </section>
             </div>
           </>

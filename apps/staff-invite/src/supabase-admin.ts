@@ -22,7 +22,7 @@ export function createSupabaseAdmin(options: SupabaseAdminOptions): SupabaseAdmi
       headers: { apikey: options.serviceRoleKey, authorization: `Bearer ${options.serviceRoleKey}`, ...(body === undefined ? {} : { 'content-type': 'application/json' }) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
-    if (!res.ok) throw new Error(`identity provider answered ${res.status} for ${method}`);
+    if (!res.ok) throw new Error(`identity provider answered ${res.status} for ${method}`);  // i18n-ignore internal error between servers, logged, never shown to a user
     const text = await res.text();
     return text === '' ? null : JSON.parse(text);
   }
@@ -32,7 +32,7 @@ export function createSupabaseAdmin(options: SupabaseAdminOptions): SupabaseAdmi
     // link (migration 0055), handed over by the admin, so its life and its use are ours to set and to log.
     async inviteUser(email) {
       const u = (await call('POST', '/admin/users', { email, email_confirm: true })) as { id?: unknown } | null;
-      if (!u || typeof u.id !== 'string') throw new Error('identity provider gave no user id');
+      if (!u || typeof u.id !== 'string') throw new Error('identity provider gave no user id');  // i18n-ignore internal error between servers, logged, never shown to a user
       return { authUserId: u.id };
     },
     async resetFactors(authUserId) {
@@ -49,7 +49,7 @@ export function createSupabaseAdmin(options: SupabaseAdminOptions): SupabaseAdmi
         body: JSON.stringify({ password }),
       });
       if (res.status === 422) return 'weak'; // the project's own password rule refused it
-      if (!res.ok) throw new Error(`identity provider answered ${res.status} for PUT`);
+      if (!res.ok) throw new Error(`identity provider answered ${res.status} for PUT`);  // i18n-ignore internal error between servers, logged, never shown to a user
       return 'ok';
     },
     async removeUnverifiedFactors(authUserId) {

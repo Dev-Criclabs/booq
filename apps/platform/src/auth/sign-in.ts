@@ -146,7 +146,7 @@ export type AuthenticateResult =
 export type StepUpResult = { ok: true } | { ok: false; code: 'bad_code' | 'locked' | 'session_invalid' };
 
 export function createPlatformAuth(deps: PlatformAuthDeps) {
-  if (deps.signingKey.length < 32) throw new Error('platform auth: signing key must be at least 32 characters');
+  if (deps.signingKey.length < 32) throw new Error('platform auth: signing key must be at least 32 characters');  // i18n-ignore internal assertion or start up error, logged, never shown to a user
   const { identity, staff, audit, store, clock } = deps;
   const policy: AuthPolicy = { ...DEFAULT_POLICY, ...deps.policy };
   const now = () => clock.now().getTime();

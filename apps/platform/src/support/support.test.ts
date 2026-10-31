@@ -58,7 +58,7 @@ describe('reading the setup projection', () => {
     expect(r.setup.settings).toEqual([{ key: 'hold_minutes', value: 15 }]);
     expect(r.setup.features).toEqual([{ feature_key: 'coach_add_at_checkout', enabled: true }]);
     expect(r.setup.locations).toHaveLength(1);
-    expect(Object.keys(r.setup).sort()).toEqual(['club', 'featureKeys', 'features', 'hours', 'locations', 'mode', 'resources', 'settings']);
+    expect(Object.keys(r.setup).sort()).toEqual(['checkRequestedAt', 'club', 'featureKeys', 'features', 'health', 'hours', 'locations', 'mode', 'resources', 'settings']);
     expect(r.setup.featureKeys.map((k) => k.feature_key)).toEqual(['backup_mode', 'coach_add_at_checkout', 'slip_checking']);
     expect(r.setup.featureKeys.find((k) => k.feature_key === 'slip_checking')?.requires_payment_option).toBe('slip');
   });

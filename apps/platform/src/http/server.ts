@@ -37,9 +37,9 @@ const METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
 const ACCESS = new Set<string>(['public', 'staff', 'admin']);
 
 export function platformRoute(def: PlatformRoute['def'], run: (ctx: PlatformContext) => Promise<unknown>): PlatformRoute {
-  if (!METHODS.has(def.method)) throw new Error(`platform route ${def.method} ${def.path}: method must be GET, POST, PUT, PATCH or DELETE`);
-  if (!def.path.startsWith('/')) throw new Error(`platform route ${def.method} ${def.path}: path must start with "/"`);
-  if (!ACCESS.has(def.access)) throw new Error(`platform route ${def.method} ${def.path}: access must be public, staff or admin`);
+  if (!METHODS.has(def.method)) throw new Error(`platform route ${def.method} ${def.path}: method must be GET, POST, PUT, PATCH or DELETE`);  // i18n-ignore internal assertion or start up error, logged, never shown to a user
+  if (!def.path.startsWith('/')) throw new Error(`platform route ${def.method} ${def.path}: path must start with "/"`);  // i18n-ignore internal assertion or start up error, logged, never shown to a user
+  if (!ACCESS.has(def.access)) throw new Error(`platform route ${def.method} ${def.path}: access must be public, staff or admin`);  // i18n-ignore internal assertion or start up error, logged, never shown to a user
   return { def, run };
 }
 
@@ -89,7 +89,7 @@ function serveNow(table: readonly PlatformRoute[], deps: PlatformServeDeps): Pla
   const seen = new Set<string>();
   for (const r of table) {
     const key = `${r.def.method} ${r.def.path}`;
-    if (seen.has(key)) throw new Error(`platform route table: ${key} registered twice`);
+    if (seen.has(key)) throw new Error(`platform route table: ${key} registered twice`);  // i18n-ignore internal assertion or start up error, logged, never shown to a user
     seen.add(key);
   }
   const compiled = table.map((route) => ({ route, segments: route.def.path.split('/').filter(Boolean) }));
