@@ -63,6 +63,7 @@ const BUILT: Record<string, string[]> = {
     'PUT /club/business club.business.write',
     'GET /settings settings.business.read', 'PUT /settings/:key settings.write', 'PUT /hours hours.write', 'POST /resources resource.write', 'PUT /resources/:id resource.write',
     'PUT /support-window support-window.write',
+    'POST /exports export.run', 'GET /exports/:id export.run',
   ],
   A17: ['GET /staff staff.manage', 'POST /staff/invites staff.manage', 'GET /staff/invites staff.manage', 'PUT /staff/:userId/roles roles.assign', 'POST /staff/:userId/deactivate staff.manage', 'GET /staff/audit audit.read'],
 };
