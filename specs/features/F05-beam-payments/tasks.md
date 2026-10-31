@@ -60,7 +60,7 @@ Depends on: F01 T09 (connections and secrets), T18, T34 (worker); F03 T13, T14 (
   Tests first: a wrong amount (under and over) opens a flag and answers 200; another club's charge never matches; a callback for an order created before a Pause is still processed.
 - [x] **F05-T08c** Webhook, part (c): response codes and alerts (unknown charge 200 plus alert, Beam unreachable 500 so Beam retries) and `platform.club_health` rows (counts and kinds only). IDs: PAY-02-AC9, AC14, AC15, PAY-01-AC7, decisions D71, D75. Role: BE-C · Deps T08b · Size: S
   Tests first: an unknown charge answers 200 and alerts; Beam down answers 500; bad signature, failed key check, unreachable Beam and unknown charge each add a row with no order or player data.
-- [ ] **F05-T09** Worker tasks `beam_reconcile`, `package_order_expiry`, and the `qr_image` clean-up. IDs: PAY-02-AC15, PAY-04-AC1 to AC7, decisions D73, D74. Role: BE-C · Deps T08b, F01-T34 · Size: M
+- [x] **F05-T09** Worker tasks `beam_reconcile`, `package_order_expiry`, and the `qr_image` clean-up. IDs: PAY-02-AC15, PAY-04-AC1 to AC7, decisions D73, D74. Role: BE-C · Deps T08b, F01-T34 · Size: M
   Tests first: reconcile confirms only when status, amount and reference all match, audited as by lookup; a package-only order is cancelled at the end of its QR time with no ledger rows and a payment after that goes to the wallet with a receipt; final payments lose their image.
 
 ## D. Setup and screens
