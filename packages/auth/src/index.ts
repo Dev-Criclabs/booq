@@ -2,6 +2,7 @@ export const packageName = '@booq/auth';
 
 export { can, canAll, isPermission, permissionNames, ROLES, type Role } from './permissions';
 export {
+  FileReply,
   Reply,
   route,
   RouteError,

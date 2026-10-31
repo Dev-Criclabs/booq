@@ -101,10 +101,10 @@ describe('balances equal the ledger sum (PKG-01-AC1)', () => {
       expect((await read<{ club_id: string }>(`select club_id from public.${v}`, [], B)).map((r) => r.club_id), v).toEqual([B]);
     }
   });
-  it('only wallet_balance is open to booq_app (for the quote, 0512); the rest wait for F06-T11; BOOQ staff never', async () => {
+  it('the app and the worker read the views (rows by the rule of 0513); BOOQ staff never', async () => {
     for (const v of ['wallet_balance', 'package_balance', 'package_status']) {
       for (const role of ['booq_app', 'booq_worker', 'booq_platform']) {
-        const open = role === 'booq_app' && v === 'wallet_balance';
+        const open = role !== 'booq_platform';
         expect((await tdb.query('select has_table_privilege($1, $2, $3) as ok', [role, `public.${v}`, 'select'])).rows[0].ok, `${role} ${v}`).toBe(open);
       }
     }

@@ -186,3 +186,36 @@ describe('who may take a seat, and which class (CLASS-01-AC5, CC-2)', () => {
     expect(n).toBe(0);
   });
 });
+
+describe('the Pay tap limit (D61, migration 0913)', () => {
+  const nextSession = async (n = 1) => (await tdb.query(`select id from public.class_session where template_id = (select template_id from public.class_session where id = $1) order by start_at offset $2 limit 1`, [session, n])).rows[0].id as string;
+
+  it('counts one tap per seat attempt in the counter shared with reserve_court; the third tap in the window is refused with the wait', async () => {
+    await tdb.query(`insert into platform.config (key, value) values ('pay_tap_limit_count', '2'), ('pay_tap_limit_window_seconds', '60') on conflict (key) do update set value = excluded.value`);
+    const second = await nextSession();
+    const third = await nextSession(2);
+    expect(await take(players[0]!, await order(players[0]!))).toMatchObject({ ok: true });
+    expect(await take(players[0]!, await order(players[0]!), second)).toMatchObject({ ok: true });
+    const r = await db.withClubTx(ctx(players[0]!, ['player']), async (tx) => tx.query(`select app.take_seat($1, $2)`, [await order(players[0]!), third]).then(() => 'ok', (e: { code?: string; message: string; detail?: string }) => [e.code, e.message, e.detail]));
+    expect(r[0]).toBe('BK001');
+    expect(r[1]).toBe('too_many_attempts');
+    expect(Number(r[2])).toBeGreaterThanOrEqual(1);
+  });
+
+  it('a second tap that only returns the held seat is not counted, and a refused tap leaves no count behind', async () => {
+    await tdb.query(`insert into platform.config (key, value) values ('pay_tap_limit_count', '2'), ('pay_tap_limit_window_seconds', '60') on conflict (key) do update set value = excluded.value`);
+    const o = await order(players[0]!);
+    await take(players[0]!, o);
+    for (let i = 0; i < 4; i += 1) expect(await take(players[0]!, o)).toMatchObject({ ok: true, res: { reused: true } });
+    expect((await tdb.query(`select count(*)::int as n from public.pay_tap where user_id = $1`, [players[0]])).rows[0].n).toBe(1);
+    expect(await take(players[0]!, await order(players[0]!), studentSession)).toEqual({ ok: false, code: 'class_not_for_you' });
+    expect((await tdb.query(`select count(*)::int as n from public.pay_tap where user_id = $1`, [players[0]])).rows[0].n).toBe(1);
+  });
+
+  it('with the limit unset nothing is refused', async () => {
+    for (let i = 0; i < 3; i += 1) {
+      const p = players[i]!;
+      expect(await take(p, await order(p))).toMatchObject({ ok: true });
+    }
+  });
+});

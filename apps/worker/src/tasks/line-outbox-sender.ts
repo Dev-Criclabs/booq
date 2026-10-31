@@ -1,5 +1,5 @@
 import type { Db, Tx } from '@booq/db';
-import type { LineTransport, MessageBuilder, MessageLanguage, PushResult } from '@booq/line';
+import type { LineTransport, MessageBuilder, MessageFacts, MessageLanguage, PushResult } from '@booq/line';
 import { recordTaskRun } from '../heartbeat';
 
 // outbox_sender (F10-T08 and T09, steps 1 to 7 of F10 design 5.2; FA 5.3). Runs every 30 seconds. One tick:
@@ -8,7 +8,8 @@ import { recordTaskRun } from '../heartbeat';
 //     never take the same row; each row's lock is held until its result is written;
 //  3. app.prepare_message_send applies the send time preconditions and the cap gate (void or undeliverable with
 //     the reason) or returns the recipient's LINE id and the language read now (D93);
-//  4. the builder makes the message from locales/* in that language and the transport pushes it with the club's
+//  4. app.message_facts reads the names, hours and amounts the ids in params lead to (never stored, CC-3); the builder
+//     (F10-T10) makes the card from locales/* in that language and the transport pushes it with the club's
 //     token (club_secret, read by the worker only) and the row's retry key (F10-T09);
 //  5. app.record_send_result writes what the push did: sent (and the usage counts), a 429 monthly limit
 //     (undeliverable), a token failure (club_health, then retried), a retry (the same retry key next time, after the
@@ -69,7 +70,10 @@ export async function runOutboxSender(db: Db, deps: OutboxSenderDeps): Promise<O
                 clubId,
                 channelAccessToken: token,
                 to: prepared.to,
-                messages: await deps.builder.build({ clubId, messageId: id, kind: prepared.kind, params: prepared.params, language: prepared.language }),
+                messages: await deps.builder.build({
+                  clubId, messageId: id, kind: prepared.kind, params: prepared.params, language: prepared.language,
+                  facts: (await tx.query<{ f: MessageFacts }>('select app.message_facts($1) as f', [id])).rows[0]!.f,
+                }),
                 retryKey: prepared.retry_key,
               });
           const status = (await tx.query<{ s: string }>('select app.record_send_result($1, $2, $3) as s',

@@ -164,8 +164,8 @@ describe('who reads (CC-1, D35)', () => {
 
 describe('test rows (RCPT-01-AC15; D33)', () => {
   it('are registered to go at Go live before payments and orders, and the registry check passes', async () => {
-    const reg = (await tdb.query(`select table_name, delete_order from app.test_tables where table_name like 'receipt%' order by delete_order`)).rows;
-    expect(reg).toEqual([{ table_name: 'receipt_void', delete_order: 257 }, { table_name: 'receipt', delete_order: 258 }, { table_name: 'receipt_counter', delete_order: 259 }]);
+    const reg = (await tdb.query(`select table_name, delete_order from app.test_tables where table_name like 'receipt%' order by delete_order, table_name desc`)).rows;
+    expect(reg).toEqual([{ table_name: 'receipt_void', delete_order: 257 }, { table_name: 'receipt_print', delete_order: 257 }, { table_name: 'receipt', delete_order: 258 }, { table_name: 'receipt_counter', delete_order: 259 }]);
     expect((await checkTableClasses(tdb.pool, await collectRegistry())).problems.filter((p) => p.table !== 'app.test_clock')).toEqual([]);
   });
 });
