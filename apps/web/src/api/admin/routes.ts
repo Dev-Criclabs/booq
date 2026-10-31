@@ -1,6 +1,6 @@
 import { FileReply, pagesFor, route, RouteError, type Route, type RouteContext } from '@booq/auth';
 import type { ClubContext, Db, Tx } from '@booq/db';
-import { addCustomer, AdminError, type AdminErrorCode, customersCsv, listCustomers, setTag, shellState, staffCalendar } from '@booq/domain';
+import { addCustomer, addCustomerNote, AdminError, type AdminErrorCode, customerBookings, customerNotes, customerOrders, customerProfile, customersCsv, listCustomers, setTag, shellState, staffCalendar } from '@booq/domain';
 
 // F11 club admin routes (design 4 to 6, prefix /api/c/{slug}). Thin handlers: resolve the club from the session and the path slug, open
 // the club transaction, call the service in packages/domain/src/admin, answer a body or a typed code. No club id is read from the input.
@@ -98,6 +98,38 @@ export function customerRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[] {
       }),
       headers: NO_STORE,
     },
+    {
+      ...route({ method: 'GET', path: '/staff/customers/:id', permission: 'customer.contact.read' }, async (ctx) => {
+        const c = await sessionContext(deps, ctx);
+        return inTx(deps.db, c, (tx) => customerProfile(tx, inputOf(ctx)['id']));
+      }),
+      headers: NO_STORE,
+    },
+    {
+      ...route({ method: 'GET', path: '/staff/customers/:id/bookings', permission: 'customer.contact.read' }, async (ctx) => {
+        const c = await sessionContext(deps, ctx);
+        return inTx(deps.db, c, (tx) => customerBookings(tx, inputOf(ctx)['id']));
+      }),
+      headers: NO_STORE,
+    },
+    {
+      ...route({ method: 'GET', path: '/staff/customers/:id/orders', permission: 'customer.contact.read' }, async (ctx) => {
+        const c = await sessionContext(deps, ctx);
+        return inTx(deps.db, c, (tx) => customerOrders(tx, inputOf(ctx)['id']));
+      }),
+      headers: NO_STORE,
+    },
+    {
+      ...route({ method: 'GET', path: '/staff/customers/:id/notes', permission: 'customer.contact.read' }, async (ctx) => {
+        const c = await sessionContext(deps, ctx);
+        return inTx(deps.db, c, (tx) => customerNotes(tx, inputOf(ctx)['id']));
+      }),
+      headers: NO_STORE,
+    },
+    route({ method: 'POST', path: '/staff/customers/:id/notes', permission: 'customer.write' }, async (ctx) => {
+      const c = await sessionContext(deps, ctx);
+      return inTx(deps.db, c, (tx) => addCustomerNote(tx, inputOf(ctx)['id'], bodyOf(ctx)['note']));
+    }),
     route({ method: 'POST', path: '/staff/customers', permission: 'customer.write' }, async (ctx) => {
       const c = await sessionContext(deps, ctx);
       const b = bodyOf(ctx);

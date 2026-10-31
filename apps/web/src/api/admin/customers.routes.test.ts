@@ -105,3 +105,37 @@ describe('customers', () => {
     expect(await call('POST', '/staff/customers', as(ACC, ['accountant', 'player']), {}, { name: 'X Y', phone: '0813333335' })).toMatchObject({ ok: false, status: 403 });
   });
 });
+
+describe('customer profile (ADMIN-07)', () => {
+  async function bookingFor(customer: string) {
+    const order = (await tdb.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'online') returning id`, [A, customer])).rows[0].id as string;
+    await tdb.query(`insert into public.location (club_id, id, name) values ($1,'00000000-0000-4000-8000-0000000000a1','M')`, [A]);
+    await tdb.query(`insert into public.resource (club_id, id, location_id, name, sport) values ($1,'00000000-0000-4000-8000-0000000000c1','00000000-0000-4000-8000-0000000000a1','Court 1','tennis')`, [A]);
+    return (await tdb.query(
+      `insert into public.booking (club_id, order_id, type, resource_id, start_at, end_at, customer_id, status, source, created_by, confirmed_at)
+       values ($1,$2,'court','00000000-0000-4000-8000-0000000000c1','2026-12-05T10:00:00+07:00','2026-12-05T11:00:00+07:00',$3,'confirmed','online',$3, app.now()) returning id`, [A, order, customer])).rows[0].id as string;
+  }
+  it('front desk and owner read details including the date of birth; a missing, other-club or malformed id is 404; the accountant is refused', async () => {
+    expect((await call('GET', '/staff/customers/:id', desk(), { id: ANN })).body).toMatchObject({ customerId: ANN, fullName: null, displayName: 'Ann Smith', dateOfBirth: '1990-02-02', phone: '+66811111111', tags: [] });
+    expect((await call('GET', '/staff/customers/:id', as(OWNER, ['owner', 'player']), { id: ANN })).ok).toBe(true);
+    for (const id of [BUSER, 'nope', '99999999-0000-4000-8000-000000000000']) {
+      expect(await call('GET', '/staff/customers/:id', desk(), { id })).toMatchObject({ ok: false, status: 404 });
+    }
+    expect(await call('GET', '/staff/customers/:id', as(ACC, ['accountant', 'player']), { id: ANN })).toMatchObject({ ok: false, status: 403 });
+  });
+  it('bookings and orders of that person only', async () => {
+    const b = await bookingFor(ANN);
+    const r = await call('GET', '/staff/customers/:id/bookings', desk(), { id: ANN });
+    expect(r.body).toEqual([expect.objectContaining({ bookingId: b, type: 'court', courtName: 'Court 1', status: 'confirmed', cancelKind: null })]);
+    expect((await call('GET', '/staff/customers/:id/bookings', desk(), { id: OWNER })).body).toEqual([]);
+    expect(await call('GET', '/staff/customers/:id/orders', desk(), { id: ANN })).toMatchObject({ ok: true, body: [] });
+  });
+  it('notes: add and read newest first with the author; blank and over long are bad input; the accountant is refused', async () => {
+    expect(await call('POST', '/staff/customers/:id/notes', desk(), { id: ANN }, { note: ' Prefers evenings ' })).toMatchObject({ ok: true });
+    const n = (await call('GET', '/staff/customers/:id/notes', desk(), { id: ANN })).body;
+    expect(n).toEqual([expect.objectContaining({ note: 'Prefers evenings', by: 'Desk' })]);
+    expect(await call('POST', '/staff/customers/:id/notes', desk(), { id: ANN }, { note: '  ' })).toMatchObject({ ok: false, status: 400 });
+    expect(await call('POST', '/staff/customers/:id/notes', desk(), { id: ANN }, { note: 'x'.repeat(2001) })).toMatchObject({ ok: false, status: 400 });
+    expect(await call('GET', '/staff/customers/:id/notes', as(ACC, ['accountant', 'player']), { id: ANN })).toMatchObject({ ok: false, status: 403 });
+  });
+});
