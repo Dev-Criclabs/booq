@@ -19,3 +19,4 @@ export { SETTINGS, checkSettingWrite, otherGroupLimitKey, settingByKey, validate
 export { settingsRoutes, type SettingView } from './club/settings';
 export { hoursRoute, resourceRoutes, supportWindowRoute } from './club';
 export { businessRoute } from './club/business';
+export { clubSetupRoute } from './club/setup-read';

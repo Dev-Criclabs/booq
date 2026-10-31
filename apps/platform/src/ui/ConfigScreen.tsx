@@ -79,7 +79,7 @@ export function ConfigScreen() {
                     ) : kind === 'list' ? (
                       <textarea id={`v-${key}`} rows={4} value={drafts[key] ?? ''} readOnly={!isAdmin} onChange={(e) => setDrafts({ ...drafts, [key]: e.target.value })} />
                     ) : (
-                      <input id={`v-${key}`} inputMode="decimal" value={drafts[key] ?? ''} readOnly={!isAdmin} onChange={(e) => setDrafts({ ...drafts, [key]: e.target.value })} />
+                      <input id={`v-${key}`} inputMode={kind === 'url' ? 'url' : 'decimal'} value={drafts[key] ?? ''} readOnly={!isAdmin} onChange={(e) => setDrafts({ ...drafts, [key]: e.target.value })} />
                     )}
                     {isAdmin && !fixed ? <button type="submit" className="btn small" disabled={busy} data-testid={`save-${key}`}>{t('X-new.config_save')}</button> : null}
                     {message?.for === key ? <p role={message.error ? 'alert' : 'status'} className={message.error ? 'error' : 'ok'} data-testid={`message-${key}`}>{t(message.key)}</p> : null}

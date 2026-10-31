@@ -1,5 +1,6 @@
 import { can, route, RouteError, type RouteContext } from '@booq/auth';
 import type { Db } from '@booq/db';
+import { withoutTransportKeys } from './input';
 import { SETTINGS, checkSettingWrite, otherGroupLimitKey, settingByKey } from './settings-registry';
 
 // GET /settings and PUT /settings/{key} (F01-T08; design 5.1, 6.2, 10; PLAT-05 settings, BOOK-03-AC3).
@@ -43,7 +44,7 @@ export function settingsRoutes(db: Db) {
   });
 
   const put = route({ method: 'PUT', path: '/settings/:key', permission: 'settings.write' }, async (ctx) => {
-    const input = ctx.input;
+    const input = withoutTransportKeys(ctx.input);
     if (typeof input !== 'object' || input === null || Array.isArray(input)) throw new RouteError(400, 'invalid_input');
     const body = input as Record<string, unknown>;
     const keys = Object.keys(body);
