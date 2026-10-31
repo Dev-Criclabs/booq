@@ -63,7 +63,7 @@ describe("F09 CANCEL-02", () => {
   // Given the P2 step 5 Beam text "Refunds go back by PromptPay" and the PRD cost section that repeats it, when F09 is built, then that text is not built and the cancel sheet says wallet or credit (Gaps A3).
   // F09/CANCEL-02-AC4: proven by a real or traced test in another file of this folder
   // Given a cash payment taken at the desk, when it is cancelled in time, then the value goes to the wallet, not as cash (D21, F05 PAY-06-AC7).
-  // F09/CANCEL-02-AC5: proven by a real or traced test in another file of this folder
+  test.todo("F09/CANCEL-02-AC5 Given a cash payment taken at the desk, when it is cancelled in time, then the value goes to the wallet, ...");
   // Given the owner or front desk, when they want to give a player money back, then the only action is a wallet credit `adjust` with a written reason (F06 PKG-01-AC4).
   test.todo("F09/CANCEL-02-AC6 Given the owner or front desk, when they want to give a player money back, then the only action is a ...");
 });
@@ -82,7 +82,7 @@ describe("F09 CANCEL-03", () => {
   // Given a group class session in the closed range, when the closure is confirmed, then the session is cancelled for everyone with full credit back and a message, the waitlist entries end, and the coach is told (F08 CLASS-01-AC13).
   // F09/CANCEL-03-AC6: proven by a real or traced test in another file of this folder
   // Given a solo class in the closed range, when the closure is confirmed, then it is cancelled with full value back for the customer and the coach is told (F07).
-  // F09/CANCEL-03-AC7: proven by a real or traced test in another file of this folder
+  test.todo("F09/CANCEL-03-AC7 Given a solo class in the closed range, when the closure is confirmed, then it is cancelled with full ...");
   // Given a booking in the closed range that is already played (its slot has ended), when the closure is confirmed, then it is not touched.
   // F09/CANCEL-03-AC8: proven by a real or traced test in another file of this folder
   // Given a repeat closure (for example every Monday), when it is confirmed, then it cancels the affected bookings across the whole booking window and the preview lists every one (D118); occurrences beyond the window apply as the window reaches them.

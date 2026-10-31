@@ -1,0 +1,37 @@
+/* C10 Checkout (F04-T17). Thai runs longer: rows wrap their text, amounts keep their own column, buttons never wrap (CC-5). */
+.checkout { height: 100dvh; }
+.co-card { background: var(--cd); border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.co-title { margin: 0; font-size: 17px; font-weight: 600; color: var(--hd); overflow-wrap: anywhere; }
+.co-sub { margin: 0; font-size: 14px; color: var(--mu); overflow-wrap: anywhere; }
+.co-section { display: flex; flex-direction: column; gap: 8px; }
+.co-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.co-h { margin: 0; font-size: 15px; font-weight: 600; color: var(--hd); overflow-wrap: anywhere; }
+.co-opt { font-size: 12px; color: var(--mu); flex: none; }
+.co-note { margin: 0; font-size: 13px; line-height: 1.5; color: var(--mu); overflow-wrap: anywhere; }
+.co-options { display: flex; flex-direction: column; gap: 8px; }
+.co-option { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 14px; border: 1.5px solid var(--ln); border-radius: 14px; background: var(--cd); font: inherit; color: var(--ink); text-align: left; width: 100%; cursor: pointer; }
+.co-option[aria-pressed='true'], .co-option[aria-checked='true'] { border-color: var(--sel); background: var(--tn); }
+.co-option:disabled { opacity: 0.55; cursor: default; }
+.co-option-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 14px; overflow-wrap: anywhere; }
+.co-option-main b { font-weight: 600; color: var(--hd); }
+.co-option-main span { color: var(--mu); font-size: 13px; }
+.co-price { flex: none; font-size: 14px; font-weight: 600; color: var(--hd); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.co-code { display: flex; gap: 8px; align-items: stretch; }
+.co-code input { flex: 1; min-width: 0; height: 46px; padding: 0 14px; border: 1.5px solid var(--ln); border-radius: 14px; font: inherit; font-size: 15px; background: var(--cd); color: var(--ink); text-transform: uppercase; }
+.co-code .btn { flex: none; width: auto; height: 46px; padding: 0 18px; }
+.co-error { margin: 0; font-size: 13px; line-height: 1.5; color: #9b2c2c; overflow-wrap: anywhere; }
+.co-ok { margin: 0; font-size: 13px; line-height: 1.5; color: var(--sel); overflow-wrap: anywhere; }
+.co-bill { display: flex; flex-direction: column; gap: 10px; }
+.co-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 15px; }
+.co-row > span:first-child { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.co-row > span:last-child { flex: none; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.co-row small { display: block; font-size: 12px; color: var(--mu); }
+.co-row-due { padding-top: 10px; border-top: 1px solid var(--ln); font-weight: 600; font-size: 17px; color: var(--hd); }
+.co-details > summary { list-style: none; cursor: pointer; }
+.co-details > summary::-webkit-details-marker { display: none; }
+.co-sublines { margin: 6px 0 0; padding: 0 0 0 12px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--mu); }
+.co-banner { padding: 12px 14px; border-radius: 14px; background: var(--aci, #fbf1d3); font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.co-banner p { margin: 0; }
+.co-pay { display: flex; flex-direction: column; gap: 8px; }
+.co-pay .btn:disabled { opacity: 0.6; }
+.co-skeleton { height: 120px; border-radius: 16px; background: var(--tk); }

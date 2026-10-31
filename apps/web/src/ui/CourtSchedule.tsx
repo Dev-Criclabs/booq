@@ -68,6 +68,8 @@ export interface CourtScheduleProps {
   /** The club has no booking window set: no date is offered (D42). */
   closedForBooking: boolean;
   paused: boolean;
+  /** A refusal brought back from checkout, as its language key and named variables (F03-T25). */
+  notice?: { key: string; vars: Record<string, number> } | null;
 }
 
 export function cellState(selection: Selection | null, courtId: string, start: string, state: SlotState): CellState {
@@ -155,6 +157,11 @@ export function CourtSchedule(p: CourtScheduleProps) {
           </div>
 
           <main className="schedule-body" aria-busy={p.loading}>
+            {p.notice ? (
+              <p className="refusal" role="alert" data-testid="refusal">
+                {t(p.notice.key, p.notice.vars)}
+              </p>
+            ) : null}
             {p.loading || !day ? (
               <div className="grid skeleton" data-testid="loading">
                 {Array.from({ length: 7 }, (_, i) => (

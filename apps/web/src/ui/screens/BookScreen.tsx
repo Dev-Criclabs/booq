@@ -16,6 +16,7 @@ import {
   type ScheduleDay,
   type Selection,
 } from '../../client/schedule';
+import { refusalInSearch, refusalMessage, type Refusal } from '../../client/refusal';
 import { useClub, useLiff } from '../../client/use-club';
 import { CourtSchedule } from '../CourtSchedule';
 import { Loading, StateScreen } from '../StateScreen';
@@ -23,6 +24,9 @@ import { Loading, StateScreen } from '../StateScreen';
 // /c/{slug}/book, C4 Book a court (F03-T24). A public page: the Book a court tile opens it directly as
 // a guest (BOOK-02-AC1, AC2, AC5; AUTH-01-AC10). The date in the address (?date=) is kept, so a shared
 // or message link opens that day. Continue goes to checkout with the choice; sign in starts there.
+// When checkout refuses the slot (taken meanwhile, hour started, ...), it sends the player back here
+// with the refusal in the address: the grid is read again, the message shows, and they pick again;
+// nothing was booked or charged (BOOK-01-AC15, BOOK-04-AC4; F03-T25).
 
 type Failure = 'offline' | 'not_found' | null;
 
@@ -37,6 +41,17 @@ export function BookScreen({ slug, initialLang }: { slug: string; initialLang: L
   const [selection, setSelection] = useState<Selection | null>(null);
   const [failure, setFailure] = useState<Failure>(null);
   const [attempt, setAttempt] = useState(0);
+  const [refusal, setRefusal] = useState<Refusal | null>(null);
+
+  // A refusal carried back from checkout: read it once, then take it out of the address.
+  useEffect(() => {
+    const r = refusalInSearch(window.location.search);
+    if (!r) return;
+    setRefusal(r);
+    const url = new URL(window.location.href);
+    for (const k of ['refused', 'hours', 'seconds', 'by']) url.searchParams.delete(k);
+    window.history.replaceState(null, '', url);
+  }, []);
   const f = useMemo(() => (typeof window === 'undefined' ? fetch : window.fetch.bind(window)), []);
 
   // The courts, today and the window; then the counts for the strip and Day full.
@@ -85,7 +100,13 @@ export function BookScreen({ slug, initialLang }: { slug: string; initialLang: L
     window.history.replaceState(null, '', url);
   }, []);
 
-  const onTap = useCallback((courtId: string, start: string) => setSelection((s) => (day ? tap(s, day, courtId, start) : s)), [day]);
+  const onTap = useCallback(
+    (courtId: string, start: string) => {
+      setRefusal(null);
+      setSelection((s) => (day ? tap(s, day, courtId, start) : s));
+    },
+    [day],
+  );
 
   const onContinue = useCallback(() => {
     if (!selection || !day || !date) return;
@@ -126,6 +147,7 @@ export function BookScreen({ slug, initialLang }: { slug: string; initialLang: L
       dayFull={day?.dayFull ? dayFullInfo(day, days) : null}
       closedForBooking={dates.length === 0}
       paused={info.status === 'paused' || load.config.status === 'paused'}
+      notice={refusal ? refusalMessage(refusal, { bookingWindowDays: info.bookingWindowDays }) : null}
     />
   );
 }
