@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LinkTarget, MessageLinks } from '../messages/builder';
-import { clubPath, createDeepLinks, DeepLinkError, liffLink, playerPath, type PlayerPage } from './deep-link';
+import { clubPath, createDeepLinks, DeepLinkError, liffLink, liffStateTarget, playerPath, richMenuLinks, type PlayerPage } from './deep-link';
 
 // F02 design 3.1, 6.3; AUTH-01-AC10, AC14; BOOK-02-AC1 to AC3; D6.
 const LIFF_A = '2012300015-WIi1jtLB';
@@ -68,5 +68,29 @@ describe('fits the F10 builder', () => {
       `https://liff.line.me/${LIFF_A}/packages`,
       `https://liff.line.me/${LIFF_A}/offer?offerId=o1`,
     ]);
+  });
+});
+
+describe('rich menu tiles (F02-T23; BOOK-02-AC1, AUTH-01-AC10, LINE-02-AC1)', () => {
+  it('six tiles with six distinct links, tile 1 is C4, every link opens the club\'s own LIFF app', () => {
+    const links = richMenuLinks(LIFF_A);
+    expect(links).toHaveLength(6);
+    expect(new Set(links).size).toBe(6);
+    expect(links[0]).toBe(`https://liff.line.me/${LIFF_A}/book`);
+    expect(links.map((l) => l.replace(`https://liff.line.me/${LIFF_A}`, ''))).toEqual(['/book', '/classes/solo', '/classes/group', '/packages', '/bookings', '/refer']);
+    for (const l of richMenuLinks(LIFF_B)) expect(l.startsWith(`https://liff.line.me/${LIFF_B}/`)).toBe(true);
+  });
+});
+
+describe('liff.state on the endpoint page (design 3.1; AUTH-01-AC14)', () => {
+  it('turns the extra path and query into an address inside the club', () => {
+    expect(liffStateTarget('hunter', '?liff.state=%2Fbook')).toBe('/c/hunter/book');
+    expect(liffStateTarget('hunter', 'liff.state=%2Fbookings%2Fb1%3Fx%3D1')).toBe('/c/hunter/bookings/b1?x=1');
+    expect(liffStateTarget('hunter', '?other=1')).toBeNull();
+  });
+  it('never leaves the club path', () => {
+    for (const bad of ['//evil.test/x', 'https://evil.test', '/../other/book', '/a/../../x', 'book', '/a\\b']) {
+      expect(liffStateTarget('hunter', `?liff.state=${encodeURIComponent(bad)}`)).toBeNull();
+    }
   });
 });
