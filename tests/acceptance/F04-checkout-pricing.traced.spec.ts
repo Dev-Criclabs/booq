@@ -77,3 +77,8 @@ traced("F04/PROMO-01-AC12", "Given the owner creates or edits a code, when it is
 // Hand mapped by title, 31 Oct (batch of F04-T14, F06-T15, F10-T13, F01 exports mount).
 traced("F04/R3-AC8", "Given the owner edits add-ons in A9b, when they save, then it is audited (PLAT-0", [{ file: "apps/web/src/api/admin/setup-data.routes.test.ts", has: "an add-on with no price is saved with null, not a default (ADMIN-10)" }]);
 traced("F04/PROMO-01-AC12", "Given the owner creates or edits a code, when it is saved, then it is audited (P", [{ file: "apps/web/src/api/admin/setup-data.routes.test.ts", has: "the stacking choice is audited (PROMO-01-AC12)" }]);
+
+// Added by trace-lane.py: criteria the lane's tests name by ID.
+traced("F04/R6-AC1", "Given a player with no court hour credit and a full price court order, when chec", [{ file: "apps/web/src/api/checkout/bundle-offer.routes.test.ts", has: "R6-AC1" }]);
+traced("F04/R6-AC2", "Given the player declines, when they continue, then checkout is the full price o", [{ file: "apps/web/src/api/checkout/bundle-offer.routes.test.ts", has: "R6-AC2" }]);
+traced("F04/R6-AC4", "Given a player who already has court hours, when checkout loads, then no prompt ", [{ file: "apps/web/src/api/checkout/bundle-offer.routes.test.ts", has: "R6-AC4" }]);

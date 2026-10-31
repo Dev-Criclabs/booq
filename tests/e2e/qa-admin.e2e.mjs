@@ -20,7 +20,14 @@ const booking = (n, over = {}) => ({ bookingId: `b${n}`, orderId: `o${n}`, type:
 const VALUE = { packages: [{ packageId: 'p1', nameTh: 'แพ็กเกจฝึกซ้อมเทนนิสสำหรับเด็กเล็กและผู้เริ่มต้น 10 ชั่วโมง', nameEn: 'Beginner and junior tennis practice bundle of ten hours', creditType: 'court_hour', creditsTotal: 10, creditsLeft: 7, status: 'active', purchasedAt: '2027-01-09T03:00:00Z', expiresAt: '2027-04-09T03:00:00Z' }], wallet: { balanceSatang: 50000, ledger: [{ at: '2027-01-10T03:00:00Z', change: 50000, reason: 'cancel', note: LONG_TH }] }, creditLedger: [] };
 const NOTES = [{ noteId: 'n1', note: 'บันทึกที่ยาวมากเป็นพิเศษ '.repeat(8) + ' Long note '.repeat(12), by: LONG_EN, at: '2027-01-12T03:00:00Z' }];
 const STAFF = [{ id: id(1), display_name: LONG_EN, roles: ['owner', 'player'], active: true }, { id: id(2), display_name: LONG_TH, roles: ['front_desk', 'accountant', 'coach', 'player'], active: true }];
+const rule = (key, value = null, over = {}) => ({ key, value, unset: value === null, required: false, available: true, ...over });
+const RULES = [rule('booking_window_days', 14), rule('cancel_window_hours'), rule('max_future_court_hours'), rule('hold_minutes', 15), rule('package_qr_minutes'), rule('waitlist_claim_minutes'), rule('waitlist_no_offer_hours'), rule('auto_slip_check'), rule('rest_cap_hours'), rule('group_min_players'), rule('group_max_players'), rule('below_min_alert_minutes'), rule('package_expiry_reminder_days', [7, 3]), rule('wallet_expiry_months'), rule('resource_label', 'court'), rule('birthday_discount'), rule('vat_enabled', false)];
+const SETUP_DATA = { business: { legal_name: 'บริษัท ฮันเตอร์ เทนนิส คลับ เพื่อสุขภาพและการออกกำลังกายสำหรับทุกวัย จำกัด (มหาชน) Hunter Tennis and Wellness Company Limited', tax_id: '0105500000001', tax_branch: '00000', registered_address: '1234/56 ถนนสุขุมวิท แขวงคลองตันเหนือ เขตวัฒนา กรุงเทพมหานคร 10110 Sukhumvit Road Khlong Tan Nuea Watthana Bangkok', receipt_prefix: 'HTC', vat_enabled: false }, hours: [{ weekday: 1, open: '07:00', close: '22:00' }, { weekday: 2, open: '07:00', close: '22:00' }], locations: [{ id: 'l1', name: 'สาขาหลักถนนสุขุมวิทใกล้สถานีรถไฟฟ้า Main branch by the sky train' }], resources: [{ id: 'c1', location_id: 'l1', name: 'สนามหลักด้านทิศตะวันออกติดสระว่ายน้ำ Main court east side by the pool', sport: 'tennis', type: 'outdoor', lights: true, max_players: 4, active: true }], supportWindowUntil: null };
+const SETUP_STEPS = { clubStatus: 'testing', steps: [{ key: 'brand', done: true }, { key: 'products_rules', done: false }, { key: 'people', done: false }], toldAt: null };
 const api = (m, p) => {
+  if (p === '/club/setup') return { status: 200, body: SETUP_DATA };
+  if (p === '/settings' && m === 'GET') return { status: 200, body: RULES };
+  if (p === '/staff/setup') return { status: 200, body: SETUP_STEPS };
   if (p === '/staff/customers') return { status: 200, body: { customers: rows, next: null } };
   if (p === `/staff/customers/${ID}`) return { status: 200, body: profile };
   if (p === `/staff/customers/${ID}/bookings`) return { status: 200, body: [booking(1), booking(2, { status: 'cancelled', cancelKind: 'player_cancel', cancelOutcome: 'returned' }), booking(3, { type: 'class_seat', classNameEn: 'Adult beginner clinic with a very long name for the class', classNameTh: 'คลินิกมือใหม่ผู้ใหญ่ที่มีชื่อยาวมากเป็นพิเศษสำหรับคลาส', courtName: 'Main outdoor court by the east entrance' })] };
@@ -92,6 +99,8 @@ const screens = [
   { name: 'A5 customers', path: '/c/hunter/admin/customers', wait: '[data-testid=cust-table]' },
   { name: 'A6 customer profile', path: `/c/hunter/admin/customers/${ID}`, wait: '[data-testid=profile]' },
   { name: 'staff', path: '/c/hunter/admin/staff', wait: '[data-testid=staff-table]' },
+  { name: 'A16 settings', path: '/c/hunter/admin/settings', wait: '[data-testid=settings-page]' },
+  { name: 'A0 setup checklist', path: '/c/hunter/admin/setup', wait: '[data-testid=setup]' },
 ];
 
 describe('QA: the admin console has nothing cut off with the longest strings', () => {
@@ -114,18 +123,19 @@ describe('QA: the admin console has nothing cut off with the longest strings', (
   }
 });
 
-// QA-UI-2 (severity 5): the admin top bar ends a long club name with an ellipsis at 320 px, and nothing else on the page shows the full name (no title, no tooltip on touch).
-// D179 says the club name has no length limit. Marked todo: it passes when the bar wraps or the name is readable elsewhere.
-describe('QA-UI-2 the admin top bar shows the whole club name', () => {
-  it('320 px, Thai and English', { todo: 'QA-UI-2' }, async () => {
-    for (const lang of ['th', 'en']) {
+// QA-UI-2 (severity 5, accepted): the admin top bar ends a long club name with an ellipsis at 320 px. D179: the club name has no length limit. Accepted with a title
+// attribute that holds the whole name (orchestrator, 31 Oct), so the name can be read when it is cut.
+describe('QA-UI-2 the admin top bar keeps the whole club name in its title', () => {
+  for (const lang of ['th', 'en']) {
+    it(`${lang}`, { todo: 'the title attribute is not on main yet (lane 2)' }, async () => {
       const { page, context } = await openAdmin(browser, api, { lang, width: 320, height: 568 });
       await page.route('**/api/c/hunter/staff/shell', (r) => r.fulfill({ status: 200, json: { pages: OWNER_PAGES, club: LONG_CLUB, paused: null, lineCap: null, lineTokenReason: null } }));
       await page.goto(`${app.base}/c/hunter/admin`);
       await page.getByTestId('adm-club').waitFor();
-      const cut = await page.getByTestId('adm-club').evaluate((e) => e.scrollWidth > e.clientWidth + 1);
+      const r = await page.getByTestId('adm-club').evaluate((e) => ({ text: e.textContent.trim(), title: e.getAttribute('title') }));
       await context.close();
-      assert.equal(cut, false, `${lang}: the club name is cut with an ellipsis`);
-    }
-  });
+      assert.equal(r.title, r.text, `${lang}: the title must hold the whole name`);
+      assert.equal(r.title, lang === 'th' ? LONG_CLUB.nameTh : LONG_CLUB.nameEn);
+    });
+  }
 });

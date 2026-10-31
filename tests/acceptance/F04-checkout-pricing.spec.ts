@@ -71,13 +71,13 @@ describe("F04 R4", () => {
 
 describe("F04 R6", () => {
   // Given a player with no court hour credit and a full price court order, when checkout loads, then the bundle prompt shows with the bundle's price from the club's products (empty means no prompt).
-  test.todo("F04/R6-AC1 Given a player with no court hour credit and a full price court order, when checkout loads, then the ...");
+  // F04/R6-AC1: proven by a real or traced test in another file of this folder
   // Given the player declines, when they continue, then checkout is the full price order unchanged.
-  test.todo("F04/R6-AC2 Given the player declines, when they continue, then checkout is the full price order unchanged.");
+  // F04/R6-AC2: proven by a real or traced test in another file of this folder
   // Given the player accepts, when they continue, then the order becomes the bundle purchase plus the booking, handled as one bill by F06 (C10P) with the hold from F03.
   test.todo("F04/R6-AC3 Given the player accepts, when they continue, then the order becomes the bundle purchase plus the booking, ...");
   // Given a player who already has court hours, when checkout loads, then no prompt shows.
-  test.todo("F04/R6-AC4 Given a player who already has court hours, when checkout loads, then no prompt shows.");
+  // F04/R6-AC4: proven by a real or traced test in another file of this folder
 });
 
 describe("F04 R8", () => {

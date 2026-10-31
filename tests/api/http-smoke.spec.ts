@@ -64,28 +64,28 @@ const covered = new Set<string>();
 const hit = (method: string, path: string) => covered.add(`${method} ${path}`);
 
 // QA-API-1 (severity 2): over HTTP these answered 400 invalid_input to a valid request, because serveRoutes puts `slug` into the input and these handlers
-// count its keys. Fixed by platform lane 2 (c939a55, not on main when this was written): remove `.fails` when it lands.
+// count its keys. Fixed by platform lane 2 in c939a55 (on main 43b77b0).
 describe('club settings family (domain/club): inputs checked key by key', () => {
-  it.fails('GET /settings and PUT /settings/:key', async () => {
+  it('GET /settings and PUT /settings/:key', async () => {
     hit('GET', '/settings'); hit('PUT', '/settings/:key');
     ok(await send(asOwner, 'GET', '/settings'));
     ok(await send(asOwner, 'PUT', '/settings/hold_minutes', { value: 15 }));
   });
-  it.fails('PUT /club/business', async () => {
+  it('PUT /club/business', async () => {
     hit('PUT', '/club/business');
     ok(await send(asOwner, 'PUT', '/club/business', { legal_name: 'Hunter Co', vat_enabled: false }));
   });
-  it.fails('PUT /hours', async () => {
+  it('PUT /hours', async () => {
     hit('PUT', '/hours');
     ok(await send(asOwner, 'PUT', '/hours', { hours: [{ weekday: 1, open: '06:00', close: '24:00' }] }));
   });
-  it.fails('POST /resources and PUT /resources/:id', async () => {
+  it('POST /resources and PUT /resources/:id', async () => {
     hit('POST', '/resources'); hit('PUT', '/resources/:id');
     const made = await send(asOwner, 'POST', '/resources', { name: '1', sport: 'tennis', location_id: LOC });
     ok(made);
     ok(await send(asOwner, 'PUT', `/resources/${made.json.id}`, { name: '1A' }));
   });
-  it.fails('PUT /support-window', async () => {
+  it('PUT /support-window', async () => {
     hit('PUT', '/support-window');
     ok(await send(asOwner, 'PUT', '/support-window', { on: true }));
   });

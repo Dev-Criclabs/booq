@@ -69,3 +69,13 @@ The three survivors guard the same thing twice (defence in depth). No test is mi
 | `cancel_session` (1013): no cancel record, a fixed kind, no reason | red |
 | `cancel_session` (1013): the returned value is not stored on the record | **green in the lane test, red in QA's new test** (`F09-session-cancel-record.new.spec.ts`) |
 
+## Package saving (0519), desk package sale, notification switches (0602), run 31 Oct on main 43b77b0
+
+| Edit | Result |
+|---|---|
+| `package_saving`: no clamp at zero, ignores the pack price, credits not multiplied, differing prices still count, weekend price not required | red (1 to 7 lane tests each) |
+| `package_saving`: unset prices tolerated (`count(*) = count(price)` removed) | green, equivalent: the group check (every group in scope has its whole week priced) already refuses an unset price |
+| Desk package sale (`staff.ts`): a looser permission, no idempotency, cash taken when the wallet covers the price, the wallet amount reported as 0 | red |
+| Desk package sale: the quote read with `forCustomer: false` | green, equivalent: front desk and owner can read the buyer's date of birth through the ordinary route, so both paths give the same answer. It would matter if staff could not read it |
+| Notification switches: default promotions on, default reminders off, a save that writes the other switch | red |
+

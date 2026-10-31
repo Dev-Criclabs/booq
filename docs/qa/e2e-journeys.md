@@ -21,7 +21,9 @@ The same clipping audit (text cut by a clipping box, ellipsis that hides text, t
 | Result | |
 |---|---|
 | All 16 pass | the page content: names, tags, notes, package names and the tables hold up. The table scrolls inside its box |
-| QA-UI-2 (severity 5, to confirm, todo) | at 320 px the top bar ends the club name with an ellipsis |
+| QA-UI-2 (severity 5, accepted with a title) | at 320 px the top bar ends the club name with an ellipsis; accepted if its `title` holds the whole name. The check is todo until the title is on main |
 
 The lane's own admin suites (shell, customers, profile, staff) pass with the rest of `apps/web/e2e` (41 of 41 before F11-T23). The audit page (`/staff/audit`) is part of the staff suite. Not yet run: F11-T22 and T24 (next batch).
+
+Added 31 Oct (main 43b77b0): A16 Settings (long legal name, address, location and court names) and A0 Setup checklist, 320 and 1280 px, th and en. All pass (24 of 26; 2 todo for the title).
 
