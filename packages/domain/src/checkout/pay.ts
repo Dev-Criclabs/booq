@@ -91,27 +91,11 @@ export async function placeOrder(tx: Tx, customerId: string, choice: QuoteReques
   const names = await lineNames(tx, choice, quote.lines, sources);
   const group = (await tx.query<Names & { id: string }>(`select id, name_th, name_en from public.price_group where club_id = app.club_id() and id = $1`, [quote.priceGroupId])).rows[0];
   await tx.query('savepoint place_order');
-  const created = await tx.query<{ id: string }>('select app.create_priced_order($1, $2::jsonb) as id', [
-    customerId,
-    JSON.stringify({
-      price_group_snapshot: group ?? null,
-      subtotal_satang: quote.subtotalSatang,
-      discount_satang: quote.discountSatang,
-      total_satang: quote.totalSatang,
-      credit_value_satang: quote.creditValueSatang,
-      wallet_satang: quote.walletSatang,
-      money_satang: quote.moneySatang,
-      promo_code_id: quote.promoCodeId,
-      birthday_entitlement: quote.birthdayEntitlement !== null,
-      quote_hash: quote.quoteHash,
-    }),
-  ]);
+  const created = await tx.query<{ id: string }>('select app.create_priced_order($1, $2::jsonb) as id', [customerId, pricedJson(quote, group)]);
   const orderId = created.rows[0]!.id;
   // Lock order (FA 3.4, BE-B 0229): customer (in create_priced_order), then the wallet and packages, then the
   // promo row, then the claim. The keyed reserve after the lines then takes no new lock (F06, 0511).
-  await tx.query('select app.lock_wallet_and_packages($1)', [customerId]);
-  if (quote.promoCodeId !== null) await entitlement(tx, 'select app.count_promo_use($1, $2)', [quote.promoCodeId, orderId]);
-  if (quote.birthdayEntitlement !== null) await entitlement(tx, 'select app.use_birthday_entitlement($1, $2)', [quote.birthdayEntitlement, orderId]);
+  await takeEntitlements(tx, customerId, orderId, quote);
   const claim = (await tx.query<{ r: { order_id: string; booking_ids: string[]; hold_expires_at: string | null; reused?: boolean } }>(
     'select app.reserve_court($1, $2, $3::timestamptz[], $4) as r',
     [orderId, choice.courtId, starts, choice.coachId],
@@ -123,13 +107,49 @@ export async function placeOrder(tx: Tx, customerId: string, choice: QuoteReques
   }
   await tx.query('release savepoint place_order');
   // booking_ids are in start order, the same order as the quote's hours.
+  await writeLines(tx, orderId, quote, names, claim.booking_ids);
+  if (!(await sources.reserveCreditAndWallet(tx, orderId))) throw new CheckoutError('credit_unavailable');
+  if (quote.moneySatang === 0) {
+    // F04-T12d (PAY-07, D64): reserve_court confirmed the bookings in the claim; the order is paid, its receipt
+    // issued in the same series and the Booking confirmed card enqueued, all in this transaction.
+    const done = await tx.query<{ receipt: string }>('select app.complete_zero_money_order($1) as receipt', [orderId]);
+    return { orderId, bookingIds: claim.booking_ids, holdExpiresAt: null, reused: false, confirmed: true, receiptId: done.rows[0]!.receipt };
+  }
+  return { orderId, bookingIds: claim.booking_ids, holdExpiresAt: isoOrNull(claim.hold_expires_at), reused: false, confirmed: false, receiptId: null };
+}
+
+/** The frozen amounts of a quote, as app.create_priced_order and app.price_offer_order take them. */
+function pricedJson(quote: QuoteView, group: (Names & { id: string }) | undefined): string {
+  return JSON.stringify({
+    price_group_snapshot: group ?? null,
+    subtotal_satang: quote.subtotalSatang,
+    discount_satang: quote.discountSatang,
+    total_satang: quote.totalSatang,
+    credit_value_satang: quote.creditValueSatang,
+    wallet_satang: quote.walletSatang,
+    money_satang: quote.moneySatang,
+    promo_code_id: quote.promoCodeId,
+    birthday_entitlement: quote.birthdayEntitlement !== null,
+    quote_hash: quote.quoteHash,
+  });
+}
+
+/** After the customer lock: the wallet and packages, then the promo row and the birthday entitlement (FA 3.4). */
+async function takeEntitlements(tx: Tx, customerId: string, orderId: string, quote: QuoteView): Promise<void> {
+  await tx.query('select app.lock_wallet_and_packages($1)', [customerId]);
+  if (quote.promoCodeId !== null) await entitlement(tx, 'select app.count_promo_use($1, $2)', [quote.promoCodeId, orderId]);
+  if (quote.birthdayEntitlement !== null) await entitlement(tx, 'select app.use_birthday_entitlement($1, $2)', [quote.birthdayEntitlement, orderId]);
+}
+
+/** The order's lines, each hour's line on its booking (bookingIds in the order of the quote's hours). */
+async function writeLines(tx: Tx, orderId: string, quote: QuoteView, names: Names[], bookingIds: string[]): Promise<void> {
   await tx.query('select app.add_order_lines($1, $2::jsonb)', [
     orderId,
     JSON.stringify(
       quote.lines.map((l, i) => ({
         position: l.position,
         kind: l.kind,
-        booking_id: claim.booking_ids[l.hourIndex],
+        booking_id: bookingIds[l.hourIndex],
         add_on_id: l.addOnId,
         package_product_id: null,
         description_key: LINE_TEXT_KEYS[l.kind],
@@ -147,14 +167,89 @@ export async function placeOrder(tx: Tx, customerId: string, choice: QuoteReques
       })),
     ),
   ]);
-  if (!(await sources.reserveCreditAndWallet(tx, orderId))) throw new CheckoutError('credit_unavailable');
-  if (quote.moneySatang === 0) {
-    // F04-T12d (PAY-07, D64): reserve_court confirmed the bookings in the claim; the order is paid, its receipt
-    // issued in the same series and the Booking confirmed card enqueued, all in this transaction.
-    const done = await tx.query<{ receipt: string }>('select app.complete_zero_money_order($1) as receipt', [orderId]);
-    return { orderId, bookingIds: claim.booking_ids, holdExpiresAt: null, reused: false, confirmed: true, receiptId: done.rows[0]!.receipt };
+}
+
+// F04-T22c: Pay for a waitlist offer (CLASS-02-AC3, AC6, WAIT-01-AC2; F08 design 4.11). The claim (POST
+// /me/waitlist/:id/claim) names the offer's held booking and its unpriced order shell; Pay takes that hold as the claim
+// instead of reserving again. The court and hour come from the held booking, never the body; add-ons and the code are
+// chosen as on C10. The shell is priced through app.price_offer_order (0417), then the code, birthday, lines and
+// reserve as for any order; nothing left to pay confirms the hold in complete_zero_money_order. An offer that has
+// ended answers spot_gone; its hold was released when it ended. Court-slot offers only: a class seat offer is F04-T22b.
+
+export interface OfferRef {
+  orderId: string;
+  bookingId: string;
+}
+
+export interface OfferHold {
+  courtId: string;
+  startsAt: string;
+  holdExpiresAt: string;
+  /** Priced already: a second tap (D47). */
+  priced: boolean;
+}
+
+const OFFER_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** The offer the body names ({orderId, bookingId} from the claim), or null for an ordinary Pay. */
+export function parseOfferRef(body: unknown): OfferRef | null {
+  const b = (body ?? {}) as Record<string, unknown>;
+  if (b['orderId'] === undefined && b['bookingId'] === undefined) return null;
+  const orderId = b['orderId'];
+  const bookingId = b['bookingId'];
+  if (typeof orderId !== 'string' || !OFFER_UUID.test(orderId) || typeof bookingId !== 'string' || !OFFER_UUID.test(bookingId)) {
+    throw new CheckoutError('bad_input');
   }
-  return { orderId, bookingIds: claim.booking_ids, holdExpiresAt: isoOrNull(claim.hold_expires_at), reused: false, confirmed: false, receiptId: null };
+  return { orderId: orderId.toLowerCase(), bookingId: bookingId.toLowerCase() };
+}
+
+/** The caller's live court offer hold, or spot_gone (an ended offer, someone else's, or one not found). */
+export async function offerHold(tx: Tx, customerId: string, ref: OfferRef): Promise<OfferHold> {
+  const r = (await tx.query<{ type: string; resource_id: string; start_at: Date; hold_expires_at: Date; priced: boolean }>(
+    `select b.type, b.resource_id, b.start_at, b.hold_expires_at, o.priced_at is not null as priced
+       from public.booking b
+       join public.orders o on o.club_id = b.club_id and o.id = b.order_id
+       join public.waitlist_entry w on w.club_id = b.club_id and w.id = b.waitlist_entry_id and w.offer_booking_id = b.id
+      where b.club_id = app.club_id() and b.id = $1 and b.order_id = $2 and b.customer_id = $3
+        and b.status = 'awaiting_payment' and b.hold_expires_at > app.now() and w.status = 'offered' and o.status = 'open'`,
+    [ref.bookingId, ref.orderId, customerId],
+  )).rows[0];
+  if (!r) throw new CheckoutError('spot_gone');
+  if (r.type !== 'court') throw new CheckoutError('bad_input');   // a class seat offer is paid through F04-T22b
+  return { courtId: r.resource_id, startsAt: new Date(r.start_at).toISOString(), holdExpiresAt: new Date(r.hold_expires_at).toISOString(), priced: r.priced };
+}
+
+/** The offer's choice: its court and hour from the hold, add-ons and the code from the body; no coach. */
+export function offerChoice(body: unknown, hold: OfferHold): QuoteRequest {
+  const b = (body ?? {}) as Record<string, unknown>;
+  return parseQuoteRequest({ addOnIds: b['addOnIds'], code: b['code'], courtId: hold.courtId, hours: [hold.startsAt], coachId: null, coachSource: 'checkout' });
+}
+
+/** Price the offer's order shell, take the entitlements, write the lines on the held booking and reserve. */
+/** The offer's order as a second tap finds it (D47). */
+export const offerReused = (ref: OfferRef, hold: OfferHold): PlacedOrder =>
+  ({ orderId: ref.orderId, bookingIds: [ref.bookingId], holdExpiresAt: hold.holdExpiresAt, reused: true, confirmed: false, receiptId: null });
+
+export async function placeOfferOrder(tx: Tx, customerId: string, ref: OfferRef, hold: OfferHold, choice: QuoteRequest, quote: QuoteView, sources: QuoteSources): Promise<PlacedOrder> {
+  if (hold.priced) return offerReused(ref, hold);
+  const names = await lineNames(tx, choice, quote.lines, sources);
+  const group = (await tx.query<Names & { id: string }>(`select id, name_th, name_en from public.price_group where club_id = app.club_id() and id = $1`, [quote.priceGroupId])).rows[0];
+  let priced: boolean;
+  try {
+    priced = (await tx.query<{ r: boolean }>('select app.price_offer_order($1, $2::jsonb) as r', [ref.orderId, pricedJson(quote, group)])).rows[0]!.r;
+  } catch (e) {
+    if ((e as { message?: string }).message === 'offer:gone') throw new CheckoutError('spot_gone');
+    throw e;
+  }
+  if (!priced) return offerReused(ref, hold);   // a parallel tap priced it first (D47)
+  await takeEntitlements(tx, customerId, ref.orderId, quote);
+  await writeLines(tx, ref.orderId, quote, names, [ref.bookingId]);
+  if (!(await sources.reserveCreditAndWallet(tx, ref.orderId))) throw new CheckoutError('credit_unavailable');
+  if (quote.moneySatang === 0) {
+    const done = await tx.query<{ receipt: string }>('select app.complete_zero_money_order($1) as receipt', [ref.orderId]);
+    return { orderId: ref.orderId, bookingIds: [ref.bookingId], holdExpiresAt: null, reused: false, confirmed: true, receiptId: done.rows[0]!.receipt };
+  }
+  return { orderId: ref.orderId, bookingIds: [ref.bookingId], holdExpiresAt: hold.holdExpiresAt, reused: false, confirmed: false, receiptId: null };
 }
 
 const isoOrNull = (v: string | Date | null): string | null => (v === null ? null : new Date(v).toISOString());
