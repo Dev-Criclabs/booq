@@ -4,6 +4,7 @@ import { createDb, type Db } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
 import { loadMessageDictionary, type RichMenuApi } from '@booq/line/server';
 import { FakeClock, FakeLine } from '../../../../tests/fakes';
+import { closeTestDatabase } from '../testing/teardown';
 import { buildRichMenu } from './line-rich-menu';
 
 // F10-T12 buildRichMenu (F10 design 5.5; LINE-02-AC1, AC4, AC8, PLAT-04): render, create the menu with its six tap areas,
@@ -62,7 +63,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   await worker?.end();
-  await tdb?.close();
+  if (tdb) await closeTestDatabase(tdb);
 });
 
 describe('buildRichMenu', () => {
