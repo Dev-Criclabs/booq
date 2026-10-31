@@ -178,7 +178,7 @@ describe('create_closure (CANCEL-03-AC2 to AC8, AC12 to AC15)', () => {
     const s = await session(19);
     const r = await create(desk(), [COURT], H(17), H(21));
     expect(r.sessions).toBe(1);
-    expect((await tdb.query(`select status, cancel_reason from public.class_session where id = $1`, [s])).rows[0]).toEqual({ status: 'cancelled', cancel_reason: 'owner' });
+    expect((await tdb.query(`select status, cancel_reason from public.class_session where id = $1`, [s])).rows[0]).toEqual({ status: 'cancelled', cancel_reason: 'closure' });
     expect(await closedSlots()).toEqual([[H(17), H(21)]]);
   });
 
