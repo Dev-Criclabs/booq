@@ -189,6 +189,14 @@ describe('booking_released (F10 design 5.4; Architect review; F03-T30)', () => {
     await release(await order('held'), 'offer_ended');
     expect(await released()).toEqual([]);
   });
+
+  it('is not queued for the reason closed: the closure message replaces it (F03 design 4.5, D48; migration 0616)', async () => {
+    await release(await order('held'), 'closed');
+    expect(await released()).toEqual([]);
+    const o = await order('expired');
+    await release(o, 'expired');
+    expect((await released()).map((r) => r.dedupe_key)).toEqual([`released:${o}`]);
+  });
 });
 
 describe('anonymise (PDPA-01-AC5, CC-3; migration 0019)', () => {
