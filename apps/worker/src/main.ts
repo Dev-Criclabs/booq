@@ -6,6 +6,8 @@ import { CONSOLE_SESSION_SWEEP, consoleSessionSweep } from './tasks/console-sess
 import { RATE_LIMIT_SWEEP, rateLimitSweep } from './tasks/rate-limit-sweep';
 import { PAY_TAP_PRUNE, PAY_TAP_PRUNE_DISPATCH, payTapPruneDispatch, prunePayTaps } from './tasks/pay-tap-prune';
 import { runHoldRelease } from './tasks/hold-release';
+import { CLASS_GENERATE, CLASS_GENERATE_DISPATCH, classGenerateDispatch, generateClassSessions } from './tasks/class-generate';
+import { runClassBelowMinimum, runOfferExpiry } from './tasks/class-jobs';
 import { startTicker } from './ticker';
 import { startWorker } from './worker';
 
@@ -21,10 +23,11 @@ const sweepRateLimit = rateLimitSweep({ db, keepSeconds: config.rateLimitKeepSec
 const worker = await startWorker({
   connectionString: config.queueUrl,
   db,
-  tasks: { [IMPORT_STAGING_SWEEP]: sweepImportStaging, [PAY_TAP_PRUNE]: prunePayTaps },
+  tasks: { [IMPORT_STAGING_SWEEP]: sweepImportStaging, [PAY_TAP_PRUNE]: prunePayTaps, [CLASS_GENERATE]: generateClassSessions },
   globalTasks: {
     [IMPORT_STAGING_DISPATCH]: importStagingDispatch({ listClubIds: () => listClubIds(db) }),
     [PAY_TAP_PRUNE_DISPATCH]: payTapPruneDispatch({ listClubIds: () => listClubIds(db) }),
+    [CLASS_GENERATE_DISPATCH]: classGenerateDispatch({ listClubIds: () => listClubIds(db) }),
     [RATE_LIMIT_SWEEP]: async () => {
       await sweepRateLimit();
     },
@@ -43,11 +46,15 @@ const holdRelease = startTicker({
   onError: () => undefined,
 });
 
+// offer_expiry and class_below_minimum also run on their own timers (F08-T10).
+const offerExpiry = startTicker({ everyMs: config.offerExpiryTickSeconds * 1000, run: () => runOfferExpiry(db), onError: () => undefined });
+const classBelowMin = startTicker({ everyMs: config.classBelowMinTickSeconds * 1000, run: () => runClassBelowMinimum(db), onError: () => undefined });
+
 let stopping = false;
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, () => {
     if (stopping) return;
     stopping = true;
-    void holdRelease.stop().then(() => worker.stop()).then(() => db.end()).then(() => process.exit(0));
+    void Promise.all([holdRelease.stop(), offerExpiry.stop(), classBelowMin.stop()]).then(() => worker.stop()).then(() => db.end()).then(() => process.exit(0));
   });
 }

@@ -282,10 +282,10 @@ describe('claiming and the booking trigger (CLASS-02-AC3, AC7)', () => {
 
   it('back at the minimum voids the pending below-minimum alert', async () => {
     await seat(P[0]!);
-    await internal(`select app.enqueue_message('class_below_minimum', $1, '{}'::jsonb, $2, app.now() + interval '1 day')`, [OWNER, `below_min:${session}`]);
-    expect((await outbox()).find((m) => m.dedupe_key === `below_min:${session}`)).toMatchObject({ status: 'pending' });
+    await internal(`select app.enqueue_message('class_below_minimum', $1, '{}'::jsonb, $2, app.now() + interval '1 day')`, [OWNER, `below_min:${session}:${OWNER}`]);
+    expect((await outbox()).find((m) => m.dedupe_key === `below_min:${session}:${OWNER}`)).toMatchObject({ status: 'pending' });
     await seat(P[1]!);
-    expect((await outbox()).find((m) => m.dedupe_key === `below_min:${session}`)).toMatchObject({ status: 'void', void_reason: 'superseded' });
+    expect((await outbox()).find((m) => m.dedupe_key === `below_min:${session}:${OWNER}`)).toMatchObject({ status: 'void', void_reason: 'superseded' });
   });
 });
 
