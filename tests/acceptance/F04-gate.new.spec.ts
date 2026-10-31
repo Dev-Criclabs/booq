@@ -11,7 +11,7 @@ import { parsePayRequest } from '../../packages/domain/src/checkout/pay';
 
 const dir = fileURLToPath(new URL('.', import.meta.url));
 const real = readdirSync(dir)
-  .filter((f) => /^F\d\d-.*\.(traced|new)\.spec\.ts$/.test(f) && f !== 'F04-closure.new.spec.ts')
+  .filter((f) => /^F\d\d-.*\.(traced|new)\.spec\.ts$/.test(f) && !f.endsWith('-gate.new.spec.ts'))
   .map((f) => readFileSync(resolve(dir, f), 'utf8'))
   .join('\n');
 const has = (id: string) => new RegExp(`['"\`]${id.replace(/[/.-]/g, '\\$&')}[ '"\`]`).test(real) || new RegExp(`\\b${id.replace(/[/.-]/g, '\\$&')}(?![0-9a-z])`).test(real.replace(/\/\/.*$/gm, ''));

@@ -17,7 +17,7 @@ function collectRealIds(): Set<string> {
   for (const f of readdirSync(dir).filter((n) => /^F\d\d-.*\.spec\.ts$/.test(n))) {
     const text = readFileSync(resolve(dir, f), 'utf8');
     if (text.includes(GENERATED)) continue;
-    if (f.endsWith('-closure.new.spec.ts')) continue;   // a closure gate lists the criteria that have NO test, with a reason: they keep their todo skeleton
+    if (f.endsWith('-gate.new.spec.ts')) continue;   // a closure gate lists the criteria that have NO test, with a reason: they keep their todo skeleton
     for (const m of text.matchAll(/['"`](F\d\d\/[A-Za-z0-9-]+)[ '"`]/g)) ids.add(m[1] as string);
   }
   return ids;

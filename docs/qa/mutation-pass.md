@@ -89,3 +89,18 @@ The three survivors guard the same thing twice (defence in depth). No test is mi
 | F06 wallet property | the balance check removed from `wallet_spend` | red (5 of 5 seeds) |
 | F06 blind | a platform grant on the wallet ledger; the app role granted `wallet_spend` | red (2 of 2) |
 | F04 closure | a Thai constant in `pricing.ts`; an English sentence in `pay.ts`; a client amount kept by the quote parser | red (3 of 3) |
+
+## F07, F08, F09, F10, F12 suites, run 31 Oct
+
+| Test | Edit | Result |
+|---|---|---|
+| F07 move wiring | the move hook unregistered; the booking's own row not ignored | red (2 of 2) |
+| F07 concurrency | a substitution locks the from coach first | red (the deterministic lock order test); red only there |
+| F07 concurrency | no coach lock in a substitution or in Add a coach | green: the exclusion constraint and the booking lock hold it (accepted) |
+| F07 no hard coded prices | a price constant in the quote code | red |
+| F08 concurrency | the waitlist cancel handler not registered | red |
+| F08 concurrency | `offer_expire` ignoring the status or the time | green, equivalent (`pass_offer_on` re-checks under its own lock) |
+| F09 concurrency | a late payment crediting half the amount | red |
+| F09 removed features and closure record | a check in route; A3 in the sidebar; a nullable closure reason | red (3 of 3) |
+| F10 cross cutting | a body column in the outbox; a cap check in a booking function | red (2 of 2) |
+| F12 access | a platform read grant; an app write grant; a worker grant on `mark_attendance` | red (3 of 3) |

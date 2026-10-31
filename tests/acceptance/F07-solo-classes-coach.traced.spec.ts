@@ -52,3 +52,11 @@ traced("F07/COACH-02-AC7", "Given the coach price, when it is priced, then it fo
 traced("F07/COACH-02-AC8", "Given adding a coach is optional, when the player skips it, then the booking sta", [{ file: "packages/db/src/solo-class.test.ts", has: "a court only booking is not affected" }]);
 traced("F07/COACH-03-AC1", "Given a player with solo credits who adds a coach at court checkout (C10), when ", [{ file: "packages/db/src/credit-functions.test.ts", has: "a coach picked at court checkout never uses solo pack credit" }]);
 traced("F07/COACH-03-AC4", "Given a solo pack credit is tied to a tier, when it is used, then it works with ", [{ file: "packages/db/src/credit-functions.test.ts", has: "a solo credit fits any coach of its tier only" }]);
+
+// Sweep T21/T19/T22 (31 Oct): by title.
+traced("F07/R3-AC4", "Given a group class, when the run is counted, then it counts until it is cancell", [{ file: "packages/db/src/coach-rules.test.ts", has: "unpaid held hours count, an expired hold does not, and a group class counts" }]);
+traced("F07/R3-AC5", "Given a staff booking or a move in A1, when it would exceed the cap, then it is ", [{ file: "packages/db/src/coach-rules.test.ts", has: "the check takes no override argument: no role can exceed the cap" }]);
+traced("F07/R2-AC7", "Given a coach is a person with a user record, when they are created, then they a", [{ file: "packages/db/src/coach-admin.test.ts", has: "only the owner saves: the coach role and the row go together" }]);
+traced("F07/R1-AC5", "Given a solo class is booked through C5 and C6, then court and coach are priced ", [{ file: "packages/db/src/solo-class.test.ts", has: "claims court and coach together in one occupancy row per hour" }, { file: "packages/domain/src/checkout/pricing.test.ts", has: "Adult with a Coach tier coach: court 50000 + coach 80000 = 130000" }]);
+traced("F07/R5-AC6", "Given a tier or a price changes after a session is booked, when it is saved, the", [{ file: "packages/db/src/promo-and-lines.test.ts", has: "after Pay nothing about the price changes" }]);
+traced("F07/R5-AC4", "Given a solo class booked on the schedule, when it is confirmed, then the Bookin", [{ file: "packages/db/src/message-facts.test.ts", has: "a solo class names its coach" }]);

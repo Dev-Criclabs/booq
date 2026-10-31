@@ -32,3 +32,7 @@ F11-T04 added `GET /staff/customers/csv` with its own `customer.export` permissi
 ## Update, 31 Oct (main d709178)
 
 F11-T0x owner setup routes are on main (`setup.routes.test.ts`, `setup-data.routes.test.ts`). ADMIN-02 (the checklist records once and is owner only), ADMIN-10 (an add-on with no price is saved as null), ADMIN-11 (a price group is audited) and ADMIN-12 (the stacking choice is audited) are now traced. Open: ADMIN-03 and ADMIN-06's screen parts.
+
+## F11-T26, 31 Oct (main 43b77b0)
+
+`F11-gate.new.spec.ts`: 17 criteria, 16 with a real test, 1 listed (ADMIN-03, the A1 move). A3, A11, A15 and the slip queue do not exist: `F09-removed-and-record.new.spec.ts` checks the route paths, the page folders, the sidebar list (no A3, A4, A11 or A15) and the schema (no check in or slip column or table); ADMIN-05 is traced to the shell test that A4 is never listed. The F11 canvas boards are not in the repo (G-04), so they were traced by criteria only.
