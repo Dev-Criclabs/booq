@@ -28,7 +28,7 @@ async function book(starts: number[], o: { coach?: string; customer?: string; co
   const customer = o.customer ?? P1;
   const order = (await tdb.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'online') returning id`, [A, customer])).rows[0].id as string;
   const r = await db.withClubTx(player(customer), async (tx) =>
-    (await tx.query(`select app.reserve_court($1, $2, $3::timestamptz[], $4) as r`, [order, o.court ?? COURT1, starts.map(H), o.coach ?? null])).rows[0].r);
+    (await tx.query(`select app.reserve_court($1, $2, $3::timestamptz[], $4) as r`, [order, o.court ?? COURT1, starts.map(H), o.coach ?? null])).rows[0]!.r);
   await db.withClubTx(desk(), (tx) => tx.query(`select app.confirm_booking($1)`, [order]));
   const c = await tdb.pool.connect();
   try {
@@ -164,7 +164,7 @@ describe('late, staff and club cancels', () => {
 describe('what cancel_booking will not do', () => {
   it('a booking awaiting payment is released through release_hold, not cancelled here (AC16)', async () => {
     const order = (await tdb.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'online') returning id`, [A, P1])).rows[0].id;
-    const r = await db.withClubTx(player(), async (tx) => (await tx.query(`select app.reserve_court($1, $2, $3::timestamptz[]) as r`, [order, COURT2, [H(20)]])).rows[0].r);
+    const r = await db.withClubTx(player(), async (tx) => (await tx.query(`select app.reserve_court($1, $2, $3::timestamptz[]) as r`, [order, COURT2, [H(20)]])).rows[0]!.r);
     await expect(cancel(player(), r.booking_ids[0])).rejects.toThrow(/cancel:hold/);
     expect(await row(r.booking_ids[0])).toBe('awaiting_payment');
   });
