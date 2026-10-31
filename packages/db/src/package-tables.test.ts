@@ -205,7 +205,8 @@ describe('class, club scope and reach (CC-1)', () => {
       await c.query('rollback');
       c.release();
     }
-    for (const t of ['package_product', 'customer_package', 'package_extension', 'wallet_account']) {
+    // package_product is class S: BOOQ staff see it in the support view from 0513 (D27), as the price tables.
+    for (const t of ['customer_package', 'package_extension', 'wallet_account']) {
       for (const priv of ['select', 'insert', 'update', 'delete']) {
         expect((await tdb.query('select has_table_privilege($1, $2, $3) as ok', ['booq_platform', `public.${t}`, priv])).rows[0].ok, `platform ${t} ${priv}`).toBe(false);
       }

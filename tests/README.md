@@ -5,6 +5,7 @@ Owned by the QA role. Strategy: `docs/qa/test-strategy.md`. Requirement map: `do
 | Folder | Holds | State on 30 Oct 2026 |
 |---|---|---|
 | `fakes/` | Fake Beam and fake LINE, a fake clock, a locale helper. No dependency on app code | Type checked, self tested in `fakes/fakes.spec.ts` (27 tests). Design in `fakes/README.md` |
+| `rls/` | The tenant isolation suite, registry driven (F01-T07). See `rls/README.md` | Written |
 | `support/` | Helpers for concurrency tests (`parallel.ts`) | Skeleton |
 | `acceptance/` | One `test.todo` per approved acceptance criterion (754 from F01 to F13), generated from `specs/features/*/requirements.md`, plus `coverage.spec.ts` that fails when a criterion has none (D126). Summary: `docs/qa/acceptance-coverage.md` | Generated |
 | `unit/`, `integration/`, `concurrency/`, `rls/`, `e2e/` | The suites | Not created yet: they need approved requirements and the schema. Designs: `docs/qa/concurrency-tests.md`, `docs/qa/rls-test-plan.md` |
