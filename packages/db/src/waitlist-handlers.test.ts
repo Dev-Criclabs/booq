@@ -196,6 +196,18 @@ describe('f08_cancel (CLASS-01-AC13, CLASS-02-AC11)', () => {
     expect((await entries()).map((e) => e.status)).toEqual(['waiting', 'waiting']);
   });
 
+  it('a late cancel mark on a future slot offers the spot; on a started slot it does not (0918)', async () => {
+    await tdb.query(`update public.booking set status = 'late_cancelled' where id = $1`, [b1]);
+    await cancelHandlers(b1, 'late_cancel_mark');
+    expect((await entries()).map((e) => e.status)).toEqual(['offered', 'waiting']);
+  });
+
+  it('a late cancel mark after the slot started frees nothing (0918)', async () => {
+    await tdb.query(`update public.booking set status = 'late_cancelled', start_at = date_trunc('hour', app.now()) - interval '1 hour', end_at = date_trunc('hour', app.now()) where id = $1`, [b1]);
+    await cancelHandlers(b1, 'late_cancel_mark');
+    expect((await entries()).map((e) => e.status)).toEqual(['waiting', 'waiting']);
+  });
+
   it('a closure over a court hour ends its waiting entries (closure) and tells those players', async () => {
     const SLOT = '2026-12-05T20:00:00+07:00';
     const order = (await tdb.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'online') returning id`, [A, P[4]])).rows[0].id;
