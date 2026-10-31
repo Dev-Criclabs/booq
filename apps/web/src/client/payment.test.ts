@@ -56,7 +56,7 @@ describe('icsFor', () => {
 describe('text keys (TEXT-01, TEXT-06)', () => {
   it('every key the payment and confirmation screens use is in both languages', () => {
     for (const k of ['P-0083', 'P-0084', 'P-0085', 'P-0087', 'P-0088', 'P-0089', 'P-0456', 'P-0457', 'P-0329', 'P-0331', 'P-0332', 'P-0021', 'P-0105', 'P-0106', 'P-0107', 'P-0108', 'P-0109', 'P-0110', 'P-0111', 'P-0112', 'P-0113', 'P-0114', 'P-0117',
-      'P-new.pay_expired_text', 'P-new.pay_failed_title', 'P-new.pay_failed_text', 'P-new.pay_wallet_title', 'P-new.pay_wallet_text', 'P-new.pay_save_qr_hint', 'P-new.pay_open_failed', 'P-new.page_not_found']) {
+      'P-new.pay_expired_text', 'P-new.pay_expired_generic', 'P-new.pay_failed_title', 'P-new.pay_failed_text', 'P-new.pay_wallet_title', 'P-new.pay_wallet_text', 'P-new.pay_save_qr_hint', 'P-new.pay_open_failed', 'P-new.page_not_found']) {
       for (const lang of ['th', 'en'] as const) expect(hasKey(lang, k), `${lang} ${k}`).toBe(true);
     }
   });

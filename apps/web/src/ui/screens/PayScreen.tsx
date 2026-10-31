@@ -76,7 +76,7 @@ function PayBody({ slug, lang, t }: { slug: string; lang: Lang; t: (k: string, v
   const court = p.booking?.courtName ?? '';
   const time = p.booking ? bangkokTime(p.booking.startAt) : '';
   if (p.state === 'expired') {
-    return <StateScreen t={t} testId="expired" titleKey="P-0329" textKey="P-new.pay_expired_text" actionKey="P-0331" onAction={again} vars={{ court, time }} secondKey="P-0332" onSecond={home} />;
+    return <StateScreen t={t} testId="expired" titleKey="P-0329" textKey={p.booking ? 'P-new.pay_expired_text' : 'P-new.pay_expired_generic'} actionKey="P-0331" onAction={again} vars={{ court, time }} secondKey="P-0332" onSecond={home} />;
   }
   if (p.state === 'failed') {
     return <StateScreen t={t} testId="failed" titleKey="P-new.pay_failed_title" textKey="P-new.pay_failed_text" actionKey="P-0331" onAction={again} secondKey="P-0332" onSecond={home} />;
