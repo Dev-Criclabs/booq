@@ -3,6 +3,12 @@ import type { ClubContext, Db, Tx } from '@booq/db';
 import {
   CheckoutError,
   findLiveHold,
+  findLivePackageOrder,
+  packageQuoteFor,
+  parsePackagePayRequest,
+  parsePackageQuoteRequest,
+  placePackageOrder,
+  preparePackagePay,
   parsePayRequest,
   parseQuoteRequest,
   placeOrder,
@@ -41,6 +47,8 @@ const STATUS: Record<CheckoutErrorCode, number> = {
   coach_price_not_set: 409,
   coach_at_checkout_disabled: 409,
   add_on_not_for_sale: 409,
+  package_not_for_sale: 409,
+  student_item_not_allowed: 409,
   code_not_valid: 422,
   code_expired: 422,
   code_wrong_audience: 422,
@@ -154,11 +162,55 @@ function payHandler(deps: CheckoutRouteDeps, staff: boolean) {
   };
 }
 
+function packageQuoteHandler(deps: CheckoutRouteDeps, staff: boolean) {
+  return async (ctx: RouteContext) => {
+    const c = await sessionContext(deps, ctx, staff);
+    const customer = customerOf(ctx, staff);
+    const request = typed(() => parsePackageQuoteRequest(ctx.body));
+    return inTx(deps.db, c, (tx) => packageQuoteFor(tx, customer, request, deps.sources, { forCustomer: staff }));
+  };
+}
+
+// F05 package-only Pay (C10P to C11P; PAY-04-AC1, F06 R3-AC1, D74): the same steps as Pay without a claim. A second
+// tap returns the running order's payment; a zero money package is granted in the transaction (PAY-07).
+function packagePayHandler(deps: CheckoutRouteDeps, staff: boolean) {
+  const path = staff ? 'POST /staff/orders/package/pay' : 'POST /checkout/package/pay';
+  return async (ctx: RouteContext) => {
+    const c = await sessionContext(deps, ctx, staff);
+    const customer = customerOf(ctx, staff);
+    const request = typed(() => parsePackagePayRequest(ctx.body));
+    const key = inputOf(ctx)['idempotencyKey'];
+    if (key !== undefined && (typeof key !== 'string' || !KEY.test(key))) throw new RouteError(400, 'bad_input');
+    type Step = { kind: 'price_changed'; quote: unknown } | { kind: 'placed'; placed: PlacedOrder };
+    const step = await inTx<Step>(deps.db, c, (tx) =>
+      withIdempotency(tx, key as string | undefined, requestHash(path, ctx.body ?? null), async (): Promise<Step> => {
+        const live = await findLivePackageOrder(tx, request.choice.productId, customer);
+        if (live) return { kind: 'placed', placed: live };
+        const prepared = await preparePackagePay(tx, customer, request, deps.sources, { forCustomer: staff });
+        if (prepared.kind === 'price_changed') return { kind: 'price_changed', quote: prepared.quote };
+        return { kind: 'placed', placed: await placePackageOrder(tx, customer, prepared.quote, deps.sources) };
+      }),
+    );
+    if (step.kind === 'price_changed') return { priceChanged: true, quote: step.quote };
+    const p = step.placed;
+    if (p.confirmed) return { orderId: p.orderId, payment: null, confirmed: true };
+    // After commit: the Beam charge. payment_unavailable has already ended the order and given back what it took.
+    const started = await startPayment({ ...deps.payments, db: deps.db, privateKey: deps.payments.privateKey() }, c, p.orderId);
+    if (!started.ok) throw new RouteError(503, 'payment_unavailable');
+    return {
+      orderId: p.orderId,
+      payment: { id: started.paymentId, amountSatang: started.amountSatang, qrImageBase64: started.qrImageBase64, qrExpiresAt: started.qrExpiresAt },
+      confirmed: false,
+    };
+  };
+}
+
 /**
  * F04-T11 to T13 with F05-T04b. POST /checkout/quote and /checkout/pay need a signed in person (a guest signs in
  * first, R8-AC4). GET /orders/:id is the stored snapshot, own or staff by the row policies. POST /staff/orders/quote
  * and /pay are the same pricing for a named customer, front desk and owner (booking.create.staff); the customer
- * pays as a player (ROLE-01-AC4). They supersede F03's POST /staff/bookings.
+ * pays as a player (ROLE-01-AC4). They supersede F03's POST /staff/bookings. POST /checkout/package/quote and /pay are a
+ * package bought on its own (C10P, F05 package-only Pay). Staff selling a package at the desk is F06's A02c.
  */
 export function checkoutRoutes(deps: CheckoutRouteDeps): Route<unknown>[] {
   const noStore = <T>(r: Route<T>): Route<T> => ({ ...r, headers: NO_STORE });
@@ -173,5 +225,7 @@ export function checkoutRoutes(deps: CheckoutRouteDeps): Route<unknown>[] {
     ),
     noStore(route({ method: 'POST', path: '/staff/orders/quote', permission: 'booking.create.staff' }, quoteHandler(deps, true))),
     noStore(route({ method: 'POST', path: '/staff/orders/pay', permission: 'booking.create.staff' }, payHandler(deps, true))),
+    noStore(route({ method: 'POST', path: '/checkout/package/quote', needsPerson: true }, packageQuoteHandler(deps, false))),
+    noStore(route({ method: 'POST', path: '/checkout/package/pay', needsPerson: true }, packagePayHandler(deps, false))),
   ];
 }

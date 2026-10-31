@@ -10,17 +10,17 @@ describe("F10 LINE-02", () => {
   // Given the Book a court tile, when it is tapped, then C4 opens directly (BOOK-02).
   // F10/LINE-02-AC2: proven by a real or traced test in another file of this folder
   // Given any tile, when it is tapped, then its page opens with the club in the URL (D6, F02 AUTH-01-AC14); a tile for a page that needs a person starts sign in first (F02 AUTH-01-AC10).
-  test.todo("F10/LINE-02-AC3 Given any tile, when it is tapped, then its page opens with the club in the URL (D6, F02 AUTH-01-AC14); a ...");
+  // F10/LINE-02-AC3: proven by a real or traced test in another file of this folder
   // Given the owner edits a tile label in A0 step 6, when they save it, then each label is stored in Thai and English; the links cannot be edited (D54).
   // F10/LINE-02-AC4: proven by a real or traced test in another file of this folder
   // Given the labels, when the menu is uploaded or redone (P2 step 4 Upload), then the club's own labels appear and the menu is the club's own rich menu on its own Official Account (LINE templates use the club's name, logo and rules).
-  test.todo("F10/LINE-02-AC5 Given the labels, when the menu is uploaded or redone (P2 step 4 Upload), then the club's own labels ...");
+  // F10/LINE-02-AC5: proven by a real or traced test in another file of this folder
   // Given the Thai terms, when the menu labels default, then they use คอร์ต, คลาสเดี่ยว, คลาสกลุ่ม, รายชื่อรอ, วอลเล็ต, เครดิต where they apply, not เรียนเดี่ยว or เรียนกลุ่ม (HO Language; Gaps A6: L-Rich-menu is wrong).
-  test.todo("F10/LINE-02-AC6 Given the Thai terms, when the menu labels default, then they use คอร์ต, คลาสเดี่ยว, คลาสกลุ่ม, รายชื่อรอ, ...");
+  // F10/LINE-02-AC6: proven by a real or traced test in another file of this folder
   // Given a Paused club, when a tile is tapped, then the page opens in its paused state; the tiles are not removed (PLAT-03).
   test.todo("F10/LINE-02-AC7 Given a Paused club, when a tile is tapped, then the page opens in its paused state; the tiles are not ...");
   // Given the menu is uploaded, when it fails, then P2 shows the failure (a Test step) and the club stays in Draft until it works; a stale menu keeps working.
-  test.todo("F10/LINE-02-AC8 Given the menu is uploaded, when it fails, then P2 shows the failure (a Test step) and the club stays in ...");
+  // F10/LINE-02-AC8: proven by a real or traced test in another file of this folder
   // Given the rich menu, when it is built, then it is one image with Thai and English labels together, rendered on the server from the owner's six labels, and one menu serves every player (D92).
   test.todo("F10/LINE-02-AC9 Given the rich menu, when it is built, then it is one image with Thai and English labels together, ...");
   // Given the owner edits a tile label after Go live, when it is saved in Settings (A16), then the image is rendered again for the club and the change is audited (D114, PLAT-04). Six label keys are needed (D54): new keys in both files, listed for the writers.
@@ -76,7 +76,7 @@ describe("F10 LINE-05", () => {
   // Given a late payment (PAY-03) or a wrong amount (F05), when it is handled, then the player gets a message saying what happened to the money. The messages that have no board use the writers' wording on the Booking confirmed card style in v1 (D91).
   test.todo("F10/LINE-05-AC13 Given a late payment (PAY-03) or a wrong amount (F05), when it is handled, then the player gets a message ...");
   // Given the owner's pause or a cap level, when it happens, then the owner gets a message (PLAT-03-AC1, LINE-07-AC4). A failed key check or token failure is a banner and a P1 alert, not a LINE message (D114, D75).
-  test.todo("F10/LINE-05-AC14 Given the owner's pause or a cap level, when it happens, then the owner gets a message (PLAT-03-AC1, ...");
+  // F10/LINE-05-AC14: proven by a real or traced test in another file of this folder
   // Given a booking made less than 24 hours or 2 hours before start, when it is confirmed, then the reminders already past are skipped (D96).
   // F10/LINE-05-AC15: proven by a real or traced test in another file of this folder
   // Given the reminder hours (24 and 2) and the package expiry days (14 and 3), when text or settings use them, then the numbers are variables in the text and settings in code, never typed in a key (D116).

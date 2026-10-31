@@ -20,7 +20,7 @@ describe("F02 AUTH-01", () => {
   // Given a guest, when the court grid and the class schedule are shown, then they show held, taken and closed states without showing who holds or booked a slot. No player data reaches a guest.
   // F02/AUTH-01-AC7: proven by a real or traced test in another file of this folder
   // Given a guest who opens the Home screen, when the page loads, then it shows the guest Home (Find a court time, no booking card, no credits) with a Sign in action (S-C03-Guest).
-  test.todo("F02/AUTH-01-AC8 Given a guest who opens the Home screen, when the page loads, then it shows the guest Home (Find a court ...");
+  // F02/AUTH-01-AC8: proven by a real or traced test in another file of this folder
   // Given a guest who opens a page that needs a person (My bookings, Credits and wallet, Refer a friend, Profile), when it loads, then LINE Login starts first and the player lands back on that page. The spec lists only booking and buying as the sign in moment; this is the minimum for these pages to work. See Q4.
   // F02/AUTH-01-AC9: proven by a real or traced test in another file of this folder
   // Given the rich menu tile Book a court, when a guest taps it, then C4 opens directly as a guest page with no sign in (BOOK-02; Home is skipped). A tile that opens a page needing a person (My bookings, Refer a friend) starts sign in first (AC9).
@@ -37,37 +37,6 @@ describe("F02 AUTH-01", () => {
   // F02/AUTH-01-AC16: proven by a real or traced test in another file of this folder
   // Given a guest who cancels or fails LINE Login (they close the LINE consent screen, the network drops), when it ends, then they return to where they were with nothing created, and an offline error uses the existing key (P-0327 "Check your internet and try again. Nothing was booked or charged.", P-0328 "Try again"). Other failure text is a new key.
   // F02/AUTH-01-AC12: proven by a real or traced test in another file of this folder
-});
-
-describe("F02 LINE-01", () => {
-  // Given a player who opens the app inside LINE (LIFF), when sign in starts, then it finishes with no screen to tap and no extra login page. They land where they were going.
-  // F02/LINE-01-AC1: proven by a real or traced test in another file of this folder
-  // Given a player in a browser (not inside LINE), when sign in starts, then C1 shows Log in with LINE; one tap opens LINE's own login and, after it, the player returns to where they were going (AUTH-01-AC2).
-  // F02/LINE-01-AC2: proven by a real or traced test in another file of this folder
-  // Given a signed in player, when they come back later in the same LINE or browser session, then they are not asked to log in again while the LINE session stays valid. The session length is Q8.
-  // F02/LINE-01-AC3: proven by a real or traced test in another file of this folder
-  // Given each club has its own LINE provider, with its own LIFF app, LINE Login channel and Official Account under it (D7, HO LINE integration), when a player signs in, then the server verifies the LINE token with LINE and accepts it only if it was issued for that club's Login channel. A token for club A is refused at club B (CC-2).
-  // F02/LINE-01-AC4: proven by a real or traced test in another file of this folder
-  // Given the LINE user ID the server receives, when the player record is read or created, then the key is club ID plus LINE user ID and the ID is the same one the club's Official Account uses for push messages (same provider), so messages reach the person.
-  // F02/LINE-01-AC5: proven by a real or traced test in another file of this folder
-  // Given C1, when the player taps Log in with LINE, then the LIFF add friend option is set to On (normal): LINE's own consent screen offers the choice to add the Official Account, and C1 shows only a plain note about booking updates, with no checkbox (D38, HO LINE-01). H-C01-Welcome and F1-03-C01-Welcome still show a checkbox; that is now a canvas bug.
-  // F02/LINE-01-AC6: proven by a real or traced test in another file of this folder
-  // Given the player declines or ignores the friend choice on LINE's screen, when sign in finishes, then they can still book and pay. Missing the friend status must not block a booking.
-  // F02/LINE-01-AC7: proven by a real or traced test in another file of this folder
-  // Given a player who is not a friend of the club's Official Account (or has blocked it), when they pay or a booking is confirmed, then checkout is not blocked. The confirmation shows in the app, and the app asks them to add the Official Account (D9). The LINE push message may not reach them; that is expected.
-  test.todo("F02/LINE-01-AC8 Given a player who is not a friend of the club's Official Account (or has blocked it), when they pay or a ...");
-  // Given a signed in player who is not a friend, when the app shows the confirmation (AC8), then it shows the add as friend ask there. Whether it asks again at later sign ins, and how often, is Q5.
-  test.todo("F02/LINE-01-AC9 Given a signed in player who is not a friend, when the app shows the confirmation (AC8), then it shows the ...");
-  // Given a staff, coach or owner, when they sign in with LINE, then the same LIFF login is used and the role (F01) decides the surface. A person with no role at the club lands in the player app (PRD "Everyone signs in with LINE, and the role decides which surfaces and data they see"). Invite links are Q13.
-  // F02/LINE-01-AC10: proven by a real or traced test in another file of this folder
-  // Given the LINE Login or LIFF is unreachable, when sign in starts, then the player gets the offline error (P-0327) and nothing is created. Platform health alerts are LINE-06 (F10, F15).
-  // F02/LINE-01-AC11: proven by a real or traced test in another file of this folder
-  // Given a club's LINE provider, when two clubs have the same person, then the person has a different LINE user ID at each club (one provider per club, D7), so the key club ID plus LINE user ID never matches across clubs and a player at two clubs has two accounts (PRD What changes in the club app).
-  // F02/LINE-01-AC14: proven by a real or traced test in another file of this folder
-  // Given a LINE display name, when the player record is created, then the display name is stored as given by LINE and is not used as the full name unless the player confirms it (AUTH-02-AC2).
-  // F02/LINE-01-AC12: proven by a real or traced test in another file of this folder
-  // Given an access token or ID token, when the server receives it, then it is not stored longer than needed for the sign in and is never written to the audit log or to any log.
-  // F02/LINE-01-AC13: proven by a real or traced test in another file of this folder
 });
 
 describe("F02 AUTH-02", () => {
