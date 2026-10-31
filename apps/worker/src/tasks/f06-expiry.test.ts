@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
+import { closeTestDatabase } from '../testing/teardown';
 import { PACKAGE_EXPIRE, SESSION_START, WALLET_EXPIRE, runPackageExpire, runSessionStart, runWalletExpire } from './f06-expiry';
 
 // F06-T13 package_expire, wallet_expire and session_start (PKG-03-AC3, AC10, R1-AC3; D85, D89, D90). Per club, idempotent,
@@ -36,7 +37,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   await worker.end();
-  await tdb.close();
+  await closeTestDatabase(tdb);
 });
 const status = async (club: string) => {
   const c = await tdb.pool.connect();

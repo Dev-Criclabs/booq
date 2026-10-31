@@ -178,6 +178,15 @@ describe('app.substitute_coach (R4-AC1 to AC7)', () => {
     expect(await bookingRow(b)).toMatchObject({ coach_id: COACH });
   });
 
+  it('substitutes_for_booking lists the free coaches without the current one, ignoring the booking own court row; owner only (0812, R4-AC6)', async () => {
+    const b = await solo(10);
+    expect((await run<{ id: string }>(owner(), `select app.substitutes_for_booking($1) as id`, [b])).map((r) => r.id)).toEqual([COACH2]);
+    for (const c of [desk(), ctx(COACH, ['coach', 'player']), player()]) {
+      await expect(run(c, `select app.substitutes_for_booking($1)`, [b])).rejects.toThrow(/not allowed/);
+    }
+    expect(await attempt(() => run(owner(), `select app.substitutes_for_booking($1)`, ['99999999-9999-4999-8999-999999999999']))).toEqual({ ok: false, code: 'booking_not_found' });
+  });
+
   it('refuses the same coach, an unknown booking, a court booking, a started hour, a cancelled class, and a bad reason', async () => {
     const b = await solo(10);
     expect(await sub(b, COACH)).toEqual({ ok: false, code: 'coach_unavailable' });

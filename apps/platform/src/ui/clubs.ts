@@ -10,6 +10,9 @@ export interface ClubRow {
   nameEn: string;
   status: Status;
   bookingsConfirmed30d: number;
+  setup: { done: number; total: number };
+  line: { used: number; limit: number | null };
+  alerts: number;
 }
 
 export const STATUS_KEY: Record<Status, string> = { live: 'X-0021', testing: 'X-0026', draft: 'X-0029', paused: 'X-0163' };
