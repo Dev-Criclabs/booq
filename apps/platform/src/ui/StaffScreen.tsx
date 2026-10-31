@@ -91,6 +91,7 @@ export function StaffScreen() {
     <ConsoleNav current="team" />
     <main className="page wide" data-testid="staff">
       <h1>{t('X-new.staff_title')}</h1>
+      <p className="lede">{t('X-new.staff_lede')}</p>
       {pending ? (
         <StepUpPanel
           signInHref="/sign-in?next=/staff"
@@ -124,7 +125,7 @@ export function StaffScreen() {
       ) : null}
       {state.kind === 'ready' ? (
         <>
-          <form onSubmit={onInvite} className="form inline" data-testid="invite-form">
+          <form onSubmit={onInvite} className="form inline card" data-testid="invite-form">
             <h2>{t('X-0260')}</h2>
             <label htmlFor="displayName">{t('X-0261')}</label>
             <input id="displayName" name="displayName" required placeholder={t('X-0266')} value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} />

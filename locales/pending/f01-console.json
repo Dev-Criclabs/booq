@@ -206,6 +206,7 @@
     "X-new.legal_unknown_field": "Only {clubName} and {legalName} can be used in the text. Found: {field}.",
     "X-new.legal_invalid": "The texts were not accepted. Check every field.",
     "X-new.legal_admin_only": "Only a platform admin can publish a version.",
-    "X-new.config_fixed": "Fixed by the product."
+    "X-new.config_fixed": "Fixed by the product.",
+    "X-new.staff_lede": "Everyone who can sign in to the BOOQ console, with their role and whether they can sign in."
   }
 }

@@ -157,13 +157,18 @@ export function ClubDetailScreen({ id }: { id: string }) {
 
         {club ? (
           <>
-            <h1>{name}</h1>
-            <p>
-              <span className={`pill ${status}`} data-testid="status">{t(STATUS_KEY[status])}</span>{' '}
-              <span data-testid="mode">{t(mode === 'edit' ? 'X-new.club_mode_edit' : 'X-new.club_mode_look')}</span>
-            </p>
-            {club.counts ? <p>{t('X-new.club_bookings', { count: club.counts.bookingsConfirmed30d })} · {t('X-new.club_messages', { count: club.counts.lineMessagesSent30d })}</p> : null}
-
+            <div className="head">
+              <div>
+                <h1>{name}</h1>
+                <p className="lede" data-testid="mode">{t(mode === 'edit' ? 'X-new.club_mode_edit' : 'X-new.club_mode_look')}</p>
+                {club.counts ? <p className="lede">{t('X-new.club_bookings', { count: club.counts.bookingsConfirmed30d })} · {t('X-new.club_messages', { count: club.counts.lineMessagesSent30d })}</p> : null}
+              </div>
+              <div className="tools">
+                <span className={`pill ${status}`} data-testid="status">{t(STATUS_KEY[status])}</span>
+                <a className="btn secondary small" href={`/clubs/${encodeURIComponent(id)}/launch`} data-testid="launch-link-top">{t('X-new.launch_link')}</a>
+              </div>
+            </div>
+            <div className="grid2">
             <section aria-labelledby="status-title">
               <h2 id="status-title">{t('X-0135')}</h2>
               {status !== 'paused' ? (
@@ -200,16 +205,19 @@ export function ClubDetailScreen({ id }: { id: string }) {
               <h2 id="setup-title">{t('X-new.club_setup_title', { done: club.progress.setup.filter((i) => i.done).length, total: club.progress.setup.length })}</h2>
               <ul className="checks" data-testid="setup">
                 {club.progress.setup.map((i) => (
-                  <li key={i.item} data-testid={`setup-${i.item}`}>
+                  <li key={i.item} data-testid={`setup-${i.item}`} data-state={i.done ? 'done' : 'open'}>
                     {t(itemKey(SETUP_KEY, i.item))} · {i.done ? t('X-new.club_item_done') : t('X-new.club_item_open')} · {t(i.owed_by === 'owner' ? 'X-0215' : 'X-new.club_owed_booq')}
                   </li>
                 ))}
               </ul>
-              <h2>{t('X-0154')}</h2>
+            </section>
+
+            <section aria-labelledby="live-title">
+              <h2 id="live-title">{t('X-0154')}</h2>
               <p><a href={`/clubs/${encodeURIComponent(id)}/launch`} data-testid="launch-link">{t('X-new.launch_link')}</a></p>
               <ul className="checks" data-testid="launch">
                 {club.progress.launch.map((i) => (
-                  <li key={i.item} data-testid={`launch-${i.item}`}>
+                  <li key={i.item} data-testid={`launch-${i.item}`} data-state={i.result === 'pass' ? 'done' : i.result === 'fail' ? 'fail' : 'wait'}>
                     {t(itemKey(LAUNCH_KEY, i.item))} · {t(RESULT_KEY[i.result] ?? 'X-new.result_pending')} · {t(i.owed_by === 'owner' ? 'X-0215' : 'X-new.club_owed_booq')}
                   </li>
                 ))}
@@ -269,6 +277,7 @@ export function ClubDetailScreen({ id }: { id: string }) {
                 <ul data-testid="features">{club.support.features.map((f) => <li key={f.feature_key}>{f.feature_key} · {t(f.enabled ? 'X-new.feature_on' : 'X-new.feature_off')}</li>)}</ul>
               )}
             </section>
+            </div>
           </>
         ) : null}
       </main>

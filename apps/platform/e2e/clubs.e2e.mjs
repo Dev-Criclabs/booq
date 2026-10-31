@@ -23,14 +23,17 @@ const CLUBS = [
   { clubId: 'c-pause', nameTh: 'พัก', nameEn: 'Paused Club', status: 'paused', bookingsConfirmed30d: 12 },
   { clubId: 'c-live2', nameTh: 'สอง', nameEn: 'Second Live Club', status: 'live', bookingsConfirmed30d: 40 },
 ];
-const api = (over = {}) => (method, path) => (over[`${method} ${path}`] ? over[`${method} ${path}`] : method === 'GET' && path === '/clubs' ? { status: 200, body: { clubs: CLUBS } } : { status: 404, body: { code: 'not_found' } });
+const api = (over = {}) => (method, path) => (over[`${method} ${path}`] ? over[`${method} ${path}`] : path === '/auth/me' ? { status: 200, body: { id: 'a1', role: 'platform_admin', displayName: 'Ada Admin', stepUpFresh: true } } : method === 'GET' && path === '/clubs' ? { status: 200, body: { clubs: CLUBS } } : { status: 404, body: { code: 'not_found' } });
 
 describe('the clubs list', () => {
   it('lists every club with its status and bookings, with counts on the filters', async () => {
     const { page, context } = await openPage(browser, api(), { width: 1024, height: 800 });
     await page.goto(`${app.base}/clubs`);
     await page.getByTestId('club-list').waitFor();
-    assert.equal(await page.locator('h1').innerText(), 'Every club on BOOQ');
+    assert.equal(await page.locator('h1').innerText(), 'Clubs');
+    assert.equal(await page.locator('.lede').first().innerText(), 'Every club on BOOQ');
+    await page.getByTestId('me').waitFor();
+    assert.equal(await page.getByTestId('me').innerText(), 'Ada Admin\nPlatform admin');
     assert.equal(await page.locator('[data-testid^=club-c-]').count(), 5);
     assert.equal(await page.getByTestId('filter-all').innerText(), 'All · 5');
     assert.equal(await page.getByTestId('filter-live').innerText(), 'Live · 2');

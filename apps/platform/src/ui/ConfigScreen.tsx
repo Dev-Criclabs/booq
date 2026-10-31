@@ -54,7 +54,7 @@ export function ConfigScreen() {
       <ConsoleNav current="config" />
       <main className="page wide" data-testid="config">
         <h1>{t('X-new.config_title')}</h1>
-        <p>{t('X-new.config_intro')}</p>
+        <p className="lede">{t('X-new.config_intro')}</p>
         {state.kind === 'loading' ? <p aria-busy="true">…</p> : null}
         {state.kind === 'error' ? (
           <p role="alert" data-testid="load-error">

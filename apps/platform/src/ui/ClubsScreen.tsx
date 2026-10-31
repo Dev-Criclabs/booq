@@ -27,7 +27,8 @@ export function ClubsScreen() {
     <>
       <ConsoleNav current="clubs" />
       <main className="page wide" data-testid="clubs">
-        <h1>{t('X-0007')}</h1>
+        <h1>{t('X-0002')}</h1>
+        <p className="lede">{t('X-0007')}</p>
         {state.kind === 'loading' ? <p aria-busy="true">…</p> : null}
         {state.kind === 'error' ? (
           <p role="alert" data-testid="load-error">
