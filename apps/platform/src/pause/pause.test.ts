@@ -106,10 +106,10 @@ describe('resume (PLAT-01-AC10, PLAT-03-AC11)', () => {
     await tdb.advance('2 days');
     const baseline = await registeredHandlers();      // handlers other features register (F06 0508, ...)
     const r = await resume(admin, { reason: 'fixed' });
-    expect(r).toEqual({ ok: true, pausedAt: '2026-12-29T03:00:00.000Z', resumedAt: '2026-12-31T03:00:00.000Z', handlersRun: baseline, ownerNotified: true });
+    expect(r).toEqual({ ok: true, pausedAt: '2026-12-29T03:00:00.000Z', resumedAt: '2026-12-31T03:00:00.000Z', handlersRun: baseline, ownerNotified: false });
     expect(await status()).toBe('live');
     expect((await p6()).find((x) => x.action === 'club.resumed')).toMatchObject({ name: 'Ada Admin', reason: 'fixed', club_id: CLUB });
-    expect(notices.at(-1)).toMatchObject({ kind: 'club_resumed', templateKey: 'L-new.club_resumed', params: { clubName: 'Club A' } });
+    expect(notices.map((n) => n.kind), 'a resume tells the owner nothing (the PRD says only the pause)').toEqual(['club_paused']);
   });
 
   it('refuses a specialist, a missing reason, a stale factor and a club that is not paused', async () => {

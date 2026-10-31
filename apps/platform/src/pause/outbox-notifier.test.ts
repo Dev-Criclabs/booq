@@ -58,12 +58,13 @@ describe('the owner notice through the outbox', () => {
     expect((await tdb.query(`select status from public.club where id = $1`, [CLUB])).rows[0].status).toBe('paused');
   });
 
-  it('a resume has no message kind yet: the notice fails, is logged, and the club is resumed', async () => {
+  it('a resume sends no message and logs no failure', async () => {
     await makeOwner();
     await pause();
     const r = await svc.resumeClub({ staffId: admin, stepUpFresh: true }, CLUB, { reason: 'fixed' });
     expect(r).toMatchObject({ ok: true, ownerNotified: false });
     expect(await outbox()).toHaveLength(1);
+    expect(await p6('club.owner_notice_failed')).toEqual([]);
   });
 
   it('only a platform admin can queue it, and only an owner kind', async () => {
