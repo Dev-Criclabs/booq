@@ -37,7 +37,9 @@ const REQUIRED_SETTINGS: Array<[string, unknown]> = [
   ['rest_cap_hours', 6], ['group_min_players', 4], ['group_max_players', 6], ['package_expiry_reminder_days', [14, 3]], ['package_qr_minutes', 15],
   ['vat_enabled', false], ['resource_label', 'court'],
 ];
-const RECORDED = ['beam_key_swap', 'owner_signed_in', 'owner_verified', 'product_priced', 'test_booking_completed'];
+/** The checks a person or a feature records (kind 'recorded'); read from the producers so a new derived check never lands here by mistake. */
+const recordedKeys = async (db: Querier): Promise<string[]> =>
+  (await db.query(`select check_key from app.launch_producers where kind = 'recorded'`)).rows.map((r) => r['check_key'] as string);
 
 /** Makes the facts behind every derived launch check true, for a club whose setup is complete (F01-T27b, migration 0046). */
 async function satisfyDerivedChecks(db: Querier, club: string): Promise<void> {
@@ -47,6 +49,8 @@ async function satisfyDerivedChecks(db: Querier, club: string): Promise<void> {
     await db.query(`insert into public.club_setting (club_id, key, value) values ($1, $2, $3::jsonb) on conflict (club_id, key) do update set value = excluded.value`, [club, k, JSON.stringify(v)]);
   }
   await db.query(`insert into platform.config (key, value) values ('pay_tap_limit_count', '5'), ('pay_tap_limit_window_seconds', '60') on conflict (key) do update set value = excluded.value`);
+  // F10 (0610): the sender's retry values; the check exists on databases that carry 0610.
+  await db.query(`insert into platform.config (key, value) values ('line_send_max_attempts', '3'), ('line_send_retry_seconds', '60') on conflict (key) do update set value = excluded.value`);
 }
 /** Makes the fact behind one derived check false again. */
 async function breakDerived(db: Querier, club: string, key: string): Promise<void> {
@@ -54,17 +58,20 @@ async function breakDerived(db: Querier, club: string, key: string): Promise<voi
     case 'line_test': await db.query(`update public.line_connection set tested_at = null where club_id = $1`, [club]); break;
     case 'receipt_prefix_set': await db.query(`update public.club set receipt_prefix = null where id = $1`, [club]); break;
     case 'pay_tap_limit_set': await db.query(`delete from platform.config where key like 'pay_tap_limit_%'`); break;
+    case 'line_send_retry_set': await db.query(`delete from platform.config where key in ('line_send_max_attempts', 'line_send_retry_seconds')`); break;
     case 'template_required_settings': await db.query(`delete from public.club_setting where club_id = $1 and key = 'hold_minutes'`, [club]); break;
     default: throw new Error(`recordLaunchChecks cannot break ${key}`);
   }
 }
 
 /**
- * Makes every required launch check pass, then makes the first checks (in list order) the given results: a recorded check
+ * The one helper that makes a club pass Go live: every required launch check passes, whatever the configured list holds, so a new check
+ * never breaks the lifecycle tests. Makes every required launch check pass, then makes the first checks (in list order) the given results: a recorded check
  * is written as that result, a derived check has its fact undone (so it reads pending). Returns the required keys.
  */
 export async function recordLaunchChecks(db: Querier, club: string, first: string[] = []): Promise<string[]> {
   const keys = await requiredLaunchKeys(db);
+  const recorded = await recordedKeys(db);
   await satisfyDerivedChecks(db, club);
   await db.query(`update public.payment_connection set merchant_id_live = 'm-live' where club_id = $1`, [club]);
   await db.query(
@@ -81,7 +88,7 @@ export async function recordLaunchChecks(db: Querier, club: string, first: strin
   }
   for (const [i, key] of keys.entries()) {
     const wanted = first[i] ?? 'pass';
-    if (RECORDED.includes(key)) {
+    if (recorded.includes(key)) {
       await db.query(
         `insert into platform.launch_check (club_id, check_key, result) values ($1, $2, $3)
          on conflict (club_id, check_key) do update set result = excluded.result`,
