@@ -27,31 +27,6 @@ describe("F10 LINE-02", () => {
   // F10/LINE-02-AC10: proven by a real or traced test in another file of this folder
 });
 
-describe("F10 LINE-03", () => {
-  // Given any message, when it is sent, then it is sent with the club's own token from the club's own Official Account (CC-1), to the LINE user ID of the player at that club.
-  // F10/LINE-03-AC1: proven by a real or traced test in another file of this folder
-  // Given a player, when a message is sent, then it is in the player's language on their record (Thai or English); when none is set, it is the LINE app language at sign in (F02 AUTH-02-AC25). A queued message uses the language at send time, not at event time (D93).
-  // F10/LINE-03-AC2: proven by a real or traced test in another file of this folder
-  // Given a message, when it is built, then its text comes from the language files by key and its layout is fixed in code; the club's name, logo and rule values (hours, days, minutes) fill the template.
-  // F10/LINE-03-AC3: proven by a real or traced test in another file of this folder
-  // Given the admin, when its pages are listed, then there is no page, route or button to edit a message (A15 is removed; E2E check).
-  // F10/LINE-03-AC4: proven by a real or traced test in another file of this folder
-  // Given a player who is not a friend of the club's Official Account or has blocked it, when a message is sent, then LINE refuses it, the send is recorded as undeliverable, nothing is blocked, and the app shows the confirmation and asks them to add the account (D9, F02 LINE-01-AC8). The message is not retried in a loop.
-  // F10/LINE-03-AC5: proven by a real or traced test in another file of this folder
-  // Given a message was sent, when it is recorded, then a log row notes message type, club, recipient reference, time and result, with no message text beyond the type, for usage and support; the log is not visible to BOOQ staff beyond counts (CC-3).
-  // F10/LINE-03-AC6: proven by a real or traced test in another file of this folder
-  // Given the same event, when the job runs twice or a retry happens, then the player gets the message once (each message has a dedupe key such as booking and type).
-  // F10/LINE-03-AC7: proven by a real or traced test in another file of this folder
-  // Given a club in Testing, when a message is sent, then it goes through the club's real Official Account to the testers and counts toward the monthly cap (D32); it is flagged test in the log and excluded from reports (D33).
-  // F10/LINE-03-AC8: proven by a real or traced test in another file of this folder
-  // Given a club's Messaging API token fails, when a send is tried, then the send fails safely, nothing else breaks, BOOQ sees an alert in P1 and the owner sees a banner in the club admin (D114, LINE-06). The owner is not told through LINE, because the message would go through the failed Official Account.
-  // F10/LINE-03-AC9: proven by a real or traced test in another file of this folder
-  // Given a message goes to staff or a coach, when it is sent, then it is sent in their language: staff and coaches have a language field that defaults to their LINE app language (D95).
-  // F10/LINE-03-AC10: proven by a real or traced test in another file of this folder
-  // Given a message for a Paused club, when the event is a reminder or a cancellation result of an existing booking, then it is still sent (PLAT-03: existing bookings and reminders stay).
-  test.todo("F10/LINE-03-AC11 Given a message for a Paused club, when the event is a reminder or a cancellation result of an existing ...");
-});
-
 describe("F10 LINE-04", () => {
   // Given a booking is confirmed (a verified payment, credit used or nothing to pay), when it is saved, then the card is sent at once with court or class, date, time, coach if any, amount paid, receipt number, and the buttons View booking and Add to calendar.
   // F10/LINE-04-AC1: proven by a real or traced test in another file of this folder
