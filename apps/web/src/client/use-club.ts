@@ -13,6 +13,8 @@ export interface ClubConfig {
   defaultLanguage: string;
   status: string;
   liffId: string | null;
+  /** The LINE OA's basic id for the Add on LINE button, or null when unset. */
+  oaBasicId?: string | null;
   languages: Lang[];
   /** The current privacy notice and terms release (D152), or null when none is published. */
   noticeVersion?: string | null;

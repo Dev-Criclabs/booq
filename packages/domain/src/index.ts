@@ -15,3 +15,4 @@ export * from './coaches';
 export * from './admin';
 export * from './payments';
 export { SETTINGS, checkSettingWrite, otherGroupLimitKey, settingByKey, validateSetting, type SettingDef, type SettingWrite } from './club/settings-registry';
+export { settingsRoutes, type SettingView } from './club/settings';

@@ -28,7 +28,7 @@ describe('public config', () => {
   it('a live club answers its name, default language, status and LIFF id, and the languages offered', async () => {
     expect(await svc.get('a')).toEqual({
       ok: true,
-      config: { nameTh: 'ก', nameEn: 'Club A', defaultLanguage: 'th', status: 'live', liffId: 'liffA', languages: ['th', 'en'], noticeVersion: null },
+      config: { nameTh: 'ก', nameEn: 'Club A', defaultLanguage: 'th', status: 'live', liffId: 'liffA', oaBasicId: null, languages: ['th', 'en'], noticeVersion: null },
     });
   });
   it('carries the current notice release, so a sign-up consents to it (D152, migration 0048)', async () => {
@@ -40,7 +40,13 @@ describe('public config', () => {
   it('a Draft club answers the same minimal config and nothing more (D102)', async () => {
     const r = await svc.get('b');
     expect(r).toMatchObject({ ok: true, config: { status: 'draft', liffId: 'liffB' } });
-    expect(Object.keys((r as { config: object }).config).sort()).toEqual(['defaultLanguage', 'languages', 'liffId', 'nameEn', 'nameTh', 'noticeVersion', 'status']);
+    expect(Object.keys((r as { config: object }).config).sort()).toEqual(['defaultLanguage', 'languages', 'liffId', 'nameEn', 'nameTh', 'noticeVersion', 'oaBasicId', 'status']);
+  });
+  it('the guest view exposes the OA basic id when one is set (0060), null when not, and nothing else new', async () => {
+    await tdb.query(`update public.line_connection set oa_basic_id = '@hunter' where club_id = $1`, [A]);
+    expect(await svc.get('a')).toMatchObject({ ok: true, config: { oaBasicId: '@hunter' } });
+    expect(await svc.get('b')).toMatchObject({ ok: true, config: { oaBasicId: null } });
+    expect(Object.keys(((await svc.get('a')) as { config: object }).config).sort()).toEqual(['defaultLanguage', 'languages', 'liffId', 'nameEn', 'nameTh', 'noticeVersion', 'oaBasicId', 'status']);
   });
   it('a paused club still answers (AUTH-01-AC11)', async () => {
     await tdb.query(`update public.club set status = 'paused' where id = $1`, [A]);
@@ -56,7 +62,7 @@ describe('public config', () => {
 describe('what a guest can read (D103)', () => {
   it('the public view lists exactly these columns; a new column fails this test', async () => {
     const cols = (await tdb.query(`select column_name from information_schema.columns where table_schema = 'public' and table_name = 'public_club_config' order by column_name`)).rows;
-    expect(cols.map((c) => c.column_name)).toEqual(['default_language', 'liff_id', 'name_en', 'name_th', 'notice_version', 'status']);
+    expect(cols.map((c) => c.column_name)).toEqual(['default_language', 'liff_id', 'name_en', 'name_th', 'notice_version', 'oa_basic_id', 'status']);
   });
   it('a guest reads one club’s config through the view and nothing of another club', async () => {
     const rows = (await db.withClubTx(guest(A), (tx) => tx.query('select name_en from public.public_club_config'))).rows;

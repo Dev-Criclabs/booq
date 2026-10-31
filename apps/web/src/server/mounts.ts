@@ -1,4 +1,4 @@
-import { createClaimService, createDataRequestService, createImportService, createProfileEditService, quoteSources, normalizePhone } from '@booq/domain';
+import { settingsRoutes, createClaimService, createDataRequestService, createImportService, createProfileEditService, quoteSources, normalizePhone } from '@booq/domain';
 import { createRedactingLogger, type Route } from '@booq/auth';
 import { beamGateway } from '@booq/beam';
 import { loadDecryptKey } from '@booq/secrets';
@@ -59,6 +59,7 @@ export const mounts: readonly Mount[] = [
   (m) => lineFriendRoutes({ db: m.db }),
   (m) => receiptRoutes({ db: m.db, pdf: createReceiptPdf(m.config.localesDir ?? null) }),
   (m) => reportRoutes({ db: m.db }),
+  (m) => Object.values(settingsRoutes(m.db)),
   (m) => [publicScheduleRoutes, playerBookingRoutes, staffBookingRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
   (m) => noticeRoutes({ db: m.db, clubBySlug: m.clubBySlug }),
   (m) => [publicClassRoutes, playerClassRoutes, staffClassRoutes].flatMap((f) => f({ db: m.db, now: m.now, clubBySlug: m.clubBySlug })),
