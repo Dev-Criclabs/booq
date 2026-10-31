@@ -1,5 +1,6 @@
 import { route, RouteError, type RouteContext } from '@booq/auth';
 import type { Db } from '@booq/db';
+import { withoutTransportKeys } from './input';
 
 // POST /resources and PUT /resources/{id} (F01 design 5.1; PLAT-02 "Meets"; CC-4, BOOK-01-AC16, decision D50).
 // A court is never deleted: taking it out of service sets active = false and keeps its id and history (CC-4).
@@ -30,7 +31,8 @@ function fields(body: Record<string, unknown>, allowed: readonly string[]): Fiel
   return out as Fields;
 }
 
-const obj = (input: unknown): Record<string, unknown> => {
+const obj = (raw: unknown): Record<string, unknown> => {
+  const input = withoutTransportKeys(raw);
   if (typeof input !== 'object' || input === null || Array.isArray(input)) throw new RouteError(400, 'invalid_input');
   return input as Record<string, unknown>;
 };
