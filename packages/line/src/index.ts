@@ -6,3 +6,4 @@ export { createMessageBuilder, fill, MessageTextError, type Dictionary, type Lin
 export { loadMessageDictionary } from './messages/dictionary';
 export type { MessageFacts, MessageHour } from './messages/facts';
 export { RICH_MENU_IMAGE, RichMenuLayoutError, labelsHash, layoutRichMenu, renderRichMenu, type RenderedRichMenu, type RichMenuLabel, type RichMenuLabels } from './rich-menu/render';
+export { probeLine, type LineProbeCheck, type LineProbeKey, type LineProbeOptions, type LineProbeResult, type LineSetup } from './probe/probe';
