@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { FakeBeam, FakeClock } from '../../../tests/fakes';
-import { BEAM_HOSTS, BeamError, beamGateway } from './adapter';
+import { BEAM_HOSTS, BeamError, beamGateway, probeBeam } from './adapter';
 
 // F05-T03: the Beam adapter against QA's fake Beam over HTTP (PAY-01-AC4, AC10, PAY-02-AC2, PAY-05; D32,
 // D76, D80; design 3.1, 5.1). Real Playground keys are not available yet (G-checks are F05-T13).
@@ -95,5 +95,33 @@ describe('failures and keys (PAY-01-AC7, design 5.1 steps 1 and 4)', () => {
     const g = gw();
     expect(Object.keys(g).sort()).toEqual(['createCharge', 'getCharge', 'host', 'set']);
     expect(JSON.stringify(g)).not.toContain(KEY);
+  });
+});
+
+// probeBeam: the console's connection check (F05 design 5.7; PAY-01-AC6, AC7; D32). One authenticated read, no charge.
+describe('probeBeam', () => {
+  const creds = (over: Partial<Parameters<typeof probeBeam>[0]> = {}) => ({ set: 'test' as const, merchantId: 'm-hunter', apiKey: KEY, baseUrl: server.url, ...over });
+
+  it('a key Beam accepts is ok, and nothing is created', async () => {
+    expect(await probeBeam(creds())).toEqual({ ok: true, code: 'ok' });
+    expect(beam.createRequests).toEqual([]);
+  });
+  it('a refused key is key_refused; Beam down is unreachable', async () => {
+    expect(await probeBeam(creds({ apiKey: 'wrong' }))).toEqual({ ok: false, code: 'key_refused' });
+    expect(await probeBeam(creds({ baseUrl: 'http://127.0.0.1:1' }))).toEqual({ ok: false, code: 'unreachable' });
+  });
+  it('a missing merchant or key is not configured, without calling Beam', async () => {
+    expect(await probeBeam(creds({ merchantId: '' }))).toEqual({ ok: false, code: 'not_configured' });
+    expect(await probeBeam(creds({ apiKey: '' }))).toEqual({ ok: false, code: 'not_configured' });
+  });
+  it('the webhook key, when given, must be well formed base64 that decodes to a key', async () => {
+    expect(await probeBeam(creds({ hmacKey: Buffer.from('club-key').toString('base64') }))).toEqual({ ok: true, code: 'ok' });
+    expect(await probeBeam(creds({ hmacKey: '' }))).toEqual({ ok: false, code: 'hmac_key_invalid' });
+    expect(await probeBeam(creds({ hmacKey: '!!!not base64' }))).toEqual({ ok: false, code: 'hmac_key_invalid' });
+  });
+  it('the key never comes back in the result', async () => {
+    for (const c of [creds(), creds({ apiKey: KEY + 'x' }), creds({ baseUrl: 'http://127.0.0.1:1' })]) {
+      expect(JSON.stringify(await probeBeam(c))).not.toContain(KEY);
+    }
   });
 });
