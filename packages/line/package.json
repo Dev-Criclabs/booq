@@ -6,7 +6,8 @@
   "main": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./server": "./src/server.ts"
+    "./server": "./src/server.ts",
+    "./probe": "./src/probe/probe.ts"
   },
   "dependencies": {
     "@expo-google-fonts/dm-sans": "0.4.2",

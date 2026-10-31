@@ -27,7 +27,9 @@ export interface SupportSetup {
 export type GetSetupResult = { ok: true; setup: SupportSetup } | { ok: false; code: 'not_found' };
 export type PutSetupResult =
   | { ok: true; changed: string[]; pendingOwnerContact?: string; connectionTest?: TestOutcome }
-  | { ok: false; code: 'not_found' | 'look_only' | 'invalid' | 'section_unavailable' | 'step_up_required' };
+  | { ok: false; code: 'not_found' | 'look_only' | 'invalid' | 'section_unavailable' | 'step_up_required' }
+  /** The probe on the typed values failed and the staff member did not choose to save anyway: nothing was written (D167). */
+  | { ok: false; code: 'connection_test_failed'; connectionTest: TestOutcome };
 export type TestConnectionResult = ({ ok: true } & TestOutcome) | { ok: false; code: 'not_found' | 'invalid' | 'section_unavailable' };
 
 // The club columns the support view shows: setup and the owner contact (decision D2). Not the
@@ -303,6 +305,13 @@ export function createSupportService(deps: { db: PlatformDb; connections?: Conne
       if (gate === 'ok') {
         const prepared = await deps.connections.prepare(section as 'line' | 'payments', body);
         if (!prepared.ok) return { ok: false, code: 'invalid' };
+        const t = prepared.plan.test;
+        if (t && t.result === 'fail' && !prepared.plan.saveAnyway) {
+          await db.withPlatformTx({ staffId: staff.id, clubId, staffLabel: staff.display_name }, (tx) =>
+            p6(tx, 'club.connection_tested', clubId, { connection: section === 'line' ? 'line' : 'beam', result: 'fail', code: t.code, saved: false }),
+          );
+          return { ok: false, code: 'connection_test_failed', connectionTest: t };
+        }
         connection = { connections: deps.connections, plan: prepared.plan };
       }
     }

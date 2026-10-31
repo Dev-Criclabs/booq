@@ -9,6 +9,7 @@ import type { Clock } from '@booq/time';
 import { bangkokDate } from '@booq/time';
 import { createClubService } from '../clubs/clubs';
 import { clubRoutes } from '../clubs/routes';
+import { loadEncryptKey } from '@booq/secrets';
 import { createOutboxOwnerNotifier } from '../pause/outbox-notifier';
 import { createPauseService, type OwnerNotifier } from '../pause/pause';
 import { createStatusService } from '../status/status';
@@ -51,6 +52,8 @@ export interface PlatformConfig {
   staffInvite: { url: string; signingSecret: string; consoleBaseUrl: string } | null;
   /** Attempts per caller and window on the sign-in routes. Platform config; absent means no limit (set it before launch). */
   signInRateLimit: { limit: number; windowSeconds: number } | null;
+  /** The LINE and Beam checks (D167): the secrets public key (it can only encrypt), LINE's API address and the wait for an answer. Absent: the LINE and payments sections answer section_unavailable. */
+  providers?: { encryptKey: string; lineApiUrl: string; probeTimeoutMs: number } | null;
 }
 
 const WHOLE = /^[1-9][0-9]*$/;
@@ -76,6 +79,11 @@ export function readPlatformConfig(env: Record<string, string | undefined>): Pla
   const window = env['PLATFORM_SIGNIN_RATE_WINDOW_SECONDS'];
   if ((limit && !window) || (!limit && window)) throw new Error('PLATFORM_SIGNIN_RATE_LIMIT and PLATFORM_SIGNIN_RATE_WINDOW_SECONDS are set together or not at all');
   if (limit && (!WHOLE.test(limit) || !WHOLE.test(window!))) throw new Error('PLATFORM_SIGNIN_RATE_LIMIT and PLATFORM_SIGNIN_RATE_WINDOW_SECONDS must be whole numbers above zero');
+  const lineUrl = env['LINE_API_BASE_URL'];
+  const timeout = env['PROVIDER_PROBE_TIMEOUT_MS'];
+  if (Boolean(lineUrl) !== Boolean(timeout)) throw new Error('LINE_API_BASE_URL and PROVIDER_PROBE_TIMEOUT_MS are set together or not at all');
+  if (lineUrl && !/^https?:\/\/[^\s/]+(\/.*)?$/.test(lineUrl)) throw new Error('LINE_API_BASE_URL must be an http or https address');
+  if (timeout && !WHOLE.test(timeout)) throw new Error('PROVIDER_PROBE_TIMEOUT_MS must be a whole number above zero');
   return {
     databaseUrl: env['DATABASE_URL']!,
     signingKey: env['PLATFORM_SIGNING_KEY']!,
@@ -84,6 +92,8 @@ export function readPlatformConfig(env: Record<string, string | undefined>): Pla
     healthToken: health ?? null,
     staffInvite: inviteUrl ? { url: inviteUrl, signingSecret: inviteSecret!, consoleBaseUrl: consoleBase! } : null,
     signInRateLimit: limit ? { limit: Number(limit), windowSeconds: Number(window) } : null,
+    // The public key is the secrets package's to read; it can only encrypt (SR-03). Set with the LINE address, or the connection sections stay unavailable.
+    providers: lineUrl ? { encryptKey: loadEncryptKey(env), lineApiUrl: lineUrl.replace(/\/+$/, ''), probeTimeoutMs: Number(timeout) } : null,
   };
 }
 

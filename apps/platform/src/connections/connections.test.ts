@@ -84,22 +84,45 @@ describe('LINE section (P2 step 4)', () => {
     expect(await everything()).not.toMatch(/MARKER/);
   });
 
-  it('with test: the probe runs with the typed token and a pass records tested_at; a fail leaves it empty and says why', async () => {
+  it('with test: the probe runs with the typed token and a pass records tested_at; a fail saves nothing and says why', async () => {
     const pass = await put(spec, 'line', body({ test: true }));
     expect(pass).toMatchObject({ ok: true, connectionTest: { result: 'pass' } });
-    expect(lineCalls).toEqual([{ channelAccessToken: TOKEN, expectedBasicId: '@club-a' }]);
+    expect(lineCalls).toEqual([{ channelAccessToken: TOKEN, expectedBasicId: '@club-a', loginChannelId: '1650000001', liffId: '1650000001-AbCdEfGh' }]);
     expect((await lineRow()).tested_at).not.toBeNull();
 
-    lineResult = { ok: false, code: 'unauthorized' };
-    const fail = await put(spec, 'line', body({ test: true }));
-    expect(fail).toMatchObject({ ok: true, connectionTest: { result: 'fail', code: 'unauthorized' } });
+    lineResult = { ok: false, code: 'messaging_api_token_rejected' };
+    const fail = await put(spec, 'line', body({ test: true, line_plan_kind: 'free' }));
+    expect(fail).toEqual({ ok: false, code: 'connection_test_failed', connectionTest: { result: 'fail', code: 'messaging_api_token_rejected' } });
+    expect((await lineRow()).tested_at).not.toBeNull();
+    expect((await lineRow()).line_plan_kind, 'a refused save changes nothing').toBe('paid');
+  });
+
+  it('D167: save anyway writes a failed test with tested_at empty and records line_token as failed in club_health; a later pass clears it', async () => {
+    const health = async () => (await tdb.query(`select check_key, status, reason from platform.club_health where club_id = $1 order by check_key`, [CLUB])).rows;
+    lineResult = { ok: false, code: 'messaging_api_token_rejected' };
+    expect(await put(spec, 'line', body({ test: true, save_anyway: true }))).toMatchObject({ ok: true, connectionTest: { result: 'fail' } });
     expect((await lineRow()).tested_at).toBeNull();
+    expect(await health()).toEqual([{ check_key: 'line_token', status: 'failed', reason: 'token_rejected' }]);
+    lineResult = { ok: true, basicId: '@club-a' };
+    await put(spec, 'line', body({ test: true }));
+    expect(await health()).toEqual([{ check_key: 'line_token', status: 'ok', reason: null }]);
+  });
+
+  it('save_anyway is only allowed together with a test', async () => {
+    expect(await put(spec, 'line', body({ save_anyway: true }))).toEqual({ ok: false, code: 'invalid' });
+    expect(await put(spec, 'line', body({ test: true, save_anyway: 'yes' }))).toEqual({ ok: false, code: 'invalid' });
+  });
+
+  it('a form fault in the login channel or LIFF id is a failed test that has no health row of its own', async () => {
+    lineResult = { ok: false, code: 'liff_not_in_login_channel' };
+    await put(spec, 'line', body({ test: true, save_anyway: true }));
+    expect((await tdb.query(`select count(*)::int as n from platform.club_health where club_id = $1`, [CLUB])).rows[0].n).toBe(0);
   });
 
   it('a different official account than the one typed is a failed test', async () => {
     lineResult = { ok: true, basicId: '@someone-else' };
-    expect(await put(spec, 'line', body({ test: true }))).toMatchObject({ ok: true, connectionTest: { result: 'fail', code: 'oa_mismatch' } });
-    expect((await lineRow()).tested_at).toBeNull();
+    expect(await put(spec, 'line', body({ test: true }))).toEqual({ ok: false, code: 'connection_test_failed', connectionTest: { result: 'fail', code: 'oa_mismatch' } });
+    expect(await lineRow(), 'nothing is saved').toBeUndefined();
   });
 
   it('changing anything after a pass makes the connection untested again', async () => {
@@ -168,8 +191,18 @@ describe('payments section (P2 step 5, D32)', () => {
     expect(beamCalls).toEqual([{ apiKey: BEAM_KEY, merchantId: 'M-TEST-1', mode: 'test' }]);
     expect((await payRow()).tested_at).not.toBeNull();
     beamResult = { ok: true, merchantId: 'M-SOMEONE-ELSE' };
-    expect(await put(spec, 'payments', body({ test: true, test_mode: 'test' }))).toMatchObject({ ok: true, connectionTest: { result: 'fail', code: 'merchant_mismatch' } });
-    expect((await payRow()).tested_at).toBeNull();
+    expect(await put(spec, 'payments', body({ test: true, test_mode: 'test' }))).toEqual({ ok: false, code: 'connection_test_failed', connectionTest: { result: 'fail', code: 'merchant_mismatch' } });
+    expect((await payRow()).tested_at, 'a refused save changes nothing').not.toBeNull();
+  });
+
+  it('D167: a Beam key refused and saved anyway shows beam_keys failed; an unreachable Beam shows beam_charge', async () => {
+    const health = async () => (await tdb.query(`select check_key, reason from platform.club_health where club_id = $1 and status = 'failed'`, [CLUB])).rows;
+    beamResult = { ok: false, code: 'key_refused' };
+    await put(spec, 'payments', body({ test: true, test_mode: 'test', save_anyway: true }));
+    expect(await health()).toEqual([{ check_key: 'beam_keys', reason: 'key_refused' }]);
+    beamResult = { ok: false, code: 'unreachable' };
+    await put(spec, 'payments', body({ test: true, test_mode: 'test', save_anyway: true }));
+    expect(await health()).toEqual([{ check_key: 'beam_keys', reason: 'key_refused' }, { check_key: 'beam_charge', reason: 'unreachable' }]);
   });
 
   it('refuses a test without the matching key and merchant in the request, an unknown option, an unknown field', async () => {
