@@ -10,7 +10,7 @@ Findings:
 
 | # | Severity | What is wrong |
 |---|---|---|
-| QA-F10-1 | 3 | `locales/en.json` and `th.json` L-0021 ("See you in 2 hours" / "เจอกันในอีก 2 ชั่วโมง") type the number of hours. The builder uses it as the 2 hour reminder title. D116 and LINE-05-AC16: reminder numbers are variables in the text, never typed in a key. The 24 hour reminder does it right (`L-new.msg_reminder_title_hours` with `{hours}`). Fix: the TEXT-03 variable pass on L-0021 (same key, `{hours}` in both languages) and the builder passes the hours. Owner: Content role, then the F10 lane |
+| QA-F10-1 | 3 | `locales/en.json` and `th.json` L-0021 ("See you in 2 hours" / "เจอกันในอีก 2 ชั่วโมง") type the number of hours. The builder uses it as the 2 hour reminder title. D116 and LINE-05-AC16: reminder numbers are variables in the text, never typed in a key. The 24 hour reminder does it right (`L-new.msg_reminder_title_hours` with `{hours}`). Fix: the TEXT-03 variable pass on L-0021 (same key, `{hours}` in both languages) and the builder passes the hours. Owner: Content role, then the F10 lane | Fixed on main 31 Oct.
 
 Also worth the orchestrator's attention (not a QA finding, a wiring gap): the platform console's default owner notifier is `outboxNotConnected`, so the owner message on pause (LINE-05-AC14, PLAT-03-AC1) fails until it is wired to the F10 outbox.
 
@@ -36,7 +36,7 @@ Also worth the orchestrator's attention (not a QA finding, a wiring gap): the pl
 | LINE-03-AC8 | Given a club in Testing, when a message is sent, then it goes through the club's real Official Accou | Covered by a lane test (traced) |
 | LINE-03-AC9 | Given a club's Messaging API token fails, when a send is tried, then the send fails safely, nothing  | Covered by a lane test (traced) |
 | LINE-03-AC10 | Given a message goes to staff or a coach, when it is sent, then it is sent in their language: staff  | Covered by a lane test (traced); partial: one language field per person, staff and coaches included |
-| LINE-03-AC11 | Given a message for a Paused club, when the event is a reminder or a cancellation result of an exist | Open: Reminders and cancellation results still go for a Paused club. The due query in apps/worker line-outbox-sender has no club status filter, so this holds by construction, but no test proves it. Candidate for a worker test with a paused club. |
+| LINE-03-AC11 | Paused club: reminders and cancellation results still sent | Covered by a lane test (traced): `line-outbox-sender.test.ts` |
 | LINE-04-AC1 | Given a booking is confirmed (a verified payment, credit used or nothing to pay), when it is saved,  | Covered by a lane test (traced) |
 | LINE-04-AC2 | Given a booking paid wholly by credit or wallet, when the card is sent, then it shows the receipt nu | Covered by a lane test (traced) |
 | LINE-04-AC3 | Given a two hour selection (one order, one booking per hour), when it is confirmed, then one card is | Covered by a lane test (traced) |

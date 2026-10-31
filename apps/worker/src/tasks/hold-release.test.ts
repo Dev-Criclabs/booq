@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
 import { HOLD_RELEASE, runHoldRelease } from './hold-release';
+import { closeTestDatabase } from '../testing/teardown';
 
 // F03-T19 hold_release (BOOK-03-AC5, AC6; design 6). Every tick finds the orders whose hold has
 // ended, across clubs, and releases each in its own club-context transaction. Correctness never
@@ -52,7 +53,7 @@ beforeEach(async () => {
 afterEach(async () => {
   await worker.end();
   await app.end();
-  await tdb.close();
+  await closeTestDatabase(tdb);
 });
 
 describe('hold_release (BOOK-03-AC5)', () => {

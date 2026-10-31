@@ -4,6 +4,7 @@ import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
 import { DEFAULT_JOB_SPEC } from '../policy';
 import { clubTask } from '../task-wrapper';
 import { PAY_TAP_PRUNE, payTapPruneDispatch, prunePayTaps } from './pay-tap-prune';
+import { closeTestDatabase } from '../testing/teardown';
 
 // F03-T12 housekeeping (D61; F03 design 4.8): the Pay tap attempts that have left the limit's window are
 // dropped, one job per club, each in its own club context (app.prune_pay_taps reads the context club only).
@@ -26,7 +27,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   await db.end();
-  await tdb.close();
+  await closeTestDatabase(tdb);
 });
 
 describe('pay tap prune (F03-T12)', () => {

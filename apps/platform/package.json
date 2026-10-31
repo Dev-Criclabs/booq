@@ -4,9 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "main": "src/index.ts",
+  "scripts": {
+    "build": "next build"
+  },
   "dependencies": {
     "@booq/auth": "workspace:*",
     "@booq/db": "workspace:*",
+    "@booq/domain": "workspace:*",
     "@booq/secrets": "workspace:*",
     "@booq/time": "workspace:*",
     "next": "16.4.2",

@@ -1,3 +1,5 @@
+import { createSettingsService } from '../settings/settings';
+import { settingsRoutes } from '../settings/routes';
 import { createPlatformAuth, DEFAULT_POLICY, type IdentityProvider } from '../auth/sign-in';
 import { createDbAuditSink, createDbAuthStore, createDbStaffDirectory, IdentityUnavailable } from '../auth/adapters';
 import { authRoutes } from '../auth/routes';
@@ -7,6 +9,7 @@ import type { Clock } from '@booq/time';
 import { bangkokDate } from '@booq/time';
 import { createClubService } from '../clubs/clubs';
 import { clubRoutes } from '../clubs/routes';
+import { createOutboxOwnerNotifier } from '../pause/outbox-notifier';
 import { createPauseService, type OwnerNotifier } from '../pause/pause';
 import { createStatusService } from '../status/status';
 import { createUsageService } from '../usage/usage';
@@ -96,13 +99,6 @@ export const unavailableIdentity: IdentityProvider = {
   },
 };
 
-/** The owner's LINE message goes through F10's outbox, which does not exist yet: the notice fails, is counted in P6, and the change stands. */
-export const outboxNotConnected: OwnerNotifier = {
-  async notifyOwner() {
-    throw new Error('owner notice outbox is not connected (F10)');
-  },
-};
-
 /** The owner invite email goes through a mail provider that is not chosen yet: the invite is made, the send fails, the route answers 502 mail_failed. */
 export const mailerNotConnected: InviteMailer = {
   async sendOwnerInvite() {
@@ -154,9 +150,10 @@ export function createPlatformTable(parts: PlatformParts): PlatformSource {
       ...clubRoutes({
         clubs: createClubService({ db }),
         status: createStatusService({ db }),
-        pause: createPauseService({ db, notifier: parts.notifier ?? outboxNotConnected }),
+        pause: createPauseService({ db, notifier: parts.notifier ?? createOutboxOwnerNotifier({ db }) }),
         usage: createUsageService({ db, today: () => bangkokDate(clock.now()) }),
       }),
+      ...settingsRoutes({ settings: createSettingsService({ db }) }),
       ...ownerRoutes({ owner: createOwnerService({ db, mailer: parts.mailer ?? mailerNotConnected, baseUrl: config.appBaseUrl }) }),
       ...testerRoutes({ testers: createTesterService({ db, baseUrl: config.appBaseUrl }) }),
       ...staffRoutes({

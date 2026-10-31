@@ -50,9 +50,9 @@ describe('F01/ROLE-02-AC3', () => {
 });
 
 describe('F01/ROLE-02-AC7', () => {
-  // FINDING QA-F01-1: platform.issue_staff_enrolment (migration 0055) lets an admin issue a 'reset' for their own account.
+  // FINDING QA-F01-1 (fixed in migration 0057): platform.issue_staff_enrolment (0055) let an admin issue a 'reset' for their own account.
   // D123 / ROLE-02-AC7: a second factor is reset only by ANOTHER platform admin.
-  it.fails('F01/ROLE-02-AC7 an admin cannot reset their own second factor', async () => {
+  it('F01/ROLE-02-AC7 an admin cannot reset their own second factor', async () => {
     await tdb.query(`insert into platform.config (key, value) values ('console_enrolment_ttl_hours', '24') on conflict (key) do update set value = excluded.value`);
     await expect(
       pdb.withPlatformTx({ staffId: admin, staffLabel: 'Admin' }, (tx) => tx.query(`select platform.issue_staff_enrolment($1, repeat('c', 64), 'reset')`, [admin])),
@@ -61,9 +61,9 @@ describe('F01/ROLE-02-AC7', () => {
 });
 
 describe('F01/ROLE-01-AC8', () => {
-  // FINDING QA-F01-2: policy club_setting_read (migration 0002) lets owner, front desk AND accountant read every club setting.
+  // Was FINDING QA-F01-2 (fixed in migration 0054): policy club_setting_read (0002) let owner, front desk AND accountant read every club setting.
   // D115 / ROLE-01-AC8: the Accountant reads business and tax settings only.
-  it.fails('F01/ROLE-01-AC8 the accountant reads no operational setting', async () => {
+  it('F01/ROLE-01-AC8 the accountant reads no operational setting', async () => {
     await tdb.query(
       `insert into public.club_setting (club_id, key, value) values ($1, 'hold_minutes', '15'), ($1, 'cancel_window_hours', '12'), ($1, 'rest_cap_hours', '6'), ($1, 'vat_enabled', 'false')
        on conflict (club_id, key) do nothing`,
