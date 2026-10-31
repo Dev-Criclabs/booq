@@ -8,6 +8,7 @@ import {
 import { STATUS_KEY, type Status } from './clubs';
 import { t } from './i18n';
 import { StepUpPanel } from './StepUpPanel';
+import { SettingsEditor } from './SettingsEditor';
 import { SupportEditor } from './SupportEditor';
 
 // /clubs/{id} (P3 and the support view): status and the checklist, the owner's invite, webhook addresses, and the club basics.
@@ -284,6 +285,8 @@ export function ClubDetailScreen({ id }: { id: string }) {
     
                 </>
               )}
+              <h3>{t('X-new.support_settings')}</h3>
+              <SettingsEditor id={id} canEdit={mode === 'edit'} askStepUp={(run) => setPending({ run })} onNotice={setNotice} />
             </section>
             </div>
           </>

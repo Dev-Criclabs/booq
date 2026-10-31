@@ -119,6 +119,28 @@ describe('app.cancel_session (CLASS-01-AC11, AC13)', () => {
     expect((await hooks()).filter((x) => x.kind === 'waitlist_ended')).toEqual([{ kind: 'waitlist_ended', usr: P3, params: { entry_id: e, session_id: session }, dedupe: `waitlist_ended:${e}` }]);
   });
 
+  it('the reason closure: the worker role cancels with no person and seats go back as closure; other reasons are refused to the worker (0919)', async () => {
+    const paid = await seat(P1);
+    const worker = createDb({ connectionString: tdb.url, max: 2, role: 'booq_worker' });
+    try {
+      const wctx = { clubId: A, userId: null, roles: ['guest'] as never, source: 'job' as const };
+      await expect(worker.withClubTx(wctx, (tx) => tx.query(`select app.cancel_session($1, 'owner')`, [session]))).rejects.toThrow(/not allowed/);
+      await worker.withClubTx(wctx, (tx) => tx.query(`select app.cancel_session($1, 'closure')`, [session]));
+    } finally {
+      await worker.end();
+    }
+    expect(await sess()).toMatchObject({ status: 'cancelled', cancel_reason: 'closure' });
+    expect((await tdb.query(`select cancelled_by from public.class_session where id = $1`, [session])).rows[0].cancelled_by).toBeNull();
+    expect((await tdb.query(`select booking, kind from public.__returns`)).rows).toEqual([{ booking: paid, kind: 'closure' }]);
+    expect(await sessionOcc()).toEqual([]);
+  });
+
+  it('staff may also cancel with the reason closure; a player may not (0919)', async () => {
+    expect(await cancel(session, 'closure', desk())).toMatchObject({ ok: true });
+    const next = (await tdb.query(`select id from public.class_session where template_id = $1 and status = 'scheduled' order by start_at limit 1`, [tpl])).rows[0].id;
+    await expect(cancel(next, 'closure', ctx(P1, ['player']))).rejects.toThrow(/not allowed/);
+  });
+
   it('a repeated cancel is a no-op; a started session is never changed; the reasons are checked', async () => {
     await cancel(session);
     expect(await cancel(session)).toMatchObject({ ok: true, res: { r: { repeated: true } } });
