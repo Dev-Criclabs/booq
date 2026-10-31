@@ -29,6 +29,7 @@ const STATUS: Record<string, number> = {
   not_testing: 409,
   not_recorded: 400,
   section_unavailable: 409,
+  connection_test_failed: 409,
   owner_contact_missing: 409,
   not_redeemed: 409,
   already_verified: 409,

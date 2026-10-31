@@ -83,16 +83,16 @@ async function solo(coach: string, start: string, over: { status?: string; coach
   });
 }
 /** A group session at `start` with seats of the given statuses. */
-async function group(coach: string, start: string, seats: string[], status = 'scheduled') {
+async function group(coach: string, start: string, seats: string[], status = 'scheduled', price: number | null = null) {
   return raw(async (c) => {
     const s = (await c.query(
-      `insert into public.class_session (club_id, template_id, start_at, end_at, name_th, name_en, audience, coach_id, resource_id, min_players, max_players, status, cancel_reason, cancelled_at)
-       values ($1, gen_random_uuid(), $2::timestamptz, $2::timestamptz + interval '1 hour', 'กลุ่ม', 'Group', 'adult', $3, $4, 2, 6, $5, case when $5 = 'cancelled' then 'owner' end, case when $5 = 'cancelled' then now() end) returning id`, [A, start, coach, RES, status])).rows[0].id as string;
+      `insert into public.class_session (club_id, template_id, start_at, end_at, name_th, name_en, audience, coach_id, resource_id, min_players, max_players, status, cancel_reason, cancelled_at, drop_in_price_satang)
+       values ($1, gen_random_uuid(), $2::timestamptz, $2::timestamptz + interval '1 hour', 'กลุ่ม', 'Group', 'adult', $3, $4, 2, 6, $5, case when $5 = 'cancelled' then 'owner' end, case when $5 = 'cancelled' then now() end, $6) returning id`, [A, start, coach, RES, status, price])).rows[0].id as string;
     for (const st of seats) {
       const o = (await c.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'online') returning id`, [A, P1])).rows[0].id as string;
       await c.query(
-        `insert into public.booking (club_id, order_id, type, resource_id, class_session_id, customer_id, start_at, end_at, status, source, created_by, confirmed_at, release_reason, released_at)
-         values ($1,$2,'class_seat',$3,$4,gen_random_uuid(),$5::timestamptz,$5::timestamptz + interval '1 hour',$6,'online',$7, now(), case when $6 = 'released' then 'expired' end, case when $6 = 'released' then now() end)`, [A, o, RES, s, start, st, P1]);
+        `insert into public.booking (club_id, order_id, type, resource_id, class_session_id, customer_id, start_at, end_at, status, source, created_by, confirmed_at, release_reason, released_at, hold_expires_at)
+         values ($1,$2,'class_seat',$3,$4,gen_random_uuid(),$5::timestamptz,$5::timestamptz + interval '1 hour',$6,'online',$7, now(), case when $6 = 'released' then 'expired' end, case when $6 = 'released' then now() end, case when $6 = 'awaiting_payment' then now() + interval '1 hour' end)`, [A, o, RES, s, start, st, P1]);
     }
     return s;
   });
@@ -169,6 +169,24 @@ describe('which sessions count (R3; D147)', () => {
   });
 });
 
+describe('group percent pay (D170)', () => {
+  it('is the percentage of the full listed seat price of each seat booked, summed over the month and rounded once', async () => {
+    await pay(C1, { base: 100000, group: ['percent', 2000] });
+    await group(C1, '2026-12-05T03:00:00Z', ['confirmed', 'confirmed', 'no_show'], 'scheduled', 50000);   // 3 seats x 500 baht
+    await group(C1, '2026-12-06T03:00:00Z', ['confirmed'], 'scheduled', 33333);                        // 1 seat
+    await group(C1, '2026-12-07T03:00:00Z', ['confirmed', 'cancelled', 'released', 'awaiting_payment'], 'scheduled', 10000);   // 1 live seat
+    // (150000 + 33333 + 10000) x 20% = 38666.6 -> 38667
+    expect(await rowOf(C1)).toMatchObject({ group_sessions: 3, group_pay_satang: 38667, amount_satang: 138667, flags: [] });
+  });
+  it('the flag group_percent_no_base is never raised any more', async () => {
+    await pay(C1, { group: ['percent', 5000] });
+    await group(C1, '2026-12-05T03:00:00Z', ['confirmed'], 'scheduled', 20000);
+    const r = await rowOf(C1);
+    expect(r.flags).toEqual([]);
+    expect(r.amount_satang).toBe(10000);
+  });
+});
+
 describe('what is owed', () => {
   it('base + fixed solo pay per session + fixed group pay per session', async () => {
     await pay(C1, { base: 1000000, solo: ['fixed', 30000], group: ['fixed', 20000] });
@@ -199,11 +217,15 @@ describe('an unset pay setting gives null and a flag, never a guess', () => {
     await solo(C1, '2026-12-10T03:00:00Z');
     expect(await rowOf(C1)).toMatchObject({ amount_satang: null, flags: ['solo_pay_unset'] });
   });
-  it('a group percentage has no stated base, and a percent solo pay with no coach line has no portion: both flagged', async () => {
-    await pay(C1, { solo: ['percent', 5000], group: ['percent', 5000] });
+  it('a percent solo pay with no coach line has no portion: flagged', async () => {
+    await pay(C1, { solo: ['percent', 5000] });
     await solo(C1, '2026-12-10T03:00:00Z', { coachNet: null });
+    expect(await rowOf(C1)).toMatchObject({ amount_satang: null, flags: ['solo_portion_missing'] });
+  });
+  it('a group session with seats and no listed seat price cannot be priced as a percentage: flagged, never guessed (D170)', async () => {
+    await pay(C1, { group: ['percent', 2000] });
     await group(C1, '2026-12-05T03:00:00Z', ['confirmed']);
-    expect(await rowOf(C1)).toMatchObject({ amount_satang: null, flags: ['solo_portion_missing', 'group_percent_no_base'] });
+    expect(await rowOf(C1)).toMatchObject({ amount_satang: null, flags: ['group_price_unset'] });
   });
   it('setting the pay later and listing again clears the flag (the row is recomputed while open)', async () => {
     await solo(C1, '2026-12-10T03:00:00Z');

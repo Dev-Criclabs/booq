@@ -175,7 +175,7 @@ describe("F01 PLAT-06", () => {
   // Given an accountant or owner in A13 and A14, when they export a report or receipts, then they receive CSV or PDF for their club (PRD Reports, Receipts). Built in F13 and F11. F01 owns only the rule that exports are club scoped and audited.
   test.todo("F01/PLAT-06-AC14 Given an accountant or owner in A13 and A14, when they export a report or receipts, then they receive CSV ...");
   // Given any export of customers or club data, when it is made, then an audit entry records who, when, which export and how many rows (PLAT-04), because exports carry personal data.
-  test.todo("F01/PLAT-06-AC15 Given any export of customers or club data, when it is made, then an audit entry records who, when, which ...");
+  // F01/PLAT-06-AC15: proven by a real or traced test in another file of this folder
   // Given any club, when F01 ships, then there is no delete club action in the platform console or anywhere else in v1 (D14). A club leaves by export and pause only.
   // F01/PLAT-06-AC17: proven by a real or traced test in another file of this folder
   // Given an export file, when it is produced, then slips and staff notes are included only in the full club export, and only if Q18 says so (PDPA-01: staff only).

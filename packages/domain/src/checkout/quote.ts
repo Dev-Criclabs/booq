@@ -102,30 +102,59 @@ interface Row<T> {
 }
 const one = <T>(r: Row<T>): T | undefined => r.rows[0];
 
-/** Read everything the engine needs for `customerId` and price the request. Throws CheckoutError. */
-export async function quoteFor(tx: Tx, customerId: string, req: QuoteRequest, sources: QuoteSources, opts: { forCustomer?: boolean } = {}): Promise<QuoteView> {
+/** The club, open for checkout: Live, or Testing for its testers; Paused refuses (R4-AC10, D60). Also the Bangkok date. */
+export async function openClub(tx: Tx): Promise<{ status: string; today: string }> {
   const club = one(await tx.query<{ status: string; today: string }>(
     `select c.status, (app.now() at time zone 'Asia/Bangkok')::date::text as today from public.club c where c.id = app.club_id()`,
   ));
   if (!club) throw new CheckoutError('club_not_available');
-  if (club.status === 'paused') throw new CheckoutError('club_paused'); // R4-AC10, D60
+  if (club.status === 'paused') throw new CheckoutError('club_paused');
   if (club.status !== 'live' && club.status !== 'testing') throw new CheckoutError('club_not_available');
+  return club;
+}
 
-  const court = one(await tx.query<{ active: boolean }>(`select active from public.resource where club_id = app.club_id() and id = $1`, [req.courtId]));
-  if (!court || !court.active) throw new CheckoutError('resource_inactive');
-
-  // A player prices for themselves; staff price as the customer (ROLE-01-AC4) through the definer read, which
-  // returns only the date of birth and refuses a person who is not an active, claimed customer of the club.
-  const person = opts.forCustomer ? await customerDob(tx, customerId) : one(await tx.query<{ dob: string | null }>(
+/** The buyer's date of birth. A player prices for themselves; staff price as the customer (ROLE-01-AC4) through the
+ *  definer read, which returns only the date of birth and refuses one who is not an active, claimed customer. */
+export async function buyerOf(tx: Tx, customerId: string, forCustomer: boolean): Promise<{ dob: string | null }> {
+  const person = forCustomer ? await customerDob(tx, customerId) : one(await tx.query<{ dob: string | null }>(
     `select date_of_birth::text as dob from public.app_user where club_id = app.club_id() and id = $1`,
     [customerId],
   ));
   if (!person) throw new CheckoutError('bad_input');
+  return person;
+}
 
-  // The price tables are readable by the club's people once it is open (0309); nothing here is invented.
-  const groups = await tx.query<{ id: string; min_age: number | null; max_age: number | null }>(
+/** The club's price groups (readable by the club's people once it is open, 0309); nothing is invented. */
+export async function priceGroupsOf(tx: Tx): Promise<Array<{ id: string; minAge: number | null; maxAge: number | null }>> {
+  return (await tx.query<{ id: string; min_age: number | null; max_age: number | null }>(
     `select id, (rule ->> 'min_age')::int as min_age, (rule ->> 'max_age')::int as max_age from public.price_group where club_id = app.club_id()`,
-  );
+  )).rows.map((g) => ({ id: g.id, minAge: g.min_age, maxAge: g.max_age }));
+}
+
+/** The birthday entitlements this customer has used in the Bangkok year (R5-AC3). */
+export async function usedBirthdayKinds(tx: Tx, customerId: string, year: number): Promise<Array<'package' | 'solo_class'>> {
+  return (await tx.query<{ kind: 'package' | 'solo_class' }>(
+    `select kind from public.birthday_entitlement_use where club_id = app.club_id() and customer_id = $1 and year = $2 and status = 'used'`,
+    [customerId, year],
+  )).rows.map((u) => u.kind);
+}
+
+/** The one code: a club promo code or a referral code, or 'not_found' for anything else (AC9). */
+export async function codeFor(tx: Tx, code: string | null, customerId: string, sources: QuoteSources): Promise<CodeInput | 'not_found' | null> {
+  if (code === null) return null;
+  if (!CODE.test(code)) return 'not_found';
+  return (await sources.promoCode(tx, code, customerId)) ?? (await sources.referralCode(tx, code, customerId)) ?? 'not_found';
+}
+
+/** Read everything the engine needs for `customerId` and price the request. Throws CheckoutError. */
+export async function quoteFor(tx: Tx, customerId: string, req: QuoteRequest, sources: QuoteSources, opts: { forCustomer?: boolean } = {}): Promise<QuoteView> {
+  const club = await openClub(tx);
+
+  const court = one(await tx.query<{ active: boolean }>(`select active from public.resource where club_id = app.club_id() and id = $1`, [req.courtId]));
+  if (!court || !court.active) throw new CheckoutError('resource_inactive');
+
+  const person = await buyerOf(tx, customerId, opts.forCustomer === true);
+  const groups = { rows: await priceGroupsOf(tx) };
   const rules = await tx.query<{ price_group_id: string; day_type: 'any' | 'weekday' | 'weekend'; peak: 'any' | 'peak' | 'off_peak'; price_satang: number }>(
     `select price_group_id, day_type, peak, price_satang from public.court_price_rule where club_id = app.club_id()`,
   );
@@ -135,11 +164,7 @@ export async function quoteFor(tx: Tx, customerId: string, req: QuoteRequest, so
   const addOns = await tx.query<{ id: string; price_satang: number | null; active: boolean }>(
     `select id, price_satang, active from public.add_on where club_id = app.club_id()`,
   );
-  const used = await tx.query<{ kind: 'package' | 'solo_class' }>(
-    `select kind from public.birthday_entitlement_use
-      where club_id = app.club_id() and customer_id = $1 and year = $2 and status = 'used'`,
-    [customerId, Number(club.today.slice(0, 4))],
-  );
+  const used = await usedBirthdayKinds(tx, customerId, Number(club.today.slice(0, 4)));
   const terms = await sources.clubTerms(tx);
 
   let coach: PricingInput['selection']['coach'] = null;
@@ -156,14 +181,9 @@ export async function quoteFor(tx: Tx, customerId: string, req: QuoteRequest, so
     coach = { coachId: req.coachId, tierId: found.tierId, source: req.coachSource, priceSatang: found.priceSatang };
   }
 
-  let code: PricingInput['code'] = null;
-  if (req.code !== null) {
-    code = CODE.test(req.code)
-      ? ((await sources.promoCode(tx, req.code, customerId)) ?? (await sources.referralCode(tx, req.code, customerId)) ?? 'not_found')
-      : 'not_found';
-  }
+  const code: PricingInput['code'] = await codeFor(tx, req.code, customerId, sources);
 
-  const groupRows = groups.rows.map((g) => ({ id: g.id, minAge: g.min_age, maxAge: g.max_age }));
+  const groupRows = groups.rows;
   const fit: CreditFit = {
     priceGroupId: groupFor(groupRows, person.dob, club.today)?.id ?? null,
     coachTierId: coach?.tierId ?? null,
@@ -180,7 +200,7 @@ export async function quoteFor(tx: Tx, customerId: string, req: QuoteRequest, so
     credits: fit.priceGroupId === null ? [] : await sources.eligibleCredits(tx, customerId, fit),
     walletBalanceSatang: await sources.walletBalance(tx, customerId),
     code,
-    birthday: { setting: terms.birthdayDiscount, usedKinds: used.rows.map((u) => u.kind) },
+    birthday: { setting: terms.birthdayDiscount, usedKinds: used },
   });
   if (!result.ok) {
     if (result.code === 'code_below_minimum') throw new CheckoutError(result.code, { amount: result.minSpendSatang });

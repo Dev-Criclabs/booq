@@ -79,7 +79,15 @@ describe('app.payment_charge_context', () => {
     const j = await context(p);
     expect(j).toMatchObject({ merchant_id: 'ml', environment: 'live', amount_satang: 45000, qr_expiry_margin_seconds: 30 });
     expect(new Date(j.hold_expires_at as string).getTime()).toBeGreaterThan(Date.now());
-    expect(Object.keys(j).sort()).toEqual(['amount_satang', 'environment', 'hold_expires_at', 'merchant_id', 'qr_expiry_margin_seconds']);
+    expect(Object.keys(j).sort()).toEqual(['amount_satang', 'environment', 'has_bookings', 'hold_expires_at', 'merchant_id', 'package_qr_minutes', 'qr_expiry_margin_seconds']);
+    expect(j).toMatchObject({ has_bookings: true, package_qr_minutes: null });
+  });
+
+  it('the club setting package_qr_minutes, a whole number of minutes, or null while unset or malformed (0416, D74)', async () => {
+    await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1,'package_qr_minutes','15')`, [A]);
+    expect(await context(await start(await order()))).toMatchObject({ package_qr_minutes: 15 });
+    await tdb.query(`update public.club_setting set value = '"soon"' where club_id = $1 and key = 'package_qr_minutes'`, [A]);
+    expect(await context(await start(await order()))).toMatchObject({ package_qr_minutes: null });
   });
 
   it('a Testing club uses the test key set; no merchant or an unset margin is null, not a default', async () => {

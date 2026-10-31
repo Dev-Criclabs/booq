@@ -1,5 +1,6 @@
 export const packageName = '@booq/auth';
 
+export { ADMIN_PAGES, pagesFor, type AdminPageId } from './admin-pages';
 export { can, canAll, isPermission, permissionNames, ROLES, type Role } from './permissions';
 export {
   FileReply,
