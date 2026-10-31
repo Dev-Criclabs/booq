@@ -32,8 +32,9 @@ Depends on: F01 (route wrapper, permissions, settings, audit, import, staff), F0
 - [x] **F11-T08** `1104_audit_read.sql`, `GET /staff/audit` and booking history `GET /staff/bookings/:id/history`. IDs: ADMIN-17, ADMIN-04. Role: BE-A · Deps F01 audit · Size: M
   Tests first: search by staff, record and date; owner only; personal fields shown as changed, not the value; no write route exists.
   Built (Architect): `1104_booking_history.sql` (`public.booking_history`, plus a read policy for booq_owner on `audit_entry` so a definer function can read it), `packages/domain/src/admin/audit.ts`, `auditRoutes`: `GET /staff/audit` (owner, reads the table through its existing owner policy, so no new audit function was needed) and `GET /staff/bookings/:id/history` (front desk, owner). Personal values are never returned, only the field names.
-- [ ] **F11-T09** `1105_owner_setup.sql`, `GET /staff/setup`, `POST /staff/setup/done`. IDs: ADMIN-02. Role: BE-A · Deps F01 launch checks · Size: M
+- [x] **F11-T09** `1105_owner_setup.sql`, `GET /staff/setup`, `POST /staff/setup/done`. IDs: ADMIN-02. Role: BE-A · Deps F01 launch checks · Size: M
   Tests first: steps 6 to 8 with done state; the tell-done click notifies P3 once; the page stays until Live; there is no address toggle (D54).
+  Built (Architect): `1105_owner_setup.sql` (`owner_setup_done` table, class S with a platform read policy; `app.owner_setup_view()`, `app.owner_tell_done()`), `packages/domain/src/admin/setup.ts`, `setupRoutes`: `GET /staff/setup`, `POST /staff/setup/done`. The three steps (brand, products_rules, people) are not registered in `app.setup_steps`, so they do not block Draft to Testing; the done tests are the design's assumption (Open item 2). Telling is refused after Go live.
 - [ ] **F11-T10** `GET /staff/leave-calendar` (dates and status only) over `coach_leave_calendar`. IDs: ADMIN-08. Role: BE-B · Deps F07-T12 · Size: S
   Tests first: front desk sees no type or note; a coach is refused; another club empty.
 
