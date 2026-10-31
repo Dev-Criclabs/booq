@@ -1434,7 +1434,7 @@
   "L-0018": "View booking",
   "L-0019": "Add to calendar",
   "L-0020": "Today {time}",
-  "L-0021": "See you in 2 hours",
+  "L-0021": "See you in {hours} hours",
   "L-0022": "Solo class with {coachName}",
   "L-0023": "{date} · {time}",
   "L-0024": "Coach",

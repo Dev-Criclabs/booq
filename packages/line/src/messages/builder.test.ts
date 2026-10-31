@@ -12,11 +12,13 @@ import { money } from './format';
 const LOCALES = resolve(__dirname, '../../../../locales');
 const dict = { th: loadMessageDictionary('th', LOCALES), en: loadMessageDictionary('en', LOCALES) };
 const LIFF = '2012300015-WIi1jtLB';
+// A stand in for F02's deep link helper (createDeepLinks): the extra path is relative to the club's LIFF endpoint
+// (/c/{slug}), so it follows the LIFF id directly and never names the club again.
 const links = {
-  link: (club: string, target: LinkTarget) =>
-    target.page === 'booking' ? `https://liff.line.me/${LIFF}/c/${club}/bookings/${target.bookingId}`
-      : target.page === 'calendar' ? `https://liff.line.me/${LIFF}/c/${club}/bookings/${target.bookingId}/calendar`
-        : `https://liff.line.me/${LIFF}/c/${club}/${target.page}`,
+  link: (_club: string, target: LinkTarget) =>
+    target.page === 'booking' ? `https://liff.line.me/${LIFF}/bookings/${target.bookingId}`
+      : target.page === 'calendar' ? `https://liff.line.me/${LIFF}/bookings/${target.bookingId}/calendar`
+        : `https://liff.line.me/${LIFF}/${target.page}`,
 };
 const builder = createMessageBuilder({ dictionary: (l) => dict[l], links });
 
@@ -144,9 +146,10 @@ describe('Booking confirmed card (LINE-04)', () => {
 });
 
 describe('reminders and the waitlist offer (boards L-Msg-Reminder, L-Msg-Waitlist)', () => {
-  it('the 2 hour reminder uses its board key; the 24 hour one names its hours (D116)', () => {
-    expect(texts(build('reminder_2h', 'en'))).toContain(fill(dict.en, 'L-0021'));
-    expect(texts(build('reminder_24h', 'th', facts({ hoursBefore: 24 })))).toContain(fill(dict.th, 'L-new.msg_reminder_title_hours', { hours: 24 }));
+  it('both reminders use the board key L-0021 with their hours (D116, QA-F10-1)', () => {
+    expect(texts(build('reminder_2h', 'en', facts({ hoursBefore: 2 })))).toContain(fill(dict.en, 'L-0021', { hours: 2 }));
+    expect(texts(build('reminder_24h', 'th', facts({ hoursBefore: 24 })))).toContain(fill(dict.th, 'L-0021', { hours: 24 }));
+    expect(fill(dict.en, 'L-0021', { hours: 2 })).not.toBe(fill(dict.en, 'L-0021', { hours: 24 }));
   });
 
   it('the offer shows the claim time from the club setting, and no claim line when the setting is unset', () => {
