@@ -52,7 +52,10 @@ export function ClubsScreen() {
                   <tr>
                     <th scope="col">{t('X-0014')}</th>
                     <th scope="col">{t('X-0015')}</th>
+                    <th scope="col">{t('X-0016')}</th>
                     <th scope="col">{t('X-0017')}</th>
+                    <th scope="col">{t('X-0018')}</th>
+                    <th scope="col">{t('X-0019')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -63,7 +66,10 @@ export function ClubsScreen() {
                         <span className="sub">{c.nameTh}</span>
                       </th>
                       <td><span className={`pill ${c.status}`}>{t(STATUS_KEY[c.status])}</span></td>
+                      <td data-testid="col-setup">{t('X-new.clubs_setup_cell', { done: c.setup.done, total: c.setup.total })}</td>
                       <td>{c.bookingsConfirmed30d}</td>
+                      <td data-testid="col-line">{c.line.limit === null ? t('X-new.clubs_line_used', { used: c.line.used }) : t('X-new.clubs_line_cell', { used: c.line.used, limit: c.line.limit })}</td>
+                      <td data-testid="col-alerts">{c.alerts === 0 ? t('X-0022') : t('X-new.clubs_alerts_cell', { count: c.alerts })}</td>
                     </tr>
                   ))}
                 </tbody>

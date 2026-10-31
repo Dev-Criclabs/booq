@@ -88,8 +88,19 @@ describe('the club list (P1)', () => {
   it('lists the clubs the staff member can see, each with one number', async () => {
     await usage(CLUB, '2026-10-30', 'bookings_confirmed', 4);
     await usage(OTHER, '2026-10-29', 'bookings_confirmed', 2);
-    expect(await svc.portfolio(admin)).toEqual(expect.arrayContaining([{ clubId: CLUB, nameTh: 'ก', nameEn: 'A', status: 'live', bookingsConfirmed30d: 4 }, { clubId: OTHER, nameTh: 'ข', nameEn: 'B', status: 'live', bookingsConfirmed30d: 2 }]));
-    expect(await svc.portfolio(spec)).toEqual([{ clubId: CLUB, nameTh: 'ก', nameEn: 'A', status: 'live', bookingsConfirmed30d: 4 }]);
+    expect(await svc.portfolio(admin)).toEqual(expect.arrayContaining([expect.objectContaining({ clubId: CLUB, nameEn: 'A', bookingsConfirmed30d: 4 }), expect.objectContaining({ clubId: OTHER, nameEn: 'B', bookingsConfirmed30d: 2 })]));
+    expect(await svc.portfolio(spec)).toEqual([expect.objectContaining({ clubId: CLUB, nameTh: 'ก', nameEn: 'A', status: 'live', bookingsConfirmed30d: 4 })]);
     expect(await svc.portfolio(loner)).toEqual([]);
+  });
+  it('adds setup progress, this month\'s LINE messages and the checks failing now (P1 columns)', async () => {
+    const month = TODAY.slice(0, 7) + '-01';
+    await tdb.query(`insert into platform.club_line_usage (club_id, month, used, message_limit, source) values ($1,$2,120,300,'own_count'), ($1,'2000-01-01',999,300,'own_count')`, [CLUB, month]);
+    await tdb.query(`insert into platform.club_health (club_id, check_key, status, reason) values ($1,'line_token','failed','http_401'), ($1,'line_usage','ok',null)`, [CLUB]);
+    const [a] = await svc.portfolio(spec);
+    expect(a).toMatchObject({ clubId: CLUB, line: { used: 120, limit: 300 }, alerts: 1 });
+    expect(a!.setup.total).toBeGreaterThan(0);
+    expect(a!.setup.done).toBeLessThanOrEqual(a!.setup.total);
+    const b = (await svc.portfolio(admin)).find((r) => r.clubId === OTHER)!;
+    expect(b).toMatchObject({ line: { used: 0, limit: null }, alerts: 0 });
   });
 });

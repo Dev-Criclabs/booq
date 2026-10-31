@@ -138,7 +138,7 @@ describe('sign-in', () => {
 });
 
 describe('clubs list (P1)', () => {
-  const club = (clubId: string, status: ClubRow['status'], n = 0): ClubRow => ({ clubId, nameTh: 'ก', nameEn: clubId, status, bookingsConfirmed30d: n });
+  const club = (clubId: string, status: ClubRow['status'], n = 0): ClubRow => ({ clubId, nameTh: 'ก', nameEn: clubId, status, bookingsConfirmed30d: n, setup: { done: 2, total: 9 }, line: { used: 0, limit: null }, alerts: 0 });
   const all = [club('a', 'live', 5), club('b', 'live'), club('c', 'testing'), club('d', 'draft'), club('e', 'paused')];
   it('counts each status and filters', () => {
     expect(counts(all)).toEqual({ all: 5, live: 2, testing: 1, draft: 1, paused: 1 });

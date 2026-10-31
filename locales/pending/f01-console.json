@@ -240,6 +240,10 @@
     "X-new.support_location_name": "Give the location a name.",
     "X-new.feature_slip_checking": "Slip checking",
     "X-new.feature_backup_mode": "Backup mode",
-    "X-new.feature_coach_add_at_checkout": "Coach added at checkout"
+    "X-new.feature_coach_add_at_checkout": "Coach added at checkout",
+    "X-new.clubs_setup_cell": "{done} of {total}",
+    "X-new.clubs_line_cell": "{used} of {limit}",
+    "X-new.clubs_line_used": "{used}",
+    "X-new.clubs_alerts_cell": "{count}"
   }
 }
