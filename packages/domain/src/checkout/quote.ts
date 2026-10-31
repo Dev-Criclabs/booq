@@ -158,14 +158,16 @@ export async function codeFor(tx: Tx, code: string | null, customerId: string, s
   return (await sources.promoCode(tx, code, customerId)) ?? (await sources.referralCode(tx, code, customerId)) ?? 'not_found';
 }
 
-/** Read everything the engine needs for `customerId` and price the request. Throws CheckoutError. */
-export async function quoteFor(tx: Tx, customerId: string, req: QuoteRequest, sources: QuoteSources, opts: { forCustomer?: boolean } = {}): Promise<QuoteView> {
+/** Read everything the engine needs for `customerId` and price the request. Throws CheckoutError.
+ *  A null `customerId` is a staff walk in with no customer record (D168): no date of birth, so the group with no upper age (the standard
+ *  price); no credits, wallet, birthday discount or code (a code is not found). */
+export async function quoteFor(tx: Tx, customerId: string | null, req: QuoteRequest, sources: QuoteSources, opts: { forCustomer?: boolean } = {}): Promise<QuoteView> {
   const club = await openClub(tx);
 
   const court = one(await tx.query<{ active: boolean }>(`select active from public.resource where club_id = app.club_id() and id = $1`, [req.courtId]));
   if (!court || !court.active) throw new CheckoutError('resource_inactive');
 
-  const person = await buyerOf(tx, customerId, opts.forCustomer === true);
+  const person = customerId === null ? { dob: null } : await buyerOf(tx, customerId, opts.forCustomer === true);
   const groups = { rows: await priceGroupsOf(tx) };
   const rules = await tx.query<{ price_group_id: string; day_type: 'any' | 'weekday' | 'weekend'; peak: 'any' | 'peak' | 'off_peak'; price_satang: number }>(
     `select price_group_id, day_type, peak, price_satang from public.court_price_rule where club_id = app.club_id()`,
@@ -176,7 +178,7 @@ export async function quoteFor(tx: Tx, customerId: string, req: QuoteRequest, so
   const addOns = await tx.query<{ id: string; price_satang: number | null; active: boolean }>(
     `select id, price_satang, active from public.add_on where club_id = app.club_id()`,
   );
-  const used = await usedBirthdayKinds(tx, customerId, Number(club.today.slice(0, 4)));
+  const used = customerId === null ? [] : await usedBirthdayKinds(tx, customerId, Number(club.today.slice(0, 4)));
   const terms = await sources.clubTerms(tx);
 
   let coach: PricingInput['selection']['coach'] = null;
@@ -193,7 +195,7 @@ export async function quoteFor(tx: Tx, customerId: string, req: QuoteRequest, so
     coach = { coachId: req.coachId, tierId: found.tierId, source: req.coachSource, priceSatang: found.priceSatang };
   }
 
-  const code: PricingInput['code'] = await codeFor(tx, req.code, customerId, sources);
+  const code: PricingInput['code'] = customerId === null ? (req.code === null ? null : 'not_found') : await codeFor(tx, req.code, customerId, sources);
 
   const groupRows = groups.rows;
   const fit: CreditFit = {
@@ -201,7 +203,7 @@ export async function quoteFor(tx: Tx, customerId: string, req: QuoteRequest, so
     coachTierId: coach?.tierId ?? null,
     coachSource: coach?.source ?? null,
   };
-  const credits = fit.priceGroupId === null ? [] : await sources.eligibleCredits(tx, customerId, fit);
+  const credits = fit.priceGroupId === null || customerId === null ? [] : await sources.eligibleCredits(tx, customerId, fit);
   const result = priceOrder({
     onDate: club.today,
     dob: person.dob,
@@ -211,7 +213,7 @@ export async function quoteFor(tx: Tx, customerId: string, req: QuoteRequest, so
     addOns: addOns.rows.map((a) => ({ id: a.id, priceSatang: a.price_satang, active: a.active })),
     selection: { courtId: req.courtId, hours: req.hours, coach, addOnIds: req.addOnIds },
     credits,
-    walletBalanceSatang: await sources.walletBalance(tx, customerId),
+    walletBalanceSatang: customerId === null ? 0 : await sources.walletBalance(tx, customerId),
     code,
     birthday: { setting: terms.birthdayDiscount, usedKinds: used },
   });

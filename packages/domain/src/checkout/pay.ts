@@ -27,7 +27,7 @@ export function parsePayRequest(body: unknown): PayRequest {
 }
 
 /** Gate and reprice, inside the Pay transaction. Writes nothing. */
-export async function preparePay(tx: Tx, customerId: string, req: PayRequest, sources: QuoteSources, opts: { forCustomer?: boolean } = {}): Promise<PreparedPay> {
+export async function preparePay(tx: Tx, customerId: string | null, req: PayRequest, sources: QuoteSources, opts: { forCustomer?: boolean } = {}): Promise<PreparedPay> {
   const quote = await quoteFor(tx, customerId, req.choice, sources, opts);
   return quote.quoteHash === req.quoteHash ? { kind: 'ready', quote } : { kind: 'price_changed', quote };
 }
@@ -82,7 +82,7 @@ async function lineNames(tx: Tx, choice: QuoteRequest, lines: QuoteLine[], sourc
 }
 
 /** Write the priced order, claim its hours, then write its lines. Refusals from the claim arrive as BK001. */
-export async function placeOrder(tx: Tx, customerId: string, choice: QuoteRequest, quote: QuoteView, sources: QuoteSources): Promise<PlacedOrder> {
+export async function placeOrder(tx: Tx, customerId: string | null, choice: QuoteRequest, quote: QuoteView, sources: QuoteSources): Promise<PlacedOrder> {
   const starts = [...new Set(quote.lines.map((l) => l.startsAt))].sort();
   // A second tap (D47) returns the caller's live hold before anything is counted, so the order's own code use
   // or birthday entitlement never refuses it. reserve_court repeats this lookup under the customer lock.
@@ -91,11 +91,14 @@ export async function placeOrder(tx: Tx, customerId: string, choice: QuoteReques
   const names = await lineNames(tx, choice, quote.lines, sources);
   const group = (await tx.query<Names & { id: string }>(`select id, name_th, name_en from public.price_group where club_id = app.club_id() and id = $1`, [quote.priceGroupId])).rows[0];
   await tx.query('savepoint place_order');
-  const created = await tx.query<{ id: string }>('select app.create_priced_order($1, $2::jsonb) as id', [customerId, pricedJson(quote, group)]);
+  // A staff walk in with no customer record (D168) has no customer to lock and no wallet, package or entitlement to take.
+  const created = customerId === null
+    ? await tx.query<{ id: string }>('select app.create_priced_walk_in_order($1::jsonb) as id', [pricedJson(quote, group)])
+    : await tx.query<{ id: string }>('select app.create_priced_order($1, $2::jsonb) as id', [customerId, pricedJson(quote, group)]);
   const orderId = created.rows[0]!.id;
   // Lock order (FA 3.4, BE-B 0229): customer (in create_priced_order), then the wallet and packages, then the
   // promo row, then the claim. The keyed reserve after the lines then takes no new lock (F06, 0511).
-  await takeEntitlements(tx, customerId, orderId, quote);
+  if (customerId !== null) await takeEntitlements(tx, customerId, orderId, quote);
   const claim = (await tx.query<{ r: { order_id: string; booking_ids: string[]; hold_expires_at: string | null; reused?: boolean } }>(
     'select app.reserve_court($1, $2, $3::timestamptz[], $4) as r',
     [orderId, choice.courtId, starts, choice.coachId],
@@ -256,16 +259,16 @@ const isoOrNull = (v: string | Date | null): string | null => (v === null ? null
 
 /** The live hold the caller made for this customer and exactly this selection, if any (D47); the same lookup as
  *  reserve_court's. The Pay route asks it before repricing. */
-export async function findLiveHold(tx: Tx, choice: QuoteRequest, customerId: string): Promise<PlacedOrder | null> {
+export async function findLiveHold(tx: Tx, choice: QuoteRequest, customerId: string | null): Promise<PlacedOrder | null> {
   const starts = choice.hours.map((h) => new Date(h)).filter((d) => !Number.isNaN(d.getTime())).map((d) => d.toISOString()).sort();
   return liveHold(tx, customerId, choice.courtId, choice.coachId, [...new Set(starts)]);
 }
 
-async function liveHold(tx: Tx, customerId: string, courtId: string, coachId: string | null, starts: string[]): Promise<PlacedOrder | null> {
+async function liveHold(tx: Tx, customerId: string | null, courtId: string, coachId: string | null, starts: string[]): Promise<PlacedOrder | null> {
   const r = (await tx.query<{ order_id: string; booking_ids: string[]; hold_expires_at: string }>(
     `select b.order_id, array_agg(b.id order by b.start_at) as booking_ids, min(b.hold_expires_at) as hold_expires_at
        from public.booking b
-      where b.club_id = app.club_id() and b.customer_id = $4 and b.created_by = app.user_id()
+      where b.club_id = app.club_id() and b.customer_id is not distinct from $4::uuid and b.created_by = app.user_id()
         and b.status = 'awaiting_payment' and b.hold_expires_at > app.now()
         and b.resource_id = $1 and b.coach_id is not distinct from $2::uuid
       group by b.order_id

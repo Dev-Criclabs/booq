@@ -122,9 +122,13 @@ async function sessionContext(deps: CheckoutRouteDeps, ctx: RouteContext, staff:
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Who the order is for: the signed in player, or for staff the customer named in the body (ROLE-01-AC4). */
-function customerOf(ctx: RouteContext, staff: boolean): string {
+function customerOf(ctx: RouteContext, staff: boolean): string;
+function customerOf(ctx: RouteContext, staff: boolean, walkIn: true): string | null;
+function customerOf(ctx: RouteContext, staff: boolean, walkIn = false): string | null {
   if (!staff) return ctx.userId;
   const id = ((ctx.body ?? {}) as Record<string, unknown>)['customerId'];
+  // A court sale at the desk may name no customer: an explicit `customerId: null` is a walk in (D168). A missing key is still bad input.
+  if (walkIn && id === null) return null;
   if (typeof id !== 'string' || !UUID.test(id)) throw new RouteError(400, 'bad_input');
   return id.toLowerCase();
 }
@@ -132,7 +136,8 @@ function customerOf(ctx: RouteContext, staff: boolean): string {
 function quoteHandler(deps: CheckoutRouteDeps, staff: boolean) {
   return async (ctx: RouteContext) => {
     const c = await sessionContext(deps, ctx, staff);
-    const customer = customerOf(ctx, staff);
+    const walk = customerOf(ctx, staff, true);
+    const customer = walk as string;   // only a staff walk in is null, and staff never reach the offer or seat paths
     // A waitlist offer (F04-T22c) is priced on its held booking's court and hour; a staff quote names no offer.
     const offer = staff ? null : typed(() => parseOfferRef(ctx.body));
     // A group class seat (F04-T22b): priced from the session; the player books it for themselves.
@@ -143,7 +148,7 @@ function quoteHandler(deps: CheckoutRouteDeps, staff: boolean) {
     });
     if (offer) return inTx(deps.db, c, async (tx) => quoteFor(tx, customer, offerChoice(ctx.body, await offerHold(tx, customer, offer)), deps.sources));
     const request = typed(() => parseQuoteRequest(ctx.body));
-    return inTx(deps.db, c, (tx) => quoteFor(tx, customer, request, deps.sources, { forCustomer: staff }));
+    return inTx(deps.db, c, (tx) => quoteFor(tx, walk, request, deps.sources, { forCustomer: staff }));
   };
 }
 
@@ -191,12 +196,13 @@ function payHandler(deps: CheckoutRouteDeps, staff: boolean) {
   const path = staff ? 'POST /staff/orders/pay' : 'POST /checkout/pay';
   return async (ctx: RouteContext) => {
     const c = await sessionContext(deps, ctx, staff);
-    const customer = customerOf(ctx, staff);
+    const walk = customerOf(ctx, staff, true);
+    const customer = walk as string;   // only a staff walk in is null, and staff never reach the offer or seat paths
     const offer = staff ? null : typed(() => parseOfferRef(ctx.body));
     const seat = staff || offer ? null : typed(() => parseSeatRequest(ctx.body));
     const step = offer ? await offerPay(deps, ctx, c, customer, offer)
       : seat ? await seatPay(deps, ctx, c, customer, seat)
-      : await orderPay(deps, ctx, c, customer, staff, path);
+      : await orderPay(deps, ctx, c, walk, staff, path);
     if (step.kind === 'price_changed') return { priceChanged: true, quote: step.quote };
     const p = step.placed;
     if (p.confirmed) return { orderId: p.orderId, holdExpiresAt: null, payment: null, confirmed: true };
@@ -214,7 +220,7 @@ function payHandler(deps: CheckoutRouteDeps, staff: boolean) {
 
 type PayStep = { kind: 'price_changed'; quote: unknown } | { kind: 'placed'; placed: PlacedOrder };
 
-function orderPay(deps: CheckoutRouteDeps, ctx: RouteContext, c: ClubContext, customer: string, staff: boolean, path: string): Promise<PayStep> {
+function orderPay(deps: CheckoutRouteDeps, ctx: RouteContext, c: ClubContext, customer: string | null, staff: boolean, path: string): Promise<PayStep> {
   const request = typed(() => parsePayRequest(ctx.body));
   const key = inputOf(ctx)['idempotencyKey'];
   if (key !== undefined && (typeof key !== 'string' || !KEY.test(key))) throw new RouteError(400, 'bad_input');
