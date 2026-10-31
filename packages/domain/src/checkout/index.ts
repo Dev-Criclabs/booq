@@ -6,3 +6,4 @@ export * from './pay';
 export * from './orders';
 export * from './package';
 export * from './package-pay';
+export * from './setup';
