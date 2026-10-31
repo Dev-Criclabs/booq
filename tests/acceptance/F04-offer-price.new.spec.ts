@@ -89,7 +89,7 @@ async function offerFor(): Promise<{ order: string; booking: string }> {
   return { order: r.order_id as string, booking: r.id as string };
 }
 const price = (user: string, order: string) =>
-  db.withClubTx(ctx(user), async (tx) => (await tx.query(`select app.price_offer_order($1, $2::jsonb) as r`, [order, JSON.stringify(PRICED)])).rows[0].r as boolean);
+  db.withClubTx(ctx(user), async (tx) => (await tx.query(`select app.price_offer_order($1, $2::jsonb) as r`, [order, JSON.stringify(PRICED)])).rows[0]!.r as boolean);
 const priced = async (order: string) => (await tdb.query(`select total_satang, priced_at is not null as p from public.orders where id = $1`, [order])).rows[0];
 
 it('F04/R4-AC9 F08/CLASS-02-AC3 the player of the offer prices the shell once; a second call returns false and changes nothing', async () => {
@@ -98,12 +98,12 @@ it('F04/R4-AC9 F08/CLASS-02-AC3 the player of the offer prices the shell once; a
   const seen: unknown[] = [];
   await expect(
     db.withClubTx(ctx(P[2]!), async (tx) => {
-      const call = async () => (await tx.query(`select app.price_offer_order($1, $2::jsonb) as r`, [o.order, JSON.stringify(PRICED)])).rows[0].r;
+      const call = async () => (await tx.query(`select app.price_offer_order($1, $2::jsonb) as r`, [o.order, JSON.stringify(PRICED)])).rows[0]!.r;
       seen.push(await call());
-      const first = (await tx.query(`select total_satang, priced_at from public.orders where id = $1`, [o.order])).rows[0];
+      const first = (await tx.query(`select total_satang, priced_at from public.orders where id = $1`, [o.order])).rows[0]!;
       seen.push(first.total_satang);
       seen.push(await call());
-      seen.push((await tx.query(`select priced_at from public.orders where id = $1`, [o.order])).rows[0].priced_at.getTime() === first.priced_at.getTime());
+      seen.push((await tx.query(`select priced_at from public.orders where id = $1`, [o.order])).rows[0]!.priced_at.getTime() === first.priced_at.getTime());
       throw new Error('rollback');
     }),
   ).rejects.toThrow('rollback');

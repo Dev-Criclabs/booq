@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type pg from 'pg';
 import { createDb, type Db } from '../../packages/db/src/tx';
 import { createTestDatabase, type TestDatabase } from '../../packages/db/src/testing/harness';
 
@@ -21,7 +20,7 @@ let db: Db;
 let session: string;
 
 async function asDefiner(sql: string, args: unknown[] = []): Promise<unknown> {
-  const c: pg.PoolClient = await tdb.pool.connect();
+  const c = await tdb.pool.connect();
   try {
     await c.query('begin');
     await c.query('set local role booq_owner');
