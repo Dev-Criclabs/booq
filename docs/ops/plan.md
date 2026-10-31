@@ -155,6 +155,7 @@ Status page: not for 7 Dec. Revisit after Hunter's soft launch.
 | repository rules | partly | lockfile drift (a warning until `CI_STRICT`), then `tools/check-table-classes.mjs`, `tools/check-audit-triggers.mjs`, `tools/check-migrations.mjs` (duplicate or out of order migration numbers) when each exists |
 | database tests and generated types | when `supabase/config.toml` exists | Supabase local stack (`supabase start`, which applies every migration from scratch), `pnpm run test:db`, then `pnpm run db:types` and a check that nothing changed |
 | CI result | yes | one status to require in branch protection |
+| **Build** (separate file `.github/workflows/build.yml`) | yes | `next build` of `apps/web` (its own `build` script, which runs the deploy guard first) and `apps/platform`, on every push to `main` and to any branch, in parallel with the test jobs and not part of them. Added 31 Oct after `apps/web`'s build sat broken on `main` unnoticed. Require `build (apps/web)` and `build (apps/platform)` in branch protection too |
 
 Contract with other roles: the three `tools/check-*.mjs` names, and the root scripts `test:db` and `db:types`, are my proposal; the Architect may rename them (F01-T05, T36), then CI is edited to match. A missing one is a notice until you set the repository variable `CI_STRICT=true`, then it fails. Turn `CI_STRICT` on when F01-T05 and F01-T36 have landed. CI uses no secrets. Tests use the fakes and no network.
 
@@ -162,7 +163,7 @@ Found while testing: `pnpm install --frozen-lockfile` rewrote `pnpm-lock.yaml` (
 
 Still to add when they exist, each needs a person's call: Playwright end to end run against a preview, dependency audit, build, deploy jobs. The `supabase` CLI flags in the database job are from memory and must be checked the first time the job runs.
 
-Repository settings to apply by the user (cannot be done from a file): protect `main`, require the `CI result` check and a review, enable secret scanning and push protection, enable Dependabot alerts.
+Repository settings to apply by the user (cannot be done from a file): protect `main`, require the `CI result`, `build (apps/web)` and `build (apps/platform)` checks and a review, enable secret scanning and push protection, enable Dependabot alerts.
 
 ## 8. Schedule to 7 Dec and 29 Dec
 

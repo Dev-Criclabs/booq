@@ -16,8 +16,10 @@
     "@booq/receipts": "workspace:*",
     "@booq/secrets": "workspace:*",
     "@booq/time": "workspace:*",
+    "@expo-google-fonts/sarabun": "0.4.1",
     "@line/liff": "2.31.2",
     "next": "16.4.2",
+    "pdfkit": "0.17.1",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },

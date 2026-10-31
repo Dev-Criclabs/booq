@@ -83,7 +83,9 @@ beforeEach(async () => {
   await tdb.query(`create or replace function app.coach_message_hook(p_kind text, p_user uuid, p_params jsonb, p_dedupe_key text) returns void language plpgsql security definer as $$ begin insert into public.__hook (kind, usr, params, dedupe) values (p_kind, p_user, p_params, p_dedupe_key); end $$`);
   await tdb.query(`create table public.__returns (n serial, booking uuid, kind text)`);
   await tdb.query(`grant all on public.__returns, public.__returns_n_seq to public`);
-  await tdb.query(`create or replace function app.return_booking_value(p_booking uuid, p_kind text) returns void language plpgsql security definer as $$ begin insert into public.__returns (booking, kind) values (p_booking, p_kind); end $$`);
+  // F09's real function (1005) returns jsonb, so the stand-in replaces it by drop and create.
+  await tdb.query(`drop function if exists app.return_booking_value(uuid, text)`);
+  await tdb.query(`create function app.return_booking_value(p_booking uuid, p_kind text) returns jsonb language plpgsql security definer as $$ begin insert into public.__returns (booking, kind) values (p_booking, p_kind); return '{}'::jsonb; end $$`);
 });
 afterEach(async () => {
   await db.end();

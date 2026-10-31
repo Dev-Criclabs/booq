@@ -38,12 +38,12 @@ Depends on: F01 T09 (setup tables), T12 (people), T13 (route wrapper), T18 (gran
   Tests first: a package at its expiry gets one `expire` row for the unreserved remainder; running the sweep twice writes once.
 - [x] **F06-T11** Migration 0513: policies and grants for the tables, views and functions; the Accountant column limits (names, no phone or date of birth); table class registry entries. IDs: PKG-01, CC-1, CC-3, D35. Role: BE-C · Deps T10, F01-T18 · Size: M
   Tests first: the blind suite shows BOOQ staff read nothing of F06's class D tables; a player reads only their own ledger; the Accountant view has no phone or date of birth; another club answers 404.
-- [ ] **F06-T12** No migration. Settings keys check: the keys already exist (`package_expiry_reminder_days`, Tennis template 14 and 3, and `wallet_expiry_months`, unset allowed, both from F01 migration 0041 and `settings-registry.ts`); F06 reads them and adds none. IDs: PKG-03-AC1, AC10, D116, D89. Role: BE-C · Deps F01 registry · Size: S
+- [x] **F06-T12** No migration. Settings keys check: the keys already exist (`package_expiry_reminder_days`, Tennis template 14 and 3, and `wallet_expiry_months`, unset allowed, both from F01 migration 0041 and `settings-registry.ts`); F06 reads them and adds none. IDs: PKG-03-AC1, AC10, D116, D89. Role: BE-C · Deps F01 registry · Size: S
   Tests first: the registry test lists both keys with their units; `wallet_expire` refuses to run when `wallet_expiry_months` is unset.
 
 ## C. Jobs and reminders
 
-- [ ] **F06-T13** Worker tasks `package_expire` and `wallet_expire` (per club, `withClubTx`, idempotent, test clock). IDs: PKG-03-AC3, AC10. Role: BE-C · Deps T10, F01-T34 · Size: S
+- [x] **F06-T13** Worker tasks `package_expire` and `wallet_expire` (per club, `withClubTx`, idempotent, test clock). IDs: PKG-03-AC3, AC10. Role: BE-C · Deps T10, F01-T34 · Size: S
   Tests first: at 23:59:59 and 00:00:00 Bangkok on the expiry date the package is active then expired; the task run twice writes once.
 - [ ] **F06-T14** Migration 0514: replaces the no-op hook `app.package_reminder_hook` (created in 0508) with the real one: reminder enqueue at grant, extension and pause through `app.enqueue_message` with keys holding `expires_at` and N. F06 builds before F10, so grant, extension and pause call the hook, which does nothing until this task. IDs: PKG-03-AC1, AC2, AC6, D116. Role: BE-C · Deps T07, F10-T06 (`app.enqueue_message`, migration 0605) · Size: S
   Tests first: reminders at 14 and 3 days once each; an extension voids the old rows and creates new ones; a package with no credits left sends none.
@@ -88,3 +88,9 @@ T01 to T03 first, then T04, T06a, T06b, T07, T05, T08, T09, T10, T11, T12 (the o
 - [x] **F06-T25** Migration 0515: `app.wallet_return_line(order_line, reason)`: returns the wallet spend of one order line (a one hour cancel needs one line; `wallet_return(order)` returns every spend row). IDs: PKG-01-AC8, R1-AC6, AC7, D158. Role: BE-C · Deps T04 · Size: S
   Tests first: only the named line's spend rows come back; a repeat returns once (key `return:{spend_id}`); a line with no spend returns nothing; a spend of another order is refused.
 
+
+## Follow-up added by D166 (template products, 31 Oct 2026)
+
+- [x] **F06-T26** Migration 0517: the `product` template handler `app.template_product`, registered with `app.register_template_handler('product', ...)` and `app.catch_up_template_handler('product')`. Court bundles load as `court_hour` products and group 8-session packs as `group_session` products for the price group made from their `age_band`, with the template's credits, validity and price. Solo packs (the template has no coach tier) and single-session items are skipped. Names come from the template data, which holds the writers' P-0186 and P-0227 text with the number filled in. IDs: PKG-02-AC1, D166. Role: BE-W · Deps T01, F04-T06 (age_band handler) · Size: S
+  Tests first: Hunter gets exactly 4 products at the PRD prices (two bundles, the Adult and Student group packs); no singles, no solo packs, nothing pending; the names equal the locale text with the variable filled; another club and Blank get nothing; an unknown product type raises.
+  - Note for F11 (A0 dashboard): show "create solo packs for your coach tiers" as a **non-blocking reminder** while `app.solo_packs_done(club)` is false (some coach tier has no active solo pack). It is not a setup step and gates no status move: the PRD does not ask for that (orchestrator, 31 Oct). Listed in design section 14.

@@ -1,0 +1,15 @@
+// F08 acceptance criteria that are proven by tests next to the code (written by the build lanes).
+// Each trace test checks that the cited test still exists. Criteria neither this file nor another QA file names stay as generated test.todo, with the reason in docs/qa/f08-sweep.md.
+import { traced } from './trace';
+
+traced("F08/CLASS-01-AC6", "Given the schedule (C7), when it loads, then it shows the week, filterable by le", [{ file: "packages/db/src/class-views.test.ts", has: "spots_left counts confirmed seats and unexpired holds" }]);
+traced("F08/CLASS-01-AC7", "Given class detail (C8), when it loads, then it shows level, audience, date and ", [{ file: "packages/db/src/class-views.test.ts", has: "shows counts only" }]);
+traced("F08/CLASS-01-AC8", "Given a guest, when they browse C7 and C8, then it loads without sign in and sho", [{ file: "packages/db/src/class-views.test.ts", has: "a guest sees the scheduled future sessions" }, { file: "packages/db/src/class-functions.test.ts", has: "a guest sees Adult classes only" }]);
+traced("F08/CLASS-01-AC9", "Given a class template with the coach on leave or over the rest cap for a sessio", [{ file: "packages/db/src/class-functions.test.ts", has: "a coach already busy at the hour gives coach_clash; a coach on approved leave gives coach_leave" }]);
+traced("F08/CLASS-01-AC12", "Given a group class hour, when the coach's rest run is counted, then it counts u", [{ file: "packages/db/src/class-functions.test.ts", has: "the coach rest run counts a group class" }, { file: "packages/db/src/coach-rules.test.ts", has: "a group class counts" }]);
+traced("F08/CLASS-02-AC5", "Given a spot opens less than the cut off (default 2 hours) before the start, whe", [{ file: "packages/db/src/waitlist-functions.test.ts", has: "no offers before the claim time is set, and none inside the cut off" }]);
+traced("F08/CLASS-02-AC7", "Given two players claim the last spot at once, when both run, then exactly one s", [{ file: "packages/db/src/take-seat.test.ts", has: "the last seat: two takers in parallel give one success and one session_full" }]);
+traced("F08/CLASS-02-AC10", "Given the Waitlist spot open message, when it is sent, then it is sent even at 8", [{ file: "packages/db/src/coach-message-hook.test.ts", has: "the two F08 kinds are in the catalogue, sent at every cap level" }]);
+traced("F08/CLASS-02-AC14", "Given an offer is open, when another player opens the schedule, then the spot is", [{ file: "packages/db/src/waitlist-functions.test.ts", has: "the offered seat counts as taken, so a walk-in cannot take it" }]);
+traced("F08/CLASS-02-AC15", "Given an offer open when the 2 hour mark passes, then it stands (D121).", [{ file: "packages/db/src/waitlist-functions.test.ts", has: "an open offer stands when the mark passes" }]);
+traced("F08/WAIT-01-AC5", "Given a court slot that is Held (being paid for), when it is viewed, then whethe", [{ file: "packages/db/src/waitlist-functions.test.ts", has: "a held hour can be joined too (D157)" }]);

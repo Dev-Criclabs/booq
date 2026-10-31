@@ -86,9 +86,9 @@ describe('class_session (CLASS-01-AC2, AC3, AC9)', () => {
     await expect(tdb.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, booking_id) values ($1,'court_booking',$2,$3,$4,'confirmed',gen_random_uuid())`, [A, RES, START, '2026-12-02T19:00:00+07:00'])).rejects.toThrow();
   });
 
-  it('is club data: forced row security, no grant to the application roles yet; the update is audited', async () => {
+  it('is club data: forced row security, nothing for BOOQ staff; the update is audited', async () => {
     expect((await tdb.query(`select relrowsecurity, relforcerowsecurity from pg_class where oid = 'public.class_session'::regclass`)).rows[0]).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
-    for (const role of ['booq_app', 'booq_worker', 'booq_platform']) expect((await tdb.query(`select has_table_privilege($1, 'public.class_session', 'select') as ok`, [role])).rows[0].ok, role).toBe(false);
+    expect((await tdb.query(`select has_table_privilege('booq_platform', 'public.class_session', 'select') as ok`)).rows[0].ok).toBe(false);   // grants to the app roles come with 0911
     const s = (await insert()).rows[0].id;
     await tdb.query(`update public.class_session set edited = true where id = $1`, [s]);
     expect((await tdb.query(`select count(*)::int as n from public.audit_entry where record_type = 'class_session'`)).rows[0].n).toBeGreaterThanOrEqual(2);
