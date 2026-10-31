@@ -347,3 +347,17 @@ describe('the card that goes out (F10-T10, LINE-04)', () => {
     expect(texts).toContain(dict.th['L-0011']!.replace('{court}', '1'));
   });
 });
+
+describe('a Paused club (PLAT-03)', () => {
+  it('LINE-03-AC11 a reminder and a cancellation result of an existing booking are still sent while the club is paused', async () => {
+    const b = await booking('3 hours');
+    const rem = await msg('reminder_2h', reminderKey(b, 2), { params: { booking_id: b.id } });
+    const gone = await booking('3 hours', 'cancelled');
+    const cancel = await msg('cancellation_result', `cancellation_result:${gone.id}`, { params: { booking_id: gone.id } });
+    await tdb.query(`update public.club set status = 'paused' where id = $1`, [A]);
+    await run();
+    expect(await rowOf(rem)).toMatchObject({ status: 'sent' });
+    expect(await rowOf(cancel)).toMatchObject({ status: 'sent' });
+    expect(line.pushes({ clubId: A }).length).toBe(2);
+  });
+});
