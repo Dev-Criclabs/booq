@@ -3,6 +3,10 @@ import type { ClubContext, Db, Tx } from '@booq/db';
 import {
   CheckoutError,
   findLiveHold,
+  findLiveSeat,
+  parseSeatRequest,
+  placeSeatOrder,
+  seatQuoteFor,
   offerChoice,
   offerHold,
   parseOfferRef,
@@ -68,6 +72,7 @@ const STATUS: Record<CheckoutErrorCode, number> = {
   payment_unavailable: 503,
   order_not_found: 404,
   spot_gone: 409,
+  session_not_available: 409,
   customer_not_found: 404,
 };
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -130,6 +135,12 @@ function quoteHandler(deps: CheckoutRouteDeps, staff: boolean) {
     const customer = customerOf(ctx, staff);
     // A waitlist offer (F04-T22c) is priced on its held booking's court and hour; a staff quote names no offer.
     const offer = staff ? null : typed(() => parseOfferRef(ctx.body));
+    // A group class seat (F04-T22b): priced from the session; the player books it for themselves.
+    const seat = staff ? null : typed(() => parseSeatRequest(ctx.body));
+    if (seat) return inTx(deps.db, c, async (tx) => {
+      const { names: _names, ...q } = await seatQuoteFor(tx, customer, seat, deps.sources);
+      return q;
+    });
     if (offer) return inTx(deps.db, c, async (tx) => quoteFor(tx, customer, offerChoice(ctx.body, await offerHold(tx, customer, offer)), deps.sources));
     const request = typed(() => parseQuoteRequest(ctx.body));
     return inTx(deps.db, c, (tx) => quoteFor(tx, customer, request, deps.sources, { forCustomer: staff }));
@@ -155,13 +166,37 @@ function offerPay(deps: CheckoutRouteDeps, ctx: RouteContext, c: ClubContext, cu
   );
 }
 
+/** F04-T22b: Pay for one group class seat (body {sessionId, code, quoteHash}). */
+function seatPay(deps: CheckoutRouteDeps, ctx: RouteContext, c: ClubContext, customer: string, seat: { sessionId: string; code: string | null }): Promise<PayStep> {
+  const hash = ((ctx.body ?? {}) as Record<string, unknown>)['quoteHash'];
+  if (typeof hash !== 'string' || !/^[0-9a-f]{64}$/i.test(hash)) throw new RouteError(400, 'bad_input');
+  const key = inputOf(ctx)['idempotencyKey'];
+  if (key !== undefined && (typeof key !== 'string' || !KEY.test(key))) throw new RouteError(400, 'bad_input');
+  return inTx<PayStep>(deps.db, c, (tx) =>
+    withIdempotency(tx, key as string | undefined, requestHash('POST /checkout/pay', ctx.body ?? null), async (): Promise<PayStep> => {
+      // A second tap (D47) returns the live held seat before anything is counted or repriced.
+      const live = await findLiveSeat(tx, seat.sessionId, customer);
+      if (live) return { kind: 'placed', placed: live };
+      const quote = await seatQuoteFor(tx, customer, seat, deps.sources);
+      if (quote.quoteHash !== hash.toLowerCase()) {
+        const { names: _names, ...q } = quote;
+        return { kind: 'price_changed', quote: q };
+      }
+      return { kind: 'placed', placed: await placeSeatOrder(tx, customer, quote, deps.sources) };
+    }),
+  );
+}
+
 function payHandler(deps: CheckoutRouteDeps, staff: boolean) {
   const path = staff ? 'POST /staff/orders/pay' : 'POST /checkout/pay';
   return async (ctx: RouteContext) => {
     const c = await sessionContext(deps, ctx, staff);
     const customer = customerOf(ctx, staff);
     const offer = staff ? null : typed(() => parseOfferRef(ctx.body));
-    const step = offer ? await offerPay(deps, ctx, c, customer, offer) : await orderPay(deps, ctx, c, customer, staff, path);
+    const seat = staff || offer ? null : typed(() => parseSeatRequest(ctx.body));
+    const step = offer ? await offerPay(deps, ctx, c, customer, offer)
+      : seat ? await seatPay(deps, ctx, c, customer, seat)
+      : await orderPay(deps, ctx, c, customer, staff, path);
     if (step.kind === 'price_changed') return { priceChanged: true, quote: step.quote };
     const p = step.placed;
     if (p.confirmed) return { orderId: p.orderId, holdExpiresAt: null, payment: null, confirmed: true };
