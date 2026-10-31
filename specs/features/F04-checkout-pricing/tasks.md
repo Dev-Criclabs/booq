@@ -73,6 +73,7 @@ Migration numbers are 0301 to 0399 and rise with task order (the migrator refuse
   Tests first: only the coaching portion is priced; the court line is untouched; a coach already busy refuses and nothing is created; the second order has its own lines and booking link.
 - [ ] **F04-T16** Bundle prompt in the quote (R6) once F06's court bundle product exists. IDs: R6-AC1 to AC4. Role: BE-C · Deps T11, F06 (court bundle product; not startable before it exists) · Size: S
   Tests first: offered only without court credit on a full price order and when the product has a price; declining changes nothing.
+  - Part built (BE-C): the offer. `quoteFor` returns `bundleOffer {productId, priceSatang, hours, hoursUsedNow: 1}` on a court order (no coach) with no discount and no credit used, for a player with no court hour credit, when an active court hour product with a price is for their group (none, or theirs; the club's oldest when there are several); otherwise null. Outside `quote_hash`, so declining changes nothing. Tests: `apps/web/src/api/checkout/bundle-offer.routes.test.ts` (R6-AC1, AC2, AC4). Accepting (`withBundle`, R6-AC3) waits on the orchestrator: the line paid from the new bundle (`scope.new_package_line`) cannot be reserved at Pay, before the package exists.
 
 ## D. Screens
 

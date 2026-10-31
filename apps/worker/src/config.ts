@@ -111,13 +111,12 @@ export function readWorkerConfig(env: Record<string, string | undefined>): Worke
   };
 }
 
-/** Graphile Worker crontab text: housekeeping, the dispatchers that add one import sweep, one Pay tap prune and one class generation per club, the rate-limit sweep, the console session sweep and the three F06 sweeps, the two F05 jobs, the two F10 LINE usage jobs and the F09 closure roll. */
+/** Graphile Worker crontab text: housekeeping, the dispatchers that add one import sweep, one Pay tap prune and one class generation per club, the rate-limit sweep, the console session sweep and the three F06 sweeps, the two F05 jobs and the two F10 LINE usage jobs. */
 export function buildCrontab(
   c: Pick<WorkerConfig, 'housekeepingCron' | 'importSweepCron' | 'rateLimitSweepCron' | 'payTapPruneCron' | 'classGenerateCron' | 'consoleSweepCron' | 'packageExpireCron' | 'walletExpireCron' | 'sessionStartCron' | 'beamReconcileCron' | 'packageOrderExpiryCron' | 'lineUsageSyncCron' | 'lineHealthCron' | 'closureRollCron'>,
 ): string {
   return `${c.housekeepingCron} ${HOUSEKEEPING}\n${c.importSweepCron} ${IMPORT_STAGING_DISPATCH}\n${c.rateLimitSweepCron} ${RATE_LIMIT_SWEEP}\n${c.payTapPruneCron} ${PAY_TAP_PRUNE_DISPATCH}\n${c.classGenerateCron} ${CLASS_GENERATE_DISPATCH}\n${c.consoleSweepCron} ${CONSOLE_SESSION_SWEEP}\n`
     + `${c.packageExpireCron} ${PACKAGE_EXPIRE}\n${c.walletExpireCron} ${WALLET_EXPIRE}\n${c.sessionStartCron} ${SESSION_START}\n`
     + `${c.beamReconcileCron} ${BEAM_RECONCILE}\n${c.packageOrderExpiryCron} ${PACKAGE_ORDER_EXPIRY}\n`
-    + `${c.lineUsageSyncCron} ${LINE_USAGE_SYNC}\n${c.lineHealthCron} ${LINE_HEALTH}\n`
-    + `${c.closureRollCron} ${CLOSURE_ROLL}\n`;
+    + `${c.lineUsageSyncCron} ${LINE_USAGE_SYNC}\n${c.lineHealthCron} ${LINE_HEALTH}\n${c.closureRollCron} ${CLOSURE_ROLL}\n`;
 }

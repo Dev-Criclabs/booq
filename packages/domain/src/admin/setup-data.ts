@@ -27,12 +27,16 @@ interface Field {
   upper?: boolean;
   /** The value used when a create leaves it out. Only for a column with no database default; never a price or a limit. */
   fallback?: unknown;
+  /** Values the table allows but the rules do not define yet: refused with peak_not_defined. */
+  notDefined?: readonly string[];
 }
 export interface SetupResource {
   path: string;
   table: string;
   fields: Field[];
   order: string;
+  /** A product is switched off, never deleted: the table grants the app no delete (package products). */
+  noDelete?: boolean;
 }
 
 const bad = (field?: string): never => {
@@ -71,6 +75,7 @@ function clean(f: Field, v: unknown): unknown {
       return JSON.stringify(o);
     }
     default:
+      if (typeof v === 'string' && f.notDefined?.includes(v)) throw new AdminError('peak_not_defined', { field: f.key });
       return typeof v === 'string' && (f.kind as { enum: readonly string[] }).enum.includes(v) ? v : bad(f.key);
   }
 }
@@ -90,8 +95,9 @@ export const SETUP: Record<string, SetupResource> = {
     fields: [
       { key: 'priceGroupId', column: 'price_group_id', kind: 'uuid', required: true },
       { key: 'dayType', column: 'day_type', kind: { enum: ['any', 'weekday', 'weekend'] }, fallback: 'any' },
-      // Peak and off peak have no definition in v1 (F04 assumption A-4): the price lookup rejects them, so a rule for them is not saved.
-      { key: 'peak', column: 'peak', kind: { enum: ['any'] }, fallback: 'any' },
+      // Peak and off peak have no definition in v1 (F04 assumption A-4): the price lookup rejects them, so a rule for them is not saved
+      // (peak_not_defined, see clean).
+      { key: 'peak', column: 'peak', kind: { enum: ['any'] }, fallback: 'any', notDefined: ['peak', 'off_peak'] },
       { key: 'priceSatang', column: 'price_satang', kind: 'int', required: true, min: 0, max: 100_000_000 },
     ],
   },
@@ -103,6 +109,21 @@ export const SETUP: Record<string, SetupResource> = {
       { key: 'priceSatang', column: 'price_satang', kind: 'int', nullable: true, min: 0, max: 100_000_000 },
       { key: 'active', column: 'active', kind: 'bool', fallback: true },
       { key: 'position', column: 'position', kind: 'int', min: 0, max: 1000, fallback: 0 },
+    ],
+  },
+  // F06 PKG-02: a package product. The database's checks hold the pairs (a solo pack names a coach tier, solo and group packs a price group).
+  // Price and validity are copied onto each package sold, so a change here never alters packages already sold (PKG-02-AC4).
+  'package-products': {
+    path: 'package-products', table: 'package_product', order: 'credit_type, credits, id', noDelete: true,
+    fields: [
+      ...NAMES,
+      { key: 'creditType', column: 'credit_type', kind: { enum: ['court_hour', 'solo_class', 'group_session'] }, required: true },
+      { key: 'credits', column: 'credits', kind: 'int', required: true, min: 1, max: 1000 },
+      { key: 'validityMonths', column: 'validity_months', kind: 'int', required: true, min: 1, max: 120 },
+      { key: 'priceGroupId', column: 'price_group_id', kind: 'uuid', nullable: true },
+      { key: 'coachTierId', column: 'coach_tier_id', kind: 'uuid', nullable: true },
+      { key: 'priceSatang', column: 'price_satang', kind: 'int', nullable: true, min: 0, max: 100_000_000 },
+      { key: 'active', column: 'active', kind: 'bool', fallback: true },
     ],
   },
   partners: {

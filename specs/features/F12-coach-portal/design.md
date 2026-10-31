@@ -40,7 +40,7 @@ One row per booking the coach marked: `club_id`, `booking_id` (a solo class book
 
 ### 3.3 Reads that are functions, not tables
 
-`app.coach_day`, `app.coach_schedule`, `app.coach_session`, `app.my_earnings`, `app.my_payout_history`, `app.my_payout_adjustments` (§5). They are `security definer`, owned by `booq_owner`, take the club from `app.club_id()` and the coach from `app.user_id()`, and read only rows of that coach. No table is granted to the coach for these reads, so a coach cannot select another coach's sessions or a customer's contact, whatever query they send (CC-1, CC-2).
+`app.coach_day`, `app.coach_schedule`, `app.coach_session`, `app.my_earnings`, `app.my_payout_history`, `app.my_payout_adjustments` (§5). They are `security definer`, owned by `booq_owner`, take the club from `app.club_id()` and the coach from `app.user_id()`, and read only rows of that coach. The functions return a fixed list of columns, so a customer's contact and payments are never in the answer; the table policies of F03 and F08 already keep a coach to their own rows, and the two F12 tables give the coach no grant at all, so no query reaches another coach's sessions or a player's contact (CC-1, CC-2).
 
 ## 4. Rules fixed here
 

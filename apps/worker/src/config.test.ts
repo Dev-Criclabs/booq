@@ -135,14 +135,6 @@ describe('F05 job schedules', () => {
   });
 });
 
-describe('F09 closure roll schedule', () => {
-  it('WORKER_CLOSURE_ROLL_CRON is required and must be five cron fields', () => {
-    const { WORKER_CLOSURE_ROLL_CRON: _gone, ...rest } = ENV as Record<string, string>;
-    expect(() => readWorkerConfig(rest)).toThrow(/WORKER_CLOSURE_ROLL_CRON/);
-    expect(() => readWorkerConfig({ ...ENV, WORKER_CLOSURE_ROLL_CRON: 'daily' })).toThrow(/WORKER_CLOSURE_ROLL_CRON/);
-  });
-});
-
 describe('F10 LINE usage schedules', () => {
   it.each(['WORKER_LINE_USAGE_SYNC_CRON', 'WORKER_LINE_HEALTH_CRON'])('%s is required and must be five cron fields', (n) => {
     const { [n]: _gone, ...rest } = ENV as Record<string, string>;
@@ -158,7 +150,7 @@ describe('console session limit', () => {
 });
 
 describe('buildCrontab', () => {
-  it('schedules housekeeping, the club dispatches, the two sweeps, the three F06 sweeps, the two F05 jobs, the two F10 usage jobs and the F09 closure roll, one line each', () => {
+  it('schedules housekeeping, the club dispatches, the two sweeps, the three F06 sweeps, the two F05 jobs and the two F10 usage jobs and the F09 closure roll, one line each', () => {
     expect(buildCrontab({
       housekeepingCron: '*/5 * * * *', importSweepCron: '17 * * * *', rateLimitSweepCron: '41 * * * *', payTapPruneCron: '23 * * * *', classGenerateCron: '5 17 * * *', consoleSweepCron: '53 * * * *',
       packageExpireCron: '*/5 * * * *', walletExpireCron: '7 17 * * *', sessionStartCron: '* * * * *',
@@ -171,5 +163,13 @@ describe('buildCrontab', () => {
         + '*/10 * * * * line_usage_sync\n37 20 * * * line_health\n'
         + '11 17 * * * closure_roll\n',
     );
+  });
+});
+
+describe('F09 closure roll schedule', () => {
+  it('WORKER_CLOSURE_ROLL_CRON is required and must be five cron fields', () => {
+    const { WORKER_CLOSURE_ROLL_CRON: _gone, ...rest } = ENV as Record<string, string>;
+    expect(() => readWorkerConfig(rest)).toThrow(/WORKER_CLOSURE_ROLL_CRON/);
+    expect(() => readWorkerConfig({ ...ENV, WORKER_CLOSURE_ROLL_CRON: 'daily' })).toThrow(/WORKER_CLOSURE_ROLL_CRON/);
   });
 });

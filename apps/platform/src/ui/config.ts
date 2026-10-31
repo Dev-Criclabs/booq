@@ -4,7 +4,7 @@ import { errorKey, type Failure } from './club';
 // screen so it can be tested without a browser. Nothing here has a default: a setting that is not set shows as not set.
 
 type Fetch = typeof fetch;
-export type Kind = 'number' | 'list';
+export type Kind = 'number' | 'list' | 'url';
 /** The settings the system reads, in the order they are shown, with the kind of value each takes and its text key. */
 /** `fixed`: a product constant (LINE-07, the PRD); the database refuses any change, so the page shows it and offers no control. */
 export const KNOWN: ReadonlyArray<{ key: string; kind: Kind; fixed?: true }> = [
@@ -22,6 +22,8 @@ export const KNOWN: ReadonlyArray<{ key: string; kind: Kind; fixed?: true }> = [
   { key: 'line_cap_reminders_stop_percent', kind: 'number', fixed: true },
   { key: 'line_cap_over_limit_percent', kind: 'number', fixed: true },
   { key: 'required_launch_checks', kind: 'list' },
+  // D178: where the owner's Message BOOQ button on the Paused banner goes (an http or https address); no default, the user supplies it.
+  { key: 'booq_support_line_url', kind: 'url' },
 ];
 export const labelKey = (key: string): string => `X-new.config_${key}`;
 export const isKnown = (key: string): boolean => KNOWN.some((k) => k.key === key);
@@ -29,10 +31,21 @@ export const isKnown = (key: string): boolean => KNOWN.some((k) => k.key === key
 /** How a value is written in its box: a number as it is, anything else as JSON. */
 export const show = (value: unknown): string => (typeof value === 'number' || typeof value === 'string' ? String(value) : JSON.stringify(value));
 
+/** An address the browser can open: http or https with a host. */
+export function isHttpUrl(text: string): boolean {
+  try {
+    const u = new URL(text);
+    return (u.protocol === 'https:' || u.protocol === 'http:') && u.host !== '';
+  } catch {
+    return false;
+  }
+}
+
 export type Parsed = { ok: true; value: unknown } | { ok: false; key: string };
 export function parse(kind: Kind, raw: string): Parsed {
   const text = raw.trim();
   if (kind === 'number') return /^[0-9]+(\.[0-9]+)?$/.test(text) && Number(text) > 0 ? { ok: true, value: Number(text) } : { ok: false, key: 'X-new.config_number_needed' };
+  if (kind === 'url') return isHttpUrl(text) ? { ok: true, value: text } : { ok: false, key: 'X-new.config_url_needed' };
   try {
     const v: unknown = JSON.parse(text);
     return Array.isArray(v) ? { ok: true, value: v } : { ok: false, key: 'X-new.config_json_needed' };
