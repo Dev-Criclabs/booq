@@ -1,6 +1,6 @@
 import { FileReply, pagesFor, route, RouteError, type Route, type RouteContext } from '@booq/auth';
 import type { ClubContext, Db, Tx } from '@booq/db';
-import { addCustomer, creditAdjust, customerValue, extendPackage, mapValueError, requestHash, walletAdjust, withIdempotency, addCustomerNote, AdminError, type AdminErrorCode, customerBookings, customerNotes, customerOrders, customerProfile, customersCsv, listCustomers, setTag, shellState, staffCalendar } from '@booq/domain';
+import { auditLog, bookingHistory, addCustomer, creditAdjust, customerValue, extendPackage, mapValueError, requestHash, walletAdjust, withIdempotency, addCustomerNote, AdminError, type AdminErrorCode, customerBookings, customerNotes, customerOrders, customerProfile, customersCsv, listCustomers, setTag, shellState, staffCalendar } from '@booq/domain';
 
 // F11 club admin routes (design 4 to 6, prefix /api/c/{slug}). Thin handlers: resolve the club from the session and the path slug, open
 // the club transaction, call the service in packages/domain/src/admin, answer a body or a typed code. No club id is read from the input.
@@ -146,6 +146,29 @@ export function customerRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[] {
       const i = inputOf(ctx);
       return inTx(deps.db, c, (tx) => setTag(tx, i['id'], i['tag'], false));
     }),
+  ];
+}
+
+/**
+ * F11-T08: GET /staff/audit (A17, owner) and GET /staff/bookings/:id/history (A2, front desk and owner). Read only; there is no write or
+ * delete route for the log anywhere (ADMIN-17-AC, D28).
+ */
+export function auditRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[] {
+  return [
+    {
+      ...route({ method: 'GET', path: '/staff/audit', permission: 'audit.read' }, async (ctx) => {
+        const c = await sessionContext(deps, ctx);
+        return inTx(deps.db, c, (tx) => auditLog(tx, inputOf(ctx)));
+      }),
+      headers: NO_STORE,
+    },
+    {
+      ...route({ method: 'GET', path: '/staff/bookings/:id/history', permission: 'booking.create.staff' }, async (ctx) => {
+        const c = await sessionContext(deps, ctx);
+        return inTx(deps.db, c, (tx) => bookingHistory(tx, inputOf(ctx)['id']));
+      }),
+      headers: NO_STORE,
+    },
   ];
 }
 
