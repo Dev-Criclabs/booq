@@ -3,3 +3,81 @@
 // The full Given, When, Then is in the comment above each test. To write a test, replace its test.todo in the task that builds it
 // and keep the ID at the start of the title (tests/acceptance/coverage.spec.ts checks every criterion appears).
 import { describe, test } from 'vitest';
+
+describe("F04 R2", () => {
+  // Given an Adult with a Coach tier coach picked at court checkout, when the order is priced, then it is a solo class: court 50000 satang plus coach 80000 satang, total 130000 (COACH-02).
+  // F04/R2-AC1: proven by a real or traced test in another file of this folder
+  // Given a Student with a Coach tier coach, when priced, then coach 70000 plus court 50000 satang, total 120000 (PRD Pricing and packages).
+  // F04/R2-AC2: proven by a real or traced test in another file of this folder
+  // Given a tier or coach with no price set (Head Coach is empty), when a coach of that tier is offered, then the card shows no price and the coach cannot be picked until the owner sets the price. No default is used.
+  // F04/R2-AC3: proven by a real or traced test in another file of this folder
+  // Given a coach picked at court checkout, when the player has solo pack credits, then the full coaching price is charged and the pack credits are not used (COACH-03). Credits apply only through Classes, then Solo classes.
+  // F04/R2-AC4: proven by a real or traced test in another file of this folder
+  // Given a solo class booked through Classes with a solo pack credit, when priced, then the coach line is covered by the credit and the court line (50000 satang) is still due, payable with a bundle hour, wallet or money (COACH-04).
+  // F04/R2-AC5: proven by a real or traced test in another file of this folder
+  // Given a coach becomes unavailable before the player pays, when checkout refreshes, then the coach line disappears and the player is asked to pick again; the court only booking stays available (PRD Court booking).
+  test.todo("F04/R2-AC6 Given a coach becomes unavailable before the player pays, when checkout refreshes, then the coach line ...");
+  // Given a two hour selection, when priced, then each hour is its own line and booking, and the order total is the sum (BOOK-06, D40).
+  // F04/R2-AC7: proven by a real or traced test in another file of this folder
+  // Given an order that is a solo class, when it is submitted, then court and coach are reserved together or neither (BOOK-04, F07).
+  // F04/R2-AC8: proven by a real or traced test in another file of this folder
+  // Given a player taps Add a coach after booking (from C12), when it is priced, then only the coaching portion is charged (PRD Court booking; F07 owns the flow).
+  test.todo("F04/R2-AC9 Given a player taps Add a coach after booking (from C12), when it is priced, then only the coaching ...");
+});
+
+describe("F04 R3", () => {
+  // Given an add-on with no price set, when checkout loads, then it is not offered for sale (an empty setting is not free).
+  // F04/R3-AC1: proven by a real or traced test in another file of this folder
+  // Given an active add-on with a price, when the player adds it, then it is a line in the order at that price in satang; the server computes the total.
+  // F04/R3-AC2: proven by a real or traced test in another file of this folder
+  // Given several add-ons, when checkout shows them, then they collapse into one row that expands to the lines.
+  test.todo("F04/R3-AC3 Given several add-ons, when checkout shows them, then they collapse into one row that expands to the lines.");
+  // Given an add-on is inactive, when checkout loads, then it is not offered; an existing paid order keeps it.
+  // F04/R3-AC4: proven by a real or traced test in another file of this folder
+  // Given add-ons in an order, when a code applies, then add-ons are excluded from the code's discount unless the code says it applies to them (D23).
+  // F04/R3-AC5: proven by a real or traced test in another file of this folder
+  // Given a booking is cancelled 12 hours or more ahead, when F09 returns value, then its add-ons return with the booking (D21); F04 records add-on lines against the booking they belong to so this works.
+  // F04/R3-AC6: proven by a real or traced test in another file of this folder
+  // Given the add-on name for balls, when it is shown anywhere, then the English is "Balls (Set of 3 balls)" and the Thai is "ลูกเทนนิส (ชุด 3 ลูก)" on every screen and receipt.
+  // F04/R3-AC7: proven by a real or traced test in another file of this folder
+  // Given the owner edits add-ons in A9b, when they save, then it is audited (PLAT-04) and the change applies to new orders only.
+  // F04/R3-AC8: proven by a real or traced test in another file of this folder
+});
+
+describe("F04 R4", () => {
+  // Given a player with package credit that fits the item, a wallet balance and an amount left, when checkout prices the order, then credit is used first, then the wallet, then the remainder is the amount due by money (D22).
+  // F04/R4-AC1: proven by a real or traced test in another file of this folder
+  // Given a credit that fits only part of an order (for example a solo pack credit covers the coaching line only), when it is applied, then it covers that line only and the rest follows the same order (R2-AC5).
+  // F04/R4-AC2: proven by a real or traced test in another file of this folder
+  // Given the wallet balance is larger than the remaining amount, when it is applied, then only the remaining amount is taken and the rest stays in the wallet.
+  // F04/R4-AC3: proven by a real or traced test in another file of this folder
+  // Given a percentage discount on a price that gives a fraction of a satang, when it is calculated, then it rounds half up to the satang (D23); the sum of line amounts equals the order total exactly.
+  // F04/R4-AC4: proven by a real or traced test in another file of this folder
+  // Given the checkout summary, when it shows, then it lists the item, add-ons, birthday discount, promo or referral code, credits applied, wallet applied and amount due, with the cancellation policy line (PRD C10) using the club's cancel window as `{hours}`.
+  // F04/R4-AC5: proven by a real or traced test in another file of this folder
+  // Given the player has a package credit of the wrong type or customer type (a Student credit for an Adult item), when checkout prices the order, then the credit is not applied.
+  // F04/R4-AC6: proven by a real or traced test in another file of this folder
+  // Given credits or wallet are applied, when the order is submitted, then the credit and wallet movements are written as ledger rows (reserve for credit, a wallet use row) by F06 in the same transaction as the order, and no balance is an editable number (PKG-01, D28).
+  test.todo("F04/R4-AC7 Given credits or wallet are applied, when the order is submitted, then the credit and wallet movements are ...");
+  // Given the order is submitted, when the allocation is stored, then each line records how much was paid by credit, by wallet and by money, so a later cancel returns package credit to the package, money paid to the wallet and wallet use to the wallet (D21).
+  // F04/R4-AC8: proven by a real or traced test in another file of this folder
+  // Given the player taps Pay, when the server prices the order, then it uses the prices at that moment (D63, HO PAY-07). If the price changed since checkout opened, the player sees the new price and must confirm again; nothing is held or charged until they do. Two requests that change the same order at once are resolved the same way: the order the server holds at Pay is the one priced.
+  // F04/R4-AC9: proven by a real or traced test in another file of this folder
+  // Given any amount shown to the player, when it is whole baht, then it shows without decimals (฿1,300); otherwise it shows two decimals (฿1,299.50). Storage stays integer satang (D69).
+  test.todo("F04/R4-AC11 Given any amount shown to the player, when it is whole baht, then it shows without decimals (฿1,300); ...");
+  // Given a Paused club, when a player starts checkout, then the server refuses (F01 PLAT-03-AC4).
+  // F04/R4-AC10: proven by a real or traced test in another file of this folder
+});
+
+describe("F04 R8", () => {
+  // Given a slot is taken between selection and Pay, when the player taps Pay, then the order is refused with the slot unavailable message and nothing is charged (BOOK-04-AC4).
+  // F04/R8-AC1: proven by a real or traced test in another file of this folder
+  // Given the network drops, when checkout loads or Pay is tapped, then the offline error shows with Try again (P-0327, P-0328) and nothing is booked or charged.
+  test.todo("F04/R8-AC2 Given the network drops, when checkout loads or Pay is tapped, then the offline error shows with Try again ...");
+  // Given the longest Thai or English string for a line or code error, when checkout renders at 375 px, then buttons do not wrap and the summary scrolls (TEXT-06).
+  test.todo("F04/R8-AC3 Given the longest Thai or English string for a line or code error, when checkout renders at 375 px, then ...");
+  // Given a guest reaches checkout, when they have not signed in, then sign in runs first and they return to checkout with the choice kept (F02 AUTH-01).
+  // F04/R8-AC4: proven by a real or traced test in another file of this folder
+  // Given the coach picker shows coaches for the exact hour, when the hour changes, then the list updates live and a coach who no longer works that hour disappears (COACH-01; F07 owns the rule).
+  test.todo("F04/R8-AC5 Given the coach picker shows coaches for the exact hour, when the hour changes, then the list updates live ...");
+});
