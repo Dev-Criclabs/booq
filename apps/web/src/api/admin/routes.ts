@@ -18,7 +18,7 @@ const NO_STORE = { 'Cache-Control': 'no-store' } as const;
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const inputOf = (ctx: RouteContext) => (ctx.input ?? {}) as Record<string, unknown>;
 
-const STATUS: Record<AdminErrorCode, number> = { bad_input: 400, not_found: 404, forbidden: 403, reason_required: 400, below_zero: 409, customer_not_claimed: 409, duplicate: 409, in_use: 409 };
+const STATUS: Record<AdminErrorCode, number> = { bad_input: 400, not_found: 404, forbidden: 403, reason_required: 400, below_zero: 409, customer_not_claimed: 409, duplicate: 409, in_use: 409, peak_not_defined: 400 };
 // A refusal raised by an admin function in the database (BK001, message = the code).
 const DB_STATUS: Record<string, number> = { phone_in_use: 409, reason_required: 400, club_not_available: 409 };
 
