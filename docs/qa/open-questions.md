@@ -13,6 +13,12 @@ Questions already open elsewhere are not repeated: `canvas-gaps.md` C1 (correcte
 | # | Pri | Req | Question | Waits |
 |---|---|---|---|---|
 
+## Player app (F02, F03)
+
+| # | Pri | Req | Question | Waits |
+|---|---|---|---|---|
+| Q-37 | C | CC-5, F02 welcome | Is there a maximum length for the club name (Thai and English)? The spec sets none. The C1 hero clips the last line of an English name of about 100 characters at 320 px (QA-UI-1). A limit in the owner's setup (A0, P2 step 1) would close it; otherwise the hero must grow with the text | QA-UI-1 test |
+
 ## Coaches (F07, F12)
 
 | # | Pri | Req | Question | Waits |
