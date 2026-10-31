@@ -1,3 +1,4 @@
+import { draftOf, loadSettings, parseDraft, saveSetting, type SettingRow } from './settings';
 import { checkBasics, checkPlan, clockTime, createBody, createClub, dayOf, emptyBasics, saveBasics as saveDraftBasics, savePaymentOption, savePlan, slugify, stampOf, stepFromQuery, type BasicValues } from './wizard';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -450,5 +451,46 @@ describe('new club wizard (P2)', () => {
     await savePaymentOption(f, 'c1', 'slip');
     expect(calls[2]!.body).toEqual({ payment_option: 'slip' });
     expect(calls).toHaveLength(3);
+  });
+});
+
+describe('club settings in the support view', () => {
+  const row = (key: string, over: Partial<SettingRow> = {}): SettingRow => ({ key, value: null, unset: true, required: false, available: true, ...over });
+  it('a draft becomes the value: whole numbers, choices, yes/no, day lists and the discount', () => {
+    expect(parseDraft(row('booking_window_days', { required: true }), ' 14 ')).toEqual({ ok: true, value: 14 });
+    for (const bad of ['0', '-1', '2.5', 'x']) expect(parseDraft(row('booking_window_days', { required: true }), bad), bad).toEqual({ ok: false, key: 'X-new.settings_whole' });
+    expect(parseDraft(row('cancel_window_hours', { required: true }), '0')).toEqual({ ok: true, value: 0 });
+    expect(parseDraft(row('hold_minutes', { required: true }), '15')).toEqual({ ok: true, value: 15 });
+    expect(parseDraft(row('hold_minutes', { required: true }), '12')).toEqual({ ok: false, key: 'X-new.settings_choice' });
+    expect(parseDraft(row('resource_label', { required: true }), 'lane')).toEqual({ ok: true, value: 'lane' });
+    expect(parseDraft(row('vat_enabled', { required: true }), 'false')).toEqual({ ok: true, value: false });
+    expect(parseDraft(row('package_expiry_reminder_days', { required: true }), '7, 3,1')).toEqual({ ok: true, value: [7, 3, 1] });
+    expect(parseDraft(row('package_expiry_reminder_days', { required: true }), '7, 7')).toEqual({ ok: false, key: 'X-new.settings_days' });
+    expect(parseDraft(row('birthday_discount'), 'percent 1000')).toEqual({ ok: true, value: { kind: 'percent', value: 1000 } });
+    expect(parseDraft(row('birthday_discount'), 'gift 5')).toEqual({ ok: false, key: 'X-new.settings_discount' });
+    expect(parseDraft(row('mystery_key'), '5')).toEqual({ ok: false, key: 'X-new.settings_unknown' });
+  });
+  it('empty unsets a setting that may be empty and is refused for a needed one', () => {
+    expect(parseDraft(row('max_future_court_hours'), '  ')).toEqual({ ok: true, value: null });
+    expect(parseDraft(row('hold_minutes', { required: true }), '')).toEqual({ ok: false, key: 'X-new.settings_needed' });
+  });
+  it('boxes start from the stored value and are empty for a setting nobody set', () => {
+    expect(draftOf(row('hold_minutes'))).toBe('');
+    expect(draftOf(row('hold_minutes', { unset: false, value: 15 }))).toBe('15');
+    expect(draftOf(row('package_expiry_reminder_days', { unset: false, value: [7, 1] }))).toBe('7, 1');
+    expect(draftOf(row('birthday_discount', { unset: false, value: { kind: 'fixed', value: 5000 } }))).toBe('fixed 5000');
+  });
+  const reply = (status: number, json: unknown) => (async () => new Response(JSON.stringify(json), { status })) as unknown as typeof fetch;
+  it('saving answers by key: a stale second factor, a club that is look only and a refused value', async () => {
+    expect(await saveSetting(reply(200, { key: 'a', value: 1 }), 'c1', 'a', 1)).toEqual({ kind: 'saved' });
+    expect(await saveSetting(reply(403, { code: 'step_up_required' }), 'c1', 'a', 1)).toMatchObject({ kind: 'error', stepUp: true });
+    expect(await saveSetting(reply(409, { code: 'look_only' }), 'c1', 'a', 1)).toMatchObject({ kind: 'error', key: 'X-new.club_look_only' });
+    expect(await saveSetting(reply(400, { code: 'invalid_value' }), 'c1', 'a', 1)).toMatchObject({ kind: 'error', key: 'X-new.settings_refused' });
+    expect(await saveSetting(reply(409, { code: 'cannot_unset' }), 'c1', 'a', null)).toMatchObject({ kind: 'error', key: 'X-new.settings_needed' });
+  });
+  it('loading reads the editable flag and the list', async () => {
+    const r = await loadSettings(reply(200, { editable: true, settings: [row('hold_minutes')] }), 'c1');
+    expect(r).toMatchObject({ kind: 'ok', view: { editable: true, settings: [{ key: 'hold_minutes' }] } });
+    expect(await loadSettings(reply(404, { code: 'not_found' }), 'c1')).toMatchObject({ kind: 'error', key: 'X-new.club_not_found' });
   });
 });
