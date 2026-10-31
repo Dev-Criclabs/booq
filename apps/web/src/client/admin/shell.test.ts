@@ -4,7 +4,7 @@ import { adminPath, bannersOf, BUILT, dayMonthOf, firstPage, GROUP_KEY, isOwnerS
 
 // F11-T12 (ADMIN-01): the shell's logic. The server decides what a person may open; this lays it out.
 const shell = (over: Partial<ShellState> = {}): ShellState => ({
-  pages: ['A1', 'A5', 'A12'], club: { nameTh: 'ฮันเตอร์', nameEn: 'Hunter Tennis Club', status: 'live', defaultLanguage: 'th' }, paused: null, lineCap: null, lineTokenReason: null, ...over,
+  pages: ['A1', 'A5', 'A12'], club: { nameTh: 'ฮันเตอร์', nameEn: 'Hunter Tennis Club', status: 'live', defaultLanguage: 'th' }, paused: null, lineCap: null, lineTokenReason: null, booqSupportLineUrl: null, ...over,
 });
 const reply = (status: number, json: unknown) => (async () => new Response(JSON.stringify(json), { status })) as unknown as typeof fetch;
 
@@ -84,5 +84,15 @@ describe('text', () => {
   });
   it('the same variables in both languages for the banner with values', () => {
     expect(adminTranslator('th')('A-0519', { dayMonth: '13 ม.ค.', reason: 'x' })).toBe('BOOQ หยุดการจองออนไลน์ชั่วคราวตั้งแต่ 13 ม.ค. · x');
+  });
+});
+
+describe('the Message BOOQ address (D178)', () => {
+  it('links only a web address', async () => {
+    const { supportHref } = await import('./shell');
+    expect(supportHref('https://line.me/R/ti/p/@booq')).toBe('https://line.me/R/ti/p/@booq');
+    expect(supportHref(null)).toBeNull();
+    expect(supportHref('javascript:alert(1)')).toBeNull();
+    expect(supportHref('line')).toBeNull();
   });
 });

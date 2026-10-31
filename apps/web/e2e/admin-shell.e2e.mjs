@@ -20,7 +20,7 @@ after(async () => {
 const CLUB = { nameTh: 'ฮันเตอร์ เทนนิส คลับ', nameEn: 'Hunter Tennis Club', status: 'live', defaultLanguage: 'th' };
 const OWNER_PAGES = ['A0', 'A1', 'A2', 'A5', 'A6', 'A7', 'A8', 'A9', 'A9b', 'A10', 'A12', 'A13', 'A14', 'A16', 'A17'];
 const DESK_PAGES = ['A1', 'A2', 'A5', 'A6', 'A12'];
-const shell = (over = {}) => ({ pages: OWNER_PAGES, club: CLUB, paused: null, lineCap: null, lineTokenReason: null, ...over });
+const shell = (over = {}) => ({ pages: OWNER_PAGES, club: CLUB, paused: null, lineCap: null, lineTokenReason: null, booqSupportLineUrl: null, ...over });
 
 async function open({ answer = { status: 200, body: shell() }, lang = 'en', width = 1280, height = 900 } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, locale: lang === 'th' ? 'th-TH' : 'en-GB' });
@@ -79,12 +79,23 @@ describe('the shell', () => {
     }
   });
 
-  it('the Message BOOQ button is not shown until the chat address exists, for the owner and for everyone else', async () => {
-    const { page, context } = await open({ answer: { status: 200, body: shell({ paused: { reason: 'r', since: '2027-01-12T17:30:00Z' } }) } });
-    await page.goto(`${app.base}/c/hunter/admin`);
-    await page.getByTestId('banner-paused').waitFor();
-    assert.equal(await page.getByTestId('message-booq').count(), 0);
-    await context.close();
+  it('the Message BOOQ button is hidden while BOOQ has set no address, and links to it (D178) once the server sends it', async () => {
+    const paused = { reason: 'r', since: '2027-01-12T17:30:00Z' };
+    const none = await open({ answer: { status: 200, body: shell({ paused }) } });
+    await none.page.goto(`${app.base}/c/hunter/admin`);
+    await none.page.getByTestId('banner-paused').waitFor();
+    assert.equal(await none.page.getByTestId('message-booq').count(), 0);
+    await none.context.close();
+    const some = await open({ answer: { status: 200, body: shell({ paused, booqSupportLineUrl: 'https://line.me/R/ti/p/@booq' }) } });
+    await some.page.goto(`${app.base}/c/hunter/admin`);
+    await some.page.getByTestId('message-booq').waitFor();
+    assert.equal(await some.page.getByTestId('message-booq').getAttribute('href'), 'https://line.me/R/ti/p/@booq');
+    await some.context.close();
+    const bad = await open({ answer: { status: 200, body: shell({ paused, booqSupportLineUrl: 'javascript:alert(1)' }) } });
+    await bad.page.goto(`${app.base}/c/hunter/admin`);
+    await bad.page.getByTestId('banner-paused').waitFor();
+    assert.equal(await bad.page.getByTestId('message-booq').count(), 0);
+    await bad.context.close();
   });
 
   it('the language toggle switches the text at once and remembers the choice', async () => {

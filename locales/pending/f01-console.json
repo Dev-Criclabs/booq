@@ -169,6 +169,8 @@
     "X-new.config_other": "Other values",
     "X-new.config_number_needed": "Enter a number above zero.",
     "X-new.config_json_needed": "Enter a valid list.",
+    "X-new.config_url_needed": "Enter a web address that starts with https:// or http://.",
+    "X-new.config_booq_support_line_url": "Message BOOQ address for paused clubs (a web address)",
     "X-new.config_invalid": "That value is not accepted for this setting.",
     "X-new.config_invite_ttl_hours": "Owner invite life, in hours",
     "X-new.config_tester_invite_ttl_hours": "Tester link life, in hours",

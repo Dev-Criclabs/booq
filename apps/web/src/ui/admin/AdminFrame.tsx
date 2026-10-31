@@ -1,7 +1,7 @@
 'use client';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { adminTranslator } from '../../client/admin/i18n';
-import { adminPath, bannersOf, BUILT, GROUP_KEY, isOwnerShell, loadShell, navFor, type ShellLoad, type ShellState } from '../../client/admin/shell';
+import { adminPath, bannersOf, BUILT, GROUP_KEY, isOwnerShell, loadShell, navFor, supportHref, type ShellLoad, type ShellState } from '../../client/admin/shell';
 import { isLang, type Lang, type T } from '../../client/i18n';
 import { cookieLang, langCookie } from '../../client/lang';
 import { signInPath } from '../../client/paths';
@@ -98,7 +98,7 @@ export function AdminFrame({ slug, initialLang, current, children }: { slug: str
                   <p className="adm-banner-title">{t(b.titleKey, b.kind === 'paused' ? b.vars : undefined)}</p>
                   <p className="adm-banner-text">{t(b.textKey)}</p>
                 </div>
-                {b.kind === 'paused' && isOwnerShell(shell) ? <MessageBooq t={t} /> : null}
+                {b.kind === 'paused' && isOwnerShell(shell) ? <MessageBooq t={t} url={shell.booqSupportLineUrl} /> : null}
               </section>
             ))}
           </div>
@@ -113,13 +113,12 @@ export function AdminFrame({ slug, initialLang, current, children }: { slug: str
   );
 }
 
-/** "Message BOOQ" opens the LINE chat with the BOOQ team. The address of that chat is BOOQ's, not the club's, and is not in the club's
- *  public config yet: until it is, the button is not shown rather than pointing somewhere invented. */
-function MessageBooq({ t }: { t: (k: string) => string }) {
-  const href = BOOQ_CHAT_URL;
-  return href ? <a className="adm-btn" href={href} data-testid="message-booq">{t('A-0521')}</a> : null;
+/** "Message BOOQ" opens the LINE chat with the BOOQ team (D178). The address is a BOOQ platform setting that the server sends to the owner while the
+ *  club is Paused; while BOOQ has set none, or it is not a web address, the button is not shown. */
+function MessageBooq({ t, url }: { t: (k: string) => string; url: string | null }) {
+  const href = supportHref(url);
+  return href ? <a className="adm-btn" href={href} target="_blank" rel="noopener noreferrer" data-testid="message-booq">{t('A-0521')}</a> : null;
 }
-const BOOQ_CHAT_URL: string | null = null;
 
 function Problem({ kind, t, onRetry }: { kind: 'forbidden' | 'not_found' | 'offline'; t: (k: string) => string; onRetry(): void }) {
   return (
