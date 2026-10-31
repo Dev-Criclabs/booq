@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { formatBaht } from '../../client/admin/api';
 import {
-  addTag, BOOKING_STATUS_KEY, BOOKING_TYPE_KEY, bookingWhat, LEVEL_KEY, loadBookings, loadNotes, loadOrders, loadProfile, loadValue, nextPackage, ORDER_KIND_KEY, packageName, recent, removeTag, visits,
+  addTag, BOOKING_STATUS_KEY, BOOKING_TYPE_KEY, bookingWhat, LEVEL_KEY, loadBookings, loadNotes, loadOrders, loadProfile, loadReceipts, receiptPdfHref, RECEIPT_KIND_KEY, RECEIPT_STATUS_KEY, type CustomerReceipt, loadValue, nextPackage, ORDER_KIND_KEY, packageName, recent, removeTag, visits,
   type BookingRow, type Note, type OrderRow, type Profile, type Value,
 } from '../../client/admin/profile';
 import { adminPath, dayMonthOf } from '../../client/admin/shell';
@@ -15,9 +15,9 @@ import { AdjustPanel, ExtendPanel, NotesPanel } from './ProfileActions';
 // waits for F14 (no route yet) and the Receipts tab for a receipts-by-customer route (GET /staff/receipts has no customer filter), so neither is
 // drawn; receipt numbers show on each purchase. Value changes are ledger rows with a written reason; this page only sends a change and a reason.
 
-type Tab = 'overview' | 'bookings' | 'purchases' | 'credits';
+type Tab = 'overview' | 'bookings' | 'purchases' | 'credits' | 'receipts';
 const TABS: ReadonlyArray<{ id: Tab; key: string }> = [
-  { id: 'overview', key: 'A-0097' }, { id: 'bookings', key: 'A-0098' }, { id: 'purchases', key: 'A-0099' }, { id: 'credits', key: 'A-0100' },
+  { id: 'overview', key: 'A-0097' }, { id: 'bookings', key: 'A-0098' }, { id: 'purchases', key: 'A-0099' }, { id: 'credits', key: 'A-0100' }, { id: 'receipts', key: 'A-0102' },
 ];
 type Head = { kind: 'loading' } | { kind: 'ready'; profile: Profile } | { kind: 'not_found' } | { kind: 'forbidden' } | { kind: 'error' };
 
@@ -28,6 +28,7 @@ export function CustomerProfileScreen({ id }: { id: string }) {
   const [tab, setTab] = useState<Tab>('overview');
   const [bookings, setBookings] = useState<BookingRow[] | null>(null);
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
+  const [receipts, setReceipts] = useState<CustomerReceipt[] | null>(null);
   const [value, setValue] = useState<Value | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
   const [adding, setAdding] = useState(false);
@@ -48,7 +49,8 @@ export function CustomerProfileScreen({ id }: { id: string }) {
   }, [loadAll, attempt]);
   useEffect(() => {
     if (tab === 'purchases' && orders === null) void loadOrders(slug, id, f()).then((o) => o.kind === 'ok' && setOrders(o.body));
-  }, [tab, orders, slug, id]);
+    if (tab === 'receipts' && receipts === null) void loadReceipts(slug, id, f()).then((o) => o.kind === 'ok' && setReceipts(o.body));
+  }, [tab, orders, receipts, slug, id]);
 
   const reloadValue = async () => {
     const [v, n] = await Promise.all([loadValue(slug, id, f()), loadNotes(slug, id, f())]);
@@ -130,6 +132,7 @@ export function CustomerProfileScreen({ id }: { id: string }) {
 
       {tab === 'bookings' ? <div data-testid="panel-bookings">{bookings && bookings.length > 0 ? <BookingTable rows={bookings} /> : <p className="adm-muted">{t('A-new.prof_bookings_empty')}</p>}</div> : null}
       {tab === 'purchases' ? <div data-testid="panel-purchases">{orders === null ? <p aria-busy="true" className="adm-muted">…</p> : orders.length > 0 ? <OrderTable rows={orders} /> : <p className="adm-muted">{t('A-new.prof_orders_empty')}</p>}</div> : null}
+      {tab === 'receipts' ? <div data-testid="panel-receipts">{receipts === null ? <p aria-busy="true" className="adm-muted">…</p> : receipts.length > 0 ? <ReceiptTable rows={receipts} /> : <p className="adm-muted">{t('A-new.prof_receipts_empty')}</p>}</div> : null}
       {tab === 'credits' ? <div data-testid="panel-credits"><ValuePanel value={value} /></div> : null}
     </section>
   );
@@ -168,7 +171,7 @@ function BookingTable({ rows }: { rows: BookingRow[] }) {
 }
 
 function OrderTable({ rows }: { rows: OrderRow[] }) {
-  const { lang, t } = useAdmin();
+  const { slug, lang, t } = useAdmin();
   return (
     <div className="adm-table-wrap">
       <table className="adm-table" data-testid="orders-table">
@@ -180,7 +183,30 @@ function OrderTable({ rows }: { rows: OrderRow[] }) {
               <td>{t(ORDER_KIND_KEY[o.kind] ?? 'A-new.prof_order_sale')}</td>
               <td className="adm-nowrap">{formatBaht(o.totalSatang)}</td>
               <td>{t('A-new.prof_paid_with', { money: formatBaht(o.moneySatang), credit: formatBaht(o.creditValueSatang), wallet: formatBaht(o.walletSatang) })}</td>
-              <td>{o.receipts.join(', ')}</td>
+              <td>{o.receipts.map((n, i) => (o.receiptIds?.[i] ? <a key={n} className="adm-btn-link" href={receiptPdfHref(slug, o.receiptIds[i]!, lang)} target="_blank" rel="noopener noreferrer" data-testid={`order-receipt-${n}`}>{n}</a> : <span key={n}>{n}</span>)).reduce<React.ReactNode[]>((acc, x, i) => (i === 0 ? [x] : [...acc, ', ', x]), [])}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ReceiptTable({ rows }: { rows: CustomerReceipt[] }) {
+  const { slug, lang, t } = useAdmin();
+  return (
+    <div className="adm-table-wrap">
+      <table className="adm-table" data-testid="receipts-table">
+        <thead><tr><th scope="col">{t('A-0302')}</th><th scope="col">{t('A-0303')}</th><th scope="col">{t('A-new.prof_col_what')}</th><th scope="col">{t('A-new.prof_col_status')}</th><th scope="col">{t('A-0305')}</th><th scope="col"><span className="adm-sr">{t('A-new.prof_receipt_pdf')}</span></th></tr></thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.receiptId} data-testid={`receipt-${r.receiptId}`}>
+              <th scope="row" className="adm-nowrap">{r.number}{r.isTest ? <span className="adm-chip"> {t('A-new.prof_receipt_test')}</span> : null}</th>
+              <td className="adm-nowrap">{dateOf(lang, r.issuedAt)}</td>
+              <td>{t(RECEIPT_KIND_KEY[r.kind] ?? 'A-new.prof_receipt_sale')}</td>
+              <td>{t(RECEIPT_STATUS_KEY[r.status] ?? 'A-new.prof_receipt_issued')}</td>
+              <td className="adm-nowrap">{formatBaht(r.totalSatang)}</td>
+              <td><a className="adm-btn adm-btn-ghost" href={receiptPdfHref(slug, r.receiptId, lang)} target="_blank" rel="noopener noreferrer" data-testid={`receipt-pdf-${r.receiptId}`}>{t('A-new.prof_receipt_pdf')}</a></td>
             </tr>
           ))}
         </tbody>
