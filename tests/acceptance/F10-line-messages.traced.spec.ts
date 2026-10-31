@@ -49,3 +49,6 @@ traced("F10/LINE-02-AC5", "Given the labels, when the menu is uploaded or redone
 // Criteria the lane's tests name by ID (added 31 Oct): the trace checks the ID is still cited in those files.
 traced("F10/LINE-02-AC8", "Given the menu is uploaded, when it fails, then P2 shows the failure (a Test ste", [{ file: "apps/worker/src/tasks/line-rich-menu.test.ts", has: "LINE-02-AC8" }]);
 traced("F10/LINE-05-AC14", "Given the owner's pause or a cap level, when it happens, then the owner gets a m", [{ file: "apps/platform/src/pause/outbox-notifier.test.ts", has: "LINE-05-AC14" }]);
+
+// Added by trace-lane.py: criteria the lane's tests name by ID.
+traced("F10/LINE-05-AC7", "Given a package, when it is 14 days and 3 days before expiry, then the player ge", [{ file: "packages/db/src/package-reminders.test.ts", has: "LINE-05-AC7" }]);

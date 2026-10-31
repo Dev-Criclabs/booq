@@ -60,6 +60,7 @@ const BUILT: Record<string, string[]> = {
     'GET /staff/reports/:name report.read', 'GET /staff/reports/:name/csv report.read', 'GET /staff/daily-close daily-close.run', 'GET /staff/daily-close/csv daily-close.run', 'POST /staff/daily-close daily-close.run'],
   A14: ['GET /staff/receipts receipt.list', 'GET /staff/receipts/:id/pdf receipt.print', 'POST /staff/receipts/:id/void receipt.void'],
   A16: [
+    'PUT /club/business club.business.write',
     'GET /settings settings.business.read', 'PUT /settings/:key settings.write', 'PUT /hours hours.write', 'POST /resources resource.write', 'PUT /resources/:id resource.write',
     'PUT /support-window support-window.write',
   ],
@@ -72,7 +73,7 @@ const GAPS: Record<string, string[]> = {
   A9: ['GET /staff/setup/package-products (F06)'],
   A12: ['POST /staff/closures/preview (F09)', 'POST /staff/closures (F09)', 'GET /staff/closures (F09)', 'POST /staff/closures/:id/end (F09)', 'GET /staff/closures/:id/expired-packages (F09)'],
   A13: ['GET /staff/reports/owed (F06)'],
-  A16: ['PUT /club/business (F01)', 'GET /staff/rich-menu (F10)', 'PUT /staff/rich-menu/labels (F10)'],
+  A16: ['GET /staff/rich-menu (F10)', 'PUT /staff/rich-menu/labels (F10)'],
 };
 
 describe('F11 route inventory (design 5)', () => {
