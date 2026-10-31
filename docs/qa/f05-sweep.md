@@ -2,7 +2,7 @@
 
 Swept on 31 Oct 2026 against `specs/features/F05-beam-payments/requirements.md`. F05 is mostly built: the payment tables, start payment, apply payment (booking and package), the late payment and reclaim rules, the Beam adapter, the webhook route and take cash exist. The package QR path, the expiry job, the status check (PAY-02-AC15) and the P2 screens do not.
 
-**Result (updated 31 Oct after main 52a973b): 54 criteria. 46 traced to lane tests, 3 covered in F09's file (PAY-05-AC2, AC3, AC5), 3 new QA tests, 5 still open (each with its reason below). No new finding.**
+**Result (updated 31 Oct after main 52a973b): 54 criteria. 44 traced to lane tests, 3 covered in F09's file (PAY-05-AC2, AC3, AC5), 2 by new QA tests (and the CONC-31 race on PAY-02-AC15), 5 still open (each with its reason below). No new finding.**
 
 The lane's tests already use QA's fake Beam over HTTP (`webhook.test.ts`): bad signature, wrong amount, duplicate in sequence and in parallel, unknown charge, failed charge then second tap.
 
