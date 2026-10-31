@@ -25,7 +25,7 @@ describe('acceptance coverage', () => {
 
   test('no skeleton names an ID that is not in a requirements.md (stale after a spec change)', () => {
     const known = new Set(allCriteria().map((c) => c.id));
-    const used = [...text.matchAll(/test(?:\.[a-z]+)?\(\s*["'`](F\d\d\/[A-Za-z0-9-]+)[ "'`]/g)].map((m) => m[1] as string);
+    const used = [...text.matchAll(/["'`](F\d\d\/[A-Z][A-Za-z0-9-]*-(?:AC\d+[a-z]?|\d+))[ "'`]/g)].map((m) => m[1] as string);
     expect(used.filter((id) => !known.has(id))).toEqual([]);
   });
 });
