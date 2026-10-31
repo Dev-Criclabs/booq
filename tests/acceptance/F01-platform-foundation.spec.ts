@@ -220,7 +220,7 @@ describe("F01 PDPA-01", () => {
   // F01/PDPA-01-AC4: proven by a real or traced test in another file of this folder
   // Given a player who asks for deletion and holds a future booking or credit, when the request is handled, then the staff see what will be lost before confirming. What happens to the booking is Q22.
   // F01/PDPA-01-AC5: proven by a real or traced test in another file of this folder
-  // Given slips and staff notes, when anyone other than staff of that club asks for them, then the server refuses. A player never sees staff notes; a coach never sees slips; BOOQ staff never see either.
+  // Given slips and staff notes, when anyone other than staff of that club asks for them, then the server refuses. A player never sees staff notes in the app; coach session notes about a player are included in that player's data export (D171); a coach never sees slips; BOOQ staff never see either.
   // F01/PDPA-01-AC6: proven by a real or traced test in another file of this folder
   // Given a PDPA request, when it is made, handled or refused, then it is in the club's audit log (PLAT-04-AC10).
   // F01/PDPA-01-AC7: proven by a real or traced test in another file of this folder

@@ -27,6 +27,7 @@ export const CHECKOUT_TEXT_KEYS = {
   credit_unavailable: 'P-new.credit_unavailable',
   payment_unavailable: 'P-new.payment_unavailable',
   order_not_found: 'P-new.order_not_found',
+  spot_gone: 'P-new.spot_gone',
   customer_not_found: 'A-new.customer_not_found',
 } as const;
 

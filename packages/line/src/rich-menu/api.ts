@@ -1,3 +1,4 @@
+import { bearer, failureCode, lineCall } from '../http/call';
 import type { RichMenuObject } from './menu';
 
 // LINE's rich menu calls (F10-T12; F10 design 5.5). G1, as LINE's Messaging API documentation states them and to confirm
@@ -35,24 +36,9 @@ export function createRichMenuHttpApi(options: RichMenuHttpApiOptions): RichMenu
   const data = options.dataBaseUrl.replace(/\/+$/, '');
   const doFetch = options.fetch ?? fetch;
 
-  async function call(url: string, init: RequestInit): Promise<{ status: number; body: unknown } | null> {
-    try {
-      const res = await doFetch(url, { ...init, signal: AbortSignal.timeout(options.timeoutMs) });
-      const text = await res.text().catch(() => '');
-      let body: unknown = null;
-      try {
-        body = text ? JSON.parse(text) : null;
-      } catch {
-        body = null;
-      }
-      return { status: res.status, body };
-    } catch {
-      return null;
-    }
-  }
-  const failure = (r: { status: number } | null): { ok: false; code: string } =>
-    r === null ? { ok: false, code: 'unreachable' } : r.status === 401 || r.status === 403 ? { ok: false, code: 'token_rejected' } : { ok: false, code: `http_${r.status}` };
-  const auth = (token: string) => ({ authorization: `Bearer ${token}` });
+  const call = (url: string, init: RequestInit) => lineCall(doFetch, url, init, options.timeoutMs);
+  const failure = failureCode;
+  const auth = bearer;
 
   return {
     async create(token, menu) {

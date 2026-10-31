@@ -40,6 +40,7 @@ export function readCriteria(featureDir: string, root = repoRoot()): Criterion[]
   for (const line of lines) {
     const bullet = /^- (\S+?)-AC(\d+[a-z]?)[.:]\s+(.*)$/.exec(line);
     if (bullet) {
+      if (/^Withdrawn\b/i.test(bullet[3] as string)) continue;   // e.g. CANCEL-04-AC9 (D172): no test, no skeleton
       add(bullet[1] as string, `${bullet[1]}-AC${bullet[2]}`, bullet[3] as string);
       continue;
     }

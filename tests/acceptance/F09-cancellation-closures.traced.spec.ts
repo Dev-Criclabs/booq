@@ -45,3 +45,6 @@ traced("F09/CANCEL-03-AC17", "Given Front desk and Owner only, when anyone else 
 traced("F09/CANCEL-04-AC6", "Given staff try to mark a no show before the slot has ended, when they do, then ", [{ file: "packages/db/src/staff-marks.test.ts", has: "before the slot ends it is refused; after, the booking is No show" }]);
 traced("F09/CANCEL-04-AC7", "Given a reversal of a no show or late cancel, when it is saved, then coach pay c", [{ file: "packages/db/src/staff-marks.test.ts", has: "a reversed no show is confirmed again (reads Played) and the credit comes back by a new return row" }]);
 traced("F09/CANCEL-04-AC10", "Given front desk and owner only, when anyone else tries to mark or reverse, then", [{ file: "packages/db/src/staff-marks.test.ts", has: "a reason is required, front desk or owner only, and only a confirmed booking" }]);
+
+// Added by trace-lane.py: criteria the lane's tests name by ID.
+traced("F09/CANCEL-03-AC11", "Given a closure is removed or shortened, when it is saved, then the slots become", [{ file: "packages/db/src/closure-end-roll.test.ts", has: "CANCEL-03-AC11" }]);
