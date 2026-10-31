@@ -24,6 +24,8 @@ const BUILT: Record<string, string[]> = {
   A2: [
     'POST /staff/orders/quote booking.create.staff', 'POST /staff/orders/pay booking.create.staff', 'POST /staff/bookings/:id/release booking.create.staff',
     'GET /staff/bookings/:id/history booking.create.staff', 'GET /bookings/:id booking.read.own', 'POST /bookings/:id/coach person', 'POST /staff/customers customer.write',
+    'GET /staff/bookings/:id/cancel-preview booking.cancel.staff', 'POST /staff/bookings/:id/cancel booking.cancel.staff', 'POST /staff/bookings/:id/mark booking.mark',
+    'POST /staff/bookings/:id/mark/reverse booking.mark',
   ],
   A5: ['GET /staff/customers customer.contact.read', 'GET /staff/customers/csv customer.export', 'POST /staff/customers/:id/tags customer.write', 'DELETE /staff/customers/:id/tags/:tag customer.write'],
   A6: [
@@ -66,13 +68,16 @@ const BUILT: Record<string, string[]> = {
     'PUT /support-window support-window.write',
     'POST /exports export.run', 'GET /exports/:id export.run',
   ],
+  A12: [
+    'POST /staff/closures/preview closure.write', 'POST /staff/closures closure.write', 'GET /staff/closures closure.write', 'POST /staff/closures/:id/end closure.write',
+    'GET /staff/closures/:id/expired-packages closure.write', 'GET /staff/closures/:id/unmessaged closure.write',
+  ],
   A17: ['GET /staff staff.manage', 'POST /staff/invites staff.manage', 'GET /staff/invites staff.manage', 'PUT /staff/:userId/roles roles.assign', 'POST /staff/:userId/deactivate staff.manage', 'GET /staff/audit audit.read', 'GET /staff/audit/record-types audit.read', 'POST /staff/invites/:id/cancel staff.manage'],
 };
 
 // Routes the design needs that another feature owns and that are not mounted yet (F11 design 5; the owner of each is named).
 const GAPS: Record<string, string[]> = {
-  A2: ['POST /staff/bookings (F03)', 'GET /staff/bookings/:id/cancel-preview (F09)', 'POST /staff/bookings/:id/cancel (F09)', 'POST /staff/bookings/:id/mark (F09)', 'POST /staff/bookings/:id/mark/reverse (F09)', 'POST /staff/orders/:id/package-sale (F06)'],
-  A12: ['POST /staff/closures/preview (F09)', 'POST /staff/closures (F09)', 'GET /staff/closures (F09)', 'POST /staff/closures/:id/end (F09)', 'GET /staff/closures/:id/expired-packages (F09)'],
+  A2: ['POST /staff/bookings (F03)', 'POST /staff/orders/:id/package-sale (F06)'],
   A13: ['GET /staff/reports/owed (F06)'],
   A16: ['GET /staff/rich-menu (F10)', 'PUT /staff/rich-menu/labels (F10)'],
 };

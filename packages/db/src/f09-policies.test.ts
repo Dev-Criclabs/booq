@@ -41,6 +41,8 @@ const RUN: Record<string, string[]> = {
   'app.closures_due_roll()': ['booq_app', 'booq_worker'],
   'app.roll_closure(uuid)': ['booq_app', 'booq_worker'],
   'app.closure_unmessaged(uuid)': ['booq_app'],
+  'app.closure_cancel_limit()': ['booq_app'],
+  'app.closure_cancelled_expired_packages(uuid)': ['booq_app'],
   'app.mark_no_show(uuid,text)': ['booq_app'],
   'app.mark_late_cancel(uuid,text)': ['booq_app'],
   'app.reverse_mark(uuid,text)': ['booq_app'],

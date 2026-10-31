@@ -6,6 +6,7 @@ import type { Db } from '@booq/db';
 import { bangkokDate } from '@booq/time';
 import { playerBookingRoutes, publicScheduleRoutes, staffBookingRoutes } from '../api/booking/routes';
 import { playerCancelRoutes } from '../api/booking/cancel';
+import { closureRoutes, staffCancelRoutes } from '../api/booking/staff-cancel';
 import { checkoutRoutes } from '../api/checkout/routes';
 import { playerClassRoutes, publicClassRoutes, staffClassRoutes } from '../api/classes/routes';
 import { addOnRoutes } from '../api/add-ons/routes';
@@ -84,7 +85,7 @@ export const mounts: readonly Mount[] = [
   (m) => reportRoutes({ db: m.db }),
   (m) => Object.values(settingsRoutes(m.db)),
   (m) => [businessRoute(m.db), clubSetupRoute(m.db)],
-  (m) => [publicScheduleRoutes, playerBookingRoutes, staffBookingRoutes, playerCancelRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
+  (m) => [publicScheduleRoutes, playerBookingRoutes, staffBookingRoutes, playerCancelRoutes, staffCancelRoutes, closureRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
   (m) => noticeRoutes({ db: m.db, clubBySlug: m.clubBySlug }),
   (m) => [publicClassRoutes, playerClassRoutes, staffClassRoutes].flatMap((f) => f({ db: m.db, now: m.now, clubBySlug: m.clubBySlug })),
   (m) => [publicCoachRoutes, playerCoachRoutes, staffCoachRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),

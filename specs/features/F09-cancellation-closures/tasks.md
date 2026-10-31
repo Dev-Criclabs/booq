@@ -47,7 +47,7 @@ Depends on: F01 (`cancel_window_hours`, `booking_window_days`, route wrapper T13
 
 - [x] **F09-T12** Player routes: `GET /me/bookings/{id}/cancel-preview`, `POST /me/bookings/{id}/cancel` with Idempotency-Key (schemas in `packages/contract`). IDs: CANCEL-01-AC1 to AC12, AC14. Role: BE-B · Deps T06b, F01-T13 · Size: S
   Tests first: another player's booking answers 404; the client cannot send an outcome; a repeat with the key returns the same result.
-- [ ] **F09-T13** Staff routes: cancel preview and cancel with `clubCancel` and reason, `mark`, `mark/reverse`, closures preview, create, list, end. IDs: CANCEL-01-AC20, CANCEL-03, CANCEL-04, CC-2. Role: BE-B · Deps T07, T08a, T08b, T09, F01-T13 · Size: M
+- [x] **F09-T13** Staff routes: cancel preview and cancel with `clubCancel` and reason, `mark`, `mark/reverse`, closures preview, create, list, end. IDs: CANCEL-01-AC20, CANCEL-03, CANCEL-04, CC-2. Role: BE-B · Deps T07, T08a, T08b, T09, F01-T13 · Size: M
   Tests first: reason required for club cancel, marks and reversals; a closure works in a Paused club; no route sends money back.
 
 ## E. Screens

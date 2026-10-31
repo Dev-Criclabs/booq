@@ -8,3 +8,5 @@ export * from './player';
 export * from './idempotency';
 export * from './staff';
 export * from './cancel';
+export * from './staff-cancel';
+export * from './closures';
