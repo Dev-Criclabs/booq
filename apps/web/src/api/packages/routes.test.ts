@@ -70,7 +70,7 @@ describe('GET /packages (C9; PKG-02-AC7, AC8; D103)', () => {
     await product(A, 'odd', 3, 100000);                 // 33333.33 per credit -> 33333
     const body = await ok<Record<string, unknown>[]>(call('/packages', null));
     expect(body.map((p) => p['nameEn'])).toEqual(['odd', '10 hour bundle']);
-    expect(Object.keys(body[1]!).sort()).toEqual(['coachTierId', 'creditType', 'credits', 'nameEn', 'nameTh', 'priceGroupId', 'pricePerCreditSatang', 'priceSatang', 'productId', 'savingSatang', 'validityMonths']);
+    expect(Object.keys(body[1]!).sort()).toEqual(['coachTierId', 'creditType', 'credits', 'nameEn', 'nameTh', 'priceGroupId', 'priceGroupNameEn', 'priceGroupNameTh', 'pricePerCreditSatang', 'priceSatang', 'productId', 'savingSatang', 'validityMonths']);
     expect(body[1]).toMatchObject({ productId: id, priceSatang: 450000, pricePerCreditSatang: 45000, credits: 10, validityMonths: 3 });
     expect(body[0]).toMatchObject({ pricePerCreditSatang: 33333 });
     expect(body.map((p) => p['savingSatang'])).toEqual([null, null]);   // no court price set: no saving, nothing guessed (D173)
@@ -79,7 +79,13 @@ describe('GET /packages (C9; PKG-02-AC7, AC8; D103)', () => {
     const g = (await tdb.query(`insert into public.price_group (club_id, name_th, name_en, rule) values ($1,'ผู้ใหญ่','Adult','{"min_age": 18}') returning id`, [A])).rows[0].id;
     await tdb.query(`insert into public.court_price_rule (club_id, price_group_id, price_satang) values ($1,$2,50000)`, [A, g]);
     await product(A, '10 hour bundle', 10, 450000);
-    expect(await ok(call('/packages', null))).toMatchObject([{ savingSatang: 50000 }]);
+    expect(await ok(call('/packages', null))).toMatchObject([{ savingSatang: 50000, priceGroupNameEn: null, priceGroupNameTh: null }]);
+  });
+  it('a product for one price group carries the group’s names (the Student and Adult packs share a name)', async () => {
+    const g = (await tdb.query(`insert into public.price_group (club_id, name_th, name_en, rule) values ($1,'นักเรียน','Student','{"max_age": 17}') returning id`, [A])).rows[0].id;
+    await tdb.query(`insert into public.package_product (club_id, name_th, name_en, credit_type, credits, validity_months, price_satang, price_group_id)
+                     values ($1,'แพ็ก 8 ครั้ง','Group 8 session pack','group_session',8,3,320000,$2)`, [A, g]);
+    expect(await ok(call('/packages', null))).toMatchObject([{ nameEn: 'Group 8 session pack', priceGroupId: g, priceGroupNameEn: 'Student', priceGroupNameTh: 'นักเรียน' }]);
   });
   it('a Draft club shows nothing; an unknown slug is not found; another club’s session is not found here', async () => {
     await product(B, 'b', 10, 1000);

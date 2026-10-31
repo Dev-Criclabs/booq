@@ -20,6 +20,9 @@ export interface PublicProduct {
   pricePerCreditSatang: number;
   /** credits x the matching single price - the price (D173); null when that price is unset or varies, or there is no saving. */
   savingSatang: number | null;
+  /** The product's price group names (the owner's text), or null for a product open to every group. */
+  priceGroupNameTh: string | null;
+  priceGroupNameEn: string | null;
 }
 
 export interface OwnPackage {
@@ -59,7 +62,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function listPublicProducts(tx: Tx): Promise<PublicProduct[]> {
   const { rows } = await tx.query<Record<string, unknown>>(
-    `select id, name_th, name_en, credit_type, credits, validity_months, price_group_id, coach_tier_id, price_satang, price_per_credit_satang, saving_satang
+    `select id, name_th, name_en, credit_type, credits, validity_months, price_group_id, coach_tier_id, price_satang, price_per_credit_satang, saving_satang, price_group_name_th, price_group_name_en
        from public.public_package_product order by credit_type, credits, price_satang, id`,
   );
   return rows.map((r) => ({
@@ -74,6 +77,8 @@ export async function listPublicProducts(tx: Tx): Promise<PublicProduct[]> {
     priceSatang: Number(r['price_satang']),
     pricePerCreditSatang: Number(r['price_per_credit_satang']),
     savingSatang: r['saving_satang'] === null ? null : Number(r['saving_satang']),
+    priceGroupNameTh: (r['price_group_name_th'] as string | null) ?? null,
+    priceGroupNameEn: (r['price_group_name_en'] as string | null) ?? null,
   }));
 }
 

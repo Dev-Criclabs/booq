@@ -1,0 +1,20 @@
+/* C9 Packages (F06-T17). Thai runs longer and taller: tabs scroll sideways inside their strip, card text wraps, prices
+   keep their own line and Buy never wraps (CC-5). */
+.packages { height: 100dvh; }
+.pk-tabs { flex: none; display: flex; gap: 8px; padding: 0 16px 10px; overflow-x: auto; scrollbar-width: none; }
+.pk-tabs::-webkit-scrollbar { display: none; }
+.pk-tab { flex: none; height: 40px; padding: 0 16px; border: 1.5px solid var(--ln); border-radius: 999px; background: var(--cd); font: inherit; font-size: 14px; color: var(--ink); white-space: nowrap; cursor: pointer; }
+.pk-tab[aria-selected='true'] { border-color: var(--hd); background: var(--hd); color: #ffffff; font-weight: 600; }
+.pk-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 4px 16px 16px; }
+.pk-body > * { flex: none; }
+.pk-empty { margin: 8px 0 0; padding: 14px 16px; border-radius: 14px; background: var(--cd); font-size: 15px; line-height: 1.5; color: var(--mu); overflow-wrap: anywhere; }
+.pk-card { display: flex; flex-direction: column; gap: 6px; padding: 16px; border-radius: 18px; background: var(--cd); min-width: 0; }
+.pk-name { margin: 0; font-size: 18px; font-weight: 600; line-height: 1.3; color: var(--hd); overflow-wrap: anywhere; }
+.pk-group { align-self: flex-start; max-width: 100%; padding: 2px 10px; border-radius: 12px; background: var(--tk); font-size: 12px; font-weight: 600; line-height: 1.5; color: var(--mu); overflow-wrap: anywhere; }
+.pk-detail { margin: 0; font-size: 14px; line-height: 1.5; color: var(--mu); overflow-wrap: anywhere; }
+.pk-price-row { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 6px 10px; margin-top: 4px; }
+.pk-prices { display: flex; flex-direction: column; min-width: 0; }
+.pk-price { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; color: var(--hd); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pk-per { font-size: 13px; color: var(--mu); overflow-wrap: anywhere; }
+.pk-save { flex: none; max-width: 100%; padding: 4px 10px; border-radius: 999px; background: var(--ac); font-size: 13px; font-weight: 600; color: var(--hd); white-space: nowrap; }
+.pk-buy { margin-top: 8px; text-decoration: none; }

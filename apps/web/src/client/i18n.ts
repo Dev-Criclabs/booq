@@ -4,6 +4,7 @@ import f02 from '../../../../locales/pending/f02.json';
 import f03 from '../../../../locales/pending/f03.json';
 import f04 from '../../../../locales/pending/f04.json';
 import f04checkout from '../../../../locales/pending/f04-checkout.json';
+import f06 from '../../../../locales/pending/f06.json';
 
 // The player app's text (CLAUDE.md, CC-5). Every string on a screen comes from the language files
 // by key; this module only looks a key up and fills its named variables. Keys still waiting for
@@ -17,7 +18,7 @@ export type T = (key: string, vars?: Vars) => string;
 
 type Catalogue = Record<string, string>;
 interface Pending { en: Catalogue; th: Catalogue }
-const pending = [f02, f03, f04, f04checkout] as unknown as Pending[];
+const pending = [f02, f03, f04, f04checkout, f06] as unknown as Pending[];
 
 function catalogue(lang: Lang): Catalogue {
   const main = (lang === 'th' ? th : en) as Catalogue;

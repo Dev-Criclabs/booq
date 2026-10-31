@@ -1,9 +1,11 @@
 {
-  "_note": "Proposed by BE-W for F06 (D81). Numbers to be assigned by Content; wording drafted, writers own it. L-new.wallet_credit_line is the item line of a wallet_credit order on its receipt (D37): money received that could not confirm a booking or package and was credited to the wallet.",
+  "_note": "Proposed by BE-W for F06 (D81). Numbers to be assigned by Content; wording drafted, writers own it. L-new.wallet_credit_line is the item line of a wallet_credit order on its receipt (D37): money received that could not confirm a booking or package and was credited to the wallet. P-new.packages_none is the C9 tab with no product on sale (F06-T17).",
   "en": {
-    "L-new.wallet_credit_line": "Credit to your wallet"
+    "L-new.wallet_credit_line": "Credit to your wallet",
+    "P-new.packages_none": "No packages here yet. Check back soon."
   },
   "th": {
-    "L-new.wallet_credit_line": "เครดิตเข้ากระเป๋าเงิน"
+    "L-new.wallet_credit_line": "เครดิตเข้ากระเป๋าเงิน",
+    "P-new.packages_none": "ยังไม่มีแพ็กเกจในหมวดนี้ แวะกลับมาดูใหม่เร็ว ๆ นี้"
   }
 }
