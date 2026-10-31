@@ -5,7 +5,7 @@ import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
 import { loadMessageDictionary, type RichMenuApi } from '@booq/line/server';
 import { FakeClock, FakeLine } from '../../../../tests/fakes';
 import { closeTestDatabase } from '../testing/teardown';
-import { buildRichMenu } from './line-rich-menu';
+import { buildRichMenu, runRichMenuRequests } from './line-rich-menu';
 
 // F10-T12 buildRichMenu (F10 design 5.5; LINE-02-AC1, AC4, AC8, PLAT-04): render, create the menu with its six tap areas,
 // upload the image, make it the default, then supersede and delete the old one; a failure keeps the old menu working,
@@ -151,5 +151,38 @@ describe('the rich_menu_build task', () => {
     expect(line.defaultRichMenuOf(A)).toBeDefined();
     await expect(task({ clubId: 'nope' })).rejects.toThrow(/valid club id/);
     await expect(task(null)).rejects.toThrow(/valid club id/);
+  });
+});
+
+describe('rich menu build requests (D176): polled on the outbox sender tick', () => {
+  const deps = () => ({ api: fakeApi(), dictionary, readToken: async () => TOKEN });
+  const request = (force = false) => tdb.query(`insert into public.rich_menu_request (club_id, force) values ($1, $2)`, [A, force]);
+
+  it('a waiting request is taken and built once; no request, nothing is called', async () => {
+    expect(await runRichMenuRequests(worker, deps())).toMatchObject({ clubs: 0 });
+    expect(calls).toEqual([]);
+    await request();
+    expect(await runRichMenuRequests(worker, deps())).toMatchObject({ clubs: 1, active: 1 });
+    expect(line.defaultRichMenuOf(A)).toBeDefined();
+    expect((await tdb.query(`select count(*)::int as n from public.rich_menu_request`)).rows[0].n).toBe(0);
+    calls = [];
+    expect(await runRichMenuRequests(worker, deps())).toMatchObject({ clubs: 0 });
+    expect(calls).toEqual([]);
+  });
+
+  it('the same labels again: unchanged unless the request is forced (Redo)', async () => {
+    await request();
+    await runRichMenuRequests(worker, deps());
+    await request();
+    expect(await runRichMenuRequests(worker, deps())).toMatchObject({ unchanged: 1 });
+    await request(true);
+    expect(await runRichMenuRequests(worker, deps())).toMatchObject({ active: 1 });
+  });
+
+  it('a failed build is a result on the row, and the request is gone (the owner sees the failure in A16)', async () => {
+    failAt = 'upload';
+    await request();
+    expect(await runRichMenuRequests(worker, deps())).toMatchObject({ failed: 1, errors: 0 });
+    expect((await menus()).map((m) => m.status)).toEqual(['failed']);
   });
 });

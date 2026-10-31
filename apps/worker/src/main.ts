@@ -16,7 +16,7 @@ import { runConnectionChecks } from './tasks/connection-check';
 import { CLOSURE_ROLL, runClosureRoll } from './tasks/closure-roll';
 import { createLineSender, createLineUsageDeps, createRichMenuBuildDeps } from './tasks/line-sender-setup';
 import { LINE_HEALTH, LINE_USAGE_SYNC, runLineHealth, runLineUsageSync } from './tasks/line-usage';
-import { RICH_MENU_BUILD, richMenuBuildTask } from './tasks/line-rich-menu';
+import { RICH_MENU_BUILD, richMenuBuildTask, runRichMenuRequests } from './tasks/line-rich-menu';
 import { BEAM_RECONCILE, PACKAGE_ORDER_EXPIRY, runBeamReconcile, runPackageOrderExpiry } from './tasks/payment-jobs';
 import { startTicker } from './ticker';
 import { startWorker } from './worker';
@@ -44,6 +44,7 @@ const lineSettings = {
 };
 const lineSender = createLineSender(db, lineSettings);
 const lineUsage = createLineUsageDeps(lineSettings);
+const richMenuDeps = createRichMenuBuildDeps(lineSettings);
 
 const worker = await startWorker({
   connectionString: config.queueUrl,
@@ -53,7 +54,7 @@ const worker = await startWorker({
     [PAY_TAP_PRUNE]: prunePayTaps,
     [CLASS_GENERATE]: generateClassSessions,
     // F10-T12: one club's rich menu, added by P2 step 4 Upload and Redo and by an owner's label save.
-    [RICH_MENU_BUILD]: richMenuBuildTask(db, createRichMenuBuildDeps(lineSettings)),
+    [RICH_MENU_BUILD]: richMenuBuildTask(db, richMenuDeps),
   },
   globalTasks: {
     [IMPORT_STAGING_DISPATCH]: importStagingDispatch({ listClubIds: () => listClubIds(db) }),
@@ -109,6 +110,8 @@ const classBelowMin = startTicker({ everyMs: config.classBelowMinTickSeconds * 1
 const outboxSender = startTicker({ everyMs: config.outboxSenderTickSeconds * 1000, run: () => lineSender.run(), onError: () => undefined });
 // connection_check (D167): the console's "Test all again". The worker opens the stored secrets and probes LINE and Beam; same tick and settings as the sender.
 const privateKey = loadDecryptKey();
+// rich menu build requests (D176): an owner's label save and P2's Upload and Redo; same tick as the sender, like connection_check.
+const richMenuRequests = startTicker({ everyMs: config.outboxSenderTickSeconds * 1000, run: () => runRichMenuRequests(db, richMenuDeps), onError: () => undefined });
 const connectionCheck = startTicker({
   everyMs: config.outboxSenderTickSeconds * 1000,
   run: () => runConnectionChecks(db, { privateKey, lineApiBaseUrl: config.lineApiBaseUrl, probeTimeoutMs: config.linePushTimeoutMs }),
@@ -120,6 +123,6 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, () => {
     if (stopping) return;
     stopping = true;
-    void Promise.all([holdRelease.stop(), offerExpiry.stop(), classBelowMin.stop(), outboxSender.stop(), connectionCheck.stop()]).then(() => worker.stop()).then(() => db.end()).then(() => process.exit(0));
+    void Promise.all([holdRelease.stop(), offerExpiry.stop(), classBelowMin.stop(), outboxSender.stop(), connectionCheck.stop(), richMenuRequests.stop()]).then(() => worker.stop()).then(() => db.end()).then(() => process.exit(0));
   });
 }

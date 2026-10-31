@@ -18,7 +18,7 @@ const mounted = new Map(web.map((r) => [`${r.def.method} ${r.def.path}`, r.def.p
 
 // route -> permission, by page.
 const BUILT: Record<string, string[]> = {
-  shell: ['GET /staff/shell staff.shell'],
+  shell: ['GET /staff/shell staff.shell', 'GET /staff/line/status line.status.read'],
   A0: ['GET /staff/setup setup.read', 'POST /staff/setup/done setup.done', 'POST /imports import.run', 'POST /imports/:id/confirm import.run', 'GET /imports/:id import.run', 'DELETE /imports/:id import.run'],
   A1: ['GET /staff/calendar calendar.read', 'PUT /staff/bookings/:id/move booking.move', 'GET /courts public'],
   A2: [
@@ -65,6 +65,7 @@ const BUILT: Record<string, string[]> = {
     'GET /settings settings.business.read', 'PUT /settings/:key settings.write', 'PUT /hours hours.write', 'POST /resources resource.write', 'PUT /resources/:id resource.write',
     'PUT /support-window support-window.write',
     'POST /exports export.run', 'GET /exports/:id export.run',
+    'GET /staff/rich-menu rich-menu.read', 'PUT /staff/rich-menu/labels rich-menu.write',
   ],
   A17: ['GET /staff staff.manage', 'POST /staff/invites staff.manage', 'GET /staff/invites staff.manage', 'PUT /staff/:userId/roles roles.assign', 'POST /staff/:userId/deactivate staff.manage', 'GET /staff/audit audit.read', 'GET /staff/audit/record-types audit.read', 'POST /staff/invites/:id/cancel staff.manage'],
 };
@@ -74,7 +75,6 @@ const GAPS: Record<string, string[]> = {
   A2: ['POST /staff/bookings (F03)', 'GET /staff/bookings/:id/cancel-preview (F09)', 'POST /staff/bookings/:id/cancel (F09)', 'POST /staff/bookings/:id/mark (F09)', 'POST /staff/bookings/:id/mark/reverse (F09)', 'POST /staff/orders/:id/package-sale (F06)'],
   A12: ['POST /staff/closures/preview (F09)', 'POST /staff/closures (F09)', 'GET /staff/closures (F09)', 'POST /staff/closures/:id/end (F09)', 'GET /staff/closures/:id/expired-packages (F09)'],
   A13: ['GET /staff/reports/owed (F06)'],
-  A16: ['GET /staff/rich-menu (F10)', 'PUT /staff/rich-menu/labels (F10)'],
 };
 
 describe('F11 route inventory (design 5)', () => {

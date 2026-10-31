@@ -1,6 +1,7 @@
 import type { Db, Tx } from '@booq/db';
 import type { Dictionary, MessageLanguage } from '@booq/line';
 import { RichMenuLayoutError, renderRichMenu, resolveLabels, richMenuObject, type RichMenuApi, type StoredLabel } from '@booq/line/server';
+import { recordTaskRun } from '../heartbeat';
 
 // buildRichMenu (F10-T12; F10 design 5.5; LINE-02-AC1, AC4, AC8; PLAT-04). One club's rich menu, in this order so that a
 // failure leaves the old menu working (LINE-02-AC8):
@@ -102,4 +103,40 @@ export function richMenuBuildTask(db: Db, deps: RichMenuBuildDeps) {
     if (typeof p?.clubId !== 'string' || !UUID.test(p.clubId)) throw new Error('task refused: the payload has no valid club id');
     await buildRichMenu(db, deps, p.clubId, { force: p.force === true });
   };
+}
+
+export const RICH_MENU_REQUESTS = 'rich_menu_requests';
+const SYSTEM_CONTEXT = { clubId: '00000000-0000-0000-0000-000000000000', userId: null, roles: [] } as const;
+const DEFAULT_REQUEST_CLUBS = 10;
+
+export interface RichMenuRequestsResult {
+  clubs: number;
+  active: number;
+  unchanged: number;
+  failed: number;
+  errors: number;
+}
+
+/** The build requests of D176: an owner's label save (and P2 Upload and Redo, F10-T16) writes public.rich_menu_request;
+ *  polled on the outbox sender's tick (as connection_check). For each club with a request: take it in the club's
+ *  context (app.take_rich_menu_request removes it and gives its force; null when another worker took it), then build.
+ *  A save during the build makes a new request, built on a later tick. A thrown error is counted; the owner's next save
+ *  asks again. `db` must connect as booq_worker. */
+export async function runRichMenuRequests(db: Db, deps: RichMenuBuildDeps, options: { clubs?: number } = {}): Promise<RichMenuRequestsResult> {
+  return recordTaskRun(db, RICH_MENU_REQUESTS, async () => {
+    const clubs = (await db.withClubTx(SYSTEM_CONTEXT, (tx) =>
+      tx.query<{ id: string }>('select id from app.due_rich_menu_clubs($1) as t(id)', [options.clubs ?? DEFAULT_REQUEST_CLUBS]))).rows.map((r) => r.id);
+    const result: RichMenuRequestsResult = { clubs: clubs.length, active: 0, unchanged: 0, failed: 0, errors: 0 };
+    for (const clubId of clubs) {
+      try {
+        const force = await db.withClubTx(ctx(clubId), async (tx) => (await tx.query<{ f: boolean | null }>('select app.take_rich_menu_request() as f')).rows[0]!.f);
+        if (force === null) continue;
+        const r = await buildRichMenu(db, deps, clubId, { force });
+        result[r.outcome] += 1;
+      } catch {
+        result.errors += 1;
+      }
+    }
+    return result;
+  });
 }

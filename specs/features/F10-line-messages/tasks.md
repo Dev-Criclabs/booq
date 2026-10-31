@@ -47,7 +47,7 @@ Not startable until their lists exist: F10 enqueues are called by F07 (substitut
 
 - [x] **F10-T14** Player routes `GET` and `PUT /me/notification-prefs`. IDs: LINE-05, D94. Role: BE-P · Deps T03, F01 T13 · Size: S
   Tests first: only the two switches are writable; confirmations stay always sent.
-- [ ] **F10-T15** Owner routes `GET /staff/line/status`, `GET` and `PUT /staff/rich-menu/labels` (a save re-renders and re-uploads, D114). IDs: LINE-02, LINE-06, D114. Role: BE-P · Deps T12, T13 · Size: M
+- [x] **F10-T15** Owner routes `GET /staff/line/status`, `GET` and `PUT /staff/rich-menu/labels` (a save re-renders and re-uploads, D114). IDs: LINE-02, LINE-06, D114. Role: BE-P · Deps T12, T13 · Size: M
   Tests first: only the owner reaches them; a label save calls the build once; the token is never returned.
 - [ ] **F10-T16** Platform routes: rich menu upload and Redo, connection test, `line-usage` (admin and assigned specialist, audited). IDs: LINE-02-AC8, LINE-06, PLAT-04. Role: BE-P · Deps T12, T13 · Size: M
   Tests first: an unassigned specialist gets 404; the response holds counts and health only; each call is audited.
