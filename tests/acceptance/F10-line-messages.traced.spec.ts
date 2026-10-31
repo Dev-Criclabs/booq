@@ -42,3 +42,4 @@ traced("F10/LINE-07-AC7", "Given a booking or payment, when the cap is reached, 
 traced("F10/LINE-07-AC8", "Given the thresholds 70 and 80 percent, when the code reads them, then they are ", [{ file: "packages/db/src/line-usage.test.ts", has: "LINE-07-AC8" }]);
 traced("F10/LINE-07-AC9", "Given the usage is read from LINE, when LINE does not answer, then the check use", [{ file: "packages/db/src/line-usage.test.ts", has: "LINE-07-AC9" }]);
 traced("F10/LINE-07-AC10", "Given the owner upgrades the LINE plan mid month, when the limit changes, then L", [{ file: "packages/db/src/enqueue-message.test.ts", has: "LINE-07-AC10" }]);
+traced("F10/LINE-03-AC11", "Given a message for a Paused club, when the event is a reminder or a cancellatio", [{ file: "apps/worker/src/tasks/line-outbox-sender.test.ts", has: "LINE-03-AC11 a reminder and a cancellation result of an existing booking are still sent while the club is paused" }]);

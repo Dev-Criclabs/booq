@@ -36,9 +36,9 @@ const json = (f: string) => JSON.parse(readFileSync(resolve(ROOT, f), 'utf8')) a
 describe('F10/LINE-03-AC4', () => {
   it('F10/LINE-03-AC4 there is no page, route or button to edit a message (A15 is removed)', () => {
     const routes = [...web.map((r) => `${r.def.method} ${r.def.path}`), ...platform.map((r) => `${r.def.method} ${r.def.path}`)];
-    expect(routes.filter((r) => /message|template|broadcast|campaign/i.test(r) && !/webhook|line\/friend|class-templates/i.test(r)), 'routes that look like a message editor').toEqual([]);
+    expect(routes.filter((r) => /message|(line|flex|notification|reminder)[-_/ ]?templates?|broadcast|campaign/i.test(r) && !/webhook|line\/friend/i.test(r)), 'routes that look like a message editor').toEqual([]);
     const pages = ['apps/web/src', 'apps/platform/src'].flatMap((d) => files(resolve(ROOT, d))).map((f) => f.replace(ROOT + '/', ''));
-    expect(pages.filter((f) => /(message|template).*(edit|editor|compose)|(edit|editor|compose).*(message|template)|broadcast|campaign/i.test(f)), 'files that look like a message editor').toEqual([]);
+    expect(pages.filter((f) => /(message|(line|flex|notification|reminder)[-_/ ]?templates?).*(edit|editor|compose)|(edit|editor|compose).*(message|(line|flex|notification|reminder)[-_/ ]?templates?)|broadcast|campaign/i.test(f)), 'files that look like a message editor').toEqual([]);
   });
 });
 

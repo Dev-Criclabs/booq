@@ -8,6 +8,7 @@ import {
 import { STATUS_KEY, type Status } from './clubs';
 import { t } from './i18n';
 import { StepUpPanel } from './StepUpPanel';
+import { SupportEditor } from './SupportEditor';
 
 // /clubs/{id} (P3 and the support view): status and the checklist, the owner's invite, webhook addresses, and the club basics.
 // A specialist sees the clubs assigned to them; admin-only actions (pause, resume, webhook addresses) show for admins. Anything
@@ -157,13 +158,18 @@ export function ClubDetailScreen({ id }: { id: string }) {
 
         {club ? (
           <>
-            <h1>{name}</h1>
-            <p>
-              <span className={`pill ${status}`} data-testid="status">{t(STATUS_KEY[status])}</span>{' '}
-              <span data-testid="mode">{t(mode === 'edit' ? 'X-new.club_mode_edit' : 'X-new.club_mode_look')}</span>
-            </p>
-            {club.counts ? <p>{t('X-new.club_bookings', { count: club.counts.bookingsConfirmed30d })} · {t('X-new.club_messages', { count: club.counts.lineMessagesSent30d })}</p> : null}
-
+            <div className="head">
+              <div>
+                <h1>{name}</h1>
+                <p className="lede" data-testid="mode">{t(mode === 'edit' ? 'X-new.club_mode_edit' : 'X-new.club_mode_look')}</p>
+                {club.counts ? <p className="lede">{t('X-new.club_bookings', { count: club.counts.bookingsConfirmed30d })} · {t('X-new.club_messages', { count: club.counts.lineMessagesSent30d })}</p> : null}
+              </div>
+              <div className="tools">
+                <span className={`pill ${status}`} data-testid="status">{t(STATUS_KEY[status])}</span>
+                <a className="btn secondary small" href={`/clubs/${encodeURIComponent(id)}/launch`} data-testid="launch-link-top">{t('X-new.launch_link')}</a>
+              </div>
+            </div>
+            <div className="grid2">
             <section aria-labelledby="status-title">
               <h2 id="status-title">{t('X-0135')}</h2>
               {status !== 'paused' ? (
@@ -200,16 +206,19 @@ export function ClubDetailScreen({ id }: { id: string }) {
               <h2 id="setup-title">{t('X-new.club_setup_title', { done: club.progress.setup.filter((i) => i.done).length, total: club.progress.setup.length })}</h2>
               <ul className="checks" data-testid="setup">
                 {club.progress.setup.map((i) => (
-                  <li key={i.item} data-testid={`setup-${i.item}`}>
+                  <li key={i.item} data-testid={`setup-${i.item}`} data-state={i.done ? 'done' : 'open'}>
                     {t(itemKey(SETUP_KEY, i.item))} · {i.done ? t('X-new.club_item_done') : t('X-new.club_item_open')} · {t(i.owed_by === 'owner' ? 'X-0215' : 'X-new.club_owed_booq')}
                   </li>
                 ))}
               </ul>
-              <h2>{t('X-0154')}</h2>
+            </section>
+
+            <section aria-labelledby="live-title">
+              <h2 id="live-title">{t('X-0154')}</h2>
               <p><a href={`/clubs/${encodeURIComponent(id)}/launch`} data-testid="launch-link">{t('X-new.launch_link')}</a></p>
               <ul className="checks" data-testid="launch">
                 {club.progress.launch.map((i) => (
-                  <li key={i.item} data-testid={`launch-${i.item}`}>
+                  <li key={i.item} data-testid={`launch-${i.item}`} data-state={i.result === 'pass' ? 'done' : i.result === 'fail' ? 'fail' : 'wait'}>
                     {t(itemKey(LAUNCH_KEY, i.item))} · {t(RESULT_KEY[i.result] ?? 'X-new.result_pending')} · {t(i.owed_by === 'owner' ? 'X-0215' : 'X-new.club_owed_booq')}
                   </li>
                 ))}
@@ -256,19 +265,27 @@ export function ClubDetailScreen({ id }: { id: string }) {
 
             <section aria-labelledby="support-title">
               <h2 id="support-title">{t('X-0134')}</h2>
+              {mode === 'edit' ? (
+                <SupportEditor id={id} support={club.support} busy={busy} onSaved={async () => { setNotice({ key: 'X-new.support_saved', error: false }); await reload(); }} onError={(key) => setNotice({ key, error: true })} />
+              ) : (
+                <>
               <h3>{t('X-new.support_hours')}</h3>
-              {club.support.hours.length === 0 ? <p>{t('X-new.support_none')}</p> : (
-                <ul data-testid="hours">{club.support.hours.map((h) => <li key={h.weekday}>{t(`X-new.weekday_${h.weekday}`)} {h.open}–{h.close}</li>)}</ul>
-              )}
-              <h3>{t('X-new.support_courts')}</h3>
-              {club.support.resources.length === 0 ? <p>{t('X-new.support_none')}</p> : (
-                <ul data-testid="courts">{club.support.resources.map((r) => <li key={r.id}>{r.name} · {r.sport}</li>)}</ul>
-              )}
-              <h3>{t('X-new.support_features')}</h3>
-              {club.support.features.length === 0 ? <p>{t('X-new.support_none')}</p> : (
-                <ul data-testid="features">{club.support.features.map((f) => <li key={f.feature_key}>{f.feature_key} · {t(f.enabled ? 'X-new.feature_on' : 'X-new.feature_off')}</li>)}</ul>
+                  {club.support.hours.length === 0 ? <p>{t('X-new.support_none')}</p> : (
+                    <ul data-testid="hours">{club.support.hours.map((h) => <li key={h.weekday}>{t(`X-new.weekday_${h.weekday}`)} {h.open}–{h.close}</li>)}</ul>
+                  )}
+                  <h3>{t('X-new.support_courts')}</h3>
+                  {club.support.resources.length === 0 ? <p>{t('X-new.support_none')}</p> : (
+                    <ul data-testid="courts">{club.support.resources.map((r) => <li key={r.id}>{r.name} · {r.sport}</li>)}</ul>
+                  )}
+                  <h3>{t('X-new.support_features')}</h3>
+                  {club.support.features.length === 0 ? <p>{t('X-new.support_none')}</p> : (
+                    <ul data-testid="features">{club.support.features.map((f) => <li key={f.feature_key}>{f.feature_key} · {t(f.enabled ? 'X-new.feature_on' : 'X-new.feature_off')}</li>)}</ul>
+                  )}
+    
+                </>
               )}
             </section>
+            </div>
           </>
         ) : null}
       </main>

@@ -11,9 +11,10 @@ export interface SupportSetup {
   club: Record<string, string | null>;
   hours: Array<{ weekday: number; open: string; close: string }>;
   locations: Array<{ id: string; name: string }>;
-  resources: Array<{ id: string; name: string; sport: string; active: boolean }>;
+  resources: Array<{ id: string; location_id?: string; name: string; sport: string; type?: string | null; lights?: boolean; max_players?: number | null; active: boolean }>;
   settings: Array<{ key: string; value: unknown }>;
   features: Array<{ feature_key: string; enabled: boolean }>;
+  featureKeys?: Array<{ feature_key: string; requires_payment_option: 'beam' | 'slip' | null }>;
 }
 export interface OwnerInvite { status: 'none' | 'pending' | 'expired' | 'redeemed'; expires_at?: string }
 export interface ClubView {

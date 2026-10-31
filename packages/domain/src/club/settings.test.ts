@@ -36,6 +36,11 @@ describe('the registry and the database agree', () => {
     expect(keys).toEqual(SETTINGS.map((s) => s.key).sort());
   });
 
+  it('the scope of each key (who reads it besides the owner, D115) is the same in the database as in the registry', async () => {
+    const rows = (await tdb.query(`select setting_key, scope from app.setting_keys order by setting_key`)).rows;
+    expect(rows).toEqual(SETTINGS.map((s) => ({ setting_key: s.key, scope: s.scope })).sort((a, b) => a.setting_key.localeCompare(b.setting_key)));
+  });
+
   it('a setting a template must have set (Go live) is one the registry does not allow to stay unset; the slip setting only exists for slip clubs', async () => {
     const rows = (await tdb.query(`select setting_key, required, slip_only from app.setting_keys order by setting_key`)).rows;
     expect(rows).toEqual(
