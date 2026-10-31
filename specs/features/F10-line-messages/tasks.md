@@ -40,7 +40,7 @@ Not startable until their lists exist: F10 enqueues are called by F07 (substitut
   Tests first: same labels give the same bytes; the longest Thai and English labels fit their tile; both scripts share a baseline.
 - [x] **F10-T12** `buildRichMenu(club)`: create, upload, set default, then supersede and delete the old menu; failure keeps the old one and marks `failed`; audit entry. IDs: LINE-02-AC1, AC4, AC8, PLAT-04. Role: BE-P · Deps T04, T11 · Size: M
   Tests first: six areas with six distinct links and tile 1 equal to C4; a failed upload leaves the old menu default; the club stays Draft after a failure; each call writes an audit row.
-- [ ] **F10-T13** Jobs `line_usage_sync` and `line_health`: quota and consumption, last known value fallback with P1 alert, the daily token check, the `owner_cap_paid_over` message once a month. IDs: LINE-06, LINE-07-AC1 to AC6, LINE-07-AC9, LINE-07-AC10, D97, D99, D114. Role: BE-P · Deps T05, T09 · Size: M
+- [x] **F10-T13** Jobs `line_usage_sync` and `line_health`: quota and consumption, last known value fallback with P1 alert, the daily token check, the `owner_cap_paid_over` message once a month. IDs: LINE-06, LINE-07-AC1 to AC6, LINE-07-AC9, LINE-07-AC10, D97, D99, D114. Role: BE-P · Deps T05, T09 · Size: M
   Tests first (fake LINE quota): the seven cap tests of FA §5.6; a failed read keeps the last value and alerts without stopping reminders; an upgrade mid month follows the new limit (LINE-07-AC10, D99); the last known usage is used when LINE cannot be read (LINE-07-AC9, D97); `owner_cap_paid_over` is sent once a month at 100 percent on a paid plan (the monthly limit is the design's rule; LINE-07 says only that the owner is told, so Q1 below).
 
 ## D. Routes

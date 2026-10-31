@@ -1,6 +1,6 @@
 # F12 Coach portal K1 to K6 · Design
 
-Status: **DRAFT for approval (gate 2).** Drafted 31 Oct 2026 from the approved F12 requirements (`requirements.md`, approved 30 Oct 2026, revision 3; D1, D19, D91, D95, D115, D118 applied) and the code on `main` (F07 migrations 0801 to 0899, F08 0901 to 0915, F13 0709 and `app.my_payouts`). The Architect reviews it. A change to anything below goes through the PRD, then the hand-off, then this file. Tasks (gate 3) are in `tasks.md` and follow approval. Nothing is built from this file until it is approved.
+Status: **Approved 31 Oct 2026 (gate 2, D171).** Drafted 31 Oct 2026 from the approved F12 requirements (`requirements.md`, approved 30 Oct 2026, revision 3; D1, D19, D91, D95, D115, D118 applied) and the code on `main` (F07 migrations 0801 to 0899, F08 0901 to 0915, F13 0709 and `app.my_payouts`). The Architect reviews it. A change to anything below goes through the PRD, then the hand-off, then this file. Tasks (gate 3) are in `tasks.md`. The user's answers of D171 are folded in (§11).
 
 Feature: F12 Coach portal. Requirement IDs: CPORT-01 to CPORT-07. Depends on F07 (coach rules, availability, leave), F08 (group sessions, roster), F10 (messages), F13 (payouts). Wave 4.
 
@@ -139,7 +139,7 @@ The route checks `coach.portal`; the function checks again from the context; the
 
 - **Club scope (CC-1):** every table has `club_id` and tenant policies; functions take the club from context; another club's id answers 404.
 - **Server side (CC-2):** a coach cannot name another coach: the functions never take a coach id; the session is checked against `coach_id` inside the function.
-- **PDPA (CC-3):** the coach reads a player's name and level on their own sessions only; notes are personal data about the player: they are never returned to the player, they are listed in the person's deletion impact and removed when the person is anonymised (`app.f12_anonymise`, registered with F01's anonymise handlers), and a coach's own notes stay as records when the coach is anonymised (F07 A-8). Access to notes under a PDPA data request is an open question (§11 Q-2).
+- **PDPA (CC-3):** the coach reads a player's name and level on their own sessions only; notes are personal data about the player held by the club: no player route and no screen of the player app ever returns them, but they ARE part of that player's PDPA data export (right of access, D171) through `app.f12_export`; they are listed in the person's deletion impact and removed when the person is anonymised (`app.f12_anonymise`, registered with F01's anonymise handlers), and a coach's own notes stay as records when the coach is anonymised (F07 A-8). Attendance marks are about the booking, not free text, and are listed in the export with the booking (a mark, a date, no coach name).
 - **Audit (PLAT-04):** attendance and notes through the audit trigger family; payout reads are not written.
 - **No double booking (CC-4):** F12 writes no booking or occupancy.
 - **Text (TEXT-01 to TEXT-06):** every string from the K keys of `locales/copy-index.csv` (K-0001 to K-0112 cover K1 to K6) and new keys in `locales/pending/F12.json`; none in code. Variables replace sample values (names, times, amounts, counts).
@@ -148,7 +148,7 @@ The route checks `coach.portal`; the function checks again from the context; the
 
 | # | Assumption or question | Default taken |
 |---|---|---|
-| A-1 | Open question 1: attendance after the session | The coach may change the mark until that month's payout is marked paid; no fixed number of days is invented. |
+| A-1 | Open question 1: attendance after the session (approved, D171) | The coach may change the mark until that month's payout is marked paid; no fixed number of days is invented. |
 | A-2 | Requirement text says the roster has a photo; the data holds no player photo and the board shows initials | Initials. A photo needs a stored LINE picture and a consent decision: not built. |
 | A-3 | Who reads notes | The writing coach, the owner and front desk. "Past notes" are this coach's own earlier notes on that player. |
 | A-4 | Level of a player | `app_user.level` as the player set it (new, beginner, intermediate, advanced); shown as typed. |
@@ -158,9 +158,13 @@ The route checks `coach.portal`; the function checks again from the context; the
 | A-8 | Pay terms on K6 | The coach sees their own rate (kind and value) beside the counts, as the board shows. |
 | A-9 | Group percent pay (F13) | Settled by D170: the percentage of the full listed seat price of each seat booked; K6 shows the amount, or "not set yet" when the pay or a session's listed price is unset (F13 flags `group_pay_unset`, `group_price_unset`). |
 | Q-1 | Open question 2: coach pay numbers are empty settings | K6 shows them only after the owner sets them (`amount_satang` null until then). |
-| Q-2 | PDPA data access: may a player ask to see coach notes about them? | **Open, for the user.** Until decided the notes are not in the player's data export and are deleted on anonymisation. |
+| Q-2 | PDPA data access to coach notes | **Settled, D171:** coach notes about a player are personal data the club holds, so they ARE in that player's data export, and are deleted when the player is anonymised. |
 | Q-3 | May the owner mark attendance for a coach who forgot? | Not built; the owner adjusts through A2 (no show) as D118 says. |
 
 ## 12. Tests (written first at the build step)
 
 Per task, from the acceptance checks: CPORT-01 three sessions today give only the coach's own, in time order, another coach's and another club's never; CPORT-02 an approved leave day shows and no session is offered on it; CPORT-03 saving hours that would make a 7th in a row leaves the 7th hour not offered; CPORT-04 submit, approve, the coach's LINE message in their language and the flagged sessions; CPORT-05 a session that has not ended refuses a mark, a mark is saved and audited, Absent changes neither the booking nor the payout figures, a change after the month is paid is refused, a note is saved, replaced and never returned to a player, a coach cannot mark or read another coach's session, a player role gets 403; CPORT-06 the coach's figures equal the owner's payout row for the same month, a null amount stays null, no other coach's or club figures are reachable by any argument, past payouts list only paid months; CPORT-07 a confirmed, moved and cancelled solo class and a group seat each enqueue one `session_change` to the right coach once (retry safe), none for a released hold. Plus the blind and access suites for the two tables and six functions (task list), the 375 px Playwright pass for the shell, and the longest Thai string on every screen.
+
+## 13. Spec wording to correct (for the orchestrator, PRD then hand-off then requirements)
+
+`requirements.md` says session notes are "never shown to the player", and PDPA-01-AC6 says a player never sees staff notes. D171 puts the coach's notes about a player into that player's data export, which is a copy sent by the club on a request, not a screen. Both lines should say "never shown in the app; included in the player's data export (D171)". The F01 data export code comment (`copyFile`, "staff notes are never included") means the club staff's own notes, and stays true for them. Until the wording is changed this design follows D171.
