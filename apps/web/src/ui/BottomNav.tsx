@@ -1,4 +1,4 @@
-import { clubPath, type PlayerPage } from '@booq/line/src/links/deep-link';
+import { clubPath, type PlayerPage } from '@booq/line';
 import type { T } from '../client/i18n';
 
 // The player app's bottom navigation (canvas: Home, Courts, Classes, Bookings, Profile; P-0034 to

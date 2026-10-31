@@ -1,5 +1,5 @@
 'use client';
-import { clubPath } from '@booq/line/src/links/deep-link';
+import { clubPath } from '@booq/line';
 import type { Lang, T } from '../client/i18n';
 import { AddFriendAsk } from './AddFriendAsk';
 import { BottomNav } from './BottomNav';
