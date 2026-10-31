@@ -26,3 +26,8 @@ export function longDayOf(lang: Lang, dayOrIso: string): string {
   const day = /^\d{4}-\d{2}-\d{2}$/.test(dayOrIso) ? dayOrIso : bangkokParts(dayOrIso)?.day ?? '';
   return day ? formatDayMonthYearLong(lang, day) : '';
 }
+
+/** The full weekday of a day (Monday, วันจันทร์), the year not involved: formatting, like the dates, not copy. */
+export function weekdayLongOf(lang: Lang, day: string): string {
+  return new Intl.DateTimeFormat(lang === 'th' ? 'th-TH-u-ca-gregory' : 'en-GB', { weekday: 'long', timeZone: 'UTC' }).format(new Date(`${day}T12:00:00Z`));
+}

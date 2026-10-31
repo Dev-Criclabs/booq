@@ -66,3 +66,6 @@ traced("F06/PKG-01-AC10", "Given the history on C14, when the player opens it, t
 // Hand mapped by title, 31 Oct (batch of F04-T14, F06-T15, F10-T13, F01 exports mount).
 traced("F06/PKG-02-AC8", "Given a product the owner marks inactive, when C9 loads, then it is not offered;", [{ file: "apps/web/src/api/packages/routes.test.ts", has: "no price or inactive is not offered" }]);
 traced("F06/R3-AC6", "Given a package order for a Paused club, when a player tries to buy, then the se", [{ file: "apps/web/src/api/checkout/package-pay.routes.test.ts", has: "a paused club refuses (R4-AC10)" }]);
+
+// Added by trace-lane.py: criteria the lane's tests name by ID.
+traced("F06/PKG-02-AC9", "Given the validity and expiry shown on C9, C10P and C12P, when they are shown, t", [{ file: "packages/db/src/package-saving.test.ts", has: "PKG-02-AC9" }]);

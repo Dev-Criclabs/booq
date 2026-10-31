@@ -98,6 +98,14 @@ describe('the shell', () => {
     await bad.context.close();
   });
 
+  it('the club name in the top bar carries the full name as its title (it may be cut with an ellipsis)', async () => {
+    const { page, context } = await open({});
+    await page.goto(`${app.base}/c/hunter/admin`);
+    await page.getByTestId('adm-club').waitFor();
+    assert.equal(await page.getByTestId('adm-club').getAttribute('title'), await page.getByTestId('adm-club').innerText());
+    await context.close();
+  });
+
   it('the language toggle switches the text at once and remembers the choice', async () => {
     const { page, context } = await open({ lang: 'th' });
     await page.goto(`${app.base}/c/hunter/admin`);

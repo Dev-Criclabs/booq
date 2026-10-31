@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { changeLines, checkQuery, loadAudit, type AuditEntry, type AuditQuery } from '../../client/admin/audit';
+import { changeLines, checkQuery, loadAudit, loadRecordTypes, type AuditEntry, type AuditQuery } from '../../client/admin/audit';
 import type { StaffMember } from '../../client/admin/staff';
 import { dateOf, timeOf } from '../../client/admin/time';
 import { dayMonthOf } from '../../client/admin/shell';
@@ -14,10 +14,14 @@ type State = { kind: 'loading' } | { kind: 'ready'; entries: AuditEntry[]; next:
 export function AuditPanel({ staff }: { staff: StaffMember[] }) {
   const { slug, lang, t } = useAdmin();
   const [q, setQ] = useState<AuditQuery>({ staff: '', type: '', from: '', to: '' });
+  const [types, setTypes] = useState<string[]>([]);
   const [applied, setApplied] = useState<AuditQuery>(q);
   const [problem, setProblem] = useState<string | null>(null);
   const [state, setState] = useState<State>({ kind: 'loading' });
   const ticket = useRef(0);
+  useEffect(() => {
+    void loadRecordTypes(slug, window.fetch.bind(window)).then(setTypes);
+  }, [slug]);
 
   const run = useCallback(async (query: AuditQuery, append: AuditEntry[] = []) => {
     const mine = ++ticket.current;
@@ -55,7 +59,14 @@ export function AuditPanel({ staff }: { staff: StaffMember[] }) {
           </select>
         </label>
         <label className="adm-field"><span className="adm-sr">{t('A-new.audit_type_label')}</span>
-          <input value={q.type} placeholder={t('A-new.audit_type_placeholder')} aria-label={t('A-new.audit_type_label')} onChange={(e) => setQ({ ...q, type: e.target.value })} data-testid="audit-type" />
+          {types.length > 0 ? (
+            <select value={q.type} aria-label={t('A-new.audit_type_label')} onChange={(e) => setQ({ ...q, type: e.target.value })} data-testid="audit-type">
+              <option value="">{t('A-new.audit_type_placeholder')}</option>
+              {types.map((x) => <option key={x} value={x}>{x}</option>)}
+            </select>
+          ) : (
+            <input value={q.type} placeholder={t('A-new.audit_type_placeholder')} aria-label={t('A-new.audit_type_label')} onChange={(e) => setQ({ ...q, type: e.target.value })} data-testid="audit-type" />
+          )}
         </label>
         <label className="adm-field"><span className="adm-sr">{t('A-new.audit_from')}</span><input type="date" aria-label={t('A-new.audit_from')} value={q.from} onChange={(e) => setQ({ ...q, from: e.target.value })} data-testid="audit-from" /></label>
         <label className="adm-field"><span className="adm-sr">{t('A-new.audit_to')}</span><input type="date" aria-label={t('A-new.audit_to')} value={q.to} onChange={(e) => setQ({ ...q, to: e.target.value })} data-testid="audit-to" /></label>

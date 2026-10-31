@@ -62,7 +62,8 @@ describe('rules', () => {
   it('a setting nobody set shows empty; a list shows as 7, 3', () => {
     expect(draftOf(row('hold_minutes'))).toBe('');
     expect(draftOf(row('package_expiry_reminder_days', { value: [7, 3], unset: false }))).toBe('7, 3');
-    expect(draftOf(row('birthday_discount', { value: { kind: 'percent', value: 10 }, unset: false }))).toBe('percent 10');
+    expect(draftOf(row('birthday_discount', { value: { kind: 'percent', value: 1000 }, unset: false }))).toBe('percent 10');
+    expect(draftOf(row('birthday_discount', { value: { kind: 'fixed', value: 5050 }, unset: false }))).toBe('fixed 50.5');
   });
   it('whole numbers, choices, lists and the discount are turned into values; wrong ones are refused', () => {
     expect(parseDraft(row('booking_window_days'), '14')).toEqual({ ok: true, value: 14 });
@@ -74,7 +75,9 @@ describe('rules', () => {
     expect(parseDraft(row('auto_slip_check'), 'true')).toEqual({ ok: true, value: true });
     expect(parseDraft(row('package_expiry_reminder_days'), '7, 3')).toEqual({ ok: true, value: [7, 3] });
     expect(parseDraft(row('package_expiry_reminder_days'), '7, 7')).toMatchObject({ ok: false, key: 'A-new.set_err_days' });
-    expect(parseDraft(row('birthday_discount'), 'percent 10')).toEqual({ ok: true, value: { kind: 'percent', value: 10 } });
+    expect(parseDraft(row('birthday_discount'), 'percent 10')).toEqual({ ok: true, value: { kind: 'percent', value: 1000 } });
+    expect(parseDraft(row('birthday_discount'), 'fixed 50')).toEqual({ ok: true, value: { kind: 'fixed', value: 5000 } });
+    expect(parseDraft(row('birthday_discount'), 'percent 100.5')).toMatchObject({ ok: false, key: 'A-new.set_err_discount' });
     expect(parseDraft(row('birthday_discount'), 'gift 10')).toMatchObject({ ok: false, key: 'A-new.set_err_discount' });
   });
   it('empty unsets a setting that may be empty and is refused for a required one', () => {

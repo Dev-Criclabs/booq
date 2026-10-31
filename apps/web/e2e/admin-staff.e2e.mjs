@@ -33,6 +33,8 @@ function server(state = {}) {
   return (method, path, search, body) => {
     if (path === '/staff' && method === 'GET') return { status: 200, body: s.staff };
     if (path === '/staff/invites' && method === 'GET') return { status: 200, body: s.invites };
+    if (path === '/staff/invites/i1/cancel') { const a = s.cancelAnswer ?? { status: 200, body: { ok: true } }; if (a.status === 200) s.invites = []; return a; }
+    if (path === '/staff/audit/record-types') return s.recordTypes ? { status: 200, body: s.recordTypes } : undefined;
     if (path === '/staff/invites' && method === 'POST') return s.inviteAnswer ?? { status: 200, body: { id: 'i2', token: 'TOKEN123' } };
     if (path.endsWith('/roles') && method === 'PUT') return s.rolesAnswer ?? { status: 200, body: { old: [], new: body.roles, changed: true } };
     if (path.endsWith('/deactivate') && method === 'POST') return { status: 200, body: { ok: true } };
@@ -178,6 +180,42 @@ describe('A17 Audit log', () => {
     await page.getByTestId('audit-empty').waitFor();
     assert.equal(calls.filter((c) => c.path === '/staff/audit').at(-1).search, `?staff=${u(2)}&type=club_setting&from=2027-01-01&to=2027-01-09`);
     await context.close();
+  });
+
+  it('the record type filter is a list of the audited tables when the server gives it', async () => {
+    const { page, context, calls } = await open(server({ recordTypes: ['booking', 'club_setting', 'promo_code'] }));
+    await page.goto(`${app.base}${url}`);
+    await page.getByTestId('audit-table').waitFor();
+    assert.equal(await page.getByTestId('audit-type').evaluate((e) => e.tagName), 'SELECT');
+    await page.getByTestId('audit-type').selectOption('promo_code');
+    await page.getByTestId('audit-apply').click();
+    await page.waitForFunction(() => document.querySelector('[data-testid="audit-empty"], [data-testid="audit-table"]'));
+    await page.waitForTimeout(300);
+    assert.equal(calls.filter((c) => c.path === '/staff/audit').at(-1).search, '?type=promo_code');
+    await context.close();
+  });
+
+  it('Cancel invite asks first, ends the invite and removes it from the list; a refusal is named', async () => {
+    const ok = await open(server());
+    ok.page.on('dialog', (d) => void d.accept());
+    await ok.page.goto(`${app.base}${url}`);
+    await ok.page.getByTestId('invite-cancel-i1').click();
+    await ok.page.waitForFunction(() => !document.querySelector('[data-testid="invite-cancel-i1"]'));
+    assert.equal(ok.calls.filter((c) => c.path === '/staff/invites/i1/cancel').length, 1);
+    await ok.context.close();
+    const no = await open(server({ cancelAnswer: { status: 404, body: { code: 'not_found' } } }));
+    no.page.on('dialog', (d) => void d.accept());
+    await no.page.goto(`${app.base}${url}`);
+    await no.page.getByTestId('invite-cancel-i1').click();
+    await no.page.getByRole('alert').first().waitFor();
+    await no.context.close();
+    const dismissed = await open(server());
+    dismissed.page.on('dialog', (d) => void d.dismiss());
+    await dismissed.page.goto(`${app.base}${url}`);
+    await dismissed.page.getByTestId('invite-cancel-i1').click();
+    await dismissed.page.waitForTimeout(300);
+    assert.equal(dismissed.calls.filter((c) => c.path === '/staff/invites/i1/cancel').length, 0);
+    await dismissed.context.close();
   });
 
   it('a long log pages with Show more and the rows join', async () => {

@@ -4,29 +4,6 @@
 // and keep the ID at the start of the title (tests/acceptance/coverage.spec.ts checks every criterion appears).
 import { describe, test } from 'vitest';
 
-describe("F06 PKG-02", () => {
-  // Given a club's package products (Hunter from the Tennis template: 10 hour bundle ฿4,500 3 months, 20 hour bundle ฿8,000 5 months, solo class pack of 8 for Adult ฿5,600 and Student ฿4,800, group pack of 8 for Adult ฿4,000 and Student ฿3,200, each 3 months), when they are loaded, then the prices are stored in satang (450000, 800000, and so on) and each is a product row with credit type, credits, validity in months, price group, tier and price. The values are copied from the template, not typed in code.
-  // F06/PKG-02-AC1: proven by a real or traced test in another file of this folder
-  // Given a purchase, when the package is created, then its expiry is calendar months from the purchase date, ending 23:59 Asia/Bangkok on that day; if that day does not exist in the month, the last day of the month (D20). 30 Nov plus 3 months is 28 Feb (or 29 in a leap year). The purchase date is the Bangkok date of the payment confirmation.
-  // F06/PKG-02-AC2: proven by a real or traced test in another file of this folder
-  // Given a bundle bought on 5 Jan 2027, when it is created, then it expires 5 Apr 2027 at 23:59 (the canvas sample "9 Apr" is wrong, Gaps B5).
-  // F06/PKG-02-AC3: proven by a real or traced test in another file of this folder
-  // Given a package product, when the owner changes its price or validity, then it applies to new purchases only and the change is audited (PLAT-04).
-  // F06/PKG-02-AC4: proven by a real or traced test in another file of this folder
-  // Given a Student package bought by a player under 18, when the player turns 18 or corrects their date of birth to an adult age, then the package stays valid, keeps its expiry date and its remaining credits stay usable, for the Student items they were bought for, until expiry (PRD Credits and wallet, HO PKG-02, D84). A new Student package cannot be bought (PKG-02-AC6). The class list for a player who is now Adult is F08 Q2.
-  // F06/PKG-02-AC5: proven by a real or traced test in another file of this folder
-  // Given a Student package product, when a player 18 or older tries to buy it, then the server refuses (F04 R1-AC6).
-  // F06/PKG-02-AC6: proven by a real or traced test in another file of this folder
-  // Given a package product with no price set, when C9 loads, then it is not offered (an empty setting is not free).
-  // F06/PKG-02-AC7: proven by a real or traced test in another file of this folder
-  // Given a product the owner marks inactive, when C9 loads, then it is not offered; packages already owned keep working.
-  // F06/PKG-02-AC8: proven by a real or traced test in another file of this folder
-  // Given the validity and expiry shown on C9, C10P and C12P, when they are shown, then they come from the product and the computed expiry date, with the international year in both languages.
-  test.todo("F06/PKG-02-AC9 Given the validity and expiry shown on C9, C10P and C12P, when they are shown, then they come from the ...");
-  // Given a court bundle, when it is used, then its hours work at any available booking time on either court (PRD Pricing and packages), and a solo pack credit works with any coach in its tier (PRD Solo classes).
-  // F06/PKG-02-AC10: proven by a real or traced test in another file of this folder
-});
-
 describe("F06 PKG-03", () => {
   // Given a package with credits left, when it is 14 days and again 3 days before its expiry date, then the player gets the Package expiring LINE message once each, in their language (F10; sent even at 80 percent of the cap, D29).
   // F06/PKG-03-AC1: proven by a real or traced test in another file of this folder
