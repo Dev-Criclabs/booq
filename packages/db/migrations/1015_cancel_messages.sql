@@ -1,4 +1,4 @@
--- F09-T11 / migration 1014: the cancel and closure messages through F10's app.enqueue_message (0605). F09 design 4.9.
+-- F09-T11 / migration 1015: the cancel and closure messages through F10's app.enqueue_message (0605). F09 design 4.9.
 -- Requirements: CANCEL-01-AC14, CANCEL-03-AC2, AC5, AC7, AC15; LINE-05; decisions D9, D48, D118.
 --
 --   * cancellation_result (dedupe cancel:{booking}:{version}) to the player of every cancel but a closure's;
@@ -13,8 +13,10 @@
 --     send that fails is the outbox's status: the cancel stands (AC15, D9).
 --   * app.closure_unmessaged(closure): front desk and owner; the players of the closure's club_closed_slot messages
 --     whose status is failed or undeliverable, with their names (staff only, CC-3), read from the outbox (no table).
--- Redefines app.cancel_booking (last 1012) and app.closure_apply (1010), so numbered above both (D159); 1013 is the
--- Architect's cancel_session records (F08), so this file is 1014.
+--   * D175: closure_apply passes its closure to app.cancel_session (the Architect's 1014), so each seat a closure cancels
+--     carries closure_id on its cancel record. roll_closure reaches cancel_session only through closure_apply.
+-- Redefines app.cancel_booking (last 1012) and app.closure_apply (1010), and calls 1014's cancel_session, so numbered above
+-- them (D159); 1013 and 1014 are the Architect's cancel_session files.
 
 create or replace function app.cancel_booking(
   p_booking uuid, p_by_staff boolean default false, p_club_cancel boolean default false, p_reason text default null, p_closure uuid default null
@@ -211,7 +213,7 @@ begin
     end if;
   end loop;
   for v_id in select unnest(v_sessions) order by 1 loop
-    perform app.cancel_session(v_id, 'closure');
+    perform app.cancel_session(v_id, 'closure', p_closure);
   end loop;
 
   -- 4. The court locks, last; then nothing new may stand in the range.

@@ -35,7 +35,7 @@ F09 uses the number block 1001 to 1099 (assumption A-1: the build plan names blo
 | `1007_cancel_booking.sql` | `app.cancel_booking` and its helpers |
 | `1008_staff_marks.sql` | `app.mark_no_show`, `app.mark_late_cancel`, `app.reverse_mark` |
 | `1009_closure_create.sql` | `app.closure_preview`, `app.create_closure` |
-| `1010_closure_end_roll.sql` | `app.end_closure`, `app.roll_closures` |
+| `1010_closure_end_roll.sql` | `app.end_closure`; `app.closures_due_roll()` (the due repeat closures) and `app.roll_closure(closure)`, one closure per transaction so the court locks stay last (FA §3.4; orchestrator, 31 Oct) |
 | `1011_grants_policies.sql` | Policies, grants, executable-by lists, the table class registry entries |
 
 No settings rows: `cancel_window_hours` already exists (F01 §10, unset not allowed, Hunter 12). The no show timing setting is not added (Q1).
