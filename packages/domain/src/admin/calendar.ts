@@ -24,12 +24,21 @@ export interface CalendarCell {
   classNameTh: string | null;
   classNameEn: string | null;
   closureId: string | null;
+  /** A group class: live seats and the cap (A-0024). */
+  classBooked: number | null;
+  classMaxPlayers: number | null;
+  /** beam, cash, credit or wallet; null when nothing pays it yet (A-0021, A-0030, A-0032). */
+  paymentMethod: 'beam' | 'cash' | 'credit' | 'wallet' | null;
+  paymentState: 'paid' | 'pending' | null;
+  /** What the staff typed on a closure (A-0028). */
+  closureReason: string | null;
 }
 
 interface Row {
   resource_id: string; resource_name: string; start_at: Date; end_at: Date; kind: string; state: 'confirmed' | 'held'; hold_expires_at: Date | null;
   booking_id: string | null; booking_status: string | null; booking_source: string | null; customer_id: string | null; customer_name: string | null;
   coach_id: string | null; coach_name: string | null; class_session_id: string | null; class_name_th: string | null; class_name_en: string | null; closure_id: string | null;
+  class_booked: number | null; class_max_players: number | null; payment_method: CalendarCell['paymentMethod']; payment_state: CalendarCell['paymentState']; closure_reason: string | null;
 }
 
 export async function staffCalendar(tx: Tx, from: unknown, to: unknown): Promise<CalendarCell[]> {
@@ -41,5 +50,6 @@ export async function staffCalendar(tx: Tx, from: unknown, to: unknown): Promise
     holdExpiresAt: x.hold_expires_at ? x.hold_expires_at.toISOString() : null, bookingId: x.booking_id, bookingStatus: x.booking_status,
     bookingSource: x.booking_source, customerId: x.customer_id, customerName: x.customer_name, coachId: x.coach_id, coachName: x.coach_name,
     classSessionId: x.class_session_id, classNameTh: x.class_name_th, classNameEn: x.class_name_en, closureId: x.closure_id,
+    classBooked: x.class_booked, classMaxPlayers: x.class_max_players, paymentMethod: x.payment_method, paymentState: x.payment_state, closureReason: x.closure_reason,
   }));
 }
