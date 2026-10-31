@@ -144,9 +144,10 @@ describe('Booking confirmed card (LINE-04)', () => {
 });
 
 describe('reminders and the waitlist offer (boards L-Msg-Reminder, L-Msg-Waitlist)', () => {
-  it('the 2 hour reminder uses its board key; the 24 hour one names its hours (D116)', () => {
-    expect(texts(build('reminder_2h', 'en'))).toContain(fill(dict.en, 'L-0021'));
-    expect(texts(build('reminder_24h', 'th', facts({ hoursBefore: 24 })))).toContain(fill(dict.th, 'L-new.msg_reminder_title_hours', { hours: 24 }));
+  it('both reminders use the board key L-0021 with their hours (D116, QA-F10-1)', () => {
+    expect(texts(build('reminder_2h', 'en', facts({ hoursBefore: 2 })))).toContain(fill(dict.en, 'L-0021', { hours: 2 }));
+    expect(texts(build('reminder_24h', 'th', facts({ hoursBefore: 24 })))).toContain(fill(dict.th, 'L-0021', { hours: 24 }));
+    expect(fill(dict.en, 'L-0021', { hours: 2 })).not.toBe(fill(dict.en, 'L-0021', { hours: 24 }));
   });
 
   it('the offer shows the claim time from the club setting, and no claim line when the setting is unset', () => {
