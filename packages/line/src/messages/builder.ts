@@ -80,7 +80,8 @@ function cardFor(m: OutgoingMessage, dict: Dictionary, links: MessageLinks): Car
     case 'reminder_2h':
       return {
         ...base,
-        title: m.kind === 'reminder_2h' ? t('L-0021') : t('L-new.msg_reminder_title_hours', { hours: f.hoursBefore ?? 0 }),
+        // Board L-Msg-Reminder; the hours are a variable (D116, QA-F10-1): 24 or 2 from the catalogue.
+        title: t('L-0021', { hours: f.hoursBefore ?? 0 }),
         rows: hourRows(f.hours, lang, t),
         buttons: viewBooking,
       };

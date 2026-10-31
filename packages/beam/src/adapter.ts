@@ -98,3 +98,37 @@ export function beamGateway(creds: BeamCredentials): BeamGateway {
 
   return { set: creds.set, host, createCharge, getCharge };
 }
+
+export type BeamProbeCode = 'ok' | 'not_configured' | 'key_refused' | 'unreachable' | 'unexpected' | 'hmac_key_invalid';
+
+/** A probe id no charge can have: the read is authenticated and finds nothing. */
+const PROBE_CHARGE = 'booq-connection-check';
+
+/**
+ * The console's connection check for one key set (F05 design 5.7; PAY-01-AC6, AC7; D32): one authenticated, read-only
+ * call to Beam and no charge. A GET for a charge that cannot exist answers 404 once the key is accepted and 401 or 403
+ * when it is not. (The design's G9 guessed a list call, GET /charges?limit=1; the single read is used because it is
+ * stated by Beam's docs and served by QA's fake Beam. The Playground checks of F05-T13 confirm either.) With `hmacKey`
+ * it also checks the webhook key is well formed base64 that decodes to a key. Pass or fail and a code only:
+ * never the key, never player data.
+ */
+export async function probeBeam(creds: BeamCredentials & { hmacKey?: string }): Promise<{ ok: boolean; code: BeamProbeCode }> {
+  if (!creds.merchantId || !creds.apiKey) return { ok: false, code: 'not_configured' };
+  if (creds.hmacKey !== undefined && !hmacKeyUsable(creds.hmacKey)) return { ok: false, code: 'hmac_key_invalid' };
+  try {
+    await beamGateway(creds).getCharge(PROBE_CHARGE);
+    return { ok: true, code: 'ok' };
+  } catch (e) {
+    const kind = (e as { kind?: BeamErrorKind }).kind;
+    if (kind === 'not_found') return { ok: true, code: 'ok' };
+    if (kind === 'unauthorized') return { ok: false, code: 'key_refused' };
+    if (kind === 'unreachable') return { ok: false, code: 'unreachable' };
+    return { ok: false, code: 'unexpected' };
+  }
+}
+
+/** The webhook key as Beam shows it: base64 that decodes to a non-empty key (webhook-authentication, stated). */
+function hmacKeyUsable(keyBase64: string): boolean {
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(keyBase64) || keyBase64.length % 4 !== 0) return false;
+  return Buffer.from(keyBase64, 'base64').length > 0;
+}
