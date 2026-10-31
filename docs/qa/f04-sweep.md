@@ -16,3 +16,7 @@ Still open:
 | R4-AC11 | Whole baht without decimals, two decimals otherwise: only the LINE builder has a money formatter (`฿1,200.50`). The player app formatter is not built. |
 | R6-AC4 | No prompt for a player with court hours: screen (Playwright). |
 | R8-AC2, R8-AC3, R8-AC5 | Offline error, longest string at 375 px, live coach list: screens (Playwright), F07 for the coach rule. |
+
+## Update, 31 Oct (main d709178)
+
+F04-T14 owner setup data routes: R3-AC8 and PROMO-01-AC12 (add-on and code edits audited) are traced to `setup-data.routes.test.ts`. F04-T22c offer Pay (0417) is covered by `offer-pay.routes.test.ts`; QA added `F04-offer-price.new.spec.ts` (the function called directly: only the player of a live offer prices it, once). Open: R2-AC9, R4-AC7, R4-AC11, R6-AC4, R8-AC2, R8-AC3, R8-AC5.

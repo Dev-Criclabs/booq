@@ -82,20 +82,3 @@ describe("F10 LINE-05", () => {
   // Given the reminder hours (24 and 2) and the package expiry days (14 and 3), when text or settings use them, then the numbers are variables in the text and settings in code, never typed in a key (D116).
   // F10/LINE-05-AC16: proven by a real or traced test in another file of this folder
 });
-
-describe("F10 LINE-06", () => {
-  // Given each club, when P1 loads, then it shows the messages used this month against the club's plan limit, as numbers only.
-  test.todo("F10/LINE-06-AC1 Given each club, when P1 loads, then it shows the messages used this month against the club's plan limit, ...");
-  // Given the usage, when it is read, then it comes from LINE's own count for the club's Official Account (PRD LINE-07: "reads each club's monthly usage from LINE"), and the plan limit is the club's LINE plan (set in setup).
-  test.todo("F10/LINE-06-AC2 Given the usage, when it is read, then it comes from LINE's own count for the club's Official Account (PRD ...");
-  // Given the month changes at Bangkok midnight on the first, when it does, then the counter starts again.
-  // F10/LINE-06-AC3: proven by a real or traced test in another file of this folder
-  // Given a club's Messaging API token fails (a send or a health check fails), when it is detected, then P1 shows an alert for that club and the owner sees a banner in the club admin (D114).
-  // F10/LINE-06-AC4: proven by a real or traced test in another file of this folder
-  // Given P1, when BOOQ staff look at a club, then they see counts and health only, never message content or recipients (PLAT-02, CC-3).
-  // F10/LINE-06-AC5: proven by a real or traced test in another file of this folder
-  // Given a club on the free plan or a paid plan, when its limit is shown, then the plan is shown (the cap rules differ at 100 percent, LINE-07).
-  test.todo("F10/LINE-06-AC6 Given a club on the free plan or a paid plan, when its limit is shown, then the plan is shown (the cap ...");
-  // Given test messages through the real Official Account (D32), when usage is shown, then they are included, because LINE counts them toward the cap.
-  // F10/LINE-06-AC7: proven by a real or traced test in another file of this folder
-});

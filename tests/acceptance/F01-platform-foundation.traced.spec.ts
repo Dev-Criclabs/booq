@@ -107,3 +107,6 @@ traced("F01/PDPA-01-AC7", "Given a PDPA request, when it is made, handled or ref
 
 // Criteria the lane's tests name by ID (added 31 Oct): the trace checks the ID is still cited in those files.
 traced("F01/PLAT-06-AC15", "Given any export of customers or club data, when it is made, then an audit entry", [{ file: "apps/web/src/api/reports/routes.test.ts", has: "PLAT-06-AC15" }]);
+
+// Hand mapped by title, 31 Oct (batch of F04-T14, F06-T15, F10-T13, F01 exports mount).
+traced("F01/PLAT-06-AC11", "Given a club, when \"Export club data\" is run, then the export holds only that cl", [{ file: "apps/web/src/api/export/mounted.test.ts", has: "with them, the owner starts an export, the worker job is added with ids only, and front desk and guests are refused" }]);
