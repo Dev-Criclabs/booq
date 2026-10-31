@@ -129,6 +129,13 @@ describe('app.cancel_session (CLASS-01-AC11, AC13)', () => {
     for (const r of rows) expect(r).toMatchObject({ kind: 'club_cancel', outcome: 'returned', version: 1, reason: 'below_minimum', by_user: OWNER, credit_lost: false });
   });
 
+  it('a closure id is carried onto the cancel record of each seat; without one it is null (1014)', async () => {
+    const paid = await seat(P1);
+    const cl = await tdb.seedClosure(A);
+    await call(owner(), `select app.cancel_session($1, 'owner', $2) as r`, [session, cl]);
+    expect((await tdb.query(`select booking_id, closure_id from public.booking_cancel`)).rows).toEqual([{ booking_id: paid, closure_id: cl }]);
+  });
+
   it('the closure reason records kind closure with no person (1013)', async () => {
     const paid = await seat(P1);
     const worker = createDb({ connectionString: tdb.url, max: 2, role: 'booq_worker' });
