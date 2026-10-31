@@ -1,9 +1,10 @@
 -- F09-T11 / migration 1015: the cancel and closure messages through F10's app.enqueue_message (0605). F09 design 4.9.
 -- Requirements: CANCEL-01-AC14, CANCEL-03-AC2, AC5, AC7, AC15; LINE-05; decisions D9, D48, D118.
 --
---   * cancellation_result (dedupe cancel:{booking}:{version}) to the player of every cancel but a closure's;
---     session_change (session:{booking}:{version}:{coach}) to the coach of a solo class, closure included (AC7);
---     both from app.cancel_booking, after the record. A staff mark sends no message (design 4.9).
+--   * cancellation_result (dedupe cancel:{booking}:{version}) to the player of every cancel but a closure's, from
+--     app.cancel_booking after the record. The coach of a solo class gets session_change from F12's trigger (1206) when
+--     the booking becomes cancelled, closure included (AC7), so F09 sends the coach nothing more. A staff mark sends no
+--     message (design 4.9).
 --   * club_closed_slot (closure:{closure}:{booking}) to each player whose confirmed booking or payment hold in the
 --     closed range the closure ended, from app.closure_apply after its cancels and releases; no cancellation_result for
 --     those bookings and, because the release reason is closed, no booking_released (F10 skips it, D48). The seat
@@ -111,17 +112,13 @@ begin
   perform app.run_cancel_handlers(b.id, v_kind);
   perform app.void_messages('reminder:' || b.id::text || ':', 'cancelled');
 
-  -- 7. The messages (F09-T11, design 4.9), held by the commit; ids only in params. A closure's own message is
+  -- 7. The message (F09-T11, design 4.9), held by the commit; ids only in params. A closure's own message is
   --    club_closed_slot, sent by app.closure_apply; every other cancel tells the player its result. The coach of a solo
-  --    class is told either way (CANCEL-03-AC7). enqueue_message skips a person with no LINE link, and a send that fails
-  --    later is the outbox's: it never undoes this cancel.
+  --    class is told by F12's trigger (1206, session_change 'cancelled'), so not here (CANCEL-03-AC7). enqueue_message
+  --    skips a person with no LINE link, and a send that fails later is the outbox's: it never undoes this cancel.
   if v_kind <> 'closure' then
     perform app.enqueue_message('cancellation_result', b.customer_id, jsonb_build_object('booking_id', b.id),
                                 'cancel:' || b.id::text || ':' || v_version::text, null);
-  end if;
-  if b.coach_id is not null then
-    perform app.enqueue_message('session_change', b.coach_id, jsonb_build_object('booking_id', b.id),
-                                'session:' || b.id::text || ':' || v_version::text || ':' || b.coach_id::text, null);
   end if;
 
   return jsonb_build_object('bookingCancel', v_id, 'version', v_version, 'kind', v_kind, 'outcome', v_outcome ->> 'outcome',

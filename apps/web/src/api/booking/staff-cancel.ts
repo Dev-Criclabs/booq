@@ -59,7 +59,7 @@ export function closureRoutes(deps: BookingRouteDeps): BookingRoute<unknown>[] {
       const c = await contextFor(deps, ctx, 'admin', ['id']);
       return inCancelTx(deps.db, c, (tx) => closureExpiredPackages(tx, inputOf(ctx)['id']));
     }),
-    route({ method: 'GET', path: '/staff/closures/:id/unmessaged', permission: 'closure.write' }, async (ctx) => {
+    route({ method: 'GET', path: '/staff/closures/:id/undelivered', permission: 'closure.write' }, async (ctx) => {
       const c = await contextFor(deps, ctx, 'admin', ['id']);
       return inCancelTx(deps.db, c, (tx) => closureUnmessaged(tx, inputOf(ctx)['id']));
     }),

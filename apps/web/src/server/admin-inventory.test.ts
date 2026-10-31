@@ -70,7 +70,7 @@ const BUILT: Record<string, string[]> = {
   ],
   A12: [
     'POST /staff/closures/preview closure.write', 'POST /staff/closures closure.write', 'GET /staff/closures closure.write', 'POST /staff/closures/:id/end closure.write',
-    'GET /staff/closures/:id/expired-packages closure.write', 'GET /staff/closures/:id/unmessaged closure.write',
+    'GET /staff/closures/:id/expired-packages closure.write', 'GET /staff/closures/:id/undelivered closure.write',
   ],
   A17: ['GET /staff staff.manage', 'POST /staff/invites staff.manage', 'GET /staff/invites staff.manage', 'PUT /staff/:userId/roles roles.assign', 'POST /staff/:userId/deactivate staff.manage', 'GET /staff/audit audit.read', 'GET /staff/audit/record-types audit.read', 'POST /staff/invites/:id/cancel staff.manage'],
 };

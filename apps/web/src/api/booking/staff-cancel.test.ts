@@ -110,7 +110,7 @@ describe('A12 closures (F09-T13)', () => {
   it('declares the routes with closure.write; a player is refused', async () => {
     expect(closures.map((r) => `${r.def.method} ${r.def.path} ${r.def.permission}`)).toEqual([
       'POST /staff/closures/preview closure.write', 'POST /staff/closures closure.write', 'GET /staff/closures closure.write',
-      'POST /staff/closures/:id/end closure.write', 'GET /staff/closures/:id/expired-packages closure.write', 'GET /staff/closures/:id/unmessaged closure.write',
+      'POST /staff/closures/:id/end closure.write', 'GET /staff/closures/:id/expired-packages closure.write', 'GET /staff/closures/:id/undelivered closure.write',
     ]);
     expect(await call(closures, 'POST', '/staff/closures', player, { ...range, reason: 'x' })).toMatchObject({ ok: false, status: 403 });
   });
@@ -128,7 +128,7 @@ describe('A12 closures (F09-T13)', () => {
       ok: true, body: { closures: [{ id: closure, reason: 'resurfacing', status: 'active', courtIds: [COURT], start: '2026-12-03T17:00:00+07:00' }] },
     });
     expect(await call(closures, 'GET', '/staff/closures/:id/expired-packages', desk, { id: closure })).toEqual({ ok: true, status: 200, body: { packages: [] } });
-    expect(await call(closures, 'GET', '/staff/closures/:id/unmessaged', desk, { id: closure })).toEqual({ ok: true, status: 200, body: { players: [] } });
+    expect(await call(closures, 'GET', '/staff/closures/:id/undelivered', desk, { id: closure })).toEqual({ ok: true, status: 200, body: { players: [] } });
     expect(await call(closures, 'POST', '/staff/closures/:id/end', desk, { id: closure })).toEqual({ ok: false, status: 400, code: 'reason_required' });
     expect(await call(closures, 'POST', '/staff/closures/:id/end', desk, { id: closure, reason: 'done early' })).toMatchObject({ ok: true, body: { status: 'ended' } });
     expect(await call(closures, 'POST', '/staff/closures/:id/end', desk, { id: closure, reason: 'again' })).toEqual({ ok: false, status: 409, code: 'not_active' });

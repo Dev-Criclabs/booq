@@ -127,17 +127,17 @@ describe('cancellation_result and session_change (CANCEL-01-AC14, LINE-05)', () 
     ]);
   });
 
-  it('a solo class tells the coach too (session_change, CANCEL-03-AC7)', async () => {
+  it('a solo class: the player gets the result and the coach one session_change, from F12 (CANCEL-03-AC7)', async () => {
     await tdb.seedCoach(A, COACH);
     const order = (await tdb.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'online') returning id`, [A, P1])).rows[0].id as string;
     const r = await db.withClubTx(player(), async (tx) => (await tx.query(`select app.reserve_court($1, $2, $3::timestamptz[], $4) as r`, [order, COURT, [H(18)], COACH])).rows[0]!.r);
     await db.withClubTx(desk(), (tx) => tx.query(`select app.confirm_booking($1)`, [order]));
     const id = r.booking_ids[0] as string;
     await cancel(desk(), id, true, 'rain');
-    expect((await outbox()).map((m) => [m.kind, m.user_id, m.dedupe_key])).toEqual([
-      ['cancellation_result', P1, `cancel:${id}:1`],
-      ['session_change', COACH, `session:${id}:1:${COACH}`],
-    ]);
+    // F12 also told the coach of the booking when it was confirmed (':booked:'); the cancel adds one message each.
+    const after = (await outbox()).filter((m) => !String(m.dedupe_key).includes(':booked:'));
+    expect(after.map((m) => [m.kind, m.user_id])).toEqual([['cancellation_result', P1], ['session_change', COACH]]);
+    expect(after.find((m) => m.kind === 'session_change')!.dedupe_key).toMatch(/:cancelled:/);
   });
 });
 
