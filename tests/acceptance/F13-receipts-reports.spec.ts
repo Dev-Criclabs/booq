@@ -18,19 +18,19 @@ describe("F13 RCPT-01", () => {
   // Given a late payment credited to the wallet (PAY-03), a payment after a package order was cancelled (PAY-04), a wrong amount credit or a duplicate payment credit (F05), when the value is credited, then a receipt is issued in the same series for the money received (D37, D74, D79, D112).
   test.todo("F13/RCPT-01-AC6 Given a late payment credited to the wallet (PAY-03), a payment after a package order was cancelled ...");
   // Given a cash payment taken by front desk (PAY-06), when it is saved, then a receipt is issued in the same series.
-  test.todo("F13/RCPT-01-AC7 Given a cash payment taken by front desk (PAY-06), when it is saved, then a receipt is issued in the same ...");
+  // F13/RCPT-01-AC7: proven by a real or traced test in another file of this folder
   // Given a package bought alone or with a booking, when it is confirmed, then it gets a receipt (one per order).
-  test.todo("F13/RCPT-01-AC8 Given a package bought alone or with a booking, when it is confirmed, then it gets a receipt (one per order).");
+  // F13/RCPT-01-AC8: proven by a real or traced test in another file of this folder
   // Given the Owner voids a receipt, when they save it with a written reason, then the receipt keeps its number and shows Void with the reason, the number is never reused, and the void is audited with the owner's name (PLAT-04). Front desk, Accountant, coach and player cannot void.
   test.todo("F13/RCPT-01-AC9 Given the Owner voids a receipt, when they save it with a written reason, then the receipt keeps its ...");
   // Given a void without a reason, when it is submitted, then the server refuses.
-  test.todo("F13/RCPT-01-AC10 Given a void without a reason, when it is submitted, then the server refuses.");
+  // F13/RCPT-01-AC10: proven by a real or traced test in another file of this folder
   // Given a reprint, when a receipt is downloaded again, then the PDF is marked as a copy and keeps the original number and date (PRD).
   test.todo("F13/RCPT-01-AC11 Given a reprint, when a receipt is downloaded again, then the PDF is marked as a copy and keeps the ...");
   // Given a receipt, when it is issued, then it is never edited; a correction is a void and a new receipt (append only, D28 pattern).
   test.todo("F13/RCPT-01-AC12 Given a receipt, when it is issued, then it is never edited; a correction is a void and a new receipt ...");
   // Given a void, when it is saved, then it only marks the receipt; nothing changes on the booking, credits or wallet (D106).
-  test.todo("F13/RCPT-01-AC13 Given a void, when it is saved, then it only marks the receipt; nothing changes on the booking, credits or ...");
+  // F13/RCPT-01-AC13: proven by a real or traced test in another file of this folder
   // Given the format HTC‑2027‑000001, then the prefix is set in P2 step 1 and required before Go live, and the number runs per club per Bangkok year: the sequence restarts each Bangkok year and the year part is the Bangkok year of issue (D106).
   test.todo("F13/RCPT-01-AC14 Given the format HTC‑2027‑000001, then the prefix is set in P2 step 1 and required before Go live, and the ...");
   // Given a club in Testing, when a test payment is made, then its receipt takes a number from its own non legal test series, marked as a test on screen and in the PDF, never from the real sequence; test receipts are purged at Go live, and the first real receipt is 000001 (D4, D33, PLAT-07).
@@ -43,40 +43,40 @@ describe("F13 RCPT-01", () => {
 
 describe("F13 RCPT-02", () => {
   // Given a receipt PDF in Thai or English, when it is produced, then it shows the club's legal name (Thai on both, no English name), tax ID, branch (head office, สำนักงานใหญ่), the registered address, the customer name, items, discounts, payment method and total (hand-off check; PRD).
-  test.todo("F13/RCPT-02-AC1 Given a receipt PDF in Thai or English, when it is produced, then it shows the club's legal name (Thai on ...");
+  // F13/RCPT-02-AC1: proven by a real or traced test in another file of this folder
   // Given Hunter, when its receipt is produced, then it shows บริษัท ทีที รีครีเอชั่น จำกัด, tax ID 0135569018041, head office, and 1128/1 ถนนเลียบคลองรังสิต ตำบลประชาธิปัตย์ อำเภอธัญบุรี จังหวัดปทุมธานี 12130, taken from the club's settings, not from code (HO).
   test.todo("F13/RCPT-02-AC2 Given Hunter, when its receipt is produced, then it shows บริษัท ทีที รีครีเอชั่น จำกัด, tax ID ...");
   // Given the PDF, then the registered address is on it and the app never shows the address anywhere (round 1, PRD Content).
-  test.todo("F13/RCPT-02-AC3 Given the PDF, then the registered address is on it and the app never shows the address anywhere (round 1, ...");
+  // F13/RCPT-02-AC3: proven by a real or traced test in another file of this folder
   // Given an order paid by a mix of methods, when the receipt is produced, then it lists each method and amount (credit, wallet, Beam, cash), the discounts (promo code, birthday) and the add-ons, with the total in baht (whole baht when whole, two decimals otherwise, D69).
-  test.todo("F13/RCPT-02-AC4 Given an order paid by a mix of methods, when the receipt is produced, then it lists each method and ...");
+  // F13/RCPT-02-AC4: proven by a real or traced test in another file of this folder
   // Given VAT is off (the default), when a receipt is produced, then it is a non VAT receipt; when the owner switches VAT tax invoices on in Settings (A16), then receipts follow the VAT layout from then on (Q4).
-  test.todo("F13/RCPT-02-AC5 Given VAT is off (the default), when a receipt is produced, then it is a non VAT receipt; when the owner ...");
+  // F13/RCPT-02-AC5: proven by a real or traced test in another file of this folder
   // Given a solo class, when its receipt is produced, then the coach and court lines are shown separately as at checkout (F04 R2).
   test.todo("F13/RCPT-02-AC6 Given a solo class, when its receipt is produced, then the coach and court lines are shown separately as ...");
   // Given the balls add-on, when it is on a receipt, then it reads "Balls (Set of 3 balls)" in English and "ลูกเทนนิส (ชุด 3 ลูก)" in Thai.
-  test.todo("F13/RCPT-02-AC7 Given the balls add-on, when it is on a receipt, then it reads \"Balls (Set of 3 balls)\" in English and ...");
+  // F13/RCPT-02-AC7: proven by a real or traced test in another file of this folder
   // Given a player in Profile (C17), when they open Receipts, then they see their own receipts newest first with a PDF button; a reprint is in the player's language, and staff may print either language (D119).
   test.todo("F13/RCPT-02-AC8 Given a player in Profile (C17), when they open Receipts, then they see their own receipts newest first ...");
   // Given a receipt page size, then it is A4 (HO Screen inventory).
-  test.todo("F13/RCPT-02-AC9 Given a receipt page size, then it is A4 (HO Screen inventory).");
+  // F13/RCPT-02-AC9: proven by a real or traced test in another file of this folder
   // Given the note "Issued automatically. No signature required." (L-0061), when the PDF is produced, then it appears from its key.
-  test.todo("F13/RCPT-02-AC10 Given the note \"Issued automatically. No signature required.\" (L-0061), when the PDF is produced, then it ...");
+  // F13/RCPT-02-AC10: proven by a real or traced test in another file of this folder
   // Given a receipt for a wallet credit (late payment, wrong amount), when it is produced, then it states what it is for in words from keys (money received and credited to the wallet).
   test.todo("F13/RCPT-02-AC11 Given a receipt for a wallet credit (late payment, wrong amount), when it is produced, then it states what ...");
   // Given a PDF in the player's browser or in LINE, when it is downloaded, then it opens as a file the player can save; it is served only to its owner (CC-3).
-  test.todo("F13/RCPT-02-AC12 Given a PDF in the player's browser or in LINE, when it is downloaded, then it opens as a file the player ...");
+  // F13/RCPT-02-AC12: proven by a real or traced test in another file of this folder
   // Given a test receipt, when produced, then it carries a clear test mark (RCPT-01-AC15).
-  test.todo("F13/RCPT-02-AC13 Given a test receipt, when produced, then it carries a clear test mark (RCPT-01-AC15).");
+  // F13/RCPT-02-AC13: proven by a real or traced test in another file of this folder
   // Given the canvas note that address and branch are placeholders, when the receipt is built, then the real values are used (Gaps B9).
-  test.todo("F13/RCPT-02-AC14 Given the canvas note that address and branch are placeholders, when the receipt is built, then the real ...");
+  // F13/RCPT-02-AC14: proven by a real or traced test in another file of this folder
 });
 
 describe("F13 RCPT-03", () => {
   // Given a Bangkok day, when the Owner or Accountant runs the daily close in A14, then it totals each payment method received that day (Beam, cash, and the others per Q7), in satang, from receipts of that day.
   test.todo("F13/RCPT-03-AC1 Given a Bangkok day, when the Owner or Accountant runs the daily close in A14, then it totals each payment ...");
   // Given the day boundary, then it is Bangkok midnight (the club closes at 24:00); a payment at 23:59 is in that day and one at 00:00 is in the next.
-  test.todo("F13/RCPT-03-AC2 Given the day boundary, then it is Bangkok midnight (the club closes at 24:00); a payment at 23:59 is in ...");
+  // F13/RCPT-03-AC2: proven by a real or traced test in another file of this folder
   // Given a void on a receipt, when the daily close is run, then the voided receipt is shown as void and not counted in the totals, and a void made on a later day shows on the day it is made (D119).
   test.todo("F13/RCPT-03-AC3 Given a void on a receipt, when the daily close is run, then the voided receipt is shown as void and not ...");
   // Given test receipts, when the close is run, then they are excluded (D33).
@@ -92,7 +92,7 @@ describe("F13 RCPT-03", () => {
   // Given a closed day, when a receipt is later issued for it (a payment reported late), then it belongs to the day it was issued, not the earlier day (the sequence is by issue time).
   test.todo("F13/RCPT-03-AC9 Given a closed day, when a receipt is later issued for it (a payment reported late), then it belongs to ...");
   // Given a closed day, then it is not reopened (D119); a payment reported late, or a void, belongs to the day it is made.
-  test.todo("F13/RCPT-03-AC10 Given a closed day, then it is not reopened (D119); a payment reported late, or a void, belongs to the day ...");
+  // F13/RCPT-03-AC10: proven by a real or traced test in another file of this folder
 });
 
 describe("F13 R1", () => {
@@ -128,7 +128,7 @@ describe("F13 R2", () => {
   // Given every report, when it is exported, then it is a CSV for the club with the same filters, audited (PLAT-04).
   test.todo("F13/R2-AC9 Given every report, when it is exported, then it is a CSV for the club with the same filters, audited ...");
   // Given the Accountant, when they read a report that lists customers, then it shows names, never phone numbers or dates of birth (D35).
-  test.todo("F13/R2-AC10 Given the Accountant, when they read a report that lists customers, then it shows names, never phone ...");
+  // F13/R2-AC10: proven by a real or traced test in another file of this folder
   // Given front desk or a coach, when they request any report, then the server refuses (A13 is Owner and Accountant; coach pay is the coach's own earnings in K6).
   test.todo("F13/R2-AC11 Given front desk or a coach, when they request any report, then the server refuses (A13 is Owner and ...");
   // Given every report, then each has an acceptance check from its formula; the formulas are in R5 as a proposal awaiting the user's approval, with D119 fixing revenue earned and occupancy.
