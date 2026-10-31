@@ -61,7 +61,7 @@ export class IdentityUnavailable extends Error {
  * milliseconds since the epoch, from the application clock.
  */
 export function createDbAuthStore(db: PlatformDb, options: { sealKey: string }): AuthStore {
-  if (options.sealKey.length < 32) throw new Error('console store: the sealing key must be at least 32 characters');
+  if (options.sealKey.length < 32) throw new Error('console store: the sealing key must be at least 32 characters');  // i18n-ignore internal assertion or start up error, logged, never shown to a user
   const hash = (id: string) => createHash('sha256').update(id).digest('hex');
   // The provider's token is sealed with AES-256-GCM under a key derived from the console signing key, so a copy
   // of the table alone does not yield it. Format: v1.<iv>.<tag>.<ciphertext>, base64url.

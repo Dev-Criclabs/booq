@@ -66,7 +66,7 @@ describe("F06 PKG-03", () => {
   // Given an owner extends a package, when they save it, then a written reason is required, the new expiry date (still ending 23:59 Bangkok) is stored, an `adjust` row or extension record with the reason is written, and the change is audited (PRD, PLAT-04). Front desk cannot extend. The owner extends one package at a time; there is no bulk extension in v1 (D88).
   // F06/PKG-03-AC5: proven by a real or traced test in another file of this folder
   // Given an extension, when the reminder dates of the new expiry arrive, then reminders follow the new date; earlier reminders already sent are not repeated.
-  test.todo("F06/PKG-03-AC6 Given an extension, when the reminder dates of the new expiry arrive, then reminders follow the new date; ...");
+  // F06/PKG-03-AC6: proven by a real or traced test in another file of this folder
   // Given a club is resumed after a pause, when the pause ends, then every package expiry date, and the wallet balance expiry when the club has set one, moves forward by the exact length of the pause, and the expiry then runs to 23:59 Asia/Bangkok on the resulting day, including for a pause shorter than a day (PLAT-03, D20, D90). Each move is one ledger or extension record with the reason "pause".
   // F06/PKG-03-AC7: proven by a real or traced test in another file of this folder
   // Given credit reserved for a future booking before the package reaches its expiry date, when the date arrives, then the credit stays valid for that session (D85) and is used when the session starts.

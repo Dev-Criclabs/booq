@@ -26,12 +26,18 @@ importers:
       '@booq/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@booq/beam':
+        specifier: workspace:*
+        version: link:../../packages/beam
       '@booq/db':
         specifier: workspace:*
         version: link:../../packages/db
       '@booq/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@booq/line':
+        specifier: workspace:*
+        version: link:../../packages/line
       '@booq/secrets':
         specifier: workspace:*
         version: link:../../packages/secrets

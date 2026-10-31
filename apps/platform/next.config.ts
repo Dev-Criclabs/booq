@@ -6,7 +6,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 // The API and the first pages (enrolment, team). The workspace packages are TypeScript source, so Next compiles them.
 const config: NextConfig = {
-  transpilePackages: ['@booq/auth', '@booq/db', '@booq/time', '@booq/secrets'],
+  transpilePackages: ['@booq/auth', '@booq/beam', '@booq/db', '@booq/domain', '@booq/line', '@booq/time', '@booq/secrets'],
   serverExternalPackages: ['pg'],
   outputFileTracingRoot: root,
   turbopack: { root },

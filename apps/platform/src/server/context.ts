@@ -9,6 +9,7 @@ import type { Clock } from '@booq/time';
 import { bangkokDate } from '@booq/time';
 import { createClubService } from '../clubs/clubs';
 import { clubRoutes } from '../clubs/routes';
+import { loadEncryptKey } from '@booq/secrets';
 import { createOutboxOwnerNotifier } from '../pause/outbox-notifier';
 import { createPauseService, type OwnerNotifier } from '../pause/pause';
 import { createStatusService } from '../status/status';
@@ -51,6 +52,8 @@ export interface PlatformConfig {
   staffInvite: { url: string; signingSecret: string; consoleBaseUrl: string } | null;
   /** Attempts per caller and window on the sign-in routes. Platform config; absent means no limit (set it before launch). */
   signInRateLimit: { limit: number; windowSeconds: number } | null;
+  /** The LINE and Beam checks (D167): the secrets public key (it can only encrypt), LINE's API address and the wait for an answer. Absent: the LINE and payments sections answer section_unavailable. */
+  providers?: { encryptKey: string; lineApiUrl: string; probeTimeoutMs: number } | null;
 }
 
 const WHOLE = /^[1-9][0-9]*$/;
@@ -58,24 +61,29 @@ const WHOLE = /^[1-9][0-9]*$/;
 export function readPlatformConfig(env: Record<string, string | undefined>): PlatformConfig & { databaseUrl: string } {
   const required = ['DATABASE_URL', 'PLATFORM_SIGNING_KEY', 'PLATFORM_MAX_BODY_BYTES', 'APP_BASE_URL'] as const;
   const missing = required.filter((n) => !env[n]);
-  if (missing.length) throw new Error(`platform settings missing: ${missing.join(', ')}`);
-  if (env['PLATFORM_SIGNING_KEY']!.length < 32) throw new Error('PLATFORM_SIGNING_KEY must be at least 32 characters');
-  if (!WHOLE.test(env['PLATFORM_MAX_BODY_BYTES']!)) throw new Error('PLATFORM_MAX_BODY_BYTES must be a whole number above zero');
-  if (!/^https:\/\/[^\s/]+(\/.*)?$/.test(env['APP_BASE_URL']!)) throw new Error('APP_BASE_URL must be an https address');
+  if (missing.length) throw new Error(`platform settings missing: ${missing.join(', ')}`);  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
+  if (env['PLATFORM_SIGNING_KEY']!.length < 32) throw new Error('PLATFORM_SIGNING_KEY must be at least 32 characters');  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
+  if (!WHOLE.test(env['PLATFORM_MAX_BODY_BYTES']!)) throw new Error('PLATFORM_MAX_BODY_BYTES must be a whole number above zero');  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
+  if (!/^https:\/\/[^\s/]+(\/.*)?$/.test(env['APP_BASE_URL']!)) throw new Error('APP_BASE_URL must be an https address');  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
   const health = env['HEALTH_TOKEN'];
-  if (health !== undefined && health.length < 16) throw new Error('HEALTH_TOKEN must be at least 16 characters');
+  if (health !== undefined && health.length < 16) throw new Error('HEALTH_TOKEN must be at least 16 characters');  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
   const inviteUrl = env['STAFF_INVITE_URL'];
   const inviteSecret = env['STAFF_INVITE_SIGNING_SECRET'];
-  if ((inviteUrl && !inviteSecret) || (!inviteUrl && inviteSecret)) throw new Error('STAFF_INVITE_URL and STAFF_INVITE_SIGNING_SECRET are set together or not at all');
-  if (inviteUrl && !/^https?:\/\/[^\s/]+(\/.*)?$/.test(inviteUrl)) throw new Error('STAFF_INVITE_URL must be an http or https address');
+  if ((inviteUrl && !inviteSecret) || (!inviteUrl && inviteSecret)) throw new Error('STAFF_INVITE_URL and STAFF_INVITE_SIGNING_SECRET are set together or not at all');  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
+  if (inviteUrl && !/^https?:\/\/[^\s/]+(\/.*)?$/.test(inviteUrl)) throw new Error('STAFF_INVITE_URL must be an http or https address');  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
   const consoleBase = env['PLATFORM_BASE_URL'];
-  if (inviteUrl && !consoleBase) throw new Error('PLATFORM_BASE_URL is required with STAFF_INVITE_URL (enrolment links)');
-  if (consoleBase && !/^https:\/\/[^\s/]+(\/.*)?$/.test(consoleBase)) throw new Error('PLATFORM_BASE_URL must be an https address');
-  if (inviteSecret && inviteSecret.length < 32) throw new Error('STAFF_INVITE_SIGNING_SECRET must be at least 32 characters');
+  if (inviteUrl && !consoleBase) throw new Error('PLATFORM_BASE_URL is required with STAFF_INVITE_URL (enrolment links)');  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
+  if (consoleBase && !/^https:\/\/[^\s/]+(\/.*)?$/.test(consoleBase)) throw new Error('PLATFORM_BASE_URL must be an https address');  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
+  if (inviteSecret && inviteSecret.length < 32) throw new Error('STAFF_INVITE_SIGNING_SECRET must be at least 32 characters');  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
   const limit = env['PLATFORM_SIGNIN_RATE_LIMIT'];
   const window = env['PLATFORM_SIGNIN_RATE_WINDOW_SECONDS'];
-  if ((limit && !window) || (!limit && window)) throw new Error('PLATFORM_SIGNIN_RATE_LIMIT and PLATFORM_SIGNIN_RATE_WINDOW_SECONDS are set together or not at all');
-  if (limit && (!WHOLE.test(limit) || !WHOLE.test(window!))) throw new Error('PLATFORM_SIGNIN_RATE_LIMIT and PLATFORM_SIGNIN_RATE_WINDOW_SECONDS must be whole numbers above zero');
+  if ((limit && !window) || (!limit && window)) throw new Error('PLATFORM_SIGNIN_RATE_LIMIT and PLATFORM_SIGNIN_RATE_WINDOW_SECONDS are set together or not at all');  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
+  if (limit && (!WHOLE.test(limit) || !WHOLE.test(window!))) throw new Error('PLATFORM_SIGNIN_RATE_LIMIT and PLATFORM_SIGNIN_RATE_WINDOW_SECONDS must be whole numbers above zero');  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
+  const lineUrl = env['LINE_API_BASE_URL'];
+  const timeout = env['PROVIDER_PROBE_TIMEOUT_MS'];
+  if (Boolean(lineUrl) !== Boolean(timeout)) throw new Error('LINE_API_BASE_URL and PROVIDER_PROBE_TIMEOUT_MS are set together or not at all');  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
+  if (lineUrl && !/^https?:\/\/[^\s/]+(\/.*)?$/.test(lineUrl)) throw new Error('LINE_API_BASE_URL must be an http or https address');  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
+  if (timeout && !WHOLE.test(timeout)) throw new Error('PROVIDER_PROBE_TIMEOUT_MS must be a whole number above zero');  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
   return {
     databaseUrl: env['DATABASE_URL']!,
     signingKey: env['PLATFORM_SIGNING_KEY']!,
@@ -84,6 +92,8 @@ export function readPlatformConfig(env: Record<string, string | undefined>): Pla
     healthToken: health ?? null,
     staffInvite: inviteUrl ? { url: inviteUrl, signingSecret: inviteSecret!, consoleBaseUrl: consoleBase! } : null,
     signInRateLimit: limit ? { limit: Number(limit), windowSeconds: Number(window) } : null,
+    // The public key is the secrets package's to read; it can only encrypt (SR-03). Set with the LINE address, or the connection sections stay unavailable.
+    providers: lineUrl ? { encryptKey: loadEncryptKey(env), lineApiUrl: lineUrl.replace(/\/+$/, ''), probeTimeoutMs: Number(timeout) } : null,
   };
 }
 
@@ -102,7 +112,7 @@ export const unavailableIdentity: IdentityProvider = {
 /** The owner invite email goes through a mail provider that is not chosen yet: the invite is made, the send fails, the route answers 502 mail_failed. */
 export const mailerNotConnected: InviteMailer = {
   async sendOwnerInvite() {
-    throw new Error('invite mailer is not connected');
+    throw new Error('invite mailer is not connected');  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
   },
 };
 

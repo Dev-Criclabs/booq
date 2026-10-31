@@ -269,3 +269,28 @@ export async function substitute(tx: Tx, id: unknown, body: unknown): Promise<{ 
   const r = await tx.query<{ id: string }>(`select app.substitute_coach($1, $2, $3) as id`, [bookingId, uuid(b['coachId']), reason]);
   return { substitutionId: r.rows[0]!.id };
 }
+
+export interface LeaveCalendarRow {
+  leaveId: string;
+  coachId: string;
+  coachName: string | null;
+  startDate: string;
+  endDate: string;
+  fromHour: number | null;
+  toHour: number | null;
+  status: 'pending' | 'approved' | 'declined';
+}
+
+/** GET /staff/leave-calendar?from=&to= (front desk, owner): when a coach is away and the status, never why (F07 R2, CC-3). */
+export async function leaveCalendar(tx: Tx, from: unknown, to: unknown): Promise<LeaveCalendarRow[]> {
+  if (typeof from !== 'string' || typeof to !== 'string' || !DAY.test(from) || !DAY.test(to) || to < from) bad();
+  if ((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000 > 92) bad();
+  const r = await tx.query(
+    `select c.id, c.coach_id, n.display_name, to_char(c.start_date, 'YYYY-MM-DD') as start_date, to_char(c.end_date, 'YYYY-MM-DD') as end_date, c.from_hour, c.to_hour, c.status
+       from public.coach_leave_calendar c left join public.app_user_names n on n.id = c.coach_id
+      where c.start_date <= $2::date and c.end_date >= $1::date order by c.start_date, c.id`, [from, to]);
+  return r.rows.map((x) => ({
+    leaveId: x.id, coachId: x.coach_id, coachName: x.display_name, startDate: x.start_date, endDate: x.end_date,
+    fromHour: x.from_hour ?? null, toHour: x.to_hour ?? null, status: x.status,
+  }));
+}

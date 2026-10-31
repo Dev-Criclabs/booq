@@ -3,16 +3,24 @@ import { createPlatformDb, type PlatformDb } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
 import { ControllableClock } from '@booq/time';
 import { servePlatform } from '../http/server';
+import { generateKeyPair } from '@booq/secrets';
 import { createPlatformTable, readPlatformConfig, unavailableIdentity } from './context';
 
 // The console's settings and wiring. Required, no defaults, no value printed on failure.
 const ENV = { DATABASE_URL: 'postgres://u:pw@h/db', PLATFORM_SIGNING_KEY: 'k'.repeat(40), PLATFORM_MAX_BODY_BYTES: '100000', APP_BASE_URL: 'https://app.example' };
 
+const PUB = generateKeyPair().publicKey;
+
 describe('readPlatformConfig', () => {
   it('reads the required settings; the rate limit is an optional pair', () => {
-    expect(readPlatformConfig(ENV)).toEqual({ databaseUrl: ENV.DATABASE_URL, signingKey: ENV.PLATFORM_SIGNING_KEY, maxBodyBytes: 100000, appBaseUrl: 'https://app.example', healthToken: null, staffInvite: null, signInRateLimit: null });
+    expect(readPlatformConfig(ENV)).toEqual({ databaseUrl: ENV.DATABASE_URL, signingKey: ENV.PLATFORM_SIGNING_KEY, maxBodyBytes: 100000, appBaseUrl: 'https://app.example', healthToken: null, staffInvite: null, signInRateLimit: null, providers: null });
     expect(readPlatformConfig({ ...ENV, APP_BASE_URL: 'https://app.example/', HEALTH_TOKEN: 'h'.repeat(20) })).toMatchObject({ appBaseUrl: 'https://app.example', healthToken: 'h'.repeat(20) });
     expect(readPlatformConfig({ ...ENV, PLATFORM_SIGNIN_RATE_LIMIT: '5', PLATFORM_SIGNIN_RATE_WINDOW_SECONDS: '60' }).signInRateLimit).toEqual({ limit: 5, windowSeconds: 60 });
+  });
+  it('the LINE address and probe wait are set together, with the secrets public key; the address loses a trailing slash', () => {
+    const p = readPlatformConfig({ ...ENV, SECRETS_PUBLIC_KEY: PUB, LINE_API_BASE_URL: 'https://api.line.me/', PROVIDER_PROBE_TIMEOUT_MS: '5000' }).providers;
+    expect(p).toMatchObject({ lineApiUrl: 'https://api.line.me', probeTimeoutMs: 5000 });
+    expect(p?.encryptKey).toContain('PUBLIC KEY');
   });
   it('the staff-invite address and signing secret are an optional pair', () => {
     expect(readPlatformConfig({ ...ENV, STAFF_INVITE_URL: 'https://invite.internal/', STAFF_INVITE_SIGNING_SECRET: 's'.repeat(40), PLATFORM_BASE_URL: 'https://console.example' }).staffInvite).toEqual({ url: 'https://invite.internal/', signingSecret: 's'.repeat(40), consoleBaseUrl: 'https://console.example' });
@@ -38,6 +46,11 @@ describe('readPlatformConfig', () => {
     [{ STAFF_INVITE_URL: 'ftp://x', STAFF_INVITE_SIGNING_SECRET: 's'.repeat(40), PLATFORM_BASE_URL: 'https://console.example' }],
     [{ STAFF_INVITE_URL: 'https://invite.internal', STAFF_INVITE_SIGNING_SECRET: 's'.repeat(40) }], // the console address is needed for enrolment links
     [{ PLATFORM_BASE_URL: 'http://console.example' }],
+    [{ LINE_API_BASE_URL: 'https://api.line.me' }],
+    [{ PROVIDER_PROBE_TIMEOUT_MS: '5000' }],
+    [{ LINE_API_BASE_URL: 'ftp://x', PROVIDER_PROBE_TIMEOUT_MS: '5000', SECRETS_PUBLIC_KEY: PUB }],
+    [{ LINE_API_BASE_URL: 'https://api.line.me', PROVIDER_PROBE_TIMEOUT_MS: '0', SECRETS_PUBLIC_KEY: PUB }],
+    [{ LINE_API_BASE_URL: 'https://api.line.me', PROVIDER_PROBE_TIMEOUT_MS: '5000' }], // the public key is needed with them
     [{ STAFF_INVITE_URL: 'https://invite.internal', STAFF_INVITE_SIGNING_SECRET: 'short', PLATFORM_BASE_URL: 'https://console.example' }],
     [{ PLATFORM_SIGNIN_RATE_LIMIT: '5' }],
     [{ PLATFORM_SIGNIN_RATE_WINDOW_SECONDS: '60' }],
@@ -59,7 +72,7 @@ describe('without the password adapter (T17b)', () => {
     await tdb.close();
   });
   it('sign-in answers 503 identity_unavailable, not a wrong-password 401', async () => {
-    const source = createPlatformTable({ db: pdb, clock: new ControllableClock('2026-12-01T03:00:00Z'), identity: unavailableIdentity, config: { signingKey: 'k'.repeat(40), maxBodyBytes: 1000, appBaseUrl: 'https://app.example', healthToken: null, staffInvite: null, signInRateLimit: null } });
+    const source = createPlatformTable({ db: pdb, clock: new ControllableClock('2026-12-01T03:00:00Z'), identity: unavailableIdentity, config: { signingKey: 'k'.repeat(40), maxBodyBytes: 1000, appBaseUrl: 'https://app.example', healthToken: null, staffInvite: null, signInRateLimit: null, providers: null } });
     const h = servePlatform(source.table, source.deps);
     const r = await h(new Request('https://console.example/api/auth/sign-in', { method: 'POST', body: JSON.stringify({ email: 'a@b.c', password: 'x' }), headers: { 'content-type': 'application/json' } }), { params: Promise.resolve({ path: ['auth', 'sign-in'] }) });
     expect([r.status, await r.json()]).toEqual([503, { code: 'identity_unavailable' }]);

@@ -10,9 +10,9 @@ const WHOLE = /^[1-9][0-9]*$/;
 export function staffInviteFromEnv(env: Record<string, string | undefined> = process.env): (request: Request) => Promise<Response> {
   const required = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_ANON_KEY', 'STAFF_INVITE_SIGNING_SECRET', 'PLATFORM_DATABASE_URL', 'STAFF_INVITE_MAX_SKEW_SECONDS', 'STAFF_INVITE_MAX_BODY_BYTES'] as const;
   const missing = required.filter((n) => !env[n]);
-  if (missing.length) throw new Error(`staff-invite settings missing: ${missing.join(', ')}`);
+  if (missing.length) throw new Error(`staff-invite settings missing: ${missing.join(', ')}`);  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
   for (const n of ['STAFF_INVITE_MAX_SKEW_SECONDS', 'STAFF_INVITE_MAX_BODY_BYTES'] as const) {
-    if (!WHOLE.test(env[n]!)) throw new Error(`${n} must be a whole number above zero`);
+    if (!WHOLE.test(env[n]!)) throw new Error(`${n} must be a whole number above zero`);  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
   }
   return createStaffInviteHandler({
     admin: createSupabaseAdmin({ url: env['SUPABASE_URL']!, serviceRoleKey: env['SUPABASE_SERVICE_ROLE_KEY']! }),
