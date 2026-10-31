@@ -4,33 +4,6 @@
 // and keep the ID at the start of the title (tests/acceptance/coverage.spec.ts checks every criterion appears).
 import { describe, test } from 'vitest';
 
-describe("F06 PKG-01", () => {
-  // Given any credit or wallet balance, when it is read, then it equals the sum of its ledger rows. No column holds an editable balance; the balance is derived (property test after any random sequence of operations).
-  // F06/PKG-01-AC1: proven by a real or traced test in another file of this folder
-  // Given the credit ledger, when a row is written, then its reason is one of reserve, return, use, forfeit, expire, adjust, import, import_transfer (HO Data model and the PRD change log, Decisions 30 Oct (12); `import_transfer` is written only by the claim transfer, two rows per transfer) and it names the package, the change, the booking where there is one, and the staff member where there is one.
-  // F06/PKG-01-AC2: proven by a real or traced test in another file of this folder
-  // Given the wallet ledger, when a row is written, then its reason is one of refund, late_payment, wrong_amount, duplicate_payment, referral_reward, spend, return, adjust, import, import_transfer (written only by the claim transfer, PRD change log Decisions 30 Oct (12)), and expire only if the club has set a wallet balance expiry (D78). It names the booking or referral where there is one and the staff member where there is one.
-  // F06/PKG-01-AC3: proven by a real or traced test in another file of this folder
-  // Given a staff adjustment to credits or wallet, when it is saved without a written reason, then it is refused; with a reason, a row with the reason `adjust` and the note is written and audited (PRD, PLAT-04).
-  // F06/PKG-01-AC4: proven by a real or traced test in another file of this folder
-  // Given a ledger row, when anyone tries to change or delete it, then the server refuses and the database rejects it. Both ledgers are append only; a correction is a new row (D28).
-  // F06/PKG-01-AC5: proven by a real or traced test in another file of this folder
-  // Given any movement, when it is saved, then the ledger row and the booking, order or request that caused it are saved in one transaction, or neither is.
-  // F06/PKG-01-AC6: proven by a real or traced test in another file of this folder
-  // Given a movement would make a balance negative (spending more than the balance, using a credit that is not there, a staff `adjust`), when it is requested, then the server refuses. A staff adjustment can never take a balance below zero (D83).
-  // F06/PKG-01-AC7: proven by a real or traced test in another file of this folder
-  // Given two requests that spend the last credit or the last wallet satang in parallel, when they run, then exactly one succeeds (CC-4; QA concurrency tests).
-  // F06/PKG-01-AC8: proven by a real or traced test in another file of this folder
-  // Given the wallet, when a customer asks to withdraw it, then no such route exists; the wallet cannot be withdrawn (PRD, CANCEL-02).
-  test.todo("F06/PKG-01-AC9 Given the wallet, when a customer asks to withdraw it, then no such route exists; the wallet cannot be ...");
-  // Given the history on C14, when the player opens it, then they see every movement of every credit and wallet, with its reason in their language, newest first (PRD Credits and wallet).
-  test.todo("F06/PKG-01-AC10 Given the history on C14, when the player opens it, then they see every movement of every credit and ...");
-  // Given a movement made in Testing, when it is saved, then it is flagged test and excluded from reports (PLAT-07, D33).
-  // F06/PKG-01-AC11: proven by a real or traced test in another file of this folder
-  // Given a late payment, a wrong amount, a duplicate payment or a refund of value to the wallet, when F05 or F09 credits the wallet, then F06 writes the row with the matching reason from AC3 and the amount in satang.
-  // F06/PKG-01-AC12: proven by a real or traced test in another file of this folder
-});
-
 describe("F06 PKG-02", () => {
   // Given a club's package products (Hunter from the Tennis template: 10 hour bundle ฿4,500 3 months, 20 hour bundle ฿8,000 5 months, solo class pack of 8 for Adult ฿5,600 and Student ฿4,800, group pack of 8 for Adult ฿4,000 and Student ฿3,200, each 3 months), when they are loaded, then the prices are stored in satang (450000, 800000, and so on) and each is a product row with credit type, credits, validity in months, price group, tier and price. The values are copied from the template, not typed in code.
   // F06/PKG-02-AC1: proven by a real or traced test in another file of this folder
@@ -47,7 +20,7 @@ describe("F06 PKG-02", () => {
   // Given a package product with no price set, when C9 loads, then it is not offered (an empty setting is not free).
   // F06/PKG-02-AC7: proven by a real or traced test in another file of this folder
   // Given a product the owner marks inactive, when C9 loads, then it is not offered; packages already owned keep working.
-  test.todo("F06/PKG-02-AC8 Given a product the owner marks inactive, when C9 loads, then it is not offered; packages already owned ...");
+  // F06/PKG-02-AC8: proven by a real or traced test in another file of this folder
   // Given the validity and expiry shown on C9, C10P and C12P, when they are shown, then they come from the product and the computed expiry date, with the international year in both languages.
   test.todo("F06/PKG-02-AC9 Given the validity and expiry shown on C9, C10P and C12P, when they are shown, then they come from the ...");
   // Given a court bundle, when it is used, then its hours work at any available booking time on either court (PRD Pricing and packages), and a solo pack credit works with any coach in its tier (PRD Solo classes).
@@ -108,7 +81,7 @@ describe("F06 R3", () => {
   // Given a purchase by staff at the desk (G-A02c), when they take cash, then it follows PAY-06 and creates the package the same way.
   // F06/R3-AC5: proven by a real or traced test in another file of this folder
   // Given a package order for a Paused club, when a player tries to buy, then the server refuses (F01 PLAT-03).
-  test.todo("F06/R3-AC6 Given a package order for a Paused club, when a player tries to buy, then the server refuses (F01 PLAT-03).");
+  // F06/R3-AC6: proven by a real or traced test in another file of this folder
   // Given a package bought together with a booking whose payment arrives late so the booking cannot be confirmed, when it is handled, then all of it goes to the wallet, with nothing partly created (D87, PAY-03).
   // F06/R3-AC7: proven by a real or traced test in another file of this folder
   // Given the owner sells a package, when it is a Student product, then the buyer must be under 18 (PKG-02-AC6).

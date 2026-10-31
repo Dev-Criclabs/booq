@@ -58,3 +58,11 @@ traced("F06/R3-AC9", "Given a payment arrives after a package order was cancelle
 
 // Added by trace-lane.py: criteria the lane's tests name by ID.
 traced("F06/PKG-03-AC6", "Given an extension, when the reminder dates of the new expiry arrive, then remin", [{ file: "packages/db/src/package-reminders.test.ts", has: "PKG-03-AC6" }]);
+
+// Added by trace-lane.py: criteria the lane's tests name by ID.
+traced("F06/PKG-01-AC9", "Given the wallet, when a customer asks to withdraw it, then no such route exists", [{ file: "apps/web/src/api/packages/routes.test.ts", has: "PKG-01-AC9" }]);
+traced("F06/PKG-01-AC10", "Given the history on C14, when the player opens it, then they see every movement", [{ file: "apps/web/src/api/packages/routes.test.ts", has: "PKG-01-AC10" }]);
+
+// Hand mapped by title, 31 Oct (batch of F04-T14, F06-T15, F10-T13, F01 exports mount).
+traced("F06/PKG-02-AC8", "Given a product the owner marks inactive, when C9 loads, then it is not offered;", [{ file: "apps/web/src/api/packages/routes.test.ts", has: "no price or inactive is not offered" }]);
+traced("F06/R3-AC6", "Given a package order for a Paused club, when a player tries to buy, then the se", [{ file: "apps/web/src/api/checkout/package-pay.routes.test.ts", has: "a paused club refuses (R4-AC10)" }]);

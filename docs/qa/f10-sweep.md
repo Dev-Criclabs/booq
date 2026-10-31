@@ -79,3 +79,7 @@ Also worth the orchestrator's attention (not a QA finding, a wiring gap): the pl
 | LINE-07-AC8 | Given the thresholds 70 and 80 percent, when the code reads them, then they are platform wide consta | Covered by a lane test (traced) |
 | LINE-07-AC9 | Given the usage is read from LINE, when LINE does not answer, then the check uses the last known val | Covered by a lane test (traced) |
 | LINE-07-AC10 | Given the owner upgrades the LINE plan mid month, when the limit changes, then LINE's own count deci | Covered by a lane test (traced) |
+
+## Update, 31 Oct (main d709178)
+
+F10-T13 usage sync and health (0613) and T14 notification switches: LINE-06-AC1, AC2 and AC6 are traced; LINE-07-AC1 to AC10 were already cited. QA added `F10-cap-below-eighty.new.spec.ts` (at 70 and 79 percent no reminder is voided). The cap thresholds were mutation checked (`mutation-pass.md`). Open: LINE-02-AC7 and AC9, LINE-04-AC4 and AC5, LINE-05-AC3 to AC6, AC10 to AC13 (producers owned by other features).

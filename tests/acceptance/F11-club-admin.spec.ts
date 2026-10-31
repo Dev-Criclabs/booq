@@ -4,27 +4,7 @@
 // and keep the ID at the start of the title (tests/acceptance/coverage.spec.ts checks every criterion appears).
 import { describe, test } from 'vitest';
 
-describe("F11 ADMIN-02", () => {
-  // Given a club in Draft, when the owner finishes steps 6 to 8 and taps Tell BOOQ I'm done, then BOOQ is notified and the page stays until Go live
-  test.todo("F11/ADMIN-02 Given a club in Draft, when the owner finishes steps 6 to 8 and taps Tell BOOQ I'm done, then BOOQ is ...");
-});
-
 describe("F11 ADMIN-03", () => {
   // Given a booking, when staff drag it to a slot where the court is held, then the move is refused and nothing changes
   test.todo("F11/ADMIN-03 Given a booking, when staff drag it to a slot where the court is held, then the move is refused and ...");
-});
-
-describe("F11 ADMIN-10", () => {
-  // Given an add-on with no price set, when the owner opens A9, then the field is empty and editable and no default is shown
-  test.todo("F11/ADMIN-10 Given an add-on with no price set, when the owner opens A9, then the field is empty and editable and no ...");
-});
-
-describe("F11 ADMIN-11", () => {
-  // Given a new price group, when it is saved, then it is audited and used by the next price decision only
-  test.todo("F11/ADMIN-11 Given a new price group, when it is saved, then it is audited and used by the next price decision only");
-});
-
-describe("F11 ADMIN-12", () => {
-  // Given a code, when it is saved with a stacking choice, then the choice is audited
-  test.todo("F11/ADMIN-12 Given a code, when it is saved with a stacking choice, then the choice is audited");
 });
