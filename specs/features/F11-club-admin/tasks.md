@@ -8,12 +8,15 @@ Depends on: F01 (route wrapper, permissions, settings, audit, import, staff), F0
 
 ## A. Server: missing reads, permissions, shell
 
-- [ ] **F11-T01** Permissions fragment `f11.ts` (`staff.shell`, `calendar.read`, `setup.read`, `setup.done`, `customer.write`, `customer.export`, `price.read`, `closure.write`) and the page to permission map. IDs: ADMIN-01. Role: BE-A · Deps F01-T13 · Size: S
+- [x] **F11-T01** Permissions fragment `f11.ts` (`staff.shell`, `calendar.read`, `setup.read`, `setup.done`, `customer.write`, `customer.export`, `price.read`, `closure.write`) and the page to permission map. IDs: ADMIN-01. Role: BE-A · Deps F01-T13 · Size: S
   Tests first: the map has no page without a permission; the union of two roles; the role matrix passes.
-- [ ] **F11-T02** `GET /staff/shell` (pages, banners, club). IDs: ADMIN-01. Role: BE-A · Deps T01, F10 `staff/line/status` · Size: M
+  Built (Architect): `packages/auth/src/permissions/f11.ts`, `packages/auth/src/admin-pages.ts` (`ADMIN_PAGES`, `pagesFor(roles)`). `closure.write` is declared here; F09's closure routes use the name and must not declare it again. A4 is not in the map (F16).
+- [x] **F11-T02** `GET /staff/shell` (pages, banners, club). IDs: ADMIN-01. Role: BE-A · Deps T01, F10 `staff/line/status` · Size: M
   Tests first: front desk does not get Reports, Pricing, Settings, Staff; front desk plus accountant get both sets; a Paused club shows the banner with the reason; the LINE banners only for the owner; A4 absent for a Beam club.
-- [ ] **F11-T03** `1101_staff_calendar.sql` and `GET /staff/calendar`. IDs: ADMIN-03. Role: BE-A · Deps F03, F07, F08 · Size: M
+  Built (Architect): `1106_shell_banners.sql` (`app.shell_state()`, taken from the F11 block out of task order), `packages/domain/src/admin/shell.ts`, `shellRoutes` in `apps/web/src/api/admin/routes.ts`. A4 is never listed (F16).
+- [x] **F11-T03** `1101_staff_calendar.sql` and `GET /staff/calendar`. IDs: ADMIN-03. Role: BE-A · Deps F03, F07, F08 · Size: M
   Tests first: held, confirmed, closure, solo and class cells; names only, no phone; range over 7 days refused; another club empty; accountant refused.
+  Built (Architect): `1101_staff_calendar.sql` (`public.staff_calendar(from, to)`, owner and front desk), `packages/domain/src/admin/calendar.ts`, `calendarRoutes`. An expired hold is not a cell. The walk-in flag of the design is the booking `source` field.
 - [ ] **F11-T04** `1102_customer_list_tags.sql`, `GET /staff/customers`, tags routes, customer CSV via `POST /staff/customers/export`. IDs: ADMIN-06. Role: BE-A · Deps F01-T25 · Size: M
   Tests first: search by name, phone fragment, tag; CSV holds only this club and writes an audit entry; front desk can export customers but not the full data export.
 - [ ] **F11-T05** `app.staff_add_customer` (walk in quick add) and `POST /staff/customers` (if Open item 1 is confirmed). IDs: ADMIN-04. Role: BE-A · Deps T04, F02 · Size: S
