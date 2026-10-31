@@ -122,8 +122,6 @@ describe("F09 CANCEL-04", () => {
   // F09/CANCEL-04-AC7: proven by a real or traced test in another file of this folder
   // Given a solo class or a class seat, when the coach marks Absent in K5 (F12), then it is a hint shown to staff and does not mark the player's no show or forfeit; staff decide in A2 (D118).
   test.todo("F09/CANCEL-04-AC8 Given a solo class or a class seat, when the coach marks Absent in K5 (F12), then it is a hint shown to ...");
-  // Withdrawn (D172): no show marking has no timing setting; staff mark a no show any time after the slot ends (D118, AC covered by the staff marks criteria).
-  test.todo("F09/CANCEL-04-AC9 Withdrawn (D172): no show marking has no timing setting; staff mark a no show any time after the slot ends ...");
   // Given front desk and owner only, when anyone else tries to mark or reverse, then the server refuses (HO Roles).
   // F09/CANCEL-04-AC10: proven by a real or traced test in another file of this folder
   // Given the played status, when the referral reward rule reads it (the friend's first paid booking is played, F14), then it uses this status, so a booking reversed to No show does not count as played.
