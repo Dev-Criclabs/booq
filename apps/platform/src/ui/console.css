@@ -139,3 +139,10 @@ input[readonly], textarea[readonly] { background: #f7f8f4; }
 .hours-row .day { font-size: 14px; }
 .check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink); font-weight: 400; min-height: 36px; }
 .check input { width: 20px; min-height: 20px; height: 20px; }
+
+/* P2 wizard: the five steps in a row; they wrap on a narrow screen. */
+.steps { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0 0 12px; }
+.steps li { border-radius: 999px; padding: 6px 14px; background: var(--tint, #DDEADB); color: var(--ink, #1D241F); font-size: 14px; }
+.steps li.on { background: #3F5E46; color: #fff; }
+.steps li.on a { color: #fff; }
+.steps li a { text-decoration: none; color: inherit; }

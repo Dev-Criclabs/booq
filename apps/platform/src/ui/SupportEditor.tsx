@@ -8,7 +8,7 @@ import { applicableSwitches, COURT_TYPES, courtDraft, courtsPatch, featuresPatch
 // own and only what changed is sent. A court is switched off, not deleted, and a new court goes into the club's first location.
 // Club settings cannot be changed here yet. English only; text by key.
 
-export function SupportEditor({ id, support, busy, onSaved, onError }: { id: string; support: SupportSetup; busy: boolean; onSaved(): Promise<void>; onError(key: string): void }) {
+export function SupportEditor({ id, support, busy, onSaved, onError, only }: { id: string; support: SupportSetup; busy: boolean; onSaved(): Promise<void>; onError(key: string): void; /** The new-club wizard shows courts and hours only. */ only?: 'courts' }) {
   const [hours, setHours] = useState<HoursDraft>(() => hoursDraft(support.hours));
   const [courts, setCourts] = useState<Record<string, CourtDraft>>(() => Object.fromEntries(support.resources.map((r) => [r.id, courtDraft(r)])));
   const switches = applicableSwitches(support);
@@ -146,6 +146,8 @@ export function SupportEditor({ id, support, busy, onSaved, onError }: { id: str
         <button type="submit" className="btn secondary" disabled={off} data-testid="add-court">{t('X-new.support_add_court')}</button>
       </form>
 
+      {only === 'courts' ? null : (
+      <>
       <h3>{t('X-new.support_features')}</h3>
       <form onSubmit={onSaveFeatures} className="form" data-testid="features-form" noValidate>
         {switches.length === 0 ? <p>{t('X-new.support_none')}</p> : null}
@@ -158,6 +160,8 @@ export function SupportEditor({ id, support, busy, onSaved, onError }: { id: str
 
       <h3>{t('X-new.support_settings')}</h3>
       <p className="sub">{t('X-new.support_settings_note')}</p>
+      </>
+      )}
     </div>
   );
 }

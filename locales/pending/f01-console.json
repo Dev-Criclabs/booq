@@ -244,6 +244,21 @@
     "X-new.clubs_setup_cell": "{done} of {total}",
     "X-new.clubs_line_cell": "{used} of {limit}",
     "X-new.clubs_line_used": "{used}",
-    "X-new.clubs_alerts_cell": "{count}"
+    "X-new.clubs_alerts_cell": "{count}",
+    "X-new.wizard_title": "New club · {name}",
+    "X-new.wizard_title_new": "New club",
+    "X-new.wizard_steps": "Setup steps",
+    "X-new.wizard_unsaved": "Step {step} of 5 · {name} · not saved yet",
+    "X-new.wizard_slug": "Web address name",
+    "X-new.wizard_required": "This is needed.",
+    "X-new.wizard_slug_bad": "Use lower case letters and digits, joined by single dashes.",
+    "X-new.wizard_slug_taken": "Another club already uses this web address name.",
+    "X-new.wizard_tax_id_bad": "The tax ID is 13 digits.",
+    "X-new.wizard_email_bad": "Enter a valid email address.",
+    "X-new.wizard_line_bad": "The LINE ID is U followed by 32 letters a to f and digits.",
+    "X-new.wizard_date_bad": "Use a date like 2026-12-29.",
+    "X-new.wizard_date_order": "Billing cannot start before the trial ends.",
+    "X-new.wizard_not_available": "LINE details cannot be entered here yet. The club can still be saved and opened.",
+    "X-new.wizard_keys_not_available": "Payment keys cannot be entered here yet. Only how players pay is saved."
   }
 }

@@ -29,6 +29,7 @@ export function ClubsScreen() {
       <main className="page wide" data-testid="clubs">
         <h1>{t('X-0002')}</h1>
         <p className="lede">{t('X-0007')}</p>
+        <p><a className="btn" href="/clubs/new" data-testid="new-club">{t('X-0008')}</a></p>
         {state.kind === 'loading' ? <p aria-busy="true">…</p> : null}
         {state.kind === 'error' ? (
           <p role="alert" data-testid="load-error">

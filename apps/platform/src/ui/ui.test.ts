@@ -1,3 +1,4 @@
+import { checkBasics, checkPlan, clockTime, createBody, createClub, dayOf, emptyBasics, saveBasics as saveDraftBasics, savePaymentOption, savePlan, slugify, stampOf, stepFromQuery, type BasicValues } from './wizard';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -392,5 +393,62 @@ describe('support view editing', () => {
     expect(await saveSection(reply(409, { code: 'look_only' }), 'c1', 'features', {})).toEqual({ kind: 'error', key: 'X-new.club_look_only' });
     expect(await saveSection(reply(400, { code: 'invalid' }), 'c1', 'features', {})).toEqual({ kind: 'error', key: 'X-new.club_invalid' });
     expect(await saveSection((async () => { throw new Error('offline'); }) as unknown as typeof fetch, 'c1', 'features', {})).toEqual({ kind: 'error', key: 'X-new.club_unavailable' });
+  });
+});
+
+describe('new club wizard (P2)', () => {
+  const full = (): BasicValues => ({ ...emptyBasics(), name_th: 'ฮันเตอร์', name_en: 'Hunter Tennis Club', slug: 'hunter-tennis-club' });
+  it('slug: lower case letters and digits joined by single dashes', () => {
+    expect(slugify(' Hunter  Tennis Club! ')).toBe('hunter-tennis-club');
+    expect(slugify('Café 2')).toBe('cafe-2');
+    expect(slugify('ฮันเตอร์')).toBe('');
+    expect(slugify('a'.repeat(80))).toHaveLength(63);
+  });
+  it('steps come from the query, one to five', () => {
+    expect([null, '1', '2', '5', '9', '0', 'x'].map((q) => stepFromQuery(q))).toEqual(['basics', 'basics', 'plan', 'payments', 'payments', 'basics', 'basics']);
+  });
+  it('step 1: names and the address name are needed; tax ID, email and LINE ID are checked when given', () => {
+    expect(checkBasics(full(), true)).toBeNull();
+    expect(checkBasics({ ...full(), name_th: ' ' }, true)).toEqual({ field: 'name_th', key: 'X-new.wizard_required' });
+    expect(checkBasics({ ...full(), slug: 'Bad Slug' }, true)).toEqual({ field: 'slug', key: 'X-new.wizard_slug_bad' });
+    expect(checkBasics({ ...full(), slug: '' }, false)).toBeNull();
+    expect(checkBasics({ ...full(), tax_id: '123' }, true)).toMatchObject({ field: 'tax_id' });
+    expect(checkBasics({ ...full(), tax_id: '1234567890123' }, true)).toBeNull();
+    expect(checkBasics({ ...full(), owner_email: 'nope' }, true)).toMatchObject({ field: 'owner_email' });
+    expect(checkBasics({ ...full(), owner_line: 'U123' }, true)).toMatchObject({ field: 'owner_line' });
+    expect(checkBasics({ ...full(), owner_line: `U${'a'.repeat(32)}` }, true)).toBeNull();
+  });
+  it('create sends only filled fields, trimmed', () => {
+    expect(createBody({ ...full(), legal_name: '  ', owner_name: ' Somchai ' })).toEqual({ name_th: 'ฮันเตอร์', name_en: 'Hunter Tennis Club', slug: 'hunter-tennis-club', owner_name: 'Somchai', default_language: 'th' });
+  });
+  it('plan: dates are days; billing cannot be before the trial ends; a day is stored as the start of it in Bangkok', () => {
+    expect(checkPlan('', '')).toBeNull();
+    expect(checkPlan('2026-12-29', '2027-01-01')).toBeNull();
+    expect(checkPlan('2026-13-40', '')).toBe('X-new.wizard_date_bad');
+    expect(checkPlan('29/12/2026', '')).toBe('X-new.wizard_date_bad');
+    expect(checkPlan('2027-01-02', '2027-01-01')).toBe('X-new.wizard_date_order');
+    expect(stampOf('2026-12-29')).toBe('2026-12-29T00:00:00+07:00');
+    expect(dayOf('2026-12-28T17:00:00.000Z')).toBe('2026-12-29');
+    expect(dayOf(null)).toBe('');
+    expect(clockTime(new Date('2026-12-29T07:20:00Z'))).toBe('14:20');
+  });
+  const reply = (status: number, json: unknown) => (async () => new Response(JSON.stringify(json), { status })) as unknown as typeof fetch;
+  it('create: a new id, a taken name, a stale second factor and an outage each answer by key', async () => {
+    expect(await createClub(reply(200, { id: 'c1' }), full())).toEqual({ kind: 'created', id: 'c1' });
+    expect(await createClub(reply(409, { code: 'slug_taken' }), full())).toMatchObject({ kind: 'error', key: 'X-new.wizard_slug_taken' });
+    expect(await createClub(reply(403, { code: 'step_up_required' }), full())).toMatchObject({ kind: 'error', stepUp: true });
+    expect(await createClub((async () => { throw new Error('x'); }) as unknown as typeof fetch, full())).toMatchObject({ kind: 'error', key: 'X-new.club_unavailable' });
+  });
+  it('saving a draft sends only what changed; nothing changed sends nothing', async () => {
+    const calls: Array<{ url: string; body: unknown }> = [];
+    const f = (async (url: string, init: { body: string }) => { calls.push({ url, body: JSON.parse(init.body) }); return new Response('{}', { status: 200 }); }) as unknown as typeof fetch;
+    expect(await saveDraftBasics(f, 'c1', full(), full())).toEqual({ kind: 'saved' });
+    await saveDraftBasics(f, 'c1', { ...full(), name_en: 'New', slug: 'ignored', legal_name: '' , tax_id: '1234567890123' }, { ...full(), legal_name: 'Old Co' });
+    expect(calls).toEqual([{ url: '/api/clubs/c1/support/setup/basics', body: { name_en: 'New', legal_name: null, tax_id: '1234567890123' } }]);
+    await savePlan(f, 'c1', { trial: '2026-12-29', billing: '' }, { trial: '', billing: '' });
+    expect(calls[1]).toEqual({ url: '/api/clubs/c1/support/setup/plan', body: { plan_trial_ends_at: '2026-12-29T00:00:00+07:00' } });
+    await savePaymentOption(f, 'c1', 'slip');
+    expect(calls[2]!.body).toEqual({ payment_option: 'slip' });
+    expect(calls).toHaveLength(3);
   });
 });
