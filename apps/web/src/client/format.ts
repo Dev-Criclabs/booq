@@ -37,3 +37,18 @@ export function formatDayMonthYearLong(lang: Lang, day: string): string {
 export function formatTime(hhmm: string): string {
   return /^([01]\d|2[0-3]):[0-5]\d$/.test(hhmm) || hhmm === '24:00' ? hhmm : '';
 }
+
+/** `{monthYear}`: January 2027, มกราคม 2027. */
+export function formatMonthYear(lang: Lang, day: string): string {
+  const p = parts(lang, day, { month: 'long', year: 'numeric' });
+  return p ? `${p['month']} ${p['year']}` : '';
+}
+
+/** The short weekday on the C4 date strip, as a language key (P-0040 Fri to P-0045 Wed, P-0138 Thu). */
+const WEEKDAY_KEY = ['P-0042', 'P-0043', 'P-0044', 'P-0045', 'P-0138', 'P-0040', 'P-0041'];
+export function weekdayKey(day: string): string {
+  return WEEKDAY_KEY[new Date(`${day}T12:00:00Z`).getUTCDay()]!;
+}
+
+/** The day of the month as a number, for the date strip. */
+export const dayOfMonth = (day: string) => String(Number(day.slice(8, 10)));
