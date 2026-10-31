@@ -164,7 +164,7 @@ H- hi-fi, G- gap states, S- states, T- Thai twin, F1-, F2-, F3- flow copies (not
 - CANCEL-04-AC6. Given staff try to mark a no show before the slot has ended, when they do, then the server refuses; a no show is marked only after the slot ends (D118).
 - CANCEL-04-AC7. Given a reversal of a no show or late cancel, when it is saved, then coach pay changes by the normal rule (F13 R3) and a referral reward that was already paid stays paid (D118).
 - CANCEL-04-AC8. Given a solo class or a class seat, when the coach marks Absent in K5 (F12), then it is a hint shown to staff and does not mark the player's no show or forfeit; staff decide in A2 (D118).
-- CANCEL-04-AC9. Given the no show timing setting (A16), when staff mark a no show, then it is read from the club's settings; its value is an empty setting until the owner sets it.
+- CANCEL-04-AC9. Withdrawn (D172): no show marking has no timing setting; staff mark a no show any time after the slot ends (D118, AC covered by the staff marks criteria).
 - CANCEL-04-AC10. Given front desk and owner only, when anyone else tries to mark or reverse, then the server refuses (HO Roles).
 - CANCEL-04-AC11. Given the played status, when the referral reward rule reads it (the friend's first paid booking is played, F14), then it uses this status, so a booking reversed to No show does not count as played.
 - CANCEL-04-AC12. Given the canvas notes about "Late after 15 minutes" and a check in QR in A01, C12 and My bookings, when F09 is built, then none is built (Gaps A1).
