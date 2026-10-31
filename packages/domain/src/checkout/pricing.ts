@@ -118,7 +118,7 @@ export interface Quote {
   promoCodeId: string | null;
   referralCodeId: string | null;
   /** The entitlement this order uses, recorded at Pay (R5). */
-  birthdayEntitlement: 'solo_class' | null;
+  birthdayEntitlement: 'solo_class' | 'package' | null;
   /** A code was entered and is valid but gave way to the larger birthday discount (D65); nothing of it is used. */
   codeNotApplied: boolean;
   lines: QuoteLine[];
@@ -287,7 +287,7 @@ export function priceOrder(input: PricingInput): PricingResult {
     priceGroupId: group.id,
     promoCodeId: applied?.source === 'promo' ? applied.id : null,
     referralCodeId: applied?.source === 'referral' ? applied.id : null,
-    birthdayEntitlement: plan.birthdayApplied ? ('solo_class' as const) : null,
+    birthdayEntitlement: plan.birthdayApplied ? plan.birthdayKind : null,
     codeNotApplied: code !== null && !plan.codeApplied,
     lines,
     subtotalSatang: sum((l) => l.unitPriceSatang),
