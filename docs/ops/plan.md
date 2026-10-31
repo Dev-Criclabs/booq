@@ -195,7 +195,9 @@ Open:
 4. On call people and hours.
 5. The shared domain (the user supplies it later). Is the club in the path or in a subdomain? That affects the LIFF endpoint and certificates (section 10).
 6. Receipts and logo storage: ask the Architect (backup of Storage).
-7. Behaviour at the LINE message cap: product question, already open.
+7. **Open, blocked on the Supabase decision: the owner's club data export.** (a) storage bucket and provider (not picked here; Supabase Storage in the project is the natural default), (b) `EXPORT_LINK_SECONDS` (spec A-14 says 24 hours, Security proposes 10 minutes: unresolved), (c) the queue credential or enqueue function and the worker task registration. Until chosen, `POST /exports` answers 503 `export_not_configured`. Detail in `web.md`.
+
+(The LINE message cap behaviour, formerly item 7, is decided: LINE-07 and D17.)
 
 ## 10. Domain and URLs (D6, D7)
 
