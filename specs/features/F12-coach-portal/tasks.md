@@ -1,6 +1,6 @@
 # F12 Coach portal · Tasks
 
-Status: **DRAFT for a quick check (gate 3).** Drafted 31 Oct 2026 from the draft design (`design.md`, gate 2, waiting for approval) and the approved requirements (`requirements.md`). Nothing here starts before the design is approved. Rules for every task (CLAUDE.md): one task per run; write the tests from the acceptance criteria first, then the code; run tests and type checks before ticking; the commit message starts with the requirement IDs, for example `CPORT-05 mark attendance after the hour has ended`. A merged migration is never edited. New text goes in `locales/pending/F12.json` (D81); no user facing text in code.
+Status: **Approved 31 Oct 2026 (D171).** Drafted 31 Oct 2026 from the approved design (`design.md`, gate 2, D171) and the approved requirements (`requirements.md`). Rules for every task (CLAUDE.md): one task per run; write the tests from the acceptance criteria first, then the code; run tests and type checks before ticking; the commit message starts with the requirement IDs, for example `CPORT-05 mark attendance after the hour has ended`. A merged migration is never edited. New text goes in `locales/pending/F12.json` (D81); no user facing text in code.
 
 Roles: **BE-C** back end (database, functions, routes), **FE-A** front end admin and coach, **QA**, **Content**.
 
@@ -41,8 +41,8 @@ Depends on: F01 (roles, route wrapper, blind suite, anonymise handlers); F07 (`c
 - [ ] **F12-T09** The access suite `packages/db/src/f12-access.test.ts`: which role reads or writes which F12 table and function, the booq_app and booq_worker grants, `booq_platform`, `anon` and `authenticated` hold nothing, and the blind suite covers the two tables. IDs: CC-1, CC-2, PLAT-02. Role: QA · Deps T01 to T05 · Size: S
   Tests first: the test is the task.
 
-- [ ] **F12-T10** Migration 1207: `app.f12_deletion_impact(club, user)` and `app.f12_anonymise(club, user)` registered with F01's handlers: notes about a customer are deleted and attendance rows keep only the booking link when that customer is anonymised; a coach's own notes and marks stay as records. IDs: CPORT rules (PDPA), PDPA-01. Role: BE-C · Deps T01, F01 anonymise registry · Size: S
-  Tests first: anonymising a customer removes the notes about them and nothing else; the deletion impact lists the counts; anonymising a coach keeps the notes; another club's rows are never touched; the audit log keeps the old text only as F01 says.
+- [ ] **F12-T10** Migration 1207: `app.f12_deletion_impact(club, user)`, `app.f12_anonymise(club, user)` and `app.f12_export(club, user)`; the first two registered with F01's handler tables, the export read by the data request copy (one file `coach-notes.csv`, one line added to `copyFile` in `packages/domain/src/data-request/service.ts`, with its comment corrected: staff notes stay out, coach notes are in, D171). Notes about a customer are deleted and attendance rows keep only the booking link when that customer is anonymised; a coach's own notes and marks stay as records. IDs: CPORT rules (PDPA), PDPA-01, D171. Role: BE-C · Deps T01, F01 anonymise registry and F01-T33 · Size: S
+  Tests first: the export of a customer holds exactly the notes written about them (date, session, text, not the coach's id, not other players' notes, not the session note of a session they were not in) and their attendance marks, as a CSV with no other field; another club's and another player's notes are never in it; a copy request by front desk returns the file and a player route returns nothing; anonymising a customer removes the notes about them and nothing else; the deletion impact lists the counts; anonymising a coach keeps the notes; another club's rows are never touched.
 
 ## D. Front end
 
