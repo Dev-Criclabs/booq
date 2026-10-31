@@ -6,6 +6,7 @@ import type { Db } from '@booq/db';
 import { bangkokDate } from '@booq/time';
 import { playerBookingRoutes, publicScheduleRoutes, staffBookingRoutes } from '../api/booking/routes';
 import { checkoutRoutes } from '../api/checkout/routes';
+import { cashRoutes } from '../api/payments/cash';
 import { playerClassRoutes, publicClassRoutes, staffClassRoutes } from '../api/classes/routes';
 import { setupDataRoutes, setupRoutes, auditRoutes, calendarRoutes, customerRoutes, customerValueRoutes, shellRoutes } from '../api/admin/routes';
 import { playerCoachRoutes, publicCoachRoutes, staffCoachRoutes } from '../api/coaches/routes';
@@ -91,4 +92,5 @@ export const mounts: readonly Mount[] = [
   (m) => [hoursRoute(m.db), resourceRoutes(m.db).create, resourceRoutes(m.db).update, supportWindowRoute(m.db)],
   (m) => profileRoutes({ db: m.db, service: () => createProfileEditService({ today: () => bangkokDate(m.now()) }) }),
   (m) => checkoutRoutes({ db: m.db, clubBySlug: m.clubBySlug, sources: quoteSources, payments: { privateKey: () => loadDecryptKey(), gateway: beamGateway, alerts: paymentAlerts, now: m.now } }),
+  (m) => cashRoutes({ db: m.db }),
 ];

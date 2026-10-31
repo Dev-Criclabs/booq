@@ -1,11 +1,27 @@
 {
-  "_note": "Proposed by BE-C for F05 package-only Pay (D81). Numbers to be assigned by Content; wording drafted, writers own it. P-new.package_line labels a package line on C10P, C11P and the receipt (the product's own name is shown beside it). Reused: P-new.student_too_old (locales/pending/f02.json) for a Student package refused by age.",
+  "_note": "Proposed by BE-C for F05 package-only Pay (D81). Numbers to be assigned by Content; wording drafted, writers own it. P-new.package_line labels a package line on C10P, C11P and the receipt (the product's own name is shown beside it). Reused: P-new.student_too_old (locales/pending/f02.json) for a Student package refused by age. A-new.cash_* are the refusals of POST /staff/orders/:id/cash (F05 §5.6); A-0058 (Cash reason, required) is reused.",
   "en": {
     "P-new.package_line": "Package",
-    "P-new.package_not_for_sale": "This package is not available to buy right now. Please contact the club."
+    "P-new.package_not_for_sale": "This package is not available to buy right now. Please contact the club.",
+    "A-new.cash_bad_input": "Something in this cash payment is not right. Check the reason and try again.",
+    "A-new.cash_note_required": "Add a note for the reason Other.",
+    "A-new.cash_club_paused": "Online booking is paused, so no payment can be taken now.",
+    "A-new.cash_order_not_found": "This order is not open any more. Reload the booking.",
+    "A-new.cash_nothing_to_pay": "There is nothing left to pay on this order.",
+    "A-new.cash_hold_ended": "The hold on this booking has ended. Book the hour again.",
+    "A-new.cash_credit_unavailable": "The player's credits or wallet changed. Book again to see the new price.",
+    "A-new.cash_coach_add_not_supported": "A coach added to a booking cannot be paid in cash yet. The player pays with the QR."
   },
   "th": {
     "P-new.package_line": "แพ็กเกจ",
-    "P-new.package_not_for_sale": "แพ็กเกจนี้ยังไม่เปิดให้ซื้อในขณะนี้ กรุณาติดต่อสโมสร"
+    "P-new.package_not_for_sale": "แพ็กเกจนี้ยังไม่เปิดให้ซื้อในขณะนี้ กรุณาติดต่อสโมสร",
+    "A-new.cash_bad_input": "ข้อมูลการรับเงินสดไม่ถูกต้อง กรุณาตรวจสอบเหตุผลแล้วลองอีกครั้ง",
+    "A-new.cash_note_required": "กรุณาใส่หมายเหตุสำหรับเหตุผล อื่นๆ",
+    "A-new.cash_club_paused": "การจองออนไลน์ถูกพักไว้ จึงยังรับชำระเงินไม่ได้ในขณะนี้",
+    "A-new.cash_order_not_found": "คำสั่งซื้อนี้ไม่ได้เปิดอยู่แล้ว กรุณาโหลดการจองใหม่",
+    "A-new.cash_nothing_to_pay": "คำสั่งซื้อนี้ไม่มียอดค้างชำระแล้ว",
+    "A-new.cash_hold_ended": "การกันที่สำหรับการจองนี้หมดเวลาแล้ว กรุณาจองชั่วโมงนี้ใหม่",
+    "A-new.cash_credit_unavailable": "เครดิตหรือยอดเงินในวอลเล็ตของผู้เล่นเปลี่ยนไป กรุณาจองใหม่เพื่อดูราคาใหม่",
+    "A-new.cash_coach_add_not_supported": "ยังรับเงินสดสำหรับการเพิ่มโค้ชในการจองไม่ได้ ผู้เล่นชำระด้วย QR"
   }
 }
