@@ -4,7 +4,7 @@ d={};order=[]
 src=glob.glob(f'specs/features/{feat}-*/requirements.md')[0]
 for l in open(src):
     m=re.match(r'^- (\S+?-AC\d+[a-z]?)[.:]\s+(.*)',l)
-    if m: d[m.group(1)]=m.group(2); order.append(m.group(1))
+    if m and not re.match(r'Withdrawn\b',m.group(2)): d[m.group(1)]=m.group(2); order.append(m.group(1))
 files=[f for f in glob.glob('**/*.ts',recursive=True)+glob.glob('**/*.tsx',recursive=True) if 'node_modules' not in f and not f.startswith('tests/acceptance')]
 text={f:open(f).read() for f in files if re.search(r'\.(test|spec)\.tsx?$',f)}
 cov={}
