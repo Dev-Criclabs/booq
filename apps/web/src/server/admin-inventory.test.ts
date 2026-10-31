@@ -28,7 +28,7 @@ const BUILT: Record<string, string[]> = {
   A5: ['GET /staff/customers customer.contact.read', 'GET /staff/customers/csv customer.export', 'POST /staff/customers/:id/tags customer.write', 'DELETE /staff/customers/:id/tags/:tag customer.write'],
   A6: [
     'GET /staff/customers/:id customer.contact.read', 'GET /staff/customers/:id/bookings customer.contact.read', 'GET /staff/customers/:id/orders customer.contact.read',
-    'GET /staff/customers/:id/notes customer.contact.read', 'POST /staff/customers/:id/notes customer.write', 'GET /staff/customers/:id/credits customer.contact.read',
+    'GET /staff/customers/:id/notes customer.contact.read', 'GET /staff/customers/:id/receipts customer.contact.read', 'POST /staff/customers/:id/notes customer.write', 'GET /staff/customers/:id/credits customer.contact.read',
     'POST /staff/customers/:id/credit-adjust customer.adjust', 'POST /staff/customers/:id/wallet-adjust customer.adjust', 'POST /staff/packages/:id/extend package.extend',
     'GET /customers/:id/dob-history customer.dob-history.read', 'GET /claims claim.handle', 'POST /claims/:id/confirm claim.handle', 'POST /claims/:id/reject claim.handle',
     'GET /data-requests datarequest.handle', 'POST /data-requests/:id/handle datarequest.handle',

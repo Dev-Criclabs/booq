@@ -183,7 +183,7 @@ export async function customerOrders(tx: Tx, id: unknown) {
   return r.rows.map((o) => ({
     orderId: o.order_id as string, status: o.status as string, source: o.source as string, kind: o.kind as string, totalSatang: o.total_satang as number,
     moneySatang: o.money_satang as number, creditValueSatang: o.credit_value_satang as number, walletSatang: o.wallet_satang as number,
-    createdAt: new Date(o.created_at).toISOString(), receipts: o.receipts as string[],
+    createdAt: new Date(o.created_at).toISOString(), receipts: o.receipts as string[], receiptIds: o.receipt_ids as string[],
   }));
 }
 
@@ -212,4 +212,21 @@ export async function addCustomerNote(tx: Tx, id: unknown, note: unknown): Promi
   const r = await tx.query<{ id: string }>(
     `insert into public.user_staff_note (club_id, user_id, note, created_by) values (app.club_id(), $1, $2, app.user_id()) returning id`, [customerId(id), note.trim()]);
   return { noteId: r.rows[0]!.id };
+}
+
+export interface CustomerReceipt {
+  receiptId: string;
+  number: string;
+  kind: string;
+  status: string;
+  issuedAt: string;
+  totalSatang: number;
+  isTest: boolean;
+}
+
+/** GET /staff/customers/:id/receipts: the person's receipts, newest first (front desk, owner; the PDF is GET /staff/receipts/:id/pdf). */
+export async function customerReceipts(tx: Tx, id: unknown): Promise<CustomerReceipt[]> {
+  await customerProfile(tx, id);
+  const r = await tx.query(`select id, number, kind, status, issued_at, total_satang, is_test from public.receipt where customer_id = $1 order by issued_at desc, id desc`, [customerId(id)]);
+  return r.rows.map((x) => ({ receiptId: x.id, number: x.number, kind: x.kind, status: x.status, issuedAt: new Date(x.issued_at).toISOString(), totalSatang: Number(x.total_satang), isTest: x.is_test }));
 }

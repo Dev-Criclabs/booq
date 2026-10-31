@@ -1,6 +1,6 @@
 import { FileReply, pagesFor, route, RouteError, type Route, type RouteContext } from '@booq/auth';
 import type { ClubContext, Db, Tx } from '@booq/db';
-import { createSetup, deleteSetup, listSetup, listTierPrices, putTierPrice, SETUP, updateSetup, ownerSetup, tellDone, auditLog, bookingHistory, addCustomer, creditAdjust, customerValue, extendPackage, mapValueError, requestHash, walletAdjust, withIdempotency, addCustomerNote, AdminError, type AdminErrorCode, customerBookings, customerNotes, customerOrders, customerProfile, customersCsv, listCustomers, setTag, shellState, staffCalendar } from '@booq/domain';
+import { createSetup, deleteSetup, listSetup, listTierPrices, putTierPrice, SETUP, updateSetup, ownerSetup, tellDone, auditLog, bookingHistory, addCustomer, creditAdjust, customerValue, extendPackage, mapValueError, requestHash, walletAdjust, withIdempotency, addCustomerNote, AdminError, type AdminErrorCode, customerBookings, customerNotes, customerOrders, customerProfile, customerReceipts, customersCsv, listCustomers, setTag, shellState, staffCalendar } from '@booq/domain';
 
 // F11 club admin routes (design 4 to 6, prefix /api/c/{slug}). Thin handlers: resolve the club from the session and the path slug, open
 // the club transaction, call the service in packages/domain/src/admin, answer a body or a typed code. No club id is read from the input.
@@ -121,6 +121,13 @@ export function customerRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[] {
       ...route({ method: 'GET', path: '/staff/customers/:id/orders', permission: 'customer.contact.read' }, async (ctx) => {
         const c = await sessionContext(deps, ctx);
         return inTx(deps.db, c, (tx) => customerOrders(tx, inputOf(ctx)['id']));
+      }),
+      headers: NO_STORE,
+    },
+    {
+      ...route({ method: 'GET', path: '/staff/customers/:id/receipts', permission: 'customer.contact.read' }, async (ctx) => {
+        const c = await sessionContext(deps, ctx);
+        return inTx(deps.db, c, (tx) => customerReceipts(tx, inputOf(ctx)['id']));
       }),
       headers: NO_STORE,
     },

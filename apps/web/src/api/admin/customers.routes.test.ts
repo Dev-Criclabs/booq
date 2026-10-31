@@ -129,6 +129,27 @@ describe('customer profile (ADMIN-07)', () => {
     expect(r.body).toEqual([expect.objectContaining({ bookingId: b, type: 'court', courtName: 'Court 1', status: 'confirmed', cancelKind: null })]);
     expect((await call('GET', '/staff/customers/:id/bookings', desk(), { id: OWNER })).body).toEqual([]);
     expect(await call('GET', '/staff/customers/:id/orders', desk(), { id: ANN })).toMatchObject({ ok: true, body: [] });
+    // A priced order with a receipt lists the receipt number and id side by side, and the receipts panel lists it too.
+    const c = await tdb.pool.connect();
+    let o: string;
+    try {
+      await c.query('begin');
+      await c.query('set local session_replication_role = replica');
+      o = (await c.query(
+        `insert into public.orders (club_id, customer_id, source, status, price_group_snapshot, subtotal_satang, discount_satang, total_satang, credit_value_satang, wallet_satang, money_satang, quote_hash, priced_at)
+         values ($1,$2,'online','paid','{}'::jsonb,50000,0,50000,0,0,50000,repeat('a',64), app.now()) returning id`, [A, ANN])).rows[0].id as string;
+      await c.query('commit');
+    } finally {
+      c.release();
+    }
+    const rc = (await tdb.query(
+      `insert into public.receipt (club_id, order_id, kind, series, seq_no, number, vat_flag, customer_id, customer_name_snapshot, lines, total_satang)
+       values ($1,$2,'sale','2026',1,'HTC-2026-000001',false,$3,'Ann Smith','{}'::jsonb,50000) returning id, number`, [A, o, ANN])).rows[0];
+    const ord = (await call('GET', '/staff/customers/:id/orders', desk(), { id: ANN })).body.find((x: { orderId: string }) => x.orderId === o);
+    expect(ord).toMatchObject({ receipts: [rc.number], receiptIds: [rc.id], totalSatang: 50000 });
+    expect((await call('GET', '/staff/customers/:id/receipts', desk(), { id: ANN })).body).toEqual([expect.objectContaining({ receiptId: rc.id, number: rc.number, totalSatang: 50000, status: 'issued' })]);
+    expect((await call('GET', '/staff/customers/:id/receipts', desk(), { id: OWNER })).body).toEqual([]);
+    expect(await call('GET', '/staff/customers/:id/receipts', as(ACC, ['accountant', 'player']), { id: ANN })).toMatchObject({ ok: false, status: 403 });
   });
   it('notes: add and read newest first with the author; blank and over long are bad input; the accountant is refused', async () => {
     expect(await call('POST', '/staff/customers/:id/notes', desk(), { id: ANN }, { note: ' Prefers evenings ' })).toMatchObject({ ok: true });
