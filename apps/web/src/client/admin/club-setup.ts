@@ -91,7 +91,7 @@ export const COURT_TYPES = ['outdoor', 'indoor'] as const;
 export interface CourtDraft { name: string; sport: string; type: string; lights: boolean; max_players: string; active: boolean }
 export const courtDraft = (c: Court): CourtDraft => ({ name: c.name, sport: c.sport, type: c.type ?? '', lights: c.lights, max_players: c.max_players === null ? '' : String(c.max_players), active: c.active });
 /** The court name holds only the label: players see "Court {label}" (A-0019). A name that already starts with the word would show it twice. */
-export const COURT_WORD = /^\s*(court|คอร์ต)\b/i;
+export const COURT_WORD = /^\s*(court(?![a-z])|คอร์ต)/i;
 export const courtLabelDoubles = (name: string): boolean => COURT_WORD.test(name);
 export type CourtProblem = 'A-new.set_court_name' | 'A-new.set_court_doubles' | 'A-new.set_court_players';
 export function checkCourt(d: CourtDraft): CourtProblem | null {

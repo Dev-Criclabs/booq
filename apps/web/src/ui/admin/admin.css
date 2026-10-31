@@ -122,3 +122,19 @@
 .adm-file { position: relative; cursor: pointer; }
 .adm-file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
 .adm-card h2 .adm-chip { margin-left: 8px; text-transform: none; letter-spacing: 0; }
+
+/* A16 Settings */
+.adm-rule { padding: 12px 0; border-top: 1px solid var(--ln); }
+.adm-rule:first-of-type { border-top: 0; padding-top: 0; }
+.adm-rule-label { display: block; font-weight: 600; margin-bottom: 6px; overflow-wrap: anywhere; }
+.adm-rule-control { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.adm-rule-control select, .adm-rule-control input { height: 38px; padding: 0 12px; border: 1px solid var(--ln); border-radius: 999px; background: var(--cd); font: inherit; font-size: 14px; min-width: 0; max-width: 100%; }
+.adm-rule-control input { width: 110px; }
+.adm-hours-row { display: grid; grid-template-columns: minmax(90px, 140px) 100px 100px minmax(0, 1fr); gap: 10px; align-items: center; width: 100%; }
+.adm-hours-row input[type='text'], .adm-hours-row input:not([type]), .adm-hours-row input[inputmode] { height: 38px; padding: 0 12px; border: 1px solid var(--ln); border-radius: 999px; font: inherit; font-size: 14px; min-width: 0; width: 100%; }
+.adm-day { overflow-wrap: anywhere; font-weight: 500; }
+.adm-court { border: 1px solid var(--ln); border-radius: 14px; padding: 14px 16px; margin: 0 0 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.adm-court legend { padding: 0 6px; font-weight: 700; color: var(--hd); overflow-wrap: anywhere; }
+.adm-court h3 { margin: 0; }
+.adm-court .adm-field { max-width: 360px; }
+@media (max-width: 900px) { .adm-hours-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .adm-hours-row .adm-day { grid-column: 1 / -1; } .adm-hours-row .adm-check { grid-column: 1 / -1; } }
