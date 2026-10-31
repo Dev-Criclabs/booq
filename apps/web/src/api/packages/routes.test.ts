@@ -106,7 +106,7 @@ describe('GET /me/credits (C14; PKG-01-AC10)', () => {
     const body = await ok<{ packages: Record<string, unknown>[]; walletSatang: number }>(call('/me/credits', me(P1)));
     expect(body.walletSatang).toBe(25000);
     expect(body.packages.map((p) => [p['packageId'], p['status'], p['creditsLeft']])).toEqual([[mine, 'active', 10], [old, 'expired', 5]]);
-    expect(body.packages[0]).toMatchObject({ nameEn: '10 hour bundle', nameTh: 'แพ็กเกจ 10 ชั่วโมง', creditType: 'court_hour', expiresAt: '2027-04-05T16:59:59.999Z' });
+    expect(body.packages[0]).toMatchObject({ nameEn: '10 hour bundle', nameTh: 'แพ็กเกจ 10 ชั่วโมง', creditType: 'court_hour', creditsTotal: 10, expiresAt: '2027-04-05T16:59:59.999Z' });
     expect(await ok(call('/me/credits', me(P2)))).toMatchObject({ walletSatang: 99999 });
   });
   it('a guest is refused', async () => {

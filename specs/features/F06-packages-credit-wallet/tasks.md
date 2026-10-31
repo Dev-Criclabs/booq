@@ -59,7 +59,7 @@ Depends on: F01 T09 (setup tables), T12 (people), T13 (route wrapper), T18 (gran
 
 - [x] **F06-T17** C9 Packages (three tabs) from the public route, with Thai and English and longest string layout. IDs: PKG-02-AC1, AC7 to AC9. Role: FE-P · Deps T15, T21, `packages/ui` · Size: M
   Tests first: component tests with the longest Thai and English strings; a product with no price is not shown.
-- [ ] **F06-T18** C14 Credits and wallet with the movement history and one reason label per ledger reason. IDs: PKG-01-AC10, PKG-03-AC3. Role: FE-P · Deps T15, T21 · Size: M
+- [x] **F06-T18** C14 Credits and wallet with the movement history and one reason label per ledger reason. IDs: PKG-01-AC10, PKG-03-AC3. Role: FE-P · Deps T15, T21 · Size: M
   Tests first: every reason has a label in both languages; the balance shown equals the route's.
 - [ ] **F06-T19** C10P, C11P and C12P package checkout, payment and confirmation screens (with F04 and F05 routes). IDs: R3-AC1 to AC4, R3-AC6, R3-AC10, PAY-04. Role: FE-P · Deps T15, T21, F04 Pay route, F05 C11P · Size: M
   Tests first: the package confirmation shows credits, expiry and Book now; a time ran out state shows when the QR ends; buying in a Paused club shows the refusal (R3-AC6); hold time and numbers come from variables (R3-AC10).

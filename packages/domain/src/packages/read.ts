@@ -31,6 +31,8 @@ export interface OwnPackage {
   nameEn: string | null;
   creditType: string;
   creditsLeft: number;
+  /** The credits the package was granted with (the "of {total}" on C14). */
+  creditsTotal: number;
   expiresAt: string;
   status: 'active' | 'used_up' | 'expired';
 }
@@ -85,7 +87,7 @@ export async function listPublicProducts(tx: Tx): Promise<PublicProduct[]> {
 /** The caller's packages (active first, then by expiry) and wallet balance. */
 export async function ownCredits(tx: Tx, userId: string): Promise<OwnCredits> {
   const packages = await tx.query<Record<string, unknown>>(
-    `select s.package_id, s.credits_left, s.expires_at, s.status, cp.product_snapshot
+    `select s.package_id, s.credits_left, cp.credits_total, s.expires_at, s.status, cp.product_snapshot
        from public.package_status s join public.customer_package cp on cp.club_id = s.club_id and cp.id = s.package_id
       where s.customer_id = $1
       order by (s.status = 'active') desc, s.expires_at, s.package_id`,
@@ -101,6 +103,7 @@ export async function ownCredits(tx: Tx, userId: string): Promise<OwnCredits> {
         nameEn: (snap['name_en'] as string | undefined) ?? null,
         creditType: (snap['credit_type'] as string | undefined) ?? '',
         creditsLeft: Number(r['credits_left']),
+        creditsTotal: Number(r['credits_total']),
         expiresAt: new Date(r['expires_at'] as string).toISOString(),
         status: r['status'] as OwnPackage['status'],
       };
