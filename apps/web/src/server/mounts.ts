@@ -1,4 +1,4 @@
-import { createClaimService, createDataRequestService, createImportService, createProfileEditService, quoteSources, normalizePhone } from '@booq/domain';
+import { settingsRoutes, createClaimService, createDataRequestService, createImportService, createProfileEditService, quoteSources, normalizePhone } from '@booq/domain';
 import { createRedactingLogger, type Route } from '@booq/auth';
 import { beamGateway } from '@booq/beam';
 import { loadDecryptKey } from '@booq/secrets';
@@ -7,6 +7,7 @@ import { bangkokDate } from '@booq/time';
 import { playerBookingRoutes, publicScheduleRoutes, staffBookingRoutes } from '../api/booking/routes';
 import { checkoutRoutes } from '../api/checkout/routes';
 import { playerClassRoutes, publicClassRoutes, staffClassRoutes } from '../api/classes/routes';
+import { calendarRoutes, shellRoutes } from '../api/admin/routes';
 import { playerCoachRoutes, publicCoachRoutes, staffCoachRoutes } from '../api/coaches/routes';
 import { claimRoutes } from '../api/claim/routes';
 import { dataRequestRoutes } from '../api/data-request/routes';
@@ -58,10 +59,12 @@ export const mounts: readonly Mount[] = [
   (m) => lineFriendRoutes({ db: m.db }),
   (m) => receiptRoutes({ db: m.db, pdf: createReceiptPdf(m.config.localesDir ?? null) }),
   (m) => reportRoutes({ db: m.db }),
+  (m) => Object.values(settingsRoutes(m.db)),
   (m) => [publicScheduleRoutes, playerBookingRoutes, staffBookingRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
   (m) => noticeRoutes({ db: m.db, clubBySlug: m.clubBySlug }),
   (m) => [publicClassRoutes, playerClassRoutes, staffClassRoutes].flatMap((f) => f({ db: m.db, now: m.now, clubBySlug: m.clubBySlug })),
   (m) => [publicCoachRoutes, playerCoachRoutes, staffCoachRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
+  (m) => [shellRoutes, calendarRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
   (m) => profileRoutes({ db: m.db, service: () => createProfileEditService({ today: () => bangkokDate(m.now()) }) }),
   (m) => checkoutRoutes({ db: m.db, clubBySlug: m.clubBySlug, sources: quoteSources, payments: { privateKey: () => loadDecryptKey(), gateway: beamGateway, alerts: paymentAlerts, now: m.now } }),
 ];

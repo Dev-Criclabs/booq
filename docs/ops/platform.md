@@ -10,6 +10,7 @@ BOOQ staff sign in with email and a second factor (D3). The password check happe
 |---|---|---|
 | `DATABASE_URL` | yes | Role `booq_platform` only. Never `booq_app` or `booq_worker` credentials (FA 4.4) |
 | `PLATFORM_SIGNING_KEY` | yes | **Secret.** 32+ characters. Signs the console session cookie. Separate from every club key and from `WEB_RATE_LIMIT_KEY`. Rotating it signs every staff member out, which is acceptable |
+| `LINE_API_BASE_URL`, `PROVIDER_PROBE_TIMEOUT_MS` **(branch, platform lane 2)** | **both or neither**; when set, `SECRETS_PUBLIC_KEY` is required | `LINE_API_BASE_URL`: http(s) base of the LINE Messaging API (the console's "Test connection" probe of the value just typed, D167). `PROVIDER_PROBE_TIMEOUT_MS`: whole milliseconds above 0, how long one probe may take. **No value proposed.** Without the pair the console has no probe. Needed for the 7 Dec readiness check of Hunter's LINE and Beam connections |
 | `SECRETS_PUBLIC_KEY` | yes, to write a club's LINE and Beam values | Public key PEM of this environment's club secrets pair (`secrets.md`). **Public key only**: this app must never hold `SECRETS_PRIVATE_KEY` |
 | `PLATFORM_MAX_BODY_BYTES` | yes | Whole number above 0. Security proposes 64 KiB for small JSON (`webhook_max_body_bytes`); Security to confirm for the console |
 | `APP_BASE_URL` | yes | `https` address of the club app, for owner and tester invite links |
@@ -21,21 +22,27 @@ BOOQ staff sign in with email and a second factor (D3). The password check happe
 
 ### Deploy environment checklist, `apps/platform`
 
-Set in the console's hosting environment (staging, production). Required for the 7 Dec test: `DATABASE_URL` (role `booq_platform`), `PLATFORM_SIGNING_KEY`, `PLATFORM_MAX_BODY_BYTES`, `APP_BASE_URL`, `HEALTH_TOKEN`, `PLATFORM_SIGNIN_RATE_LIMIT` with `PLATFORM_SIGNIN_RATE_WINDOW_SECONDS`, `STAFF_INVITE_URL` with `STAFF_INVITE_SIGNING_SECRET` and `PLATFORM_BASE_URL`, and **`SECRETS_PUBLIC_KEY`** (the console writes a club's LINE and Beam values with it, and only with it). **`SECRETS_PRIVATE_KEY` must not be set here.** Also set the `platform.config` rows below before the test.
+Set in the console's hosting environment (staging, production). Required for the 7 Dec test: `DATABASE_URL` (role `booq_platform`), `PLATFORM_SIGNING_KEY`, `PLATFORM_MAX_BODY_BYTES`, `APP_BASE_URL`, `HEALTH_TOKEN`, `PLATFORM_SIGNIN_RATE_LIMIT` with `PLATFORM_SIGNIN_RATE_WINDOW_SECONDS`, `STAFF_INVITE_URL` with `STAFF_INVITE_SIGNING_SECRET` and `PLATFORM_BASE_URL`, `LINE_API_BASE_URL` with `PROVIDER_PROBE_TIMEOUT_MS` (the probes), and **`SECRETS_PUBLIC_KEY`** (the console writes a club's LINE and Beam values with it, and only with it). **`SECRETS_PRIVATE_KEY` must not be set here.** Also set the `platform.config` rows below before the test.
 
 **Probes (decided as D167).** The console probes **only the value just typed**, before it is encrypted. It holds only the public key, so it cannot read back a stored secret (that would need the private key and break SR-03). "Test all again" runs in **the worker**, which holds the private key, and writes `club_health`. So the worker needs the outbound settings of the probes too (`LINE_API_BASE_URL`, `LINE_PUSH_TIMEOUT_MS` already; Beam's address and timeout to come). The console's own outbound URL and timeout settings will be added here when platform lane 2 sends the names (the orchestrator forwards them).
 
-### Platform config values (database table `platform.config`, set by a BOOQ admin, no defaults)
+### Platform config values (database table `platform.config`, set by a BOOQ admin)
 
-These are not environment variables. They are rows an admin enters in the console, and the code ships none (no invented settings). Known so far, all to be set **before the 7 Dec test**:
+These are not environment variables. They are rows an admin enters on the console's settings page (P6 config, `PUT /config/{key}`; a change asks for a fresh second factor). The list below follows the page's own list of known settings (`apps/platform/src/ui/config.ts` on `main`, 31 Oct) and the migrations that seed the rows. A row with value `null` means "not configured": the feature that needs it refuses. **No value is shipped except where a migration says so**, and I propose none.
 
-| Key | What happens if it is unset | Value |
+| Key | If unset | Before the 7 Dec test? |
 |---|---|---|
-| `console_enrolment_ttl_hours` **(branch)** | Issuing a staff enrolment link is refused (`enrolment:not_configured`), so **no new BOOQ teammate can be invited or have a second factor reset**. The number is hours the single-use link stays valid; it must be above 0 | **No value proposed.** A BOOQ admin decides. (Security's `invite_ttl_hours` figures are for club invites, a different setting) |
-| `line_send_max_attempts`, `line_send_retry_seconds` (F10) | The LINE sender has no retry limit or base backoff for a push that fails on a token problem. Messages stay unsent or retry without bound, depending on the code | **No value proposed.** Token-failure retry limit and base backoff, a BOOQ admin or Security decides. Alerts on token failure are in `plan.md` section 5 |
-| `beam_reconcile_age_seconds` (F05, pending main) | **Read by the reconcile task. While it is unset, reconcile is off**, so a payment whose callback never arrives is never looked up | **No value proposed.** Must be set before the 7 Dec test. How old a pending payment must be before the worker asks Beam about it |
-| `beam_reconcile_interval_seconds` | **Not read by the code.** The cron `WORKER_BEAM_RECONCILE_CRON` replaced it. Do not set it | n/a |
-| `pay_tap_limit_count`, `pay_tap_limit_window_seconds` | No limit on new payment holds (F03 design 4.8, D61) | Security proposes 5 holds per 600 s (`threat-model.md` section 6); approval is Security's and the owner's |
+| `console_enrolment_ttl_hours` | Issuing a staff enrolment link is refused (`enrolment:not_configured`): **no new BOOQ teammate can be invited or have a second factor reset.** The first admin's link uses its own argument (runbook 17) | **Yes**, before inviting anyone else |
+| `invite_ttl_hours` | Seeded **72** by migration 0035 (the design's proposal; an admin can change it). Owner invite link life | Review |
+| `tester_invite_ttl_hours` | Seeded **720** (30 days) by migration 0040 (a proposal; tester links are long lived, D102) | Review |
+| `staff_invite_ttl_hours` | Club staff invite link life. **None is shipped** (migration 0050: "set by a BOOQ admin; no invented setting"), so club staff invites are not possible until it is set | **Yes**, before the owner invites front desk and coaches |
+| `pay_tap_limit_count`, `pay_tap_limit_window_seconds` | No limit on new payment holds (F03 design 4.8, D61). **A Go live check (migration 0046) requires both to be positive numbers.** Security proposes 5 holds per 600 s (`threat-model.md` section 6); approval is Security's and the owner's | **Yes** |
+| `qr_expiry_margin_seconds` (F05) | Seeded `null`. How long before the QR runs out the hold must still last (D73, D80). Beam payments refuse until it is set | **Yes** |
+| `line_send_max_attempts`, `line_send_retry_seconds` (F10) | The LINE sender's token-failure retry limit and base backoff. **A required Go live check, `line_send_retry_set` (migration 0053), stays pending until both are positive numbers** | **Yes** |
+| `required_launch_checks` | A list (JSON). The Go live checks a club must pass; edited only by an admin | Review |
+| `line_cap_alert_percent`, `line_cap_reminders_stop_percent`, `line_cap_over_limit_percent` | **Fixed** product constants (LINE-07, D17): seeded 70, 80 and 100. The page shows them and offers no control; the database refuses a change | No action |
+| `beam_reconcile_age_seconds` (F05) | Seeded `null`. **While it is unset, the reconcile job is off**, so a payment whose callback never arrives is never looked up. How old an unresolved charge must be before the job asks Beam | **Yes**. **Gap:** the settings page's known list does not include this key (I checked `config.ts`), so an admin may not be able to set it in the console. Raised with the orchestrator |
+| `beam_reconcile_interval_seconds` | Seeded `null` by migration 0409 but **not read by the code**: the cron `WORKER_BEAM_RECONCILE_CRON` replaced it. Do not set it | No action |
 
 The first BOOQ admin account needs a way in before this works (first-admin bootstrap): that is the Architect's and BE-P's design, not set here. Add any other `platform.config` key to this table when a feature adds one.
 
