@@ -168,3 +168,8 @@ td.adm-cal-cell { background: transparent; }
 .adm-cal-free { text-align: center; }
 .adm-cal-add { display: inline-block; width: 100%; min-height: 40px; line-height: 40px; color: var(--mu); text-decoration: none; border-radius: 8px; }
 .adm-cal-add:hover, .adm-cal-add:focus-visible { background: var(--tn); color: var(--hd); }
+
+/* A14 daily close: the totals as a two column list that wraps on a phone. */
+.adm-dl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 16px; margin: 12px 0; }
+.adm-dl dt { color: var(--mu); overflow-wrap: anywhere; }
+.adm-dl dd { margin: 0; font-weight: 600; text-align: right; overflow-wrap: anywhere; }
