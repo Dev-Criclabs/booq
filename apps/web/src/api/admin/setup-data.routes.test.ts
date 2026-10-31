@@ -53,7 +53,7 @@ afterEach(async () => {
 
 describe('who may read and write', () => {
   it('every resource: owner, front desk and accountant read; only the owner writes; a player and a guest do neither', async () => {
-    for (const p of ['price-groups', 'court-prices', 'coach-tiers', 'add-ons', 'partners', 'promo-codes', 'coach-tier-prices']) {
+    for (const p of ['price-groups', 'court-prices', 'coach-tiers', 'package-products', 'add-ons', 'partners', 'promo-codes', 'coach-tier-prices']) {
       const path = `/staff/setup/${p}`;
       expect((await call('GET', path, owner())).ok, p).toBe(true);
       expect((await call('GET', path, desk())).ok, p).toBe(true);
@@ -122,6 +122,29 @@ describe('add-ons, coach tiers and their prices (A9)', () => {
     expect(await call('PUT', '/staff/setup/coach-tier-prices', owner(), {}, { tierId: '99999999-9999-4999-8999-999999999999', priceGroupId: g, priceSatang: 1 })).toMatchObject({ ok: false, status: 409 });
     expect(await call('DELETE', '/staff/setup/coach-tiers/:id', owner(), { id: t })).toMatchObject({ ok: false, status: 409, code: 'in_use' });
     expect(await audits('coach_tier_price')).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe('package products (A9, F06 PKG-02)', () => {
+  it('a court pack needs no tier or group; a solo pack needs a tier and a group; a price left out is null', async () => {
+    const g = (await call('POST', '/staff/setup/price-groups', owner(), {}, { nameTh: 'ก', nameEn: 'Adult', rule: { min_age: 18 } })).body.id;
+    const t = (await call('POST', '/staff/setup/coach-tiers', owner(), {}, { nameTh: 'โค้ช', nameEn: 'Head Coach' })).body.id;
+    const court = (await call('POST', '/staff/setup/package-products', owner(), {}, { nameTh: 'ชุด', nameEn: 'Ten hours', creditType: 'court_hour', credits: 10, validityMonths: 3 })).body;
+    expect(court).toMatchObject({ creditType: 'court_hour', credits: 10, validityMonths: 3, priceSatang: null, priceGroupId: null, coachTierId: null, active: true });
+    expect(await call('POST', '/staff/setup/package-products', owner(), {}, { nameTh: 'ก', nameEn: 'Solo', creditType: 'solo_class', credits: 5, validityMonths: 3, priceGroupId: g })).toMatchObject({ ok: false, status: 400 });
+    expect(await call('POST', '/staff/setup/package-products', owner(), {}, { nameTh: 'ก', nameEn: 'Group', creditType: 'group_session', credits: 5, validityMonths: 3 })).toMatchObject({ ok: false, status: 400 });
+    const solo = (await call('POST', '/staff/setup/package-products', owner(), {}, { nameTh: 'ก', nameEn: 'Solo', creditType: 'solo_class', credits: 5, validityMonths: 3, priceGroupId: g, coachTierId: t, priceSatang: 400000 })).body;
+    expect(solo).toMatchObject({ coachTierId: t, priceSatang: 400000 });
+    expect((await call('PUT', '/staff/setup/package-products/:id', owner(), { id: court.id }, { priceSatang: 90000 })).body.priceSatang).toBe(90000);
+    expect((await call('GET', '/staff/setup/package-products', desk())).body).toHaveLength(2);
+    for (const bad of [{ credits: 0 }, { validityMonths: 0 }, { creditType: 'x' }, { priceSatang: -1 }]) {
+      expect(await call('POST', '/staff/setup/package-products', owner(), {}, { nameTh: 'ก', nameEn: 'X', creditType: 'court_hour', credits: 1, validityMonths: 1, ...bad }), JSON.stringify(bad)).toMatchObject({ ok: false, status: 400 });
+    }
+  });
+  it('a product is switched off, never deleted: there is no delete route, and a sold product stays', async () => {
+    const p = (await call('POST', '/staff/setup/package-products', owner(), {}, { nameTh: 'ชุด', nameEn: 'Ten', creditType: 'court_hour', credits: 10, validityMonths: 3, priceSatang: 90000 })).body.id;
+    expect(routes.some((r) => r.def.method === 'DELETE' && r.def.path === '/staff/setup/package-products/:id')).toBe(false);
+    expect((await call('PUT', '/staff/setup/package-products/:id', owner(), { id: p }, { active: false })).body.active).toBe(false);
   });
 });
 

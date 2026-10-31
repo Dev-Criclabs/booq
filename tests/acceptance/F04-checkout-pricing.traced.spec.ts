@@ -70,3 +70,10 @@ traced("F04/R3-AC7", "Given the add-on name for balls, when it is shown anywhere
 
 // Added by trace-lane.py: criteria the lane's tests name by ID.
 traced("F04/R1-AC6", "Given a Student item (a package, class or price sold only to under 18) and a pla", [{ file: "packages/domain/src/checkout/package.test.ts", has: "R1-AC6" }, { file: "apps/web/src/api/checkout/package-pay.routes.test.ts", has: "R1-AC6" }]);
+
+// Added by trace-lane.py: criteria the lane's tests name by ID.
+traced("F04/PROMO-01-AC12", "Given the owner creates or edits a code, when it is saved, then it is audited (P", [{ file: "apps/web/src/api/admin/setup-data.routes.test.ts", has: "PROMO-01-AC12" }]);
+
+// Hand mapped by title, 31 Oct (batch of F04-T14, F06-T15, F10-T13, F01 exports mount).
+traced("F04/R3-AC8", "Given the owner edits add-ons in A9b, when they save, then it is audited (PLAT-0", [{ file: "apps/web/src/api/admin/setup-data.routes.test.ts", has: "an add-on with no price is saved with null, not a default (ADMIN-10)" }]);
+traced("F04/PROMO-01-AC12", "Given the owner creates or edits a code, when it is saved, then it is audited (P", [{ file: "apps/web/src/api/admin/setup-data.routes.test.ts", has: "the stacking choice is audited (PROMO-01-AC12)" }]);

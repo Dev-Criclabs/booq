@@ -28,3 +28,7 @@ Open:
 
 F11-T04 added `GET /staff/customers/csv` with its own `customer.export` permission (front desk and owner), synchronous and audited; the async `/exports` route stays owner only (D168). The lane test proves the CSV holds only this club, writes one audit entry and refuses the accountant; the export route test proves front desk is refused the club export. QA added `F11-customer-csv.new.spec.ts`: a customer whose display name starts with `=` (a player chooses it) is written as `'=...`, and a phone starting with `+` as `'+...`, so a spreadsheet does not run it as a formula. The spec is silent on this; the lane does it and the test only keeps it from regressing.
 
+
+## Update, 31 Oct (main d709178)
+
+F11-T0x owner setup routes are on main (`setup.routes.test.ts`, `setup-data.routes.test.ts`). ADMIN-02 (the checklist records once and is owner only), ADMIN-10 (an add-on with no price is saved as null), ADMIN-11 (a price group is audited) and ADMIN-12 (the stacking choice is audited) are now traced. Open: ADMIN-03 and ADMIN-06's screen parts.

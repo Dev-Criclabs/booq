@@ -248,7 +248,7 @@ export function setupDataRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[] {
     out.push(mk('GET', base, 'price.read', (tx) => listSetup(tx, r)));
     out.push(mk('POST', base, 'price.write', (tx, _i, b) => createSetup(tx, r, b)));
     out.push(mk('PUT', `${base}/:id`, 'price.write', (tx, i, b) => updateSetup(tx, r, i['id'], b)));
-    out.push(mk('DELETE', `${base}/:id`, 'price.write', (tx, i) => deleteSetup(tx, r, i['id'])));
+    if (!r.noDelete) out.push(mk('DELETE', `${base}/:id`, 'price.write', (tx, i) => deleteSetup(tx, r, i['id'])));
   }
   out.push(mk('GET', '/staff/setup/coach-tier-prices', 'price.read', (tx) => listTierPrices(tx)));
   out.push(mk('PUT', '/staff/setup/coach-tier-prices', 'price.write', (tx, _i, b) => putTierPrice(tx, b)));

@@ -52,3 +52,8 @@ traced("F10/LINE-05-AC14", "Given the owner's pause or a cap level, when it happ
 
 // Added by trace-lane.py: criteria the lane's tests name by ID.
 traced("F10/LINE-05-AC7", "Given a package, when it is 14 days and 3 days before expiry, then the player ge", [{ file: "packages/db/src/package-reminders.test.ts", has: "LINE-05-AC7" }]);
+
+// Hand mapped by title, 31 Oct (batch of F04-T14, F06-T15, F10-T13, F01 exports mount).
+traced("F10/LINE-06-AC1", "Given each club, when P1 loads, then it shows the messages used this month again", [{ file: "packages/db/src/line-usage-sync.test.ts", has: "LINE’s consumption is used and a limited quota is the limit; P1 sees counts only" }, { file: "apps/worker/src/tasks/line-usage.test.ts", has: "reads each Testing, Live and Paused club with its own token" }]);
+traced("F10/LINE-06-AC2", "Given the usage, when it is read, then it comes from LINE's own count for the cl", [{ file: "packages/db/src/line-usage-sync.test.ts", has: "LINE’s consumption is used and a limited quota is the limit" }]);
+traced("F10/LINE-06-AC6", "Given a club on the free plan or a paid plan, when its limit is shown, then the ", [{ file: "packages/db/src/line-usage-sync.test.ts", has: "a quota of none, or a failed quota read, falls back to the plan limit from P2 step 4" }]);
