@@ -75,3 +75,18 @@ describe('F10/LINE-05-AC16', () => {
     for (const [k, t] of found) expect(t, k).not.toMatch(/\b(24|14)\b/);
   });
 });
+
+describe('F10/LINE-02-AC6', () => {
+  // FINDING QA-F10-2 (severity 3, content): the default tile labels L-0002 and L-0003 are เรียนเดี่ยว and เรียนกลุ่ม in locales/th.json.
+  // LINE-02-AC6 and Gaps A6: the Thai terms are คลาสเดี่ยว and คลาสกลุ่ม, and เรียนเดี่ยว / เรียนกลุ่ม are the wrong ones. The lane knows (RICH_MENU_DEFAULT_KEYS
+  // in packages/line/src/rich-menu/menu.ts says the six D54 keys replace these) and tracks it as F10-T20; this test turns red when the new keys are used.
+  it.fails('F10/LINE-02-AC6 the default Thai tile labels use คลาสเดี่ยว and คลาสกลุ่ม, not เรียนเดี่ยว or เรียนกลุ่ม', async () => {
+    const { RICH_MENU_DEFAULT_KEYS } = await import('../../packages/line/src/rich-menu/menu');
+    const th = json('locales/th.json');
+    const labels = Object.values(RICH_MENU_DEFAULT_KEYS).map((k) => th[k] as string);
+    expect(labels).toHaveLength(6);
+    expect(labels.join('|')).not.toMatch(/เรียนเดี่ยว|เรียนกลุ่ม/);
+    expect(labels.join('|')).toMatch(/คลาสเดี่ยว/);
+    expect(labels.join('|')).toMatch(/คลาสกลุ่ม/);
+  });
+});

@@ -104,3 +104,6 @@ traced("F01/PLAT-07-AC8", "Given a test run, when it starts, finishes or is purg
 traced("F01/PLAT-07-AC10", "Given each club, when Beam is set up, then the club holds two sets of Beam keys,", [{ file: "packages/db/src/go-live.test.ts", has: "fails while the live key set is not in place" }]);
 traced("F01/PLAT-07-AC12", "Given the Go live purge, when it runs, then it removes only rows made by a teste", [{ file: "packages/db/src/purge.test.ts", has: "a setting changed in Testing keeps its audit entry" }]);
 traced("F01/PDPA-01-AC7", "Given a PDPA request, when it is made, handled or refused, then it is in the clu", [{ file: "packages/db/src/import-export.test.ts", has: "a request and its handling are audited" }]);
+
+// Criteria the lane's tests name by ID (added 31 Oct): the trace checks the ID is still cited in those files.
+traced("F01/PLAT-06-AC15", "Given any export of customers or club data, when it is made, then an audit entry", [{ file: "apps/web/src/api/reports/routes.test.ts", has: "PLAT-06-AC15" }]);

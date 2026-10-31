@@ -822,6 +822,15 @@ export interface PublicCustomerPackage {
   created_at: string;
 }
 
+export interface PublicCustomerTag {
+  club_id: string;
+  user_id: string;
+  tag: string;
+  created_by: string;
+  created_at: string;
+  is_test: boolean;
+}
+
 export interface PublicDailyClose {
   club_id: string;
   id: string;
@@ -1405,6 +1414,7 @@ export interface Tables {
   'public.court_price_rule': PublicCourtPriceRule;
   'public.credit_ledger': PublicCreditLedger;
   'public.customer_package': PublicCustomerPackage;
+  'public.customer_tag': PublicCustomerTag;
   'public.daily_close': PublicDailyClose;
   'public.data_export': PublicDataExport;
   'public.data_request': PublicDataRequest;

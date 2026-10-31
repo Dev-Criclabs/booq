@@ -116,3 +116,20 @@ Class template schedule summaries (are they built from data?), "Friend 1 / 2" (s
 | A-0510 | Rich menu label 2 | ชื่อปุ่ม Rich menu 2 |
 | A-0512 | Rich menu label 3 | ชื่อปุ่ม Rich menu 3 |
 | X-0089 | [Yes or no] | (English only) |
+
+## 11. Wording that breaks a product rule or an agreed term (from QA and the canvas gaps list)
+
+Both were raised by the orchestrator session. Writers own the wording, so nothing was changed in the locale files. Please send replacement text.
+
+**X-0120 (platform console, English only): refunds.** The rule is that value never goes back as cash. Refunds go to the wallet or package credit (CANCEL-02, PAY-05, canvas gap A3). The sentence "Refunds go back by PromptPay" says the opposite. The QA test for finding QA-F09-1 stays red until the wording changes.
+
+| Key | English now |
+|---|---|
+| X-0120 | Player pays a QR made for each booking. Confirms by itself, no slips. Refunds go back by PromptPay. Needs the club's own Beam merchant account. |
+
+**L-0002 and L-0003 (LINE rich menu tiles): Thai terms.** The agreed Thai terms are คลาสเดี่ยว and คลาสกลุ่ม (canvas gap A6). The tiles say เรียนเดี่ยว and เรียนกลุ่ม. The other four tiles (L-0001, L-0004, L-0005, L-0006) were checked and use none of the old terms.
+
+| Key | English | Thai now | Agreed term |
+|---|---|---|---|
+| L-0002 | Solo classes | เรียนเดี่ยว | คลาสเดี่ยว |
+| L-0003 | Group classes | เรียนกลุ่ม | คลาสกลุ่ม |
