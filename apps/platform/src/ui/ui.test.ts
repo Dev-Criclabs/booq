@@ -1,3 +1,4 @@
+import { CHECK_KEY, reasonKey, requestRecheck } from './health';
 import { buildBody, probeKey, sendConnection } from './connections';
 import { draftOf, loadSettings, parseDraft, saveSetting, type SettingRow } from './settings';
 import { checkBasics, checkPlan, clockTime, createBody, createClub, dayOf, emptyBasics, saveBasics as saveDraftBasics, savePaymentOption, savePlan, slugify, stampOf, stepFromQuery, type BasicValues } from './wizard';
@@ -526,5 +527,21 @@ describe('LINE and Beam connections (D167)', () => {
   it('every known failure code has its own words; an unknown one gets the generic line', () => {
     for (const c of ['messaging_api_token_rejected', 'liff_not_in_login_channel', 'key_refused', 'hmac_key_invalid']) expect(probeKey(c)).not.toBe('X-new.probe_failed');
     expect(probeKey('http_418')).toBe('X-new.probe_failed');
+  });
+});
+
+describe('connection checks and "Test all again" (D167)', () => {
+  it('a stored reason has words; no reason is a pass; an unknown code gets the generic line', () => {
+    expect(reasonKey(null)).toBe('X-new.health_ok');
+    for (const r of ['token_rejected', 'token_missing', 'keys_missing', 'key_refused', 'unreachable']) expect(reasonKey(r), r).not.toBe('X-new.probe_failed');
+    expect(reasonKey('http_418')).toBe('X-new.probe_failed');
+    expect(Object.keys(CHECK_KEY).sort()).toEqual(['beam_charge', 'beam_keys', 'line_token']);
+  });
+  const reply = (status: number, json: unknown) => (async () => new Response(JSON.stringify(json), { status })) as unknown as typeof fetch;
+  it('asking answers asked, or an error by key', async () => {
+    expect(await requestRecheck(reply(200, { requestedAt: 'x' }), 'c1')).toEqual({ kind: 'asked' });
+    expect(await requestRecheck(reply(404, { code: 'not_found' }), 'c1')).toMatchObject({ kind: 'error', key: 'X-new.club_not_found' });
+    expect(await requestRecheck(reply(401, {}), 'c1')).toMatchObject({ kind: 'error', signIn: true });
+    expect(await requestRecheck((async () => { throw new Error('x'); }) as unknown as typeof fetch, 'c1')).toMatchObject({ kind: 'error', key: 'X-new.club_unavailable' });
   });
 });

@@ -244,3 +244,29 @@ describe('Test connection on its own (design 5.2)', () => {
     expect(await boom.testConnection(spec, CLUB, 'line', { channel_access_token: TOKEN })).toEqual({ ok: true, result: 'fail', code: 'unreachable' });
   });
 });
+
+describe('"Test all again" (D167)', () => {
+  const ask = (who: string, club = CLUB) => svc.requestConnectionCheck(who, club);
+  const requests = async () => (await tdb.query(`select club_id, requested_by from platform.connection_check_request`)).rows;
+
+  it('asks the worker: one open request per club, shown in the setup with the last results; nothing is probed or read here', async () => {
+    const r = await ask(spec);
+    expect(r).toMatchObject({ ok: true });
+    expect(await requests()).toEqual([{ club_id: CLUB, requested_by: spec }]);
+    await ask(admin);
+    expect(await requests()).toEqual([{ club_id: CLUB, requested_by: admin }]);
+    await tdb.query(`insert into platform.club_health (club_id, check_key, status, reason) values ($1,'line_token','failed','token_rejected')`, [CLUB]);
+    const got = await svc.getSetup(spec, CLUB);
+    expect(got).toMatchObject({ ok: true, setup: { health: [{ check_key: 'line_token', status: 'failed', reason: 'token_rejected' }], checkRequestedAt: expect.anything() } });
+    expect(lineCalls).toEqual([]);
+    expect(beamCalls).toEqual([]);
+  });
+
+  it('works on a Live club too (a look only visit), is logged in P6, and an unassigned specialist gets not_found', async () => {
+    expect(await ask(spec, LIVE)).toMatchObject({ ok: true });
+    expect((await tdb.query(`select action, club_id from platform.audit_log where action = 'support.connection_check_requested'`)).rows).toEqual([{ action: 'support.connection_check_requested', club_id: LIVE }]);
+    expect(await ask(loner)).toEqual({ ok: false, code: 'not_found' });
+    expect(await ask(spec, 'not-an-id')).toEqual({ ok: false, code: 'not_found' });
+  });
+});
+

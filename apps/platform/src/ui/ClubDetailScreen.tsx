@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { ConnectionEditor } from './ConnectionEditor';
+import { ConnectionHealth } from './ConnectionHealth';
 import { ConsoleNav } from './ConsoleNav';
 import {
   BASICS_FIELDS, changeStatus, issueWebhookToken, itemKey, LAUNCH_KEY, loadClub, pauseClub, RESULT_KEY, resumeClub, saveBasics, sendOwnerInvite, SETUP_KEY, WEBHOOK_KINDS,
@@ -287,6 +288,8 @@ export function ClubDetailScreen({ id }: { id: string }) {
               )}
               <h3>{t('X-new.support_settings')}</h3>
               <SettingsEditor id={id} canEdit={mode === 'edit'} askStepUp={(run) => setPending({ run })} onNotice={setNotice} />
+              <h3>{t('X-new.health_title')}</h3>
+              <ConnectionHealth id={id} support={club.support} reload={reload} onNotice={setNotice} />
               <h3>{t('X-0140')}</h3>
               <ConnectionEditor id={id} kind="line" canEdit={mode === 'edit'} askStepUp={(run) => setPending({ run })} onNotice={setNotice} onSaved={reload} />
               <h3>{t('X-0038')}</h3>

@@ -10,6 +10,7 @@ import { runHoldRelease } from './tasks/hold-release';
 import { PACKAGE_EXPIRE, SESSION_START, WALLET_EXPIRE, runPackageExpire, runSessionStart, runWalletExpire } from './tasks/f06-expiry';
 import { CLASS_GENERATE, CLASS_GENERATE_DISPATCH, classGenerateDispatch, generateClassSessions } from './tasks/class-generate';
 import { runClassBelowMinimum, runOfferExpiry } from './tasks/class-jobs';
+import { runConnectionChecks } from './tasks/connection-check';
 import { createLineSender } from './tasks/line-sender-setup';
 import { startTicker } from './ticker';
 import { startWorker } from './worker';
@@ -70,12 +71,19 @@ const lineSender = createLineSender(db, {
   privateKey: loadDecryptKey(),
 });
 const outboxSender = startTicker({ everyMs: config.outboxSenderTickSeconds * 1000, run: () => lineSender.run(), onError: () => undefined });
+// connection_check (D167): the console's "Test all again". The worker opens the stored secrets and probes LINE and Beam; same tick and settings as the sender.
+const privateKey = loadDecryptKey();
+const connectionCheck = startTicker({
+  everyMs: config.outboxSenderTickSeconds * 1000,
+  run: () => runConnectionChecks(db, { privateKey, lineApiBaseUrl: config.lineApiBaseUrl, probeTimeoutMs: config.linePushTimeoutMs }),
+  onError: () => undefined,
+});
 
 let stopping = false;
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, () => {
     if (stopping) return;
     stopping = true;
-    void Promise.all([holdRelease.stop(), offerExpiry.stop(), classBelowMin.stop(), outboxSender.stop()]).then(() => worker.stop()).then(() => db.end()).then(() => process.exit(0));
+    void Promise.all([holdRelease.stop(), offerExpiry.stop(), classBelowMin.stop(), outboxSender.stop(), connectionCheck.stop()]).then(() => worker.stop()).then(() => db.end()).then(() => process.exit(0));
   });
 }

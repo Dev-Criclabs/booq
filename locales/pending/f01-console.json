@@ -328,6 +328,18 @@
     "X-new.probe_unexpected": "The service gave an answer that was not expected.",
     "X-new.probe_hmac_invalid": "The Beam webhook key is not in the form Beam shows it.",
     "X-new.probe_merchant_mismatch": "This key belongs to a different merchant.",
-    "X-new.probe_failed": "The check failed ({code})."
+    "X-new.probe_failed": "The check failed ({code}).",
+    "X-new.health_none": "No check has been recorded yet.",
+    "X-new.health_ok": "The last check passed.",
+    "X-new.health_line_token": "LINE connection",
+    "X-new.health_beam_keys": "Beam keys",
+    "X-new.health_beam_charge": "Beam charges",
+    "X-new.health_other": "{check}",
+    "X-new.health_status_ok": "Passed",
+    "X-new.health_status_failed": "Failed",
+    "X-new.health_waiting": "Checking the stored values. This page updates when the check is done.",
+    "X-new.health_slow": "The check is taking longer than expected. Ask again in a few minutes.",
+    "X-new.health_recheck": "Test all again",
+    "X-new.health_title": "Connection checks"
   }
 }

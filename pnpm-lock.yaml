@@ -121,6 +121,9 @@ importers:
 
   apps/worker:
     dependencies:
+      '@booq/beam':
+        specifier: workspace:*
+        version: link:../../packages/beam
       '@booq/db':
         specifier: workspace:*
         version: link:../../packages/db

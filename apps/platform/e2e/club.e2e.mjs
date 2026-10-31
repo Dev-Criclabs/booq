@@ -25,7 +25,7 @@ const DETAIL = {
   },
   counts: { bookingsConfirmed30d: 7, lineMessagesSent30d: 120 },
 };
-const SUPPORT = (over = {}) => ({ setup: { mode: 'edit', club: club(), hours: [{ weekday: 1, open: '06:00', close: '22:00' }], locations: [], resources: [{ id: 'r1', name: 'Court 1', sport: 'tennis', active: true }], settings: [], features: [{ feature_key: 'coach_add_at_checkout', enabled: true }], featureKeys: [{ feature_key: 'coach_add_at_checkout', requires_payment_option: null }, { feature_key: 'slip_only_thing', requires_payment_option: 'slip' }], ...over } });
+const SUPPORT = (over = {}) => ({ setup: { mode: 'edit', health: [], checkRequestedAt: null, club: club(), hours: [{ weekday: 1, open: '06:00', close: '22:00' }], locations: [], resources: [{ id: 'r1', name: 'Court 1', sport: 'tennis', active: true }], settings: [], features: [{ feature_key: 'coach_add_at_checkout', enabled: true }], featureKeys: [{ feature_key: 'coach_add_at_checkout', requires_payment_option: null }, { feature_key: 'slip_only_thing', requires_payment_option: 'slip' }], ...over } });
 
 /** A console serving this club to an admin. `over` replaces any answer ("METHOD /path" -> answer or function). */
 const SETTINGS = (over = {}) => ({
@@ -385,6 +385,31 @@ describe('the club page', () => {
     await page.getByTestId('step-up-submit').click();
     await page.getByTestId('notice').getByText('Saved. The check passed.').waitFor();
     assert.equal(calls.filter((c) => c.path.endsWith('/support/setup/line')).length, 2);
+    await context.close();
+  });
+
+  it('Test all again: the last results show, the button asks the worker, the page waits and shows the new results', async () => {
+    const HEALTH_OLD = [{ check_key: 'line_token', status: 'failed', reason: 'token_rejected', checked_at: '2026-12-01T03:00:00Z' }];
+    const HEALTH_NEW = [{ check_key: 'line_token', status: 'ok', reason: null, checked_at: '2026-12-01T03:01:00Z' }];
+    let state = 'idle';
+    let reads = 0;
+    const over = {
+      [`POST /clubs/${ID}/support/connection-check`]: () => ((state = 'waiting'), { status: 200, body: { requestedAt: '2026-12-01T03:00:30Z' } }),
+      [`GET /clubs/${ID}/support/setup`]: () => {
+        if (state === 'waiting' && ++reads >= 3) state = 'done';
+        const health = state === 'done' ? HEALTH_NEW : HEALTH_OLD;
+        return { status: 200, body: SUPPORT({ health, checkRequestedAt: state === 'waiting' ? '2026-12-01T03:00:30Z' : null }) };
+      },
+    };
+    const { page, context } = await openPage(browser, api({ over }), { width: 1024, height: 1000 });
+    await page.goto(`${app.base}/clubs/${ID}`);
+    await page.getByTestId('health-line_token').waitFor();
+    assert.match(await page.getByTestId('health-line_token').innerText(), /LINE connection · Failed · LINE did not accept the channel access token/);
+    await page.getByTestId('recheck').click();
+    await page.getByTestId('health-waiting').waitFor();
+    assert.equal(await page.getByTestId('recheck').isDisabled(), true);
+    await page.getByTestId('health-waiting').waitFor({ state: 'detached', timeout: 20000 });
+    assert.match(await page.getByTestId('health-line_token').innerText(), /LINE connection · Passed/);
     await context.close();
   });
 
