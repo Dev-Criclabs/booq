@@ -91,7 +91,7 @@ The language is read at send time from the recipient row, not stored on the outb
 | `club_closed_slot` | Player | F09 closure | now | `closure:{closure_id}:{booking_id}` | none | none | A |
 | `coach_changed` | Player | F07 substitution | now | `coach_changed:{booking_id}:{coach_id}` | none | none | A |
 | `waitlist_offer` | Player | F08 offer | now | `offer:{entry_id}:{offer_no}` | offer still open | none | A (free plan at 100: passes on) |
-| `package_expiring` | Player | F06 grant, extension, pause (days from setting, D116) | expiry minus N d | `package_expiring:{package_id}:{expires_at}:{N}` | credits left | none | A (D29) |
+| `package_expiring` | Player | F06 grant, extension, pause (days from setting, D116) | 09:00 Bangkok on the day N d before expiry (D169) | `package_expiring:{package_id}:{expires_at}:{N}` | credits left | none | A (D29) |
 | `birthday_discount` | Player | F14 monthly job, 09:00 Bangkok on the 1st | that moment | `birthday:{user_id}:{year}` | value set, date of birth on file | promotions | A |
 | `referral_reward` | Referrer | F14 on reward | now | `reward:{referral_id}` | none | promotions | A |
 | `session_change` | Coach | F07, F09 booking, move, cancel of their solo or class | now | `session:{booking_id}:{version}:{coach_id}` | none | none | A |
