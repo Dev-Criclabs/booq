@@ -8,3 +8,4 @@ export type { Dictionary, LinkTarget, MessageBuilderOptions, MessageLinks } from
 export type { MessageFacts, MessageHour } from './messages/facts';
 export type { RenderedRichMenu, RichMenuLabel, RichMenuLabels } from './rich-menu/render';
 export type { LineProbeCheck, LineProbeKey, LineProbeOptions, LineProbeResult, LineSetup } from './probe/probe';
+export { clubPath, createDeepLinks, DeepLinkError, liffLink, playerPath, type LinkClub, type PlayerPage } from './links/deep-link';

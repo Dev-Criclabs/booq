@@ -1,0 +1,46 @@
+name: Build
+
+# Production builds of the two Next.js apps (found missing 31 Oct 2026: `next build` of apps/web was broken on main
+# for a while, with Turbopack and the receipt font, and no gate caught it). Kept apart from ci.yml so the test jobs
+# stay fast. Runs on every push to main and to any lane branch, which also covers a pull request's head commit.
+# Require the "build (apps/web)" and "build (apps/platform)" checks in branch protection next to "CI result".
+# No secrets and no database: a build must not need either. A build that needs one is a bug in the app.
+
+on:
+  push:
+    branches: ['**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build (apps/${{ matrix.app }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [web, platform]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: next build
+        run: |
+          pkg="@booq/${{ matrix.app }}"
+          # Use the app's own "build" script when it has one (apps/web runs the deploy guard first).
+          if node -e "process.exit(require('./apps/${{ matrix.app }}/package.json').scripts?.build ? 0 : 1)"; then
+            pnpm --filter "$pkg" build
+          else
+            echo "::notice::$pkg has no build script yet. Running next build directly; please add one."
+            pnpm --filter "$pkg" exec next build
+          fi

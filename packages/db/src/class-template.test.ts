@@ -81,11 +81,9 @@ describe('class_template (CLASS-01-AC1, AC10)', () => {
     await expect(insert({ resource_id: '99999999-9999-4999-8999-999999999999' })).rejects.toThrow(/foreign key/);
   });
 
-  it('is club data: forced row security, the owner and tenant policies, no grant to the application roles yet', async () => {
+  it('is club data: forced row security, the owner and tenant policies, nothing for BOOQ staff', async () => {
     expect((await tdb.query(`select relrowsecurity, relforcerowsecurity from pg_class where oid = 'public.class_template'::regclass`)).rows[0]).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
-    for (const role of ['booq_app', 'booq_worker', 'booq_platform']) {
-      expect((await tdb.query(`select has_table_privilege($1, 'public.class_template', 'select') as ok`, [role])).rows[0].ok, role).toBe(false);
-    }
+    expect((await tdb.query(`select has_table_privilege('booq_platform', 'public.class_template', 'select') as ok`)).rows[0].ok).toBe(false);   // grants to the app roles come with 0911
   });
 
   it('a Testing club’s template is a test row, and an update is audited', async () => {

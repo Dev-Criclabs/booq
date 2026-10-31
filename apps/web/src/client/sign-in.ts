@@ -1,4 +1,5 @@
-import { createLiffClient, type SessionOutcome } from '@booq/line';
+// The LIFF client module only: the package index also exports server code (message dictionaries read files).
+import { createLiffClient, type SessionOutcome } from '@booq/line/src/liff/client';
 import type { LiffPort } from './liff';
 import { profileSetupPath, safeNext, signInPath } from './paths';
 
