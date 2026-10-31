@@ -134,3 +134,8 @@ input[readonly], textarea[readonly] { background: #f7f8f4; }
   .page.wide > section, .card { padding: 14px 14px; }
   h1 { font-size: 24px; }
 }
+
+.hours-row { display: grid; grid-template-columns: minmax(80px, 1fr) 1fr 1fr; gap: 8px; align-items: center; }
+.hours-row .day { font-size: 14px; }
+.check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink); font-weight: 400; min-height: 36px; }
+.check input { width: 20px; min-height: 20px; height: 20px; }

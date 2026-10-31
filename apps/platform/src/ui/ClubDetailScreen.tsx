@@ -8,6 +8,7 @@ import {
 import { STATUS_KEY, type Status } from './clubs';
 import { t } from './i18n';
 import { StepUpPanel } from './StepUpPanel';
+import { SupportEditor } from './SupportEditor';
 
 // /clubs/{id} (P3 and the support view): status and the checklist, the owner's invite, webhook addresses, and the club basics.
 // A specialist sees the clubs assigned to them; admin-only actions (pause, resume, webhook addresses) show for admins. Anything
@@ -264,17 +265,24 @@ export function ClubDetailScreen({ id }: { id: string }) {
 
             <section aria-labelledby="support-title">
               <h2 id="support-title">{t('X-0134')}</h2>
+              {mode === 'edit' ? (
+                <SupportEditor id={id} support={club.support} busy={busy} onSaved={async () => { setNotice({ key: 'X-new.support_saved', error: false }); await reload(); }} onError={(key) => setNotice({ key, error: true })} />
+              ) : (
+                <>
               <h3>{t('X-new.support_hours')}</h3>
-              {club.support.hours.length === 0 ? <p>{t('X-new.support_none')}</p> : (
-                <ul data-testid="hours">{club.support.hours.map((h) => <li key={h.weekday}>{t(`X-new.weekday_${h.weekday}`)} {h.open}–{h.close}</li>)}</ul>
-              )}
-              <h3>{t('X-new.support_courts')}</h3>
-              {club.support.resources.length === 0 ? <p>{t('X-new.support_none')}</p> : (
-                <ul data-testid="courts">{club.support.resources.map((r) => <li key={r.id}>{r.name} · {r.sport}</li>)}</ul>
-              )}
-              <h3>{t('X-new.support_features')}</h3>
-              {club.support.features.length === 0 ? <p>{t('X-new.support_none')}</p> : (
-                <ul data-testid="features">{club.support.features.map((f) => <li key={f.feature_key}>{f.feature_key} · {t(f.enabled ? 'X-new.feature_on' : 'X-new.feature_off')}</li>)}</ul>
+                  {club.support.hours.length === 0 ? <p>{t('X-new.support_none')}</p> : (
+                    <ul data-testid="hours">{club.support.hours.map((h) => <li key={h.weekday}>{t(`X-new.weekday_${h.weekday}`)} {h.open}–{h.close}</li>)}</ul>
+                  )}
+                  <h3>{t('X-new.support_courts')}</h3>
+                  {club.support.resources.length === 0 ? <p>{t('X-new.support_none')}</p> : (
+                    <ul data-testid="courts">{club.support.resources.map((r) => <li key={r.id}>{r.name} · {r.sport}</li>)}</ul>
+                  )}
+                  <h3>{t('X-new.support_features')}</h3>
+                  {club.support.features.length === 0 ? <p>{t('X-new.support_none')}</p> : (
+                    <ul data-testid="features">{club.support.features.map((f) => <li key={f.feature_key}>{f.feature_key} · {t(f.enabled ? 'X-new.feature_on' : 'X-new.feature_off')}</li>)}</ul>
+                  )}
+    
+                </>
               )}
             </section>
             </div>

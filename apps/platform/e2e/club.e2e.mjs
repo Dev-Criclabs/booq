@@ -53,9 +53,10 @@ describe('the club page', () => {
     assert.match(await page.getByTestId('launch-line_test').innerText(), /Passed · BOOQ/);
     assert.match(await page.getByTestId('launch-product_priced').innerText(), /Waiting · Owner/);
     assert.match(await page.getByTestId('launch-brand_new_check').innerText(), /brand_new_check · Missing/, 'an unknown check shows its own key, not invented text');
-    assert.match(await page.getByTestId('hours').innerText(), /Monday 06:00–22:00/);
-    assert.match(await page.getByTestId('courts').innerText(), /Court 1 · tennis/);
-    assert.match(await page.getByTestId('features').innerText(), /coaches · On/);
+    assert.equal(await page.locator('#h-1-open').inputValue(), '06:00');
+    assert.equal(await page.locator('#h-1-close').inputValue(), '22:00');
+    assert.equal(await page.locator('#c-r1-name').inputValue(), 'Court 1');
+    assert.equal(await page.getByTestId('feature-coaches').isChecked(), true);
     await page.screenshot({ path: join(SHOTS, 'club.png'), fullPage: true });
     await context.close();
   });
@@ -67,6 +68,10 @@ describe('the club page', () => {
     await page.getByTestId('basics-form').waitFor();
     assert.match(await page.getByTestId('mode').innerText(), /Read only/);
     assert.equal(await page.getByTestId('save-basics').count(), 0);
+    assert.equal(await page.getByTestId('support-editor').count(), 0, 'no editing in read-only mode');
+    assert.match(await page.getByTestId('hours').innerText(), /Monday 06:00–22:00/);
+    assert.match(await page.getByTestId('courts').innerText(), /Court 1 · tennis/);
+    assert.match(await page.getByTestId('features').innerText(), /coaches · On/);
     assert.equal(await page.locator('#b-name_en').getAttribute('readonly'), '');
     assert.equal(await page.getByTestId('webhook-line').isDisabled(), true);
     await context.close();
@@ -217,6 +222,98 @@ describe('the club page', () => {
     assert.ok(overflow <= 0, `page scrolls sideways by ${overflow}px`);
     for (const b of await page.locator('main button').all()) assert.ok((await b.boundingBox()).height < 60, 'a button wraps');
     await page.screenshot({ path: join(SHOTS, 'club-320.png'), fullPage: true });
+    await context.close();
+  });
+
+  it('hours: only the changed day is sent; a bad time is refused before anything is sent, naming the day', async () => {
+    const over = { [`PUT /clubs/${ID}/support/setup/resources-hours`]: { status: 200, body: { changed: ['hours'] } } };
+    const { page, context, calls } = await openPage(browser, api({ over }), { width: 1024, height: 900 });
+    await page.goto(`${app.base}/clubs/${ID}`);
+    await page.getByTestId('hours-form').waitFor();
+    await page.locator('#h-3-open').fill('7:00');
+    await page.locator('#h-3-close').fill('22:00');
+    await page.getByTestId('save-hours').click();
+    assert.equal(await page.getByTestId('support-problem-hours').innerText(), 'Use 24-hour time such as 06:00 (closing can be 24:00). (Wednesday)');
+    assert.equal(calls.filter((c) => c.method === 'PUT').length, 0);
+    await page.locator('#h-3-open').fill('07:00');
+    await page.getByTestId('save-hours').click();
+    await page.getByTestId('notice').waitFor();
+    assert.equal(await page.getByTestId('notice').innerText(), 'Saved.');
+    assert.deepEqual(calls.find((c) => c.method === 'PUT').body, { hours: [{ weekday: 3, open: '07:00', close: '22:00' }] });
+    await context.close();
+  });
+
+  it('courts: only the changed fields are sent, a court is switched off not deleted, and an unchanged form says so', async () => {
+    const over = { [`PUT /clubs/${ID}/support/setup/resources-hours`]: { status: 200, body: { changed: ['resources'] } } };
+    const { page, context, calls } = await openPage(browser, api({ over }), { width: 1024, height: 900 });
+    await page.goto(`${app.base}/clubs/${ID}`);
+    await page.getByTestId('courts-form').waitFor();
+    await page.getByTestId('save-courts').click();
+    assert.equal(await page.getByTestId('support-problem-courts').innerText(), 'Nothing was changed.');
+    await page.locator('#c-r1-name').fill('Centre Court');
+    await page.locator('#c-r1-sport').selectOption('padel');
+    await page.getByTestId('court-r1').locator('input[type=checkbox]').nth(1).uncheck();
+    await page.getByTestId('save-courts').click();
+    await page.getByTestId('notice').waitFor();
+    assert.deepEqual(calls.find((c) => c.method === 'PUT').body, { resources: [{ id: 'r1', name: 'Centre Court', sport: 'padel', active: false }] });
+    await context.close();
+  });
+
+  it('a court with players that are not a number is refused naming the court', async () => {
+    const { page, context, calls } = await openPage(browser, api(), { width: 1024, height: 900 });
+    await page.goto(`${app.base}/clubs/${ID}`);
+    await page.getByTestId('courts-form').waitFor();
+    await page.locator('#c-r1-players').fill('four');
+    await page.getByTestId('save-courts').click();
+    assert.equal(await page.getByTestId('support-problem-courts').innerText(), 'Players must be a whole number above zero. (Court 1)');
+    assert.equal(calls.filter((c) => c.method === 'PUT').length, 0);
+    await context.close();
+  });
+
+  it('adding a court uses the first location; with no location it says it cannot', async () => {
+    const over = { [`PUT /clubs/${ID}/support/setup/resources-hours`]: { status: 200, body: { changed: ['resources'] } } };
+    const withLocation = await openPage(browser, api({ support: SUPPORT({ locations: [{ id: 'loc-1', name: 'Main' }] }), over }), { width: 1024, height: 900 });
+    await withLocation.page.goto(`${app.base}/clubs/${ID}`);
+    await withLocation.page.getByTestId('add-court-form').waitFor();
+    await withLocation.page.locator('#new-court-name').fill('Court 2');
+    await withLocation.page.locator('#new-court-sport').selectOption('pickleball');
+    await withLocation.page.getByTestId('add-court').click();
+    await withLocation.page.getByTestId('notice').waitFor();
+    assert.deepEqual(withLocation.calls.find((c) => c.method === 'PUT').body, { resources: [{ location_id: 'loc-1', name: 'Court 2', sport: 'pickleball' }] });
+    await withLocation.context.close();
+    const none = await openPage(browser, api(), { width: 1024, height: 900 });
+    await none.page.goto(`${app.base}/clubs/${ID}`);
+    await none.page.getByTestId('add-court-form').waitFor();
+    await none.page.locator('#new-court-name').fill('Court 2');
+    await none.page.getByTestId('add-court').click();
+    assert.match(await none.page.getByTestId('support-problem-new').innerText(), /no location yet/);
+    assert.equal(none.calls.filter((c) => c.method === 'PUT').length, 0);
+    await none.context.close();
+  });
+
+  it('switches: only a changed one is sent; club settings say they cannot be changed yet', async () => {
+    const over = { [`PUT /clubs/${ID}/support/setup/features`]: { status: 200, body: { changed: ['coaches'] } } };
+    const { page, context, calls } = await openPage(browser, api({ over }), { width: 1024, height: 900 });
+    await page.goto(`${app.base}/clubs/${ID}`);
+    await page.getByTestId('features-form').waitFor();
+    await page.getByTestId('feature-coaches').uncheck();
+    await page.getByTestId('save-features').click();
+    await page.getByTestId('notice').waitFor();
+    assert.deepEqual(calls.find((c) => c.method === 'PUT').body, { features: { coaches: false } });
+    assert.match(await page.getByTestId('support-editor').innerText(), /Club settings cannot be changed here yet\./);
+    await context.close();
+  });
+
+  it('the API refusing an edit (the owner window closed) is told in words', async () => {
+    const over = { [`PUT /clubs/${ID}/support/setup/resources-hours`]: { status: 409, body: { code: 'look_only' } } };
+    const { page, context } = await openPage(browser, api({ over }), { width: 1024, height: 900 });
+    await page.goto(`${app.base}/clubs/${ID}`);
+    await page.getByTestId('hours-form').waitFor();
+    await page.locator('#h-3-open').fill('06:00');
+    await page.locator('#h-3-close').fill('22:00');
+    await page.getByTestId('save-hours').click();
+    await page.getByTestId('notice').waitFor();
+    assert.match(await page.getByTestId('notice').innerText(), /live or paused, so it can be looked at but not changed/);
     await context.close();
   });
 });

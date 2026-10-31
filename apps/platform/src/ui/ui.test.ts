@@ -7,6 +7,7 @@ import { BASICS_FIELDS, changeStatus, errorKey as clubErrorKey, issueWebhookToke
 import { loadLaunch, MARK_KEY, openChecks, recordResult } from './launch';
 import { isKnown, KNOWN, labelKey, loadConfig, parse, saveValue, show } from './config';
 import { check, emptyTexts, fromCurrent, loadLegal, publish, when, kindKey, languageKey, partKey, KINDS, LANGUAGES, PARTS } from './legal';
+import { courtDraft, courtsPatch, featuresPatch, hoursDraft, hoursPatch, newCourt, saveSection, trimSeconds, WEEKDAYS } from './support-edit';
 import { counts, FILTER_KEY, loadClubs, STATUS_KEY, visible, type ClubRow } from './clubs';
 import { safeNext, signInWithCode, signInWithPassword, stepUp } from './auth';
 import { deactivate, errorKey, invite, loadTeam, resetFactor } from './staff';
@@ -327,5 +328,58 @@ describe('legal page', () => {
     expect(await publish(reply(400, { code: 'invalid', reason: 'invalid_texts' }), full())).toEqual({ kind: 'error', key: 'X-new.legal_invalid' });
     expect(await publish(reply(403, { code: 'step_up_required' }), full())).toMatchObject({ kind: 'error', stepUp: true });
     expect(await publish(reply(403, { code: 'forbidden' }), full())).toEqual({ kind: 'error', key: 'X-new.staff_forbidden' });
+  });
+});
+
+describe('support view editing', () => {
+  const was = hoursDraft([{ weekday: 1, open: '06:00:00', close: '24:00:00' }, { weekday: 2, open: '06:00:00', close: '22:00:00' }]);
+  it('hours: seconds are trimmed, nothing changed sends nothing, a change sends only that day', () => {
+    expect(trimSeconds('06:00:00')).toBe('06:00');
+    expect(was[1]).toEqual({ open: '06:00', close: '24:00' });
+    expect(was[3]).toEqual({ open: '', close: '' });
+    expect(hoursPatch(was, was)).toEqual({ ok: true, hours: [] });
+    expect(hoursPatch(was, { ...was, 2: { open: '07:00', close: '21:30' } })).toEqual({ ok: true, hours: [{ weekday: 2, open: '07:00', close: '21:30' }] });
+    expect(hoursPatch(was, { ...was, 3: { open: '06:00', close: '24:00' } })).toEqual({ ok: true, hours: [{ weekday: 3, open: '06:00', close: '24:00' }] });
+  });
+  it('hours: both or neither, 24-hour time, closing later than opening', () => {
+    expect(hoursPatch(was, { ...was, 3: { open: '06:00', close: '' } })).toEqual({ ok: false, weekday: 3, key: 'X-new.support_hours_both' });
+    for (const bad of ['6:00', '25:00', '06:60', 'soon', '24:00x']) expect(hoursPatch(was, { ...was, 3: { open: bad, close: '22:00' } }), bad).toMatchObject({ ok: false, weekday: 3, key: 'X-new.support_hours_format' });
+    expect(hoursPatch(was, { ...was, 3: { open: '22:00', close: '06:00' } })).toMatchObject({ ok: false, key: 'X-new.support_hours_order' });
+    expect(hoursPatch(was, { ...was, 3: { open: '24:00', close: '24:00' } })).toMatchObject({ ok: false, key: 'X-new.support_hours_format' });
+    expect(WEEKDAYS).toHaveLength(7);
+  });
+  const court = { id: 'r1', name: 'Court 1', sport: 'tennis', type: 'outdoor', lights: true, max_players: 4, active: true };
+  it('courts: only the changed fields of the changed courts are sent, an empty players box clears it', () => {
+    const d = courtDraft(court);
+    expect(d).toEqual({ name: 'Court 1', sport: 'tennis', type: 'outdoor', lights: true, max_players: '4', active: true });
+    expect(courtDraft({ ...court, type: null, max_players: null, lights: undefined })).toMatchObject({ type: '', max_players: '', lights: false });
+    const base = { r1: d, r2: { ...d, name: 'Court 2' } };
+    expect(courtsPatch(base, base)).toEqual({ ok: true, resources: [] });
+    expect(courtsPatch(base, { ...base, r1: { ...d, name: ' Centre ', active: false, max_players: '' } })).toEqual({ ok: true, resources: [{ id: 'r1', name: 'Centre', active: false, max_players: null }] });
+    expect(courtsPatch(base, { ...base, r2: { ...base.r2, type: '', sport: 'padel', lights: false } })).toEqual({ ok: true, resources: [{ id: 'r2', sport: 'padel', type: null, lights: false }] });
+  });
+  it('courts: a name cannot be emptied and players must be a whole number above zero', () => {
+    const d = courtDraft(court);
+    expect(courtsPatch({ r1: d }, { r1: { ...d, name: '  ' } })).toEqual({ ok: false, id: 'r1', key: 'X-new.support_court_name' });
+    for (const bad of ['0', '-1', '2.5', 'four', '1000']) expect(courtsPatch({ r1: d }, { r1: { ...d, max_players: bad } }), bad).toEqual({ ok: false, id: 'r1', key: 'X-new.support_court_players_bad' });
+  });
+  it('a new court goes into the first location; without one, or without a name, it is refused', () => {
+    expect(newCourt([{ id: 'l1', name: 'Main' }, { id: 'l2', name: 'Annex' }], { name: ' Court 3 ', sport: 'padel' })).toEqual({ ok: true, resource: { location_id: 'l1', name: 'Court 3', sport: 'padel' } });
+    expect(newCourt([], { name: 'Court 3', sport: 'padel' })).toEqual({ ok: false, key: 'X-new.support_court_no_location' });
+    expect(newCourt([{ id: 'l1', name: 'Main' }], { name: ' ', sport: 'padel' })).toEqual({ ok: false, key: 'X-new.support_court_name' });
+  });
+  it('switches: only an existing one that changed is sent', () => {
+    expect(featuresPatch({ coaches: true, classes: false }, { coaches: false, classes: false })).toEqual({ coaches: false });
+    expect(featuresPatch({ coaches: true }, { coaches: true })).toEqual({});
+    expect(featuresPatch({ coaches: true }, { coaches: true, invented: true })).toEqual({});
+  });
+  it('saving names the section in the path; a refusal has its text', async () => {
+    const c = calls();
+    await saveSection(c.f, 'c1', 'resources-hours', { hours: [] });
+    expect(c.seen[0]).toEqual({ url: '/api/clubs/c1/support/setup/resources-hours', method: 'PUT', body: { hours: [] } });
+    expect(await saveSection(reply(200, {}), 'c1', 'features', {})).toEqual({ kind: 'saved' });
+    expect(await saveSection(reply(409, { code: 'look_only' }), 'c1', 'features', {})).toEqual({ kind: 'error', key: 'X-new.club_look_only' });
+    expect(await saveSection(reply(400, { code: 'invalid' }), 'c1', 'features', {})).toEqual({ kind: 'error', key: 'X-new.club_invalid' });
+    expect(await saveSection((async () => { throw new Error('offline'); }) as unknown as typeof fetch, 'c1', 'features', {})).toEqual({ kind: 'error', key: 'X-new.club_unavailable' });
   });
 });
