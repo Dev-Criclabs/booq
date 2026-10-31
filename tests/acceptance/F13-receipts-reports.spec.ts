@@ -86,7 +86,7 @@ describe("F13 RCPT-03", () => {
   // Given an order paid by credit or wallet only, when the close is run, then no money is counted; the close lists money methods (Beam, cash) and shows wallet use and credit use as separate non money lines (D119).
   test.todo("F13/RCPT-03-AC6 Given an order paid by credit or wallet only, when the close is run, then no money is counted; the close ...");
   // Given a close, when it is exported, then it is a CSV or PDF for the club and the export is audited (F01 PLAT-06-AC15).
-  test.todo("F13/RCPT-03-AC7 Given a close, when it is exported, then it is a CSV or PDF for the club and the export is audited (F01 ...");
+  // F13/RCPT-03-AC7: proven by a real or traced test in another file of this folder
   // Given an Accountant, when they run the close, then they see totals and receipt numbers and customer names, no phone numbers or dates of birth (D35).
   test.todo("F13/RCPT-03-AC8 Given an Accountant, when they run the close, then they see totals and receipt numbers and customer names, ...");
   // Given a closed day, when a receipt is later issued for it (a payment reported late), then it belongs to the day it was issued, not the earlier day (the sequence is by issue time).
@@ -126,7 +126,7 @@ describe("F13 R2", () => {
   // Given promotion and partner performance, then the partner report shows redemptions, revenue, new customers and repeat bookings within 30 and 60 days; a restored code reduces the redemption count (PRD, D70).
   test.todo("F13/R2-AC8 Given promotion and partner performance, then the partner report shows redemptions, revenue, new customers ...");
   // Given every report, when it is exported, then it is a CSV for the club with the same filters, audited (PLAT-04).
-  test.todo("F13/R2-AC9 Given every report, when it is exported, then it is a CSV for the club with the same filters, audited ...");
+  // F13/R2-AC9: proven by a real or traced test in another file of this folder
   // Given the Accountant, when they read a report that lists customers, then it shows names, never phone numbers or dates of birth (D35).
   // F13/R2-AC10: proven by a real or traced test in another file of this folder
   // Given front desk or a coach, when they request any report, then the server refuses (A13 is Owner and Accountant; coach pay is the coach's own earnings in K6).
