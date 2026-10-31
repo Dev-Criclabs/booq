@@ -6,3 +6,4 @@ export { startWorker, HOUSEKEEPING, type RunningWorker, type WorkerOptions } fro
 export { IMPORT_STAGING_SWEEP, sweepImportStaging } from './tasks/import-staging';
 export { CLUB_EXPORT, clubExportTask } from './tasks/club-export';
 export { HOLD_RELEASE, runHoldRelease, type HoldReleaseResult } from './tasks/hold-release';
+export { PACKAGE_EXPIRE, WALLET_EXPIRE, SESSION_START, runPackageExpire, runWalletExpire, runSessionStart, type ExpiryResult } from './tasks/f06-expiry';

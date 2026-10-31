@@ -6,6 +6,7 @@ import { CONSOLE_SESSION_SWEEP, consoleSessionSweep } from './tasks/console-sess
 import { RATE_LIMIT_SWEEP, rateLimitSweep } from './tasks/rate-limit-sweep';
 import { PAY_TAP_PRUNE, PAY_TAP_PRUNE_DISPATCH, payTapPruneDispatch, prunePayTaps } from './tasks/pay-tap-prune';
 import { runHoldRelease } from './tasks/hold-release';
+import { PACKAGE_EXPIRE, SESSION_START, WALLET_EXPIRE, runPackageExpire, runSessionStart, runWalletExpire } from './tasks/f06-expiry';
 import { startTicker } from './ticker';
 import { startWorker } from './worker';
 
@@ -30,6 +31,15 @@ const worker = await startWorker({
     },
     [CONSOLE_SESSION_SWEEP]: async () => {
       await sweepConsoleSessions();
+    },
+    [PACKAGE_EXPIRE]: async () => {
+      await runPackageExpire(db);
+    },
+    [WALLET_EXPIRE]: async () => {
+      await runWalletExpire(db);
+    },
+    [SESSION_START]: async () => {
+      await runSessionStart(db);
     },
   },
   crontab: buildCrontab(config),
