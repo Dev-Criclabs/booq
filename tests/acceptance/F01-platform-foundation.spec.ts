@@ -4,215 +4,154 @@
 // and keep the ID at the start of the title (tests/acceptance/coverage.spec.ts checks every criterion appears).
 import { describe, test } from 'vitest';
 
-describe("F01 ROLE-01", () => {
-  // Given a LINE user who is a coach at a club and also books courts, when they sign in, then they have one record with the roles Coach and Player and can open both surfaces.
-  test.todo("F01/ROLE-01-AC1 Given a LINE user who is a coach at a club and also books courts, when they sign in, then they have one ...");
-  // Given a user with two roles, when the server checks a request, then it allows the request if **any** of their roles allows it, and refuses if none does. Rights are the union of the roles and nothing more.
-  test.todo("F01/ROLE-01-AC2 Given a user with two roles, when the server checks a request, then it allows the request if **any** of ...");
-  // Given a user who is a coach and a player, when they look at players or other coaches in the coach portal, then they see only what the Coach role allows; the Player role does not widen it.
-  test.todo("F01/ROLE-01-AC3 Given a user who is a coach and a player, when they look at players or other coaches in the coach portal, ...");
-  // Given an owner or staff member who also plays, when they book as a player, then they pay as a player (same price, same hold, same rules). Staff rights do not skip payment or the hold.
-  test.todo("F01/ROLE-01-AC4 Given an owner or staff member who also plays, when they book as a player, then they pay as a player (same ...");
-  // Given a role added to or removed from a person, when it is saved, then it is audited (PLAT-04) with the old and new set. Roles are assigned by the owner only (A17).
-  test.todo("F01/ROLE-01-AC5 Given a role added to or removed from a person, when it is saved, then it is audited (PLAT-04) with the ...");
-  // Given a BOOQ role, when a person holds one, then it lives on the BOOQ account (ROLE-02) and is never mixed into a club role set. A BOOQ staff member who also plays at a club has a separate club player record signed in with LINE.
-  test.todo("F01/ROLE-01-AC6 Given a BOOQ role, when a person holds one, then it lives on the BOOQ account (ROLE-02) and is never mixed ...");
-  // Given every club person (owner, staff, coach), when they have a record, then they also hold the Player role, so they can book and edit their own profile (D115, Reviewer F02-4).
-  test.todo("F01/ROLE-01-AC7 Given every club person (owner, staff, coach), when they have a record, then they also hold the Player ...");
-  // Given the Accountant, when they open settings, then they read business and tax settings only; they see no other settings (D115). Only the Owner marks a coach payout paid (D115).
-  test.todo("F01/ROLE-01-AC8 Given the Accountant, when they open settings, then they read business and tax settings only; they see no ...");
-});
-
 describe("F01 ROLE-02", () => {
   // Given a BOOQ staff account, when they sign in to the platform console, then they must pass email sign in and a second factor. Without the second factor, no session is created.
-  test.todo("F01/ROLE-02-AC1 Given a BOOQ staff account, when they sign in to the platform console, then they must pass email sign in ...");
+  // F01/ROLE-02-AC1: proven by a real or traced test in another file of this folder
   // Given a BOOQ staff account, when they try to sign in through LINE as that account, or open a club's admin console as a club user, then it is refused. A BOOQ account never gets a club role (ROLE-01-AC6).
-  test.todo("F01/ROLE-02-AC2 Given a BOOQ staff account, when they try to sign in through LINE as that account, or open a club's admin ...");
+  // F01/ROLE-02-AC2: proven by a real or traced test in another file of this folder
   // Given a LINE sign in of a club user, when they try the platform console, then the server refuses.
-  test.todo("F01/ROLE-02-AC3 Given a LINE sign in of a club user, when they try the platform console, then the server refuses.");
+  // F01/ROLE-02-AC3: proven by a real or traced test in another file of this folder
   // Given a BOOQ staff member removed or deactivated in P6, when they try to sign in, then it is refused and any open session ends.
-  test.todo("F01/ROLE-02-AC4 Given a BOOQ staff member removed or deactivated in P6, when they try to sign in, then it is refused and ...");
+  // F01/ROLE-02-AC4: proven by a real or traced test in another file of this folder
   // Given every BOOQ sign in, failed sign in, second factor reset and teammate invite, when it happens, then it is written to P6 (PLAT-04).
-  test.todo("F01/ROLE-02-AC5 Given every BOOQ sign in, failed sign in, second factor reset and teammate invite, when it happens, then ...");
+  // F01/ROLE-02-AC5: proven by a real or traced test in another file of this folder
   // Given a teammate invited in P6, when they accept, then they set up their own email sign in and second factor. The method (code app, SMS, other) is Q-C.
   test.todo("F01/ROLE-02-AC6 Given a teammate invited in P6, when they accept, then they set up their own email sign in and second ...");
   // Given a BOOQ staff member's second factor must be reset, when it is reset, then it is done only by another platform admin and logged in P6 (D123).
-  test.todo("F01/ROLE-02-AC7 Given a BOOQ staff member's second factor must be reset, when it is reset, then it is done only by another ...");
+  // F01/ROLE-02-AC7: proven by a real or traced test in another file of this folder
   // Given the owner invite, when P2 step 1 saves the owner's LINE ID, then the invite is bound to that LINE ID and is single use (D122).
-  test.todo("F01/ROLE-02-AC8 Given the owner invite, when P2 step 1 saves the owner's LINE ID, then the invite is bound to that LINE ID ...");
-});
-
-describe("F01 ROLE", () => {
-  // Given a signed in front desk user, when they request revenue, coach pay, prices, rules or staff data, then the server refuses, whatever the screen shows.
-  test.todo("F01/ROLE-AC1 Given a signed in front desk user, when they request revenue, coach pay, prices, rules or staff data, then ...");
-  // Given a signed in accountant, when they try to change a booking, price or balance, then the server refuses and nothing changes.
-  test.todo("F01/ROLE-AC2 Given a signed in accountant, when they try to change a booking, price or balance, then the server refuses ...");
-  // Given a coach, when they request another coach's schedule, any customer payment or club revenue, then the server refuses.
-  test.todo("F01/ROLE-AC3 Given a coach, when they request another coach's schedule, any customer payment or club revenue, then the ...");
-  // Given a player, when they request another player's data, then the server returns not found.
-  test.todo("F01/ROLE-AC4 Given a player, when they request another player's data, then the server returns not found.");
-  // Given an onboarding specialist, when they open a club not assigned to them, then the server refuses. When they try to pause or resume any club, then the server refuses (D15). There is no delete club action for anyone in v1 (D14).
-  test.todo("F01/ROLE-AC5 Given an onboarding specialist, when they open a club not assigned to them, then the server refuses. When ...");
-  // Given a user of club A with any role, when they request a record of club B, then the server returns not found (CC-1).
-  test.todo("F01/ROLE-AC6 Given a user of club A with any role, when they request a record of club B, then the server returns not ...");
-});
-
-describe("F01 PLAT-01", () => {
-  // Given a new club created in P2, when it is saved, then its status is Draft, and every later P2 save keeps it Draft.
-  test.todo("F01/PLAT-01-AC1 Given a new club created in P2, when it is saved, then its status is Draft, and every later P2 save keeps ...");
-  // Given a Draft club, when steps 1 to 8 of the setup are not all done, then the server refuses the change to Testing and P3 shows what is missing and who owes it (PRD Platform flows: Flow J). Both a specialist (assigned club) and a platform admin may make this change (D15).
-  test.todo("F01/PLAT-01-AC2 Given a Draft club, when steps 1 to 8 of the setup are not all done, then the server refuses the change to ...");
-  // Given a Testing club, when any P4 Go live check is not passed, then the server refuses the change to Live, whatever the screen shows. When every check is passed and BOOQ staff press Go live, then the status is Live and the change is written to the P6 log.
-  test.todo("F01/PLAT-01-AC3 Given a Testing club, when any P4 Go live check is not passed, then the server refuses the change to Live, ...");
-  // Given the Go live checklist, when P4 lists it, then beyond the P4 checks it requires: the owner has signed in, one completed test booking, the per player pay tap limit is set, and the Beam key swap with its smoke test is done (D108, D32). Go live is refused until each is ticked.
-  test.todo("F01/PLAT-01-AC12 Given the Go live checklist, when P4 lists it, then beyond the P4 checks it requires: the owner has signed ...");
-  // Given a club on a blank template, when it has no product, or any rule is unset, then Go live is refused (PRD P5). A product with a price counts; the exact rule list is Q7.
-  test.todo("F01/PLAT-01-AC4 Given a club on a blank template, when it has no product, or any rule is unset, then Go live is refused ...");
-  // Given a Draft or Testing club, when a player opens the player app, then the club is not visible to players (P4 "Players can't see the club yet"). In Testing, only the testers can sign in: the club owner and named BOOQ testers (D4, PLAT-07).
-  test.todo("F01/PLAT-01-AC5 Given a Draft or Testing club, when a player opens the player app, then the club is not visible to players ...");
-  // Given a Draft or Testing club, when someone who is not signed in calls it, then the club serves only a minimal sign in config (name, language, status, LIFF id). The club admits the owner role and testers; the owner invite stays valid for return visits and testers get long lived invites (D102).
-  test.todo("F01/PLAT-01-AC11 Given a Draft or Testing club, when someone who is not signed in calls it, then the club serves only a ...");
-  // Given a Testing club, when it goes Live, then all test data is purged (P4 "Test bookings will be cleared, deleted at Go live") and the club's real receipts start at 000001 (D4; PLAT-07).
-  test.todo("F01/PLAT-01-AC6 Given a Testing club, when it goes Live, then all test data is purged (P4 \"Test bookings will be cleared, ...");
-  // Given a club of any status, when any status change is made, then it records who, when, old status, new status and, for Paused, the reason (PLAT-04).
-  test.todo("F01/PLAT-01-AC7 Given a club of any status, when any status change is made, then it records who, when, old status, new ...");
-  // Given an onboarding specialist, when they request a status change on a club that is not assigned to them, or try to pause or resume any club, then the server refuses. A platform admin may pause and resume any club (D15).
-  test.todo("F01/PLAT-01-AC8 Given an onboarding specialist, when they request a status change on a club that is not assigned to them, ...");
-  // Given a Paused club, when a platform admin resumes it, then the status returns to Live, the reason for resuming is written to P6, and the pause length is fixed for PLAT-03-AC7. Only a platform admin can resume (D15).
-  test.todo("F01/PLAT-01-AC10 Given a Paused club, when a platform admin resumes it, then the status returns to Live, the reason for ...");
-  // Given a failed test, when the club is Draft or Testing, then it stays in that status and P3 shows what is missing and who owes it (PRD Flow J).
-  test.todo("F01/PLAT-01-AC9 Given a failed test, when the club is Draft or Testing, then it stays in that status and P3 shows what is ...");
+  // F01/ROLE-02-AC8: proven by a real or traced test in another file of this folder
 });
 
 describe("F01 PLAT-02", () => {
   // Given BOOQ staff in a club's support view, when they request players, bookings, payments, slips, receipts, wallets or reports, then the server refuses, even with a direct API call (CLAUDE.md "BOOQ platform staff never see...").
-  test.todo("F01/PLAT-02-AC1 Given BOOQ staff in a club's support view, when they request players, bookings, payments, slips, receipts, ...");
+  // F01/PLAT-02-AC1: proven by a real or traced test in another file of this folder
   // Given a Draft or Testing club, when BOOQ staff change a setup value in the support view, then the change is saved.
-  test.todo("F01/PLAT-02-AC2 Given a Draft or Testing club, when BOOQ staff change a setup value in the support view, then the change ...");
+  // F01/PLAT-02-AC2: proven by a real or traced test in another file of this folder
   // Given a Live club with Allow BOOQ to make changes off, when BOOQ staff try to change any value, then the server refuses and the support view shows look only.
-  test.todo("F01/PLAT-02-AC3 Given a Live club with Allow BOOQ to make changes off, when BOOQ staff try to change any value, then the ...");
+  // F01/PLAT-02-AC3: proven by a real or traced test in another file of this folder
   // Given a Live club, when the owner turns on Allow BOOQ to make changes, then BOOQ staff can edit setup values. When 24 hours have passed, then it turns off by itself and further edits are refused, with no action by anyone.
-  test.todo("F01/PLAT-02-AC4 Given a Live club, when the owner turns on Allow BOOQ to make changes, then BOOQ staff can edit setup ...");
+  // F01/PLAT-02-AC4: proven by a real or traced test in another file of this folder
   // Given the 24 hour window is on, when the owner turns it off early, then edits stop at once.
-  test.todo("F01/PLAT-02-AC5 Given the 24 hour window is on, when the owner turns it off early, then edits stop at once.");
+  // F01/PLAT-02-AC5: proven by a real or traced test in another file of this folder
   // Given any support view visit or change by BOOQ staff, when it happens, then it is logged in P6 and in the club's own staff audit log with the BOOQ staff name (PRD Support access; PLAT-04).
-  test.todo("F01/PLAT-02-AC6 Given any support view visit or change by BOOQ staff, when it happens, then it is logged in P6 and in the ...");
+  // F01/PLAT-02-AC6: proven by a real or traced test in another file of this folder
   // Given a Paused club, when BOOQ staff open the support view, then it is look only, unless the owner has allowed changes (D27). A Paused club behaves like a Live club here.
-  test.todo("F01/PLAT-02-AC7 Given a Paused club, when BOOQ staff open the support view, then it is look only, unless the owner has ...");
+  // F01/PLAT-02-AC7: proven by a real or traced test in another file of this folder
   // Given a stored secret (Messaging API token, Beam key, LIFF secret), when it is shown anywhere, then only the last 4 characters show. Secrets are write only: BOOQ staff and the owner can replace a value but nobody can read it back (D27).
-  test.todo("F01/PLAT-02-AC8 Given a stored secret (Messaging API token, Beam key, LIFF secret), when it is shown anywhere, then only ...");
+  // F01/PLAT-02-AC8: proven by a real or traced test in another file of this folder
   // Given a platform user without access to the club, when they open its support view, then the server refuses (assigned clubs only for the specialist, ROLE-AC5).
-  test.todo("F01/PLAT-02-AC9 Given a platform user without access to the club, when they open its support view, then the server refuses ...");
+  // F01/PLAT-02-AC9: proven by a real or traced test in another file of this folder
   // Given BOOQ staff in P1 or P3, when they look at a club, then they may see aggregate counts (for example bookings in the last 30 days, as P1 shows) and the owner's contact details (name, phone, LINE and email, as entered in P2 step 1). They never see an individual booking, player, payment, slip, receipt, wallet or report (D2).
-  test.todo("F01/PLAT-02-AC10 Given BOOQ staff in P1 or P3, when they look at a club, then they may see aggregate counts (for example ...");
+  // F01/PLAT-02-AC10: proven by a real or traced test in another file of this folder
   // Given the support view, when it lists pages, then it holds exactly: courts and hours, products and pricing (with add-ons), LINE, payment connections, settings. It does not hold staff, coaches, closures or promo codes (D27).
-  test.todo("F01/PLAT-02-AC12 Given the support view, when it lists pages, then it holds exactly: courts and hours, products and pricing ...");
+  // F01/PLAT-02-AC12: proven by a real or traced test in another file of this folder
   // Given BOOQ staff request a record of a club they have no access to, or a record outside the setup only view, when the server answers, then it returns 404 (not found), never a refusal that confirms the record exists (D27).
   test.todo("F01/PLAT-02-AC13 Given BOOQ staff request a record of a club they have no access to, or a record outside the setup only ...");
   // Given a guest (not signed in), when any route answers them, then it reads only named public columns or routes; owner contact details and merchant ids are never readable by a guest (D103).
-  test.todo("F01/PLAT-02-AC14 Given a guest (not signed in), when any route answers them, then it reads only named public columns or ...");
+  // F01/PLAT-02-AC14: proven by a real or traced test in another file of this folder
   // Given an aggregate count, when it is produced, then it is computed on the server as a number only, with no list of rows behind it and no way to drill down (D2). Which counts exist is limited to those on P1 and P3 (Q-D).
-  test.todo("F01/PLAT-02-AC11 Given an aggregate count, when it is produced, then it is computed on the server as a number only, with no ...");
+  // F01/PLAT-02-AC11: proven by a real or traced test in another file of this folder
 });
 
 describe("F01 PLAT-03", () => {
   // Given a Live club, when a platform admin pauses it with a reason, then the status is Paused, the reason is stored and the owner gets a LINE message with the reason (P3c "The club owner gets a LINE message with the reason").
-  test.todo("F01/PLAT-03-AC1 Given a Live club, when a platform admin pauses it with a reason, then the status is Paused, the reason is ...");
+  // F01/PLAT-03-AC1: proven by a real or traced test in another file of this folder
   // Given a pause request without a reason, when it is submitted, then it is refused (P3c "Reason, required").
-  test.todo("F01/PLAT-03-AC2 Given a pause request without a reason, when it is submitted, then it is refused (P3c \"Reason, required\").");
+  // F01/PLAT-03-AC2: proven by a real or traced test in another file of this folder
   // Given an onboarding specialist, when they try to pause or resume a club, then the server refuses. Only a platform admin pauses or resumes (D15).
-  test.todo("F01/PLAT-03-AC3 Given an onboarding specialist, when they try to pause or resume a club, then the server refuses. Only a ...");
+  // F01/PLAT-03-AC3: proven by a real or traced test in another file of this folder
   // Given a Paused club, when a player or a staff member tries to start a new booking or purchase or a new hold, then the server refuses it, including a direct API call, and the app shows "Online booking is paused for now. Message the club on LINE for help." (P-0442 "Online booking is paused for now"; exact string by key). The owner can still manage existing bookings (D60, HO PLAT-03).
-  test.todo("F01/PLAT-03-AC4 Given a Paused club, when a player or a staff member tries to start a new booking or purchase or a new ...");
+  // F01/PLAT-03-AC4: proven by a real or traced test in another file of this folder
   // Given a Paused club, when a player opens the app, then Book a court, Classes and Packages show as paused and upcoming bookings still show (PRD Pausing).
   test.todo("F01/PLAT-03-AC5 Given a Paused club, when a player opens the app, then Book a court, Classes and Packages show as paused ...");
   // Given an existing booking, when the club is paused, then the booking stays valid and its LINE reminders still go out.
   test.todo("F01/PLAT-03-AC6 Given an existing booking, when the club is paused, then the booking stays valid and its LINE reminders ...");
   // Given a package or wallet balance with an expiry date, when the club is resumed, then every expiry date moves forward by the length of the pause (start to end) and still ends at 23:59 Asia/Bangkok on its day (D20 applies to pause extensions). The ledger records one movement per package with a reason, not a silent edit (PKG-01, D28). Whether a wallet with no expiry is touched is Q11.
-  test.todo("F01/PLAT-03-AC7 Given a package or wallet balance with an expiry date, when the club is resumed, then every expiry date ...");
+  // F01/PLAT-03-AC7: proven by a real or traced test in another file of this folder
   // Given a Paused club, when the owner or staff open the club admin, then it works and every page shows a banner with the reason and a Message BOOQ button (H-A01 pause banner, S-A01-Paused).
   test.todo("F01/PLAT-03-AC8 Given a Paused club, when the owner or staff open the club admin, then it works and every page shows a ...");
   // Given a payment already started before the pause, when it completes after the pause begins, then it is handled by the PAY-03 rules (F05), not refused. Stated here only so F05 and F01 agree; the spec does not say. See Q12.
   test.todo("F01/PLAT-03-AC9 Given a payment already started before the pause, when it completes after the pause begins, then it is ...");
   // Given any pause or resume, then it is written to the P6 log and the club's audit log (PLAT-04).
-  test.todo("F01/PLAT-03-AC10 Given any pause or resume, then it is written to the P6 log and the club's audit log (PLAT-04).");
+  // F01/PLAT-03-AC10: proven by a real or traced test in another file of this folder
   // Given a Paused club, when a platform admin resumes it, then new booking and buying turn back on, the pause banner leaves the club admin, the owner gets a LINE message, and the pause length (start to resume) is used for the expiry shift in AC7 (D15).
-  test.todo("F01/PLAT-03-AC11 Given a Paused club, when a platform admin resumes it, then new booking and buying turn back on, the pause ...");
+  // F01/PLAT-03-AC11: proven by a real or traced test in another file of this folder
   // Given a Paused club, when the owner or staff manage existing bookings, then they may move, add a coach, cancel and mark no show (D107). A late payment is not used to confirm a booking in a Paused club and the whole value goes to the wallet (D107, D109).
   test.todo("F01/PLAT-03-AC12 Given a Paused club, when the owner or staff manage existing bookings, then they may move, add a coach, ...");
 });
 
 describe("F01 PLAT-04", () => {
   // Given a change to a booking, a credit or wallet balance (any ledger movement made by staff), a price or a setting, when it is saved, then one audit entry is written in the same transaction, holding actor, time, record type and ID, old value, new value and reason.
-  test.todo("F01/PLAT-04-AC1 Given a change to a booking, a credit or wallet balance (any ledger movement made by staff), a price or a ...");
+  // F01/PLAT-04-AC1: proven by a real or traced test in another file of this folder
   // Given the change cannot write its audit entry, when the transaction runs, then the whole change is rolled back (no unaudited change).
-  test.todo("F01/PLAT-04-AC2 Given the change cannot write its audit entry, when the transaction runs, then the whole change is rolled ...");
+  // F01/PLAT-04-AC2: proven by a real or traced test in another file of this folder
   // Given a staff adjustment to credits or wallet, when it is submitted without a written reason, then it is refused (PRD Credits and wallet; PKG-01).
-  test.todo("F01/PLAT-04-AC3 Given a staff adjustment to credits or wallet, when it is submitted without a written reason, then it is ...");
+  // F01/PLAT-04-AC3: proven by a real or traced test in another file of this folder
   // Given a change made by BOOQ staff, when it is saved, then the entry names the BOOQ staff member and appears in P6 and in the club's own audit log (PRD Support access).
-  test.todo("F01/PLAT-04-AC4 Given a change made by BOOQ staff, when it is saved, then the entry names the BOOQ staff member and ...");
+  // F01/PLAT-04-AC4: proven by a real or traced test in another file of this folder
   // Given any platform action (create club, status change, support view visit, pause, test run, export, invite), when it happens, then a P6 entry is written with club, who and what.
-  test.todo("F01/PLAT-04-AC5 Given any platform action (create club, status change, support view visit, pause, test run, export, ...");
+  // F01/PLAT-04-AC5: proven by a real or traced test in another file of this folder
   // Given an audit entry, or a credit or wallet ledger row, when anyone tries to edit or delete it, then the server refuses and the database rejects it too (the app has no update or delete right). Both are append only (D28; H-P6-Team-audit "Nothing here can be edited or deleted"). A correction is a new row. The same holds for the club log. The one exception is the Go live purge of test flagged data (PLAT-07-AC3).
-  test.todo("F01/PLAT-04-AC6 Given an audit entry, or a credit or wallet ledger row, when anyone tries to edit or delete it, then the ...");
+  // F01/PLAT-04-AC6: proven by a real or traced test in another file of this folder
   // Given a deleted player is anonymised, when it is done, then personal fields in audit rows are replaced by a placeholder and nothing else in an audit row can change (D104). This is the second named exception to append only, after the Go live purge.
-  test.todo("F01/PLAT-04-AC12 Given a deleted player is anonymised, when it is done, then personal fields in audit rows are replaced by ...");
+  // F01/PLAT-04-AC12: proven by a real or traced test in another file of this folder
   // Given an owner, when they open the audit log, then they can search and filter it by staff, record and date (PRD A17; screen is F11).
   test.todo("F01/PLAT-04-AC7 Given an owner, when they open the audit log, then they can search and filter it by staff, record and date ...");
   // Given a front desk, accountant or coach, when they request the audit log, then the server refuses (A17 is owner only).
-  test.todo("F01/PLAT-04-AC8 Given a front desk, accountant or coach, when they request the audit log, then the server refuses (A17 is ...");
+  // F01/PLAT-04-AC8: proven by a real or traced test in another file of this folder
   // Given the Staff and audit log, when it lists an entry about a player, then it shows what the club needs to run the business; BOOQ staff cannot read it (PLAT-02-AC1).
-  test.todo("F01/PLAT-04-AC9 Given the Staff and audit log, when it lists an entry about a player, then it shows what the club needs to ...");
+  // F01/PLAT-04-AC9: proven by a real or traced test in another file of this folder
   // Given a PDPA copy or delete request, when it is made or handled, then it is logged in the club's audit log (G-C17-Privacy, "Every request is recorded in the audit log"; PDPA-01).
-  test.todo("F01/PLAT-04-AC10 Given a PDPA copy or delete request, when it is made or handled, then it is logged in the club's audit log ...");
+  // F01/PLAT-04-AC10: proven by a real or traced test in another file of this folder
   // Given times in entries, when they are stored and shown, then they are Asia/Bangkok.
-  test.todo("F01/PLAT-04-AC11 Given times in entries, when they are stored and shown, then they are Asia/Bangkok.");
+  // F01/PLAT-04-AC11: proven by a real or traced test in another file of this folder
 });
 
 describe("F01 PLAT-05", () => {
   // Given one codebase for every club, when a feature switch is set on one club, then it changes that club only (CC-1).
-  test.todo("F01/PLAT-05-AC1 Given one codebase for every club, when a feature switch is set on one club, then it changes that club ...");
+  // F01/PLAT-05-AC1: proven by a real or traced test in another file of this folder
   // Given a switch is off for a club, when any surface or API of that club asks for the feature, then the server refuses and the surface hides it. A hidden screen is not enough.
-  test.todo("F01/PLAT-05-AC2 Given a switch is off for a club, when any surface or API of that club asks for the feature, then the ...");
+  // F01/PLAT-05-AC2: proven by a real or traced test in another file of this folder
   // Given a switch, when it is changed, then it is written to the audit log (it is a setting; PLAT-04).
-  test.todo("F01/PLAT-05-AC3 Given a switch, when it is changed, then it is written to the audit log (it is a setting; PLAT-04).");
+  // F01/PLAT-05-AC3: proven by a real or traced test in another file of this folder
   // Given a club's payment option (Beam or slip checking), when it is read, then it behaves as a club level choice made in P2 step 5 (PAY-01), and slip checking and backup mode are features that exist only when slip checking is chosen (F16).
-  test.todo("F01/PLAT-05-AC4 Given a club's payment option (Beam or slip checking), when it is read, then it behaves as a club level ...");
+  // F01/PLAT-05-AC4: proven by a real or traced test in another file of this folder
   // Given Hunter, when it runs, then nothing is written only for Hunter. Tennis, two courts, ฿500 an hour and Beam are club settings or switches (HO Architecture).
-  test.todo("F01/PLAT-05-AC5 Given Hunter, when it runs, then nothing is written only for Hunter. Tennis, two courts, ฿500 an hour and ...");
+  // F01/PLAT-05-AC5: proven by a real or traced test in another file of this folder
   // Given the list of switches, when F01 ships, then it contains only switches the spec names. The list itself is Q5.
-  test.todo("F01/PLAT-05-AC6 Given the list of switches, when F01 ships, then it contains only switches the spec names. The list itself ...");
+  // F01/PLAT-05-AC6: proven by a real or traced test in another file of this folder
   // Given the Tennis template, when a new club starts from it, then products, prices and rules are copied to that club as its own values. Later changes to the template do not change existing clubs ("Changes only affect new clubs", H-P5).
-  test.todo("F01/PLAT-05-AC7 Given the Tennis template, when a new club starts from it, then products, prices and rules are copied to ...");
+  // F01/PLAT-05-AC7: proven by a real or traced test in another file of this folder
   // Given the Blank template, when a new club starts from it, then it has no products and every club rule is empty, including hold time, waitlist claim time, no offer cut off, rest cap and group player counts (D8, PRD P5). The owner adds everything in Pricing and Settings.
-  test.todo("F01/PLAT-05-AC8 Given the Blank template, when a new club starts from it, then it has no products and every club rule is ...");
+  // F01/PLAT-05-AC8: proven by a real or traced test in another file of this folder
   // Given a template, when a value is a TBD in the spec (add-on prices, Head Coach price, referral reward, friend discount, birthday discount, max future court hours, below minimum alert time, wallet balance expiry, coach pay), then it is copied as an empty setting. No value is invented (D8).
-  test.todo("F01/PLAT-05-AC9 Given a template, when a value is a TBD in the spec (add-on prices, Head Coach price, referral reward, ...");
+  // F01/PLAT-05-AC9: proven by a real or traced test in another file of this folder
   // Given sport labels, when a club uses a template, then labels follow the sport (court, table, lane) from the template (PRD Platform foundation, P5).
-  test.todo("F01/PLAT-05-AC10 Given sport labels, when a club uses a template, then labels follow the sport (court, table, lane) from ...");
+  // F01/PLAT-05-AC10: proven by a real or traced test in another file of this folder
   // Given Padel and Pickleball, when F01 ships, then they appear as templates marked "to build" and cannot be chosen until built (H-P5 text "To build before the first padel club"). Their content is out of scope.
-  test.todo("F01/PLAT-05-AC11 Given Padel and Pickleball, when F01 ships, then they appear as templates marked \"to build\" and cannot be ...");
+  // F01/PLAT-05-AC11: proven by a real or traced test in another file of this folder
   // Given a platform admin or specialist, when they pick a template in P2 or A0, then the chosen template is recorded on the club and the copy is written to the audit log.
-  test.todo("F01/PLAT-05-AC12 Given a platform admin or specialist, when they pick a template in P2 or A0, then the chosen template is ...");
+  // F01/PLAT-05-AC12: proven by a real or traced test in another file of this folder
   // Given the Tennis template, when it is loaded, then its prices equal the final offer in PRD Pricing and packages (court ฿500, 10 hour bundle ฿4,500 for 3 months, 20 hour bundle ฿8,000 for 5 months, solo and group single prices and 8 packs for Adult and Student), stored as integer satang. Values are copied from the spec; none are added.
-  test.todo("F01/PLAT-05-AC13 Given the Tennis template, when it is loaded, then its prices equal the final offer in PRD Pricing and ...");
+  // F01/PLAT-05-AC13: proven by a real or traced test in another file of this folder
   // Given the Tennis template, when it is loaded, then it carries the PRD default rules: payment hold 15 minutes (the owner may pick 10, 15 or 20), waitlist claim time 30 minutes, no waitlist offers within 2 hours of start, coach rest cap 6 hours in a row, group classes 4 to 6 players (D8). Booking length is fixed at 60 minutes for every club and is not a template value.
-  test.todo("F01/PLAT-05-AC15 Given the Tennis template, when it is loaded, then it carries the PRD default rules: payment hold 15 ...");
+  // F01/PLAT-05-AC15: proven by a real or traced test in another file of this folder
   // Given the Tennis template, when it is loaded, then it also carries the other values the PRD and decisions state: booking window 30 days, cancel window 12 hours, package QR time 15 minutes (D74), package expiry reminders 14 and 3 days, VAT off (PRD Club facts, Payments). The Blank template leaves all of these empty and Go live needs them set (F01-8).
-  test.todo("F01/PLAT-05-AC16 Given the Tennis template, when it is loaded, then it also carries the other values the PRD and decisions ...");
+  // F01/PLAT-05-AC16: proven by a real or traced test in another file of this folder
   // Given the template actions on H-P5 ("New template", "Duplicate", "Edit") when F01 is built, then whether those actions exist is decided in Q5.
   test.todo("F01/PLAT-05-AC14 Given the template actions on H-P5 (\"New template\", \"Duplicate\", \"Edit\") when F01 is built, then whether ...");
 });
 
 describe("F01 PLAT-06", () => {
   // Given an owner in A0 step 7, when they upload a CSV of players, packages or balances, then the server validates every row before saving and shows an error report listing each failing row with the reason. Nothing is saved until the whole file is valid and the owner confirms (D13).
-  test.todo("F01/PLAT-06-AC1 Given an owner in A0 step 7, when they upload a CSV of players, packages or balances, then the server ...");
+  // F01/PLAT-06-AC1: proven by a real or traced test in another file of this folder
   // Given a CSV import, when it completes, then it has created players, customer packages and ledger movements only, and no bookings (D13).
   test.todo("F01/PLAT-06-AC18 Given a CSV import, when it completes, then it has created players, customer packages and ledger movements ...");
   // Given an import with any invalid row, when the owner confirms or tries to, then nothing is saved. The import is all or nothing, the owner fixes the file and uploads again (D13).
-  test.todo("F01/PLAT-06-AC2 Given an import with any invalid row, when the owner confirms or tries to, then nothing is saved. The ...");
+  // F01/PLAT-06-AC2: proven by a real or traced test in another file of this folder
   // Given a balances file, when it is imported, then each balance becomes ledger movements with the reason `import` and the owner as actor, never a single editable number (PKG-01, D13). `import` is a new ledger reason beyond reserve, return, use, forfeit, expire, adjust; the PRD and hand-off data model need it added, PRD first.
-  test.todo("F01/PLAT-06-AC3 Given a balances file, when it is imported, then each balance becomes ledger movements with the reason ...");
+  // F01/PLAT-06-AC3: proven by a real or traced test in another file of this folder
   // Given a packages file, when it is imported, then each row creates a customer package with credits total, purchase date and expiry date, and ledger rows with reason `import` for credits already used. Whether the file's expiry date is kept or recomputed from purchase date plus validity (PKG-02) is Q15.
   test.todo("F01/PLAT-06-AC4 Given a packages file, when it is imported, then each row creates a customer package with credits total, ...");
   // Given an import file, when a row has a club ID column or any other club's identifier, then it is ignored; the club ID is always the importing club (CC-1).
@@ -220,17 +159,17 @@ describe("F01 PLAT-06", () => {
   // Given an import, when it completes, then one audit entry records who, when, file name, counts of rows read, saved and rejected, and each created balance is audited (PLAT-04).
   test.todo("F01/PLAT-06-AC6 Given an import, when it completes, then one audit entry records who, when, file name, counts of rows ...");
   // Given an imported player, when someone signs in with LINE and their typed phone matches an imported record, then they are linked only after the front desk confirms the claim in A6; a sign in that matches no record becomes a new player (D105, D13). Duplicate phones at one club are flagged (D11).
-  test.todo("F01/PLAT-06-AC7 Given an imported player, when someone signs in with LINE and their typed phone matches an imported ...");
+  // F01/PLAT-06-AC7: proven by a real or traced test in another file of this folder
   // Given a front desk, accountant, coach or BOOQ staff, when they try to import, then the server refuses. Import is for the owner only (D13), including in Draft and Testing support view.
-  test.todo("F01/PLAT-06-AC8 Given a front desk, accountant, coach or BOOQ staff, when they try to import, then the server refuses. ...");
+  // F01/PLAT-06-AC8: proven by a real or traced test in another file of this folder
   // Given a CSV file, when it holds amounts, then amounts are read as THB and stored as integer satang, and dates are read as Asia/Bangkok and shown with the international year.
-  test.todo("F01/PLAT-06-AC9 Given a CSV file, when it holds amounts, then amounts are read as THB and stored as integer satang, and ...");
+  // F01/PLAT-06-AC9: proven by a real or traced test in another file of this folder
   // Given an uploaded file, when the import is finished or cancelled, then the raw file is not kept longer than the import needs (PDPA data minimisation; retention is Q13).
-  test.todo("F01/PLAT-06-AC10 Given an uploaded file, when the import is finished or cancelled, then the raw file is not kept longer ...");
+  // F01/PLAT-06-AC10: proven by a real or traced test in another file of this folder
   // Given a club, when "Export club data" is run, then the export holds only that club's records (CC-1).
-  test.todo("F01/PLAT-06-AC11 Given a club, when \"Export club data\" is run, then the export holds only that club's records (CC-1).");
+  // F01/PLAT-06-AC11: proven by a real or traced test in another file of this folder
   // Given BOOQ staff in P3, when they press Export club data, then the export starts, but BOOQ staff cannot open, download or read its content. The owner downloads the file (D14). Where the owner finds and downloads it (A16 or a link in LINE) is Q1.
-  test.todo("F01/PLAT-06-AC12 Given BOOQ staff in P3, when they press Export club data, then the export starts, but BOOQ staff cannot ...");
+  // F01/PLAT-06-AC12: proven by a real or traced test in another file of this folder
   // Given an owner or front desk in A5 (the Accountant sees names on receipts and reports, never phone numbers or dates of birth, D35), when they press Export CSV, then they receive the customer list CSV for their club (PRD A5 shows CSV export for front desk and owner).
   test.todo("F01/PLAT-06-AC13 Given an owner or front desk in A5 (the Accountant sees names on receipts and reports, never phone numbers ...");
   // Given an accountant or owner in A13 and A14, when they export a report or receipts, then they receive CSV or PDF for their club (PRD Reports, Receipts). Built in F13 and F11. F01 owns only the rule that exports are club scoped and audited.
@@ -238,57 +177,57 @@ describe("F01 PLAT-06", () => {
   // Given any export of customers or club data, when it is made, then an audit entry records who, when, which export and how many rows (PLAT-04), because exports carry personal data.
   test.todo("F01/PLAT-06-AC15 Given any export of customers or club data, when it is made, then an audit entry records who, when, which ...");
   // Given any club, when F01 ships, then there is no delete club action in the platform console or anywhere else in v1 (D14). A club leaves by export and pause only.
-  test.todo("F01/PLAT-06-AC17 Given any club, when F01 ships, then there is no delete club action in the platform console or anywhere ...");
+  // F01/PLAT-06-AC17: proven by a real or traced test in another file of this folder
   // Given an export file, when it is produced, then slips and staff notes are included only in the full club export, and only if Q18 says so (PDPA-01: staff only).
   test.todo("F01/PLAT-06-AC16 Given an export file, when it is produced, then slips and staff notes are included only in the full club ...");
 });
 
 describe("F01 PLAT-07", () => {
   // Given a club in Testing, when a booking, order, payment, receipt, ledger movement or player record is made, then it is flagged as test data at creation, on the server, and the flag cannot be removed.
-  test.todo("F01/PLAT-07-AC1 Given a club in Testing, when a booking, order, payment, receipt, ledger movement or player record is ...");
+  // F01/PLAT-07-AC1: proven by a real or traced test in another file of this folder
   // Given a test receipt, when it is issued, then it uses its own number series that is clearly not a legal receipt (marked as a test on screen and in the PDF) and never uses the club's real sequence (HTC‑2027‑000001 and on). The series name and format are for design.
   test.todo("F01/PLAT-07-AC2 Given a test receipt, when it is issued, then it uses its own number series that is clearly not a legal ...");
   // Given a club goes Live, when Go live is confirmed, then all test flagged data of that club is purged in one step, including test players, test ledgers and the test receipt series, and the real receipt sequence starts at 000001 of the club's series for that Bangkok year (D4, D106; receipt numbers run per club per Bangkok year and the prefix is set in P2 step 1 and required before Go live).
-  test.todo("F01/PLAT-07-AC3 Given a club goes Live, when Go live is confirmed, then all test flagged data of that club is purged in ...");
+  // F01/PLAT-07-AC3: proven by a real or traced test in another file of this folder
   // Given the Go live purge, when it runs, then it removes only rows made by a tester kind; owner, staff and coach accounts are never test rows and survive Go live (D100). Audit entries are not flagged on their own: only audit entries about test data are purged, and a setting changed in Testing keeps its audit entry after Go live (D101).
-  test.todo("F01/PLAT-07-AC12 Given the Go live purge, when it runs, then it removes only rows made by a tester kind; owner, staff and ...");
+  // F01/PLAT-07-AC12: proven by a real or traced test in another file of this folder
   // Given the purge, when it runs, then it deletes only rows with the test flag and only for that club ID. If any row cannot be purged, Go live does not complete and the status stays Testing.
-  test.todo("F01/PLAT-07-AC4 Given the purge, when it runs, then it deletes only rows with the test flag and only for that club ID. If ...");
+  // F01/PLAT-07-AC4: proven by a real or traced test in another file of this folder
   // Given a club in Testing, when someone signs in to the player app, then only the club owner and named BOOQ testers can. The tester list is set in P4 or P3 by BOOQ staff and every change is written to P6 (D4). A BOOQ tester signs in to the player app with LINE as a test player, not with the BOOQ account (ROLE-02-AC2).
-  test.todo("F01/PLAT-07-AC5 Given a club in Testing, when someone signs in to the player app, then only the club owner and named BOOQ ...");
+  // F01/PLAT-07-AC5: proven by a real or traced test in another file of this folder
   // Given BOOQ staff in P4, when they look at test results, then they see pass or fail per check only (D4). They never see the test bookings, test players, test payments or test receipts themselves. The owner sees them in the club admin.
-  test.todo("F01/PLAT-07-AC6 Given BOOQ staff in P4, when they look at test results, then they see pass or fail per check only (D4). ...");
+  // F01/PLAT-07-AC6: proven by a real or traced test in another file of this folder
   // Given test data, when it is counted for aggregates in P1 (bookings in the last 30 days), then it is not counted (D33).
-  test.todo("F01/PLAT-07-AC7 Given test data, when it is counted for aggregates in P1 (bookings in the last 30 days), then it is not ...");
+  // F01/PLAT-07-AC7: proven by a real or traced test in another file of this folder
   // Given a test run, when it starts, finishes or is purged, then it is written to P6 (PLAT-04).
-  test.todo("F01/PLAT-07-AC8 Given a test run, when it starts, finishes or is purged, then it is written to P6 (PLAT-04).");
+  // F01/PLAT-07-AC8: proven by a real or traced test in another file of this folder
   // Given each club, when Beam is set up, then the club holds two sets of Beam keys, test and live. Testing uses the test set. Swapping to the live set at Go live is a required item on the P4 checklist, with a smoke test, and Go live is refused until it is ticked (D32). Test LINE messages go through the club's real Official Account and count toward the monthly cap (D32).
-  test.todo("F01/PLAT-07-AC10 Given each club, when Beam is set up, then the club holds two sets of Beam keys, test and live. Testing ...");
+  // F01/PLAT-07-AC10: proven by a real or traced test in another file of this folder
   // Given test flagged records, when any report, daily close, receipts list or platform count is produced, then they are excluded everywhere and appear only in test mode views (D33).
   test.todo("F01/PLAT-07-AC11 Given test flagged records, when any report, daily close, receipts list or platform count is produced, ...");
   // Given a test payment in Testing, when it is made, then it uses Beam's sandbox only. There is no in app "simulate payment" action in any club status (D26), so no route can confirm a booking without a valid signed Beam callback (F05 owns the integration). The 7 Dec test runs on production with Hunter in Testing status (PRD Decisions 30 Oct (3)).
-  test.todo("F01/PLAT-07-AC9 Given a test payment in Testing, when it is made, then it uses Beam's sandbox only. There is no in app ...");
+  // F01/PLAT-07-AC9: proven by a real or traced test in another file of this folder
 });
 
 describe("F01 PDPA-01", () => {
   // Given any processing of player data, when BOOQ staff act, then they act only on the club's setup, never on player, booking or payment data (PLAT-02-AC1). BOOQ is a processor for the club.
-  test.todo("F01/PDPA-01-AC1 Given any processing of player data, when BOOQ staff act, then they act only on the club's setup, never on ...");
+  // F01/PDPA-01-AC1: proven by a real or traced test in another file of this folder
   // Given a new player's first sign in, when they continue, then consent to the terms and the privacy notice is required and recorded (F02 AUTH-02 builds the screen; F01 supplies the record). What the record holds is Q20.
-  test.todo("F01/PDPA-01-AC2 Given a new player's first sign in, when they continue, then consent to the terms and the privacy notice ...");
+  // F01/PDPA-01-AC2: proven by a real or traced test in another file of this folder
   // Given a signed in player, when they request a copy of their data in Profile, then the request is stored, the front desk sees it and the player gets the file in LINE (G-C17-Privacy). The file holds profile, bookings, credits and receipts. Whether staff notes are included is Q21.
-  test.todo("F01/PDPA-01-AC3 Given a signed in player, when they request a copy of their data in Profile, then the request is stored, ...");
+  // F01/PDPA-01-AC3: proven by a real or traced test in another file of this folder
   // Given a signed in player, when they request deletion, then the request is stored, the front desk sees it and the club confirms in LINE. On deletion the profile and history are deleted, unused credits and wallet balance are lost, and receipts stay on record for the club's accounts (G-C17-Privacy copy). Receipt and ledger rows are anonymised, not deleted, because receipt numbers are never reused and the ledger is the record of money. See Q22 for the legal basis and the time limit.
-  test.todo("F01/PDPA-01-AC4 Given a signed in player, when they request deletion, then the request is stored, the front desk sees it ...");
+  // F01/PDPA-01-AC4: proven by a real or traced test in another file of this folder
   // Given a player who asks for deletion and holds a future booking or credit, when the request is handled, then the staff see what will be lost before confirming. What happens to the booking is Q22.
-  test.todo("F01/PDPA-01-AC5 Given a player who asks for deletion and holds a future booking or credit, when the request is handled, ...");
+  // F01/PDPA-01-AC5: proven by a real or traced test in another file of this folder
   // Given slips and staff notes, when anyone other than staff of that club asks for them, then the server refuses. A player never sees staff notes; a coach never sees slips; BOOQ staff never see either.
-  test.todo("F01/PDPA-01-AC6 Given slips and staff notes, when anyone other than staff of that club asks for them, then the server ...");
+  // F01/PDPA-01-AC6: proven by a real or traced test in another file of this folder
   // Given a PDPA request, when it is made, handled or refused, then it is in the club's audit log (PLAT-04-AC10).
-  test.todo("F01/PDPA-01-AC7 Given a PDPA request, when it is made, handled or refused, then it is in the club's audit log (PLAT-04-AC10).");
+  // F01/PDPA-01-AC7: proven by a real or traced test in another file of this folder
   // Given all club data, when the nightly backup runs, then every club's data is backed up daily. How long backups are kept, and how a deleted player is removed from backups, are Q13.
   test.todo("F01/PDPA-01-AC8 Given all club data, when the nightly backup runs, then every club's data is backed up daily. How long ...");
   // Given personal data in transit and at rest, when it is stored or sent, then it is encrypted in transit (TLS) and at rest (the host's standard disk encryption), and stored secrets such as Beam and LINE keys get an extra layer of encryption in the app (D34).
-  test.todo("F01/PDPA-01-AC9 Given personal data in transit and at rest, when it is stored or sent, then it is encrypted in transit ...");
+  // F01/PDPA-01-AC9: proven by a real or traced test in another file of this folder
   // Given hosting, when data is stored, then it is stored in Supabase in the nearest region, Singapore, under a data processing agreement with the club as controller (D5). Plan section 3 ("Thai-region hosting") is superseded by D5.
   test.todo("F01/PDPA-01-AC10 Given hosting, when data is stored, then it is stored in Supabase in the nearest region, Singapore, under ...");
   // Given a player, when they open Privacy and my data, then they see the privacy notice, Request a copy and Request deletion, in the language they use (P-0413, P-0414, P-0419, P-0422).
