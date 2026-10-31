@@ -1,5 +1,5 @@
-import { businessRoute, createClaimService, createDataRequestService, createImportService, createProfileEditService, hoursRoute, quoteSources, normalizePhone, resourceRoutes, settingsRoutes, supportWindowRoute } from '@booq/domain';
-import { createRedactingLogger, type Route } from '@booq/auth';
+import { businessRoute, createClaimService, createDataRequestService, createExportService, createImportService, createProfileEditService, hoursRoute, quoteSources, normalizePhone, resourceRoutes, settingsRoutes, supportWindowRoute } from '@booq/domain';
+import { createRedactingLogger, RouteError, type Route } from '@booq/auth';
 import { beamGateway } from '@booq/beam';
 import { loadDecryptKey } from '@booq/secrets';
 import type { Db } from '@booq/db';
@@ -10,6 +10,7 @@ import { playerClassRoutes, publicClassRoutes, staffClassRoutes } from '../api/c
 import { setupRoutes, auditRoutes, calendarRoutes, customerRoutes, customerValueRoutes, shellRoutes } from '../api/admin/routes';
 import { playerCoachRoutes, publicCoachRoutes, staffCoachRoutes } from '../api/coaches/routes';
 import { claimRoutes } from '../api/claim/routes';
+import { exportRoutes } from '../api/export/routes';
 import { dataRequestRoutes } from '../api/data-request/routes';
 import { profileRoutes } from '../api/profile/routes';
 import { staffRoutes } from '../api/staff/routes';
@@ -53,6 +54,20 @@ export const mounts: readonly Mount[] = [
       service: (limits) => createImportService({ limits, today: () => bangkokDate(m.now()), normalizePhone }),
     }),
   (m) => claimRoutes({ db: m.db, service: () => createClaimService() }),
+  // F01-T25 (PLAT-06-AC11, AC12): the owner's data export. Until the storage provider and the queue are given in the config, both routes
+  // answer 503 export_not_configured before anything is written, so no request is left that nothing will build.
+  (m) =>
+    exportRoutes({
+      db: m.db,
+      service: () => {
+        if (!m.config.exports) throw new RouteError(503, 'export_not_configured');
+        return createExportService({ storage: m.config.exports.storage, linkSeconds: m.config.exports.linkSeconds });
+      },
+      enqueue: (task, payload) => {
+        if (!m.config.exports) throw new RouteError(503, 'export_not_configured');
+        return m.config.exports.enqueue(task, payload);
+      },
+    }),
   (m) => dataRequestRoutes({ db: m.db, service: () => createDataRequestService() }),
   (m) => staffRoutes({ db: m.db }),
   (m) => dobHistoryRoutes({ db: m.db }),
