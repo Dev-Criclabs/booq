@@ -115,3 +115,10 @@
 .adm-table td .adm-btn, .adm-table td .adm-btn-ghost { height: 34px; font-size: 13px; padding: 0 14px; }
 /* A visually hidden label is positioned against its box, so it cannot sit outside a table that scrolls sideways. */
 .adm-table-wrap, .adm-field, .adm-card { position: relative; }
+
+/* A0 Setup checklist */
+.adm-import { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--ln); }
+.adm-import h3 { margin: 0 0 6px; }
+.adm-file { position: relative; cursor: pointer; }
+.adm-file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.adm-card h2 .adm-chip { margin-left: 8px; text-transform: none; letter-spacing: 0; }
