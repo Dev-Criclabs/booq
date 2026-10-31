@@ -14,6 +14,8 @@ const DEFAULT_BATCH = 200;
 export interface OfferExpiryResult {
   /** Entries ended because their class or court hour has started. */
   ended: number;
+  /** Offers passed on because their message was undeliverable (the club is at its message cap, CLASS-02-AC9). */
+  passedOn: number;
   /** Offers found past their end time. */
   due: number;
   /** Offers this tick expired and passed on (an offer a hold release ended a moment earlier is not counted). */
@@ -29,7 +31,7 @@ export async function runOfferExpiry(db: Db, options: { batch?: number } = {}): 
       ended: Number((await tx.query<{ n: number }>('select app.end_passed_waitlist_entries() as n')).rows[0]?.n ?? 0),
       offers: (await tx.query<{ club_id: string; entry_id: string; lag_seconds: number }>('select club_id, entry_id, lag_seconds from app.due_offers($1)', [options.batch ?? DEFAULT_BATCH])).rows,
     }));
-    const result: OfferExpiryResult = { ended: found.ended, due: found.offers.length, expired: 0, failed: 0, lagSeconds: found.offers[0]?.lag_seconds ?? 0 };
+    const result: OfferExpiryResult = { ended: found.ended, passedOn: 0, due: found.offers.length, expired: 0, failed: 0, lagSeconds: found.offers[0]?.lag_seconds ?? 0 };
     for (const row of found.offers) {
       try {
         const done = await db.withClubTx(
@@ -41,8 +43,21 @@ export async function runOfferExpiry(db: Db, options: { batch?: number } = {}): 
         result.failed += 1;
       }
     }
+    // An offer whose message F10 could not send at the free plan cap passes to the next in line at once (CLASS-02-AC9).
+    const undeliverable = await db.withClubTx(SYSTEM_CONTEXT, (tx) => tx.query<{ club_id: string; entry_id: string }>('select club_id, entry_id from app.due_undeliverable_offers($1)', [options.batch ?? DEFAULT_BATCH]));
+    for (const row of undeliverable.rows) {
+      try {
+        const done = await db.withClubTx(
+          { clubId: row.club_id, userId: null, roles: [], source: 'job', actorLabel: OFFER_EXPIRY },
+          async (tx) => (await tx.query<{ r: boolean }>('select app.waitlist_pass_on($1) as r', [row.entry_id])).rows[0]?.r === true,
+        );
+        if (done) result.passedOn += 1;
+      } catch {
+        result.failed += 1;
+      }
+    }
     await recordQueueHealth(db, OFFER_EXPIRY, result.lagSeconds, 0);
-    if (result.failed > 0) throw new Error(`${OFFER_EXPIRY}: ${result.failed} of ${result.due} offers failed`);
+    if (result.failed > 0) throw new Error(`${OFFER_EXPIRY}: ${result.failed} offers failed`);
     return result;
   });
 }

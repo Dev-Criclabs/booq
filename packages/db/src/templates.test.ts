@@ -29,6 +29,9 @@ const applyAsOwner = async (key: string, roles: string[] = ['owner', 'player'], 
 
 beforeEach(async () => {
   tdb = await createTestDatabase();
+  // These tests use 'product' as the example of a kind whose handler arrives later. F06 registers the real one (0517,
+  // template-products.test.ts covers it), so it is removed here and each test installs its own as before.
+  await tdb.query(`delete from app.template_handlers where kind = 'product'`);
   await tdb.query(`insert into public.club (id, slug, name_th, name_en) values ($1, 'a', 'ก', 'A'), ($2, 'b', 'ข', 'B')`, [CLUB, OTHER]);
   admin = await staff('admin@booq.example', 'platform_admin', '99999999-0000-4000-8000-000000000001', 'Ada Admin');
   spec = await staff('spec@booq.example', 'onboarding_specialist', '99999999-0000-4000-8000-000000000002', 'Sam Specialist');
@@ -75,16 +78,17 @@ describe('the Tennis template equals the spec (PLAT-05-AC13, AC15, AC16)', () =>
     expect(await value('price', 'court_hour')).toEqual({ price_satang: 50000 });
     const p = Object.fromEntries((await items('tennis', 'product')).map((i) => [i.key, i.value]));
     expect(p).toEqual({
-      bundle_10h: { type: 'court_hours', quantity: 10, validity_months: 3, price_satang: 450000 },
-      bundle_20h: { type: 'court_hours', quantity: 20, validity_months: 5, price_satang: 800000 },
+      // names added by F06 0517 (D166): the writers' P-0186 and P-0227 text with the number filled in
+      bundle_10h: { type: 'court_hours', quantity: 10, validity_months: 3, price_satang: 450000, name_key: 'P-0186', name_en: '10 hour bundle', name_th: 'แพ็กเกจ 10 ชั่วโมง' },
+      bundle_20h: { type: 'court_hours', quantity: 20, validity_months: 5, price_satang: 800000, name_key: 'P-0186', name_en: '20 hour bundle', name_th: 'แพ็กเกจ 20 ชั่วโมง' },
       solo_single_adult: { type: 'solo_class', audience: 'adult', quantity: 1, validity_months: null, price_satang: 80000 },
       solo_pack8_adult: { type: 'solo_class', audience: 'adult', quantity: 8, validity_months: 3, price_satang: 560000 },
       solo_single_student: { type: 'solo_class', audience: 'student', quantity: 1, validity_months: null, price_satang: 70000 },
       solo_pack8_student: { type: 'solo_class', audience: 'student', quantity: 8, validity_months: 3, price_satang: 480000 },
       group_single_adult: { type: 'group_class', audience: 'adult', quantity: 1, validity_months: null, price_satang: 60000 },
-      group_pack8_adult: { type: 'group_class', audience: 'adult', quantity: 8, validity_months: 3, price_satang: 400000 },
+      group_pack8_adult: { type: 'group_class', audience: 'adult', quantity: 8, validity_months: 3, price_satang: 400000, name_key: 'P-0227', name_en: 'Group 8 session pack', name_th: 'แพ็กคลาสกลุ่ม 8 ครั้ง' },
       group_single_student: { type: 'group_class', audience: 'student', quantity: 1, validity_months: null, price_satang: 50000 },
-      group_pack8_student: { type: 'group_class', audience: 'student', quantity: 8, validity_months: 3, price_satang: 320000 },
+      group_pack8_student: { type: 'group_class', audience: 'student', quantity: 8, validity_months: 3, price_satang: 320000, name_key: 'P-0227', name_en: 'Group 8 session pack', name_th: 'แพ็กคลาสกลุ่ม 8 ครั้ง' },
     });
     for (const v of Object.values(p)) expect(Number.isInteger((v as { price_satang: number }).price_satang)).toBe(true);
   });
