@@ -84,12 +84,18 @@ importers:
       '@booq/time':
         specifier: workspace:*
         version: link:../../packages/time
+      '@expo-google-fonts/sarabun':
+        specifier: 0.4.1
+        version: 0.4.1
       '@line/liff':
         specifier: 2.31.2
         version: 2.31.2
       next:
         specifier: 16.4.2
         version: 16.4.2(@types/node@22.20.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      pdfkit:
+        specifier: 0.17.1
+        version: 0.17.1
       react:
         specifier: 19.3.1
         version: 19.3.1
