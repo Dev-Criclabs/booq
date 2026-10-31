@@ -167,8 +167,8 @@ describe('past payouts', () => {
     await pay(C2, { base: 777 });
     const o2 = (await rows(owner, 'select app.compute_payout($1, $2::date) as id', [C2, '2026-11-01']))[0]!.id as string;
     await rows(owner, 'select app.mark_payout_paid($1)', [o2]);
-    const h = await rows(coach1, 'select * from app.my_payout_history()');
-    expect(h.map((r) => [new Date(r.month).toISOString().slice(0, 10), Number(r.total_satang)])).toEqual([['2026-11-01', 102500], ['2026-10-01', 100000]]);
+    const h = await rows(coach1, `select to_char(month, 'YYYY-MM-DD') as month, total_satang, paid_at from app.my_payout_history()`);
+    expect(h.map((r) => [r.month, Number(r.total_satang)])).toEqual([['2026-11-01', 102500], ['2026-10-01', 100000]]);
     expect(h.every((r) => r.paid_at !== null)).toBe(true);
     expect(await rows(ctx(C2, ['coach', 'player']), 'select count(*)::int as n from app.my_payout_history()')).toEqual([{ n: 1 }]);
   });
