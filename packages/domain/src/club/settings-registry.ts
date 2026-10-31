@@ -71,3 +71,33 @@ export function validateSetting(key: string, value: unknown): SettingCheck | { o
   const def = BY_KEY.get(key);
   return def ? def.validate(value) : { ok: false, code: 'unknown_setting' };
 }
+
+export type SettingWrite =
+  | { ok: true; action: 'set'; value: unknown }
+  | { ok: true; action: 'unset' }
+  | { ok: false; status: 400 | 404 | 409; code: 'unknown_setting' | 'not_available' | 'cannot_unset' | 'invalid_value' };
+
+/**
+ * The one rule for writing a club setting, shared by the owner's route and the console's (F01; PLAT-05). `null` unsets, only where the
+ * registry allows it; nothing here supplies a default. `paymentOption` is the club's choice (a slip-only setting needs `slip`);
+ * `otherGroupLimit` is the stored value of the other one of group_min_players and group_max_players (the smallest group may not exceed the largest).
+ */
+export function checkSettingWrite(input: { key: string; value: unknown; paymentOption: string | null; otherGroupLimit: unknown }): SettingWrite {
+  const def = BY_KEY.get(input.key);
+  if (!def) return { ok: false, status: 404, code: 'unknown_setting' };
+  if (def.slipOnly && input.paymentOption !== 'slip') return { ok: false, status: 409, code: 'not_available' };
+  if (input.value === null) return def.unsetAllowed ? { ok: true, action: 'unset' } : { ok: false, status: 400, code: 'cannot_unset' };
+  const checked = def.validate(input.value);
+  if (!checked.ok) return { ok: false, status: 400, code: checked.code };
+  const o = input.otherGroupLimit;
+  if ((input.key === 'group_min_players' || input.key === 'group_max_players') && typeof o === 'number') {
+    const v = checked.value as number;
+    if (input.key === 'group_min_players' ? v > o : o > v) return { ok: false, status: 400, code: 'invalid_value' };
+  }
+  return { ok: true, action: 'set', value: checked.value };
+}
+
+/** The other group limit of a group limit key, or null for any other key. */
+export function otherGroupLimitKey(key: string): string | null {
+  return key === 'group_min_players' ? 'group_max_players' : key === 'group_max_players' ? 'group_min_players' : null;
+}

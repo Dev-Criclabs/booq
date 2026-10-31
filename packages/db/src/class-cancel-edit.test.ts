@@ -233,3 +233,42 @@ describe('app.apply_template_edit (CLASS-01-AC10, D121)', () => {
     await expect(call(desk(), `select app.apply_template_edit($1)`, [tpl])).rejects.toThrow(/not allowed/);
   });
 });
+
+describe('app.resolve_session (CLASS-01-AC9, migration 0917)', () => {
+  const resolve = (id: string, c = owner()) => call(c, `select app.resolve_session($1) as r`, [id]);
+  /** A session made needs_attention by an approved leave, as generation does. */
+  async function flagged() {
+    const s = (await tdb.query(`select id, start_at from public.class_session where template_id = $1 order by start_at offset 1 limit 1`, [tpl])).rows[0];
+    const day = new Date(s.start_at).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
+    const leave = (await tdb.query(`insert into public.coach_leave (club_id, coach_id, start_date, end_date, status, decided_by, decided_at) values ($1,$2,$3,$3,'approved',$4,app.now()) returning id`, [A, COACH, day, OWNER])).rows[0].id;
+    await tdb.query(`delete from public.occupancy where class_session_id = $1`, [s.id]);
+    await tdb.query(`update public.class_session set status = 'needs_attention', attention_reason = 'coach_leave' where id = $1`, [s.id]);
+    return { id: s.id as string, leave: leave as string };
+  }
+
+  it('stays needs_attention with its reason while the cause remains, and becomes scheduled with its occupancy once it is fixed', async () => {
+    const f = await flagged();
+    expect(await resolve(f.id)).toMatchObject({ ok: true, res: { r: { resolved: false, reason: 'coach_leave' } } });
+    expect((await sess(f.id)).status).toBe('needs_attention');
+    expect(await sessionOcc(f.id)).toEqual([]);
+    await tdb.query(`update public.coach_leave set status = 'declined' where id = $1`, [f.leave]);
+    expect(await resolve(f.id)).toMatchObject({ ok: true, res: { r: { resolved: true, reason: null } } });
+    expect(await sess(f.id)).toMatchObject({ status: 'scheduled' });
+    expect(await sessionOcc(f.id)).toEqual([{ resource_id: C1, coach_id: COACH }]);
+    expect(await resolve(f.id)).toMatchObject({ ok: true, res: { r: { resolved: true } } });   // a repeat is harmless
+  });
+
+  it('a court taken meanwhile gives court_clash; a cancelled or started session is refused; only the owner resolves', async () => {
+    const f = await flagged();
+    await tdb.query(`update public.coach_leave set status = 'declined' where id = $1`, [f.leave]);
+    const s = (await tdb.query(`select resource_id, start_at, end_at from public.class_session where id = $1`, [f.id])).rows[0];
+    const order = (await tdb.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'online') returning id`, [A, P1])).rows[0].id;
+    const bk = (await tdb.query(`insert into public.booking (club_id, order_id, type, resource_id, start_at, end_at, customer_id, status, source, created_by, confirmed_at) values ($1,$2,'court',$3,$4,$5,$6,'confirmed','online',$6, app.now()) returning id`, [A, order, s.resource_id, s.start_at, s.end_at, P1])).rows[0].id;
+    await tdb.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, booking_id) values ($1,'court_booking',$2,$3,$4,'confirmed',$5)`, [A, s.resource_id, s.start_at, s.end_at, bk]);
+    expect(await resolve(f.id)).toMatchObject({ ok: true, res: { r: { resolved: false, reason: 'court_clash' } } });
+    await expect(resolve(f.id, desk())).rejects.toThrow(/not allowed/);
+    await cancel(f.id);
+    expect(await resolve(f.id)).toEqual({ ok: false, code: 'session_not_available' });
+    expect(await resolve('99999999-9999-4999-8999-999999999999')).toEqual({ ok: false, code: 'session_not_available' });
+  });
+});
