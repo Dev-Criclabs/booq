@@ -1,4 +1,4 @@
--- F09-T11 / migration 1013: the cancel and closure messages through F10's app.enqueue_message (0605). F09 design 4.9.
+-- F09-T11 / migration 1014: the cancel and closure messages through F10's app.enqueue_message (0605). F09 design 4.9.
 -- Requirements: CANCEL-01-AC14, CANCEL-03-AC2, AC5, AC7, AC15; LINE-05; decisions D9, D48, D118.
 --
 --   * cancellation_result (dedupe cancel:{booking}:{version}) to the player of every cancel but a closure's;
@@ -13,7 +13,8 @@
 --     send that fails is the outbox's status: the cancel stands (AC15, D9).
 --   * app.closure_unmessaged(closure): front desk and owner; the players of the closure's club_closed_slot messages
 --     whose status is failed or undeliverable, with their names (staff only, CC-3), read from the outbox (no table).
--- Redefines app.cancel_booking (last 1012) and app.closure_apply (1010), so numbered above both (D159).
+-- Redefines app.cancel_booking (last 1012) and app.closure_apply (1010), so numbered above both (D159); 1013 is the
+-- Architect's cancel_session records (F08), so this file is 1014.
 
 create or replace function app.cancel_booking(
   p_booking uuid, p_by_staff boolean default false, p_club_cancel boolean default false, p_reason text default null, p_closure uuid default null

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db, type ClubContext } from './tx';
 import { createTestDatabase, type TestDatabase } from './testing/harness';
 
-// F09-T11 / migration 1013: the cancel and closure messages through F10's app.enqueue_message (F09 design 4.9; CANCEL-01-AC14,
+// F09-T11 / migration 1014: the cancel and closure messages through F10's app.enqueue_message (F09 design 4.9; CANCEL-01-AC14,
 // CANCEL-03-AC2, AC5, AC7, AC15; LINE-05). One message per player by dedupe key; params hold ids only; a message that
 // fails or cannot be delivered never undoes the cancel, and the owner gets the list of players a closure could not reach.
 const A = '3f2b8f0e-7c1d-4a55-9d0a-1c2e3f4a5b6c';
