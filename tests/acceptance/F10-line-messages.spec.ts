@@ -6,13 +6,13 @@ import { describe, test } from 'vitest';
 
 describe("F10 LINE-02", () => {
   // Given a club's rich menu, when it is built, then it has exactly 6 tiles with 6 distinct deep links: C4 Book a court, Solo classes, Group classes, Packages, My bookings, Refer a friend (the pages that each tile opens, not Home).
-  test.todo("F10/LINE-02-AC1 Given a club's rich menu, when it is built, then it has exactly 6 tiles with 6 distinct deep links: C4 ...");
+  // F10/LINE-02-AC1: proven by a real or traced test in another file of this folder
   // Given the Book a court tile, when it is tapped, then C4 opens directly (BOOK-02).
-  test.todo("F10/LINE-02-AC2 Given the Book a court tile, when it is tapped, then C4 opens directly (BOOK-02).");
+  // F10/LINE-02-AC2: proven by a real or traced test in another file of this folder
   // Given any tile, when it is tapped, then its page opens with the club in the URL (D6, F02 AUTH-01-AC14); a tile for a page that needs a person starts sign in first (F02 AUTH-01-AC10).
   test.todo("F10/LINE-02-AC3 Given any tile, when it is tapped, then its page opens with the club in the URL (D6, F02 AUTH-01-AC14); a ...");
   // Given the owner edits a tile label in A0 step 6, when they save it, then each label is stored in Thai and English; the links cannot be edited (D54).
-  test.todo("F10/LINE-02-AC4 Given the owner edits a tile label in A0 step 6, when they save it, then each label is stored in Thai and ...");
+  // F10/LINE-02-AC4: proven by a real or traced test in another file of this folder
   // Given the labels, when the menu is uploaded or redone (P2 step 4 Upload), then the club's own labels appear and the menu is the club's own rich menu on its own Official Account (LINE templates use the club's name, logo and rules).
   test.todo("F10/LINE-02-AC5 Given the labels, when the menu is uploaded or redone (P2 step 4 Upload), then the club's own labels ...");
   // Given the Thai terms, when the menu labels default, then they use คอร์ต, คลาสเดี่ยว, คลาสกลุ่ม, รายชื่อรอ, วอลเล็ต, เครดิต where they apply, not เรียนเดี่ยว or เรียนกลุ่ม (HO Language; Gaps A6: L-Rich-menu is wrong).
@@ -24,60 +24,60 @@ describe("F10 LINE-02", () => {
   // Given the rich menu, when it is built, then it is one image with Thai and English labels together, rendered on the server from the owner's six labels, and one menu serves every player (D92).
   test.todo("F10/LINE-02-AC9 Given the rich menu, when it is built, then it is one image with Thai and English labels together, ...");
   // Given the owner edits a tile label after Go live, when it is saved in Settings (A16), then the image is rendered again for the club and the change is audited (D114, PLAT-04). Six label keys are needed (D54): new keys in both files, listed for the writers.
-  test.todo("F10/LINE-02-AC10 Given the owner edits a tile label after Go live, when it is saved in Settings (A16), then the image is ...");
+  // F10/LINE-02-AC10: proven by a real or traced test in another file of this folder
 });
 
 describe("F10 LINE-03", () => {
   // Given any message, when it is sent, then it is sent with the club's own token from the club's own Official Account (CC-1), to the LINE user ID of the player at that club.
-  test.todo("F10/LINE-03-AC1 Given any message, when it is sent, then it is sent with the club's own token from the club's own Official ...");
+  // F10/LINE-03-AC1: proven by a real or traced test in another file of this folder
   // Given a player, when a message is sent, then it is in the player's language on their record (Thai or English); when none is set, it is the LINE app language at sign in (F02 AUTH-02-AC25). A queued message uses the language at send time, not at event time (D93).
-  test.todo("F10/LINE-03-AC2 Given a player, when a message is sent, then it is in the player's language on their record (Thai or ...");
+  // F10/LINE-03-AC2: proven by a real or traced test in another file of this folder
   // Given a message, when it is built, then its text comes from the language files by key and its layout is fixed in code; the club's name, logo and rule values (hours, days, minutes) fill the template.
-  test.todo("F10/LINE-03-AC3 Given a message, when it is built, then its text comes from the language files by key and its layout is ...");
+  // F10/LINE-03-AC3: proven by a real or traced test in another file of this folder
   // Given the admin, when its pages are listed, then there is no page, route or button to edit a message (A15 is removed; E2E check).
-  test.todo("F10/LINE-03-AC4 Given the admin, when its pages are listed, then there is no page, route or button to edit a message (A15 ...");
+  // F10/LINE-03-AC4: proven by a real or traced test in another file of this folder
   // Given a player who is not a friend of the club's Official Account or has blocked it, when a message is sent, then LINE refuses it, the send is recorded as undeliverable, nothing is blocked, and the app shows the confirmation and asks them to add the account (D9, F02 LINE-01-AC8). The message is not retried in a loop.
-  test.todo("F10/LINE-03-AC5 Given a player who is not a friend of the club's Official Account or has blocked it, when a message is ...");
+  // F10/LINE-03-AC5: proven by a real or traced test in another file of this folder
   // Given a message was sent, when it is recorded, then a log row notes message type, club, recipient reference, time and result, with no message text beyond the type, for usage and support; the log is not visible to BOOQ staff beyond counts (CC-3).
-  test.todo("F10/LINE-03-AC6 Given a message was sent, when it is recorded, then a log row notes message type, club, recipient ...");
+  // F10/LINE-03-AC6: proven by a real or traced test in another file of this folder
   // Given the same event, when the job runs twice or a retry happens, then the player gets the message once (each message has a dedupe key such as booking and type).
-  test.todo("F10/LINE-03-AC7 Given the same event, when the job runs twice or a retry happens, then the player gets the message once ...");
+  // F10/LINE-03-AC7: proven by a real or traced test in another file of this folder
   // Given a club in Testing, when a message is sent, then it goes through the club's real Official Account to the testers and counts toward the monthly cap (D32); it is flagged test in the log and excluded from reports (D33).
-  test.todo("F10/LINE-03-AC8 Given a club in Testing, when a message is sent, then it goes through the club's real Official Account to ...");
+  // F10/LINE-03-AC8: proven by a real or traced test in another file of this folder
   // Given a club's Messaging API token fails, when a send is tried, then the send fails safely, nothing else breaks, BOOQ sees an alert in P1 and the owner sees a banner in the club admin (D114, LINE-06). The owner is not told through LINE, because the message would go through the failed Official Account.
-  test.todo("F10/LINE-03-AC9 Given a club's Messaging API token fails, when a send is tried, then the send fails safely, nothing else ...");
+  // F10/LINE-03-AC9: proven by a real or traced test in another file of this folder
   // Given a message goes to staff or a coach, when it is sent, then it is sent in their language: staff and coaches have a language field that defaults to their LINE app language (D95).
-  test.todo("F10/LINE-03-AC10 Given a message goes to staff or a coach, when it is sent, then it is sent in their language: staff and ...");
+  // F10/LINE-03-AC10: proven by a real or traced test in another file of this folder
   // Given a message for a Paused club, when the event is a reminder or a cancellation result of an existing booking, then it is still sent (PLAT-03: existing bookings and reminders stay).
   test.todo("F10/LINE-03-AC11 Given a message for a Paused club, when the event is a reminder or a cancellation result of an existing ...");
 });
 
 describe("F10 LINE-04", () => {
   // Given a booking is confirmed (a verified payment, credit used or nothing to pay), when it is saved, then the card is sent at once with court or class, date, time, coach if any, amount paid, receipt number, and the buttons View booking and Add to calendar.
-  test.todo("F10/LINE-04-AC1 Given a booking is confirmed (a verified payment, credit used or nothing to pay), when it is saved, then ...");
+  // F10/LINE-04-AC1: proven by a real or traced test in another file of this folder
   // Given a booking paid wholly by credit or wallet, when the card is sent, then it shows the receipt number of the zero money receipt and how it was paid (F04 PAY-07-AC6, D64).
-  test.todo("F10/LINE-04-AC2 Given a booking paid wholly by credit or wallet, when the card is sent, then it shows the receipt number ...");
+  // F10/LINE-04-AC2: proven by a real or traced test in another file of this folder
   // Given a two hour selection (one order, one booking per hour), when it is confirmed, then one card is sent for the order listing its hours, with one receipt number (BOOK-06).
-  test.todo("F10/LINE-04-AC3 Given a two hour selection (one order, one booking per hour), when it is confirmed, then one card is sent ...");
+  // F10/LINE-04-AC3: proven by a real or traced test in another file of this folder
   // Given View booking, when it is tapped, then it opens that booking in My bookings with the club in the URL; Add to calendar adds an event with the booking time in Asia/Bangkok.
   test.todo("F10/LINE-04-AC4 Given View booking, when it is tapped, then it opens that booking in My bookings with the club in the URL; ...");
   // Given a late payment that is approved (PAY-03), when it is confirmed, then the same card is sent.
   test.todo("F10/LINE-04-AC5 Given a late payment that is approved (PAY-03), when it is confirmed, then the same card is sent.");
   // Given a player who is not a friend, when the card cannot be sent, then the confirmation shows in My bookings and on the confirmation screen (D9, LINE-07-AC5).
-  test.todo("F10/LINE-04-AC6 Given a player who is not a friend, when the card cannot be sent, then the confirmation shows in My ...");
+  // F10/LINE-04-AC6: proven by a real or traced test in another file of this folder
   // Given the card, when it is rendered in Thai or English, then every line comes from L keys with the named variables, and amounts show as whole baht or two decimals (D69).
-  test.todo("F10/LINE-04-AC7 Given the card, when it is rendered in Thai or English, then every line comes from L keys with the named ...");
+  // F10/LINE-04-AC7: proven by a real or traced test in another file of this folder
   // Given a card for a Testing club, when it is sent, then it carries no real receipt number (test series, PLAT-07).
-  test.todo("F10/LINE-04-AC8 Given a card for a Testing club, when it is sent, then it carries no real receipt number (test series, ...");
+  // F10/LINE-04-AC8: proven by a real or traced test in another file of this folder
   // Given the card for a solo class, when it is sent, then it names the coach and the court.
-  test.todo("F10/LINE-04-AC9 Given the card for a solo class, when it is sent, then it names the coach and the court.");
+  // F10/LINE-04-AC9: proven by a real or traced test in another file of this folder
 });
 
 describe("F10 LINE-05", () => {
   // Given a booking and the player's Booking reminders in LINE switch on, when it is 24 hours and again 2 hours before start, then the player gets a Reminder, once each, in their language. A booking cancelled before then gets none. With the switch off, no reminder is sent (D94).
-  test.todo("F10/LINE-05-AC1 Given a booking and the player's Booking reminders in LINE switch on, when it is 24 hours and again 2 ...");
+  // F10/LINE-05-AC1: proven by a real or traced test in another file of this folder
   // Given a hold ends without payment, when it is released, then the player gets Booking released, in a Beam club too (D45).
-  test.todo("F10/LINE-05-AC2 Given a hold ends without payment, when it is released, then the player gets Booking released, in a Beam ...");
+  // F10/LINE-05-AC2: proven by a real or traced test in another file of this folder
   // Given a player cancels, when the cancel is saved, then they get Cancellation result stating whether value came back (F09, D21).
   test.todo("F10/LINE-05-AC3 Given a player cancels, when the cancel is saved, then they get Cancellation result stating whether value ...");
   // Given staff close a slot with bookings (A12), when they confirm, then each affected player gets Club closed this slot with full credit back (F09).
@@ -89,9 +89,9 @@ describe("F10 LINE-05", () => {
   // Given a package, when it is 14 days and 3 days before expiry, then the player gets Package expiring (F06 PKG-03).
   test.todo("F10/LINE-05-AC7 Given a package, when it is 14 days and 3 days before expiry, then the player gets Package expiring (F06 ...");
   // Given the first day of a player's birth month, a birthday discount set (F14) and the player's Promotions in LINE switch on, when the day arrives, then they get Birthday discount; no discount value set, or the switch off, means no message (D94).
-  test.todo("F10/LINE-05-AC8 Given the first day of a player's birth month, a birthday discount set (F14) and the player's Promotions ...");
+  // F10/LINE-05-AC8: proven by a real or traced test in another file of this folder
   // Given a referral reward is earned (the friend's first booking played, F14) and the referrer's Promotions in LINE switch is on, when it lands, then the referrer gets Referral reward earned; the reward itself is still paid when the switch is off (D94).
-  test.todo("F10/LINE-05-AC9 Given a referral reward is earned (the friend's first booking played, F14) and the referrer's Promotions ...");
+  // F10/LINE-05-AC9: proven by a real or traced test in another file of this folder
   // Given a solo or group class is booked, moved or cancelled, when it is saved, then the coach gets New or changed session (F12 CPORT-07).
   test.todo("F10/LINE-05-AC10 Given a solo or group class is booked, moved or cancelled, when it is saved, then the coach gets New or ...");
   // Given the owner decides a leave request, when it is saved, then the coach gets Leave approved or declined (F12 CPORT-04).
@@ -103,9 +103,9 @@ describe("F10 LINE-05", () => {
   // Given the owner's pause or a cap level, when it happens, then the owner gets a message (PLAT-03-AC1, LINE-07-AC4). A failed key check or token failure is a banner and a P1 alert, not a LINE message (D114, D75).
   test.todo("F10/LINE-05-AC14 Given the owner's pause or a cap level, when it happens, then the owner gets a message (PLAT-03-AC1, ...");
   // Given a booking made less than 24 hours or 2 hours before start, when it is confirmed, then the reminders already past are skipped (D96).
-  test.todo("F10/LINE-05-AC15 Given a booking made less than 24 hours or 2 hours before start, when it is confirmed, then the reminders ...");
+  // F10/LINE-05-AC15: proven by a real or traced test in another file of this folder
   // Given the reminder hours (24 and 2) and the package expiry days (14 and 3), when text or settings use them, then the numbers are variables in the text and settings in code, never typed in a key (D116).
-  test.todo("F10/LINE-05-AC16 Given the reminder hours (24 and 2) and the package expiry days (14 and 3), when text or settings use ...");
+  // F10/LINE-05-AC16: proven by a real or traced test in another file of this folder
 });
 
 describe("F10 LINE-06", () => {
@@ -114,36 +114,13 @@ describe("F10 LINE-06", () => {
   // Given the usage, when it is read, then it comes from LINE's own count for the club's Official Account (PRD LINE-07: "reads each club's monthly usage from LINE"), and the plan limit is the club's LINE plan (set in setup).
   test.todo("F10/LINE-06-AC2 Given the usage, when it is read, then it comes from LINE's own count for the club's Official Account (PRD ...");
   // Given the month changes at Bangkok midnight on the first, when it does, then the counter starts again.
-  test.todo("F10/LINE-06-AC3 Given the month changes at Bangkok midnight on the first, when it does, then the counter starts again.");
+  // F10/LINE-06-AC3: proven by a real or traced test in another file of this folder
   // Given a club's Messaging API token fails (a send or a health check fails), when it is detected, then P1 shows an alert for that club and the owner sees a banner in the club admin (D114).
-  test.todo("F10/LINE-06-AC4 Given a club's Messaging API token fails (a send or a health check fails), when it is detected, then P1 ...");
+  // F10/LINE-06-AC4: proven by a real or traced test in another file of this folder
   // Given P1, when BOOQ staff look at a club, then they see counts and health only, never message content or recipients (PLAT-02, CC-3).
-  test.todo("F10/LINE-06-AC5 Given P1, when BOOQ staff look at a club, then they see counts and health only, never message content or ...");
+  // F10/LINE-06-AC5: proven by a real or traced test in another file of this folder
   // Given a club on the free plan or a paid plan, when its limit is shown, then the plan is shown (the cap rules differ at 100 percent, LINE-07).
   test.todo("F10/LINE-06-AC6 Given a club on the free plan or a paid plan, when its limit is shown, then the plan is shown (the cap ...");
   // Given test messages through the real Official Account (D32), when usage is shown, then they are included, because LINE counts them toward the cap.
-  test.todo("F10/LINE-06-AC7 Given test messages through the real Official Account (D32), when usage is shown, then they are included, ...");
-});
-
-describe("F10 LINE-07", () => {
-  // Given a club's usage reaches 70 percent of its monthly limit, when it does, then P1 shows an alert and the club admin shows a banner in the pause banner style asking the owner to upgrade the LINE plan (D98).
-  test.todo("F10/LINE-07-AC1 Given a club's usage reaches 70 percent of its monthly limit, when it does, then P1 shows an alert and the ...");
-  // Given a club at 80 percent or more, when a booking is confirmed, then the confirmation is sent and no 24 hour or 2 hour reminder is queued; reminders skipped are not sent later, even if the cap clears (hand-off check, PRD).
-  test.todo("F10/LINE-07-AC2 Given a club at 80 percent or more, when a booking is confirmed, then the confirmation is sent and no 24 ...");
-  // Given a club at 80 percent or more, when any of these events happens, then the message is still sent: booking confirmed, booking released, cancellation result, waitlist offer, club closed this slot, coach changed, package expiring (D29), birthday discount and referral reward (D17).
-  test.todo("F10/LINE-07-AC3 Given a club at 80 percent or more, when any of these events happens, then the message is still sent: ...");
-  // Given a club at 100 percent on a paid plan, when messages are due, then everything keeps sending and the owner is told that LINE bills the club for extra messages.
-  test.todo("F10/LINE-07-AC4 Given a club at 100 percent on a paid plan, when messages are due, then everything keeps sending and the ...");
-  // Given a club at 100 percent on the free plan, when a confirmation cannot be sent, then the confirmation shows in My bookings and on the confirmation screen, and the booking and payment go ahead.
-  test.todo("F10/LINE-07-AC5 Given a club at 100 percent on the free plan, when a confirmation cannot be sent, then the confirmation ...");
-  // Given a waitlist offer that cannot be sent on the free plan at 100 percent, when the send fails, then the offer passes to the next person in line (F08).
-  test.todo("F10/LINE-07-AC6 Given a waitlist offer that cannot be sent on the free plan at 100 percent, when the send fails, then the ...");
-  // Given a booking or payment, when the cap is reached, then it is never blocked.
-  test.todo("F10/LINE-07-AC7 Given a booking or payment, when the cap is reached, then it is never blocked.");
-  // Given the thresholds 70 and 80 percent, when the code reads them, then they are platform wide constants of the product, not club settings, and are not editable by a club owner.
-  test.todo("F10/LINE-07-AC8 Given the thresholds 70 and 80 percent, when the code reads them, then they are platform wide constants of ...");
-  // Given the usage is read from LINE, when LINE does not answer, then the check uses the last known value and P1 shows an alert; reminders are not stopped (D97).
-  test.todo("F10/LINE-07-AC9 Given the usage is read from LINE, when LINE does not answer, then the check uses the last known value and ...");
-  // Given the owner upgrades the LINE plan mid month, when the limit changes, then LINE's own count decides the usage and the alerts and the reminder stop follow the new percentage (D99); a reminder already skipped is not sent.
-  test.todo("F10/LINE-07-AC10 Given the owner upgrades the LINE plan mid month, when the limit changes, then LINE's own count decides ...");
+  // F10/LINE-06-AC7: proven by a real or traced test in another file of this folder
 });
