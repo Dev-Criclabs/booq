@@ -50,3 +50,22 @@ These are the lane's tests (`record-booking-cancel.test.ts`, `closure-end-roll.t
 | `roll_closure`: no booking window setting, roll anyway | green, equivalent: no new occurrence is found without a window (checked by reading `closure_new_occurrences`; not provable from outside) |
 
 The three survivors guard the same thing twice (defence in depth). No test is missing.
+
+## Offer Pay (0417), cap thresholds (0605, 0613) and cancel session records (1013), run 31 Oct on main d709178
+
+| Edit | Result |
+|---|---|
+| `price_offer_order`: a second tap prices again | red (lane test) |
+| `price_offer_order`: an ended hold still prices | **green in the lane test, red in QA's new test**. The route refuses an ended hold before the function, so the function's own check was untested. QA added `F04-offer-price.new.spec.ts`, which calls the function directly |
+| `price_offer_order`: another player may price the shell | green in the lane test, **red in QA's new test**. The `exists()` check on the booking's customer is a second guard, so the mutation had to remove both; the new test calls the function as another player |
+| `price_offer_order`: the entry need not be offered; more than one booking is fine; the order kind is not checked; the customer lock removed | green, not killed. The entry check is covered by the hold and booking checks (a declined offer releases the hold); the booking count and kind cannot be built through the offer path; the lock needs a race. Recorded, not chased |
+| `cap_state`: `>` for `>=` at 70, 80 or 100 percent | red (lane tests, 2 to 5 tests each) |
+| `cap_state`: the alert reads the stop threshold | red |
+| `cap_state`: the percent computed on a wrong base | red (11 tests) |
+| `record_line_usage`: the owner told on a free plan | red |
+| `record_line_usage`: reminders voided only at 100 percent | red |
+| `record_line_usage`: the owner told on every sync, not once a month | red |
+| `record_line_usage`: reminders voided at the alert state (70 percent) | green, equivalent: `void_cap_reminders` checks the state itself. QA still added `F10-cap-below-eighty.new.spec.ts`, because the lane never asserted that a reminder stays pending at 70 and 79 percent |
+| `cancel_session` (1013): no cancel record, a fixed kind, no reason | red |
+| `cancel_session` (1013): the returned value is not stored on the record | **green in the lane test, red in QA's new test** (`F09-session-cancel-record.new.spec.ts`) |
+
