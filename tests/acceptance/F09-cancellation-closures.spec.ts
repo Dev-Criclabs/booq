@@ -55,13 +55,13 @@ describe("F09 CANCEL-01", () => {
 
 describe("F09 CANCEL-02", () => {
   // Given the whole system, when its routes, buttons and admin actions are listed, then none refunds money or withdraws the wallet (route inventory test; hand-off check).
-  test.todo("F09/CANCEL-02-AC1 Given the whole system, when its routes, buttons and admin actions are listed, then none refunds money or ...");
+  // F09/CANCEL-02-AC1: proven by a real or traced test in another file of this folder
   // Given a cancel, closure, failed payment or wrong amount, when value returns, then it returns as wallet balance or package credit only.
   test.todo("F09/CANCEL-02-AC2 Given a cancel, closure, failed payment or wrong amount, when value returns, then it returns as wallet ...");
   // Given Beam, when the app is built, then it has no refund call and a test double fails if one is made (F05 PAY-05-AC3).
-  test.todo("F09/CANCEL-02-AC3 Given Beam, when the app is built, then it has no refund call and a test double fails if one is made (F05 ...");
+  // F09/CANCEL-02-AC3: proven by a real or traced test in another file of this folder
   // Given the P2 step 5 Beam text "Refunds go back by PromptPay" and the PRD cost section that repeats it, when F09 is built, then that text is not built and the cancel sheet says wallet or credit (Gaps A3).
-  test.todo("F09/CANCEL-02-AC4 Given the P2 step 5 Beam text \"Refunds go back by PromptPay\" and the PRD cost section that repeats it, ...");
+  // F09/CANCEL-02-AC4: proven by a real or traced test in another file of this folder
   // Given a cash payment taken at the desk, when it is cancelled in time, then the value goes to the wallet, not as cash (D21, F05 PAY-06-AC7).
   test.todo("F09/CANCEL-02-AC5 Given a cash payment taken at the desk, when it is cancelled in time, then the value goes to the wallet, ...");
   // Given the owner or front desk, when they want to give a player money back, then the only action is a wallet credit `adjust` with a written reason (F06 PKG-01-AC4).

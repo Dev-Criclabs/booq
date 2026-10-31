@@ -13,6 +13,9 @@ const ENV = {
   WORKER_CONSOLE_SWEEP_CRON: '53 * * * *',
   WORKER_CONSOLE_SESSION_ABSOLUTE_SECONDS: '43200',
   WORKER_HOLD_RELEASE_TICK_SECONDS: '20',
+  WORKER_PACKAGE_EXPIRE_CRON: '*/5 * * * *',
+  WORKER_WALLET_EXPIRE_CRON: '7 17 * * *',
+  WORKER_SESSION_START_CRON: '* * * * *',
 };
 
 describe('readWorkerConfig', () => {
@@ -28,6 +31,9 @@ describe('readWorkerConfig', () => {
       consoleSweepCron: '53 * * * *',
       consoleSessionAbsoluteSeconds: 43200,
       holdReleaseTickSeconds: 20,
+      packageExpireCron: '*/5 * * * *',
+      walletExpireCron: '7 17 * * *',
+      sessionStartCron: '* * * * *',
     });
   });
   it('names every missing setting and never prints a value', () => {
@@ -46,6 +52,9 @@ describe('readWorkerConfig', () => {
     expect(message).toContain('WORKER_CONSOLE_SWEEP_CRON');
     expect(message).toContain('WORKER_CONSOLE_SESSION_ABSOLUTE_SECONDS');
     expect(message).toContain('WORKER_HOLD_RELEASE_TICK_SECONDS');
+    expect(message).toContain('WORKER_PACKAGE_EXPIRE_CRON');
+    expect(message).toContain('WORKER_WALLET_EXPIRE_CRON');
+    expect(message).toContain('WORKER_SESSION_START_CRON');
     expect(message).not.toContain('secret');
   });
   it('refuses a schedule that is not five cron fields', () => {
@@ -53,6 +62,9 @@ describe('readWorkerConfig', () => {
     expect(() => readWorkerConfig({ ...ENV, WORKER_IMPORT_SWEEP_CRON: '* * * *' })).toThrow(/WORKER_IMPORT_SWEEP_CRON/);
     expect(() => readWorkerConfig({ ...ENV, WORKER_PAY_TAP_PRUNE_CRON: 'hourly' })).toThrow(/WORKER_PAY_TAP_PRUNE_CRON/);
     expect(() => readWorkerConfig({ ...ENV, WORKER_IMPORT_SWEEP_CRON: '* * * * * x\n0 0 * * * evil' })).toThrow(/WORKER_IMPORT_SWEEP_CRON/);
+    expect(() => readWorkerConfig({ ...ENV, WORKER_PACKAGE_EXPIRE_CRON: 'every 5 minutes' })).toThrow(/WORKER_PACKAGE_EXPIRE_CRON/);
+    expect(() => readWorkerConfig({ ...ENV, WORKER_WALLET_EXPIRE_CRON: 'daily' })).toThrow(/WORKER_WALLET_EXPIRE_CRON/);
+    expect(() => readWorkerConfig({ ...ENV, WORKER_SESSION_START_CRON: '* * * *' })).toThrow(/WORKER_SESSION_START_CRON/);
   });
 });
 
@@ -75,9 +87,13 @@ describe('console session limit', () => {
 });
 
 describe('buildCrontab', () => {
-  it('schedules housekeeping, the club dispatches and the two sweeps, one line each', () => {
-    expect(buildCrontab({ housekeepingCron: '*/5 * * * *', importSweepCron: '17 * * * *', rateLimitSweepCron: '41 * * * *', payTapPruneCron: '23 * * * *', consoleSweepCron: '53 * * * *' })).toBe(
-      '*/5 * * * * housekeeping\n17 * * * * import_staging_dispatch\n41 * * * * rate_limit_sweep\n23 * * * * pay_tap_prune_dispatch\n53 * * * * console_session_sweep\n',
+  it('schedules housekeeping, the club dispatches, the two sweeps and the three F06 sweeps, one line each', () => {
+    expect(buildCrontab({
+      housekeepingCron: '*/5 * * * *', importSweepCron: '17 * * * *', rateLimitSweepCron: '41 * * * *', payTapPruneCron: '23 * * * *', consoleSweepCron: '53 * * * *',
+      packageExpireCron: '*/5 * * * *', walletExpireCron: '7 17 * * *', sessionStartCron: '* * * * *',
+    })).toBe(
+      '*/5 * * * * housekeeping\n17 * * * * import_staging_dispatch\n41 * * * * rate_limit_sweep\n23 * * * * pay_tap_prune_dispatch\n53 * * * * console_session_sweep\n'
+        + '*/5 * * * * package_expire\n7 17 * * * wallet_expire\n* * * * * session_start\n',
     );
   });
 });

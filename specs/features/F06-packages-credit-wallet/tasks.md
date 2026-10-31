@@ -38,12 +38,12 @@ Depends on: F01 T09 (setup tables), T12 (people), T13 (route wrapper), T18 (gran
   Tests first: a package at its expiry gets one `expire` row for the unreserved remainder; running the sweep twice writes once.
 - [x] **F06-T11** Migration 0513: policies and grants for the tables, views and functions; the Accountant column limits (names, no phone or date of birth); table class registry entries. IDs: PKG-01, CC-1, CC-3, D35. Role: BE-C · Deps T10, F01-T18 · Size: M
   Tests first: the blind suite shows BOOQ staff read nothing of F06's class D tables; a player reads only their own ledger; the Accountant view has no phone or date of birth; another club answers 404.
-- [ ] **F06-T12** No migration. Settings keys check: the keys already exist (`package_expiry_reminder_days`, Tennis template 14 and 3, and `wallet_expiry_months`, unset allowed, both from F01 migration 0041 and `settings-registry.ts`); F06 reads them and adds none. IDs: PKG-03-AC1, AC10, D116, D89. Role: BE-C · Deps F01 registry · Size: S
+- [x] **F06-T12** No migration. Settings keys check: the keys already exist (`package_expiry_reminder_days`, Tennis template 14 and 3, and `wallet_expiry_months`, unset allowed, both from F01 migration 0041 and `settings-registry.ts`); F06 reads them and adds none. IDs: PKG-03-AC1, AC10, D116, D89. Role: BE-C · Deps F01 registry · Size: S
   Tests first: the registry test lists both keys with their units; `wallet_expire` refuses to run when `wallet_expiry_months` is unset.
 
 ## C. Jobs and reminders
 
-- [ ] **F06-T13** Worker tasks `package_expire` and `wallet_expire` (per club, `withClubTx`, idempotent, test clock). IDs: PKG-03-AC3, AC10. Role: BE-C · Deps T10, F01-T34 · Size: S
+- [x] **F06-T13** Worker tasks `package_expire` and `wallet_expire` (per club, `withClubTx`, idempotent, test clock). IDs: PKG-03-AC3, AC10. Role: BE-C · Deps T10, F01-T34 · Size: S
   Tests first: at 23:59:59 and 00:00:00 Bangkok on the expiry date the package is active then expired; the task run twice writes once.
 - [ ] **F06-T14** Migration 0514: replaces the no-op hook `app.package_reminder_hook` (created in 0508) with the real one: reminder enqueue at grant, extension and pause through `app.enqueue_message` with keys holding `expires_at` and N. F06 builds before F10, so grant, extension and pause call the hook, which does nothing until this task. IDs: PKG-03-AC1, AC2, AC6, D116. Role: BE-C · Deps T07, F10-T06 (`app.enqueue_message`, migration 0605) · Size: S
   Tests first: reminders at 14 and 3 days once each; an extension voids the old rows and creates new ones; a package with no credits left sends none.
