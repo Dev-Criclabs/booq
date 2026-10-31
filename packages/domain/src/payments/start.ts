@@ -127,9 +127,11 @@ export async function startPayment(deps: StartPaymentDeps, ctx: ClubContext, ord
 
 async function refuse(deps: StartPaymentDeps, ctx: ClubContext, orderId: string, alert: PaymentAlertKind, flag: boolean): Promise<StartedPayment> {
   await deps.db.withClubTx(ctx, async (tx) => {
-    // An order with bookings releases its hold; a package bought alone has none, so it is ended instead (0416).
+    // An order with bookings releases its hold; one that adds a coach releases its add (0806); a package bought alone
+    // has neither, so it is ended instead (0416).
     const released = (await tx.query<{ r: boolean }>(`select app.release_hold($1, 'payment_unavailable') as r`, [orderId])).rows[0]?.r === true;
-    if (!released) await tx.query(`select app.end_package_order($1, 'payment_unavailable')`, [orderId]);
+    const addReleased = released || (await tx.query<{ r: boolean }>(`select app.release_coach_add($1, 'payment_unavailable') as r`, [orderId])).rows[0]?.r === true;
+    if (!addReleased) await tx.query(`select app.end_package_order($1, 'payment_unavailable')`, [orderId]);
     if (flag) await tx.query('select app.flag_key_check_failed()');
     const health = HEALTH[alert];
     if (health) await tx.query('select app.report_payment_health($1, $2)', health);

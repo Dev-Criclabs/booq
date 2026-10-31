@@ -1,6 +1,6 @@
 // F04 checkout refusals (design 5.1) and the locale key each one shows. Code never builds text (CC-5).
 // `P-new.*` keys are in locales/pending/f04.json until Content merges them and assigns numbers; then only
-// this table changes. Reused: P-0442 (paused); P-new.student_too_old (locales/pending/f02.json). The package keys are in
+// this table changes. Reused: P-0442 (paused); P-new.booking_not_found (locales/pending/f03.json); P-new.student_too_old (locales/pending/f02.json). The package keys are in
 // locales/pending/f05.json.
 export const CHECKOUT_TEXT_KEYS = {
   bad_input: 'P-new.checkout_bad_input',
@@ -29,6 +29,8 @@ export const CHECKOUT_TEXT_KEYS = {
   order_not_found: 'P-new.order_not_found',
   spot_gone: 'P-new.spot_gone',
   session_not_available: 'P-new.session_not_available',
+  booking_not_found: 'P-new.booking_not_found',
+  coach_add_not_possible: 'P-new.coach_add_not_possible',
   customer_not_found: 'A-new.customer_not_found',
 } as const;
 

@@ -3,6 +3,11 @@ import type { ClubContext, Db, Tx } from '@booq/db';
 import {
   CheckoutError,
   findLiveHold,
+  coachAddQuoteFor,
+  findLiveCoachAdd,
+  parseCoachAddPay,
+  parseCoachAddRequest,
+  placeCoachAddOrder,
   findLiveSeat,
   parseSeatRequest,
   placeSeatOrder,
@@ -73,6 +78,8 @@ const STATUS: Record<CheckoutErrorCode, number> = {
   order_not_found: 404,
   spot_gone: 409,
   session_not_available: 409,
+  booking_not_found: 404,
+  coach_add_not_possible: 409,
   customer_not_found: 404,
 };
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -81,7 +88,7 @@ const NO_STORE = { 'Cache-Control': 'no-store' } as const;
 const inputOf = (ctx: RouteContext) => (ctx.input ?? {}) as Record<string, unknown>;
 
 // The refusals of reserve_court (BK001, message = the code, detail = its one value; F03 design 4.2).
-const CLAIM_STATUS: Record<string, number> = { too_many_attempts: 429, slot_unavailable: 409, limit_reached: 409, sign_in_required: 401 };
+const CLAIM_STATUS: Record<string, number> = { too_many_attempts: 429, slot_unavailable: 409, limit_reached: 409, sign_in_required: 401, booking_not_found: 404 };
 const CLAIM_PARAM: Record<string, string> = { too_many_attempts: 'seconds', slot_unavailable: 'by', limit_reached: 'hours' };
 const KEY = /^[\x21-\x7e]{1,200}$/;
 
@@ -231,6 +238,46 @@ function orderPay(deps: CheckoutRouteDeps, ctx: RouteContext, c: ClubContext, cu
   );
 }
 
+// F04-T15 (R2-AC9, D111): add a coach to the caller's paid court booking (C12). The coaching portion is its own
+// order; the coach is claimed by F07's add_coach_to_booking inside Pay; the QR lives inside the add hold (0418).
+function coachAddQuoteHandler(deps: CheckoutRouteDeps) {
+  return async (ctx: RouteContext) => {
+    const c = await sessionContext(deps, ctx, false);
+    const request = typed(() => parseCoachAddRequest(ctx.body));
+    return inTx(deps.db, c, (tx) => coachAddQuoteFor(tx, ctx.userId, request, deps.sources));
+  };
+}
+
+function coachAddPayHandler(deps: CheckoutRouteDeps) {
+  return async (ctx: RouteContext) => {
+    const c = await sessionContext(deps, ctx, false);
+    const request = typed(() => parseCoachAddPay(ctx.body));
+    const key = inputOf(ctx)['idempotencyKey'];
+    if (key !== undefined && (typeof key !== 'string' || !KEY.test(key))) throw new RouteError(400, 'bad_input');
+    const step = await inTx<PayStep>(deps.db, c, (tx) =>
+      withIdempotency(tx, key as string | undefined, requestHash('POST /checkout/coach-add/pay', ctx.body ?? null), async (): Promise<PayStep> => {
+        const live = await findLiveCoachAdd(tx, request.choice.bookingId);
+        if (live) return { kind: 'placed', placed: live };
+        const quote = await coachAddQuoteFor(tx, ctx.userId, request.choice, deps.sources);
+        if (quote.quoteHash !== request.quoteHash) return { kind: 'price_changed', quote };
+        return { kind: 'placed', placed: await placeCoachAddOrder(tx, ctx.userId, quote, deps.sources) };
+      }),
+    );
+    if (step.kind === 'price_changed') return { priceChanged: true, quote: step.quote };
+    const p = step.placed;
+    if (p.confirmed) return { orderId: p.orderId, holdExpiresAt: null, payment: null, confirmed: true };
+    // After commit: the Beam charge. payment_unavailable has already released the add and freed the coach.
+    const started = await startPayment({ ...deps.payments, db: deps.db, privateKey: deps.payments.privateKey() }, c, p.orderId);
+    if (!started.ok) throw new RouteError(503, 'payment_unavailable');
+    return {
+      orderId: p.orderId,
+      holdExpiresAt: p.holdExpiresAt,
+      payment: { id: started.paymentId, amountSatang: started.amountSatang, qrImageBase64: started.qrImageBase64, qrExpiresAt: started.qrExpiresAt },
+      confirmed: false,
+    };
+  };
+}
+
 function packageQuoteHandler(deps: CheckoutRouteDeps, staff: boolean) {
   return async (ctx: RouteContext) => {
     const c = await sessionContext(deps, ctx, staff);
@@ -295,6 +342,8 @@ export function checkoutRoutes(deps: CheckoutRouteDeps): Route<unknown>[] {
     noStore(route({ method: 'POST', path: '/staff/orders/quote', permission: 'booking.create.staff' }, quoteHandler(deps, true))),
     noStore(route({ method: 'POST', path: '/staff/orders/pay', permission: 'booking.create.staff' }, payHandler(deps, true))),
     noStore(route({ method: 'POST', path: '/checkout/package/quote', needsPerson: true }, packageQuoteHandler(deps, false))),
+    noStore(route({ method: 'POST', path: '/checkout/coach-add/quote', needsPerson: true }, coachAddQuoteHandler(deps))),
+    noStore(route({ method: 'POST', path: '/checkout/coach-add/pay', needsPerson: true }, coachAddPayHandler(deps))),
     noStore(route({ method: 'POST', path: '/checkout/package/pay', needsPerson: true }, packagePayHandler(deps, false))),
   ];
 }

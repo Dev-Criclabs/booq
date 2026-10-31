@@ -73,6 +73,8 @@ export interface Selection {
   hours: string[];
   coach: CoachChoice | null;
   addOnIds: string[];
+  /** F04-T15 (R2-AC9, D111): price the coaching portion only, for a coach added to a booking already paid. */
+  coachOnly?: boolean;
 }
 
 export interface PricingInput {
@@ -253,7 +255,12 @@ export function priceOrder(input: PricingInput): PricingResult {
       netSatang: unit,
     });
 
+  if (selection.coachOnly === true && (selection.coach === null || selection.addOnIds.length > 0)) return { ok: false, code: 'selection_invalid' };
   for (const [hourIndex, at] of hours.entries()) {
+    if (selection.coachOnly === true) {
+      push('coach', hourIndex, coachPrice!, { coachId: selection.coach!.coachId });
+      continue;
+    }
     const price = courtPrice(input.courtPriceRules, group.id, at);
     if (price === null) return { ok: false, code: 'price_not_set', hourIndex };
     push('court_hour', hourIndex, price);
