@@ -60,10 +60,10 @@ export function CourtRateCard({ data, onChanged }: Props) {
 }
 
 // ---- package products (court bundles, solo packs, group packs) -------------------------------------------------------------------------------------
-const TITLE: Record<CreditType, { title: string; add: string; credits: string }> = {
-  court_hour: { title: 'A-0234', add: 'A-0235', credits: 'A-0237' },
-  solo_class: { title: 'A-new.price_solo_packs', add: 'A-new.price_add_pack', credits: 'A-new.price_credits_classes' },
-  group_session: { title: 'A-new.price_group_packs', add: 'A-new.price_add_pack', credits: 'A-new.price_credits_sessions' },
+const TITLE: Record<CreditType, { head: string; add: string; credits: string }> = {
+  court_hour: { head: 'A-0234', add: 'A-0235', credits: 'A-0237' },
+  solo_class: { head: 'A-new.price_solo_packs', add: 'A-new.price_add_pack', credits: 'A-new.price_credits_classes' },
+  group_session: { head: 'A-new.price_group_packs', add: 'A-new.price_add_pack', credits: 'A-new.price_credits_sessions' },
 };
 
 function ProductFields({ type, d, set, data, disabled, idp }: { type: CreditType; d: ProductDraft; set(p: Partial<ProductDraft>): void; data: Pricing; disabled: boolean; idp: string }) {
@@ -134,7 +134,7 @@ export function ProductsCard({ type, data, onChanged }: Props & { type: CreditTy
 
   return (
     <section className="adm-card" aria-labelledby={`price-${type}`} data-testid={`price-products-${type}`}>
-      <h2 id={`price-${type}`}>{t(TITLE[type].title)}</h2>
+      <h2 id={`price-${type}`}>{t(TITLE[type].head)}</h2>
       {list.length === 0 ? <p className="adm-muted">{t('A-new.price_none')}</p> : null}
       {list.map((p) => {
         const d = drafts[p.id];
