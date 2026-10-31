@@ -105,7 +105,7 @@ export async function savePlan(f: Fetch, id: string, now: { trial: string; billi
 export const PAYMENT_OPTIONS = ['beam', 'slip'] as const;
 export type PaymentOption = (typeof PAYMENT_OPTIONS)[number];
 // The shared Beam option text says refunds go back by PromptPay (QA-F09-1): value never returns as cash, so the wizard uses its own wording.
-export const OPTION_KEY: Record<PaymentOption, { title: string; text: string }> = { beam: { title: 'X-0119', text: 'X-new.wizard_option_beam_text' }, slip: { title: 'X-0121', text: 'X-0122' } };
+export const OPTION_KEY: Record<PaymentOption, { nameKey: string; aboutKey: string }> = { beam: { nameKey: 'X-0119', aboutKey: 'X-new.wizard_option_beam_text' }, slip: { nameKey: 'X-0121', aboutKey: 'X-0122' } };
 export const savePaymentOption = (f: Fetch, id: string, option: PaymentOption) => put(f, id, 'basics', { payment_option: option });
 
 /** The day part of a stored timestamp, for the date boxes. */
@@ -114,3 +114,6 @@ export const dayOf = (v: string | null | undefined): string => (v && !Number.isN
 export const stampOf = (day: string): string => `${day.trim()}T00:00:00+07:00`;
 /** "14:20" in Bangkok time, for "saved as draft {time}". */
 export const clockTime = (d: Date): string => new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Bangkok' }).format(d);
+
+// i18n-ignore the shape of a date to type, not words
+export const DATE_PATTERN = 'YYYY-MM-DD';

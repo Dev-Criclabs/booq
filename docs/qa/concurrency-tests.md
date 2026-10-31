@@ -100,6 +100,7 @@ Not part of BOOK-04, but each is a way money or a legal number can break, so eac
 | CONC-27 | PAY-02, BOOK-03 | Valid callback arrives at the same moment the expiry job releases the hold | Either confirmed on time or released and then handled as a late callback (PAY-03). Only a payment after the hold end is late (D126, PAY-02-AC2). The Beam QR expires slightly before the hold end, by a platform margin (D80), so a payment between QR expiry and hold end is on time and must confirm normally; add this interleaving to the race (callback at QR expiry plus a little, job at hold end); never confirmed twice, never released and confirmed, never money lost |
 | CONC-28 | BOOK-05 | Fixture limit N. Player has N-1 future hours. Two requests for one more hour each (different slots) | At most one succeeds; total never exceeds N. With the setting empty, both succeed |
 | CONC-30 | BOOK-04 | **Chaos pass.** 30 players, 3 coaches, 2 courts, one day; 300 random requests (hold, pay, expire, cancel, solo, group, closure) sent in 10 waves with jitter on the fake clock | Invariants I1 to I8 hold at the end of each wave. Seed is printed; failing seeds are saved as regression fixtures |
+| CONC-31 | PAY-02-AC15, D73 | Three `beam_reconcile` runs at once over four paid charges whose callbacks never came (fake Beam, deliver off) | Each booking confirmed once, one receipt call and one `applied` event per charge, nothing to the wallet. Written: `tests/acceptance/F05-reconcile-race.new.spec.ts` |
 
 ## 7. Pass rules
 

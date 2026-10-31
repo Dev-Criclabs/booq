@@ -1,6 +1,8 @@
 import { createPlatformDb } from '@booq/db';
 import { systemClock } from '@booq/time';
 import type { PlatformSource } from '../http/server';
+import { createConnections } from '../connections/connections';
+import { createBeamProbe, createLineProbe } from '../connections/providers';
 import { createStaffIdentityClient } from '../staff/staff-identity-client';
 import { createPlatformTable, readPlatformConfig, unavailableIdentity } from './context';
 
@@ -12,6 +14,9 @@ export function platformSource(): PlatformSource {
   const { databaseUrl, ...config } = readPlatformConfig(process.env);
   const db = createPlatformDb({ connectionString: databaseUrl });
   const client = config.staffInvite ? createStaffIdentityClient({ url: config.staffInvite.url, signingSecret: config.staffInvite.signingSecret, now: () => systemClock.now() }) : null;
-  built = createPlatformTable({ db, clock: systemClock, identity: client ?? unavailableIdentity, ...(client ? { enrolment: client } : {}), config });
+  const connections = config.providers
+    ? createConnections({ encryptKey: config.providers.encryptKey, line: createLineProbe({ baseUrl: config.providers.lineApiUrl, timeoutMs: config.providers.probeTimeoutMs }), beam: createBeamProbe() })
+    : undefined;
+  built = createPlatformTable({ db, clock: systemClock, identity: client ?? unavailableIdentity, ...(client ? { enrolment: client } : {}), ...(connections ? { connections } : {}), config });
   return built;
 }

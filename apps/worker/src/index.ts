@@ -5,6 +5,7 @@ export { DEFAULT_JOB_SPEC, TASK_MAX_ATTEMPTS, isPermanentFailure } from './polic
 export { startWorker, HOUSEKEEPING, type RunningWorker, type WorkerOptions } from './worker';
 export { IMPORT_STAGING_SWEEP, sweepImportStaging } from './tasks/import-staging';
 export { CLUB_EXPORT, clubExportTask } from './tasks/club-export';
+export { CONNECTION_CHECK, runConnectionChecks, type ConnectionCheckDeps } from './tasks/connection-check';
 export { HOLD_RELEASE, runHoldRelease, type HoldReleaseResult } from './tasks/hold-release';
 export { PACKAGE_EXPIRE, WALLET_EXPIRE, SESSION_START, runPackageExpire, runWalletExpire, runSessionStart, type ExpiryResult } from './tasks/f06-expiry';
 export { CLASS_GENERATE, CLASS_GENERATE_DISPATCH, classGenerateDispatch, generateClassSessions } from './tasks/class-generate';

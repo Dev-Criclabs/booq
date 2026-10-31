@@ -184,7 +184,8 @@ async function liveHold(tx: Tx, customerId: string, courtId: string, coachId: st
 // The refusals of count_promo_use ('promo:<code>') and use_birthday_entitlement ('birthday:<code>'), P0001.
 const PROMO_CODES = new Set(['code_not_valid', 'code_expired', 'code_used_up', 'code_first_booking_only', 'one_code_per_order']);
 
-async function entitlement(tx: Tx, sql: string, args: unknown[]): Promise<void> {
+/** Run count_promo_use or use_birthday_entitlement and map its refusal to a typed code. */
+export async function entitlement(tx: Tx, sql: string, args: unknown[]): Promise<void> {
   try {
     await tx.query(sql, args);
   } catch (e) {

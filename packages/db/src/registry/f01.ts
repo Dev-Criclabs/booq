@@ -24,6 +24,7 @@ export const tables: Fragment = {
   'platform.template_item': { class: 'P' },
   'platform.launch_check': { class: 'P' },
   'platform.export_request': { class: 'P' },
+  'platform.connection_check_request': { class: 'P' },   // migration 0059: a request for the worker to recheck a club's LINE and Beam values (D167)
   'platform.console_session': { class: 'P' },     // 0051: console sign-in state, ids hashed, reached only through definer functions
   'platform.console_challenge': { class: 'P' },
   'platform.console_login_state': { class: 'P' },

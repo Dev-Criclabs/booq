@@ -17,25 +17,33 @@ Depends on: F01 (route wrapper, permissions, settings, audit, import, staff), F0
 - [x] **F11-T03** `1101_staff_calendar.sql` and `GET /staff/calendar`. IDs: ADMIN-03. Role: BE-A · Deps F03, F07, F08 · Size: M
   Tests first: held, confirmed, closure, solo and class cells; names only, no phone; range over 7 days refused; another club empty; accountant refused.
   Built (Architect): `1101_staff_calendar.sql` (`public.staff_calendar(from, to)`, owner and front desk), `packages/domain/src/admin/calendar.ts`, `calendarRoutes`. An expired hold is not a cell. The walk-in flag of the design is the booking `source` field.
-- [ ] **F11-T04** `1102_customer_list_tags.sql`, `GET /staff/customers`, tags routes, customer CSV via `POST /staff/customers/export`. IDs: ADMIN-06. Role: BE-A · Deps F01-T25 · Size: M
+- [x] **F11-T04** `1102_customer_list_tags.sql`, `GET /staff/customers`, tags routes, customer CSV via `POST /staff/customers/export`. IDs: ADMIN-06. Role: BE-A · Deps F01-T25 · Size: M
   Tests first: search by name, phone fragment, tag; CSV holds only this club and writes an audit entry; front desk can export customers but not the full data export.
-- [ ] **F11-T05** `app.staff_add_customer` (walk in quick add) and `POST /staff/customers` (if Open item 1 is confirmed). IDs: ADMIN-04. Role: BE-A · Deps T04, F02 · Size: S
+  Built (Architect): `1102_customer_list_tags.sql` (`customer_tag` table, `public.customer_list`, `app.customer_tag_set`, `app.audit_customer_export`), `packages/domain/src/admin/customers.ts`, `customerRoutes`: `GET /staff/customers`, `GET /staff/customers/csv` (a synchronous CSV with an audit entry, permission `customer.export`; the async `/exports` stays owner only), tag routes. The cursor is opaque.
+- [x] **F11-T05** `app.staff_add_customer` (walk in quick add) and `POST /staff/customers` (if Open item 1 is confirmed). IDs: ADMIN-04. Role: BE-A · Deps T04, F02 · Size: S
   Tests first: creates an unclaimed customer; a duplicate phone is refused; the first LINE sign in claims it (D105).
-- [ ] **F11-T06** `1103_customer_profile_reads.sql`, `GET /staff/customers/:id`, `.../bookings`, `.../orders`, notes routes over `user_staff_note`. IDs: ADMIN-07. Role: BE-A · Deps T04 · Size: M
+  Built (Architect) with T04 in 1102: `app.staff_add_customer(name, phone, phone_normalized)` and `POST /staff/customers`. Name and phone only, no consent implied (D168). Note for F04: an unclaimed person cannot be priced (0320 needs `claim_state is null`), so the quick add makes a record the front desk can find and a player can claim; selling to it needs the F04 decision on unclaimed buyers.
+- [x] **F11-T06** `1103_customer_profile_reads.sql`, `GET /staff/customers/:id`, `.../bookings`, `.../orders`, notes routes over `user_staff_note`. IDs: ADMIN-07. Role: BE-A · Deps T04 · Size: M
   Tests first: date of birth shown to front desk and owner, never the accountant; its change history owner only (D55); notes are never readable by the player.
-- [ ] **F11-T07** Credit and wallet panels: `GET /staff/customers/:id/credits`, `POST .../credit-adjust`, `POST .../wallet-adjust`, `POST /staff/packages/:id/extend` wired to F06 functions. IDs: ADMIN-07. Role: BE-C · Deps T06, F06 · Size: M
+  Built (Architect): `1103_customer_profile_reads.sql` (`customer_profile`, `customer_bookings`, `customer_orders`), `customerRoutes`: `GET /staff/customers/:id`, `.../bookings`, `.../orders`, `GET/POST .../notes` (over `user_staff_note`). The date of birth history stays on the existing owner-only `GET /customers/:id/dob-history`.
+- [x] **F11-T07** Credit and wallet panels: `GET /staff/customers/:id/credits`, `POST .../credit-adjust`, `POST .../wallet-adjust`, `POST /staff/packages/:id/extend` wired to F06 functions. IDs: ADMIN-07. Role: BE-C · Deps T06, F06 · Size: M
   Tests first: a wallet adjust without a reason is refused; with a reason a ledger row is added; the extension needs the owner and a reason.
-- [ ] **F11-T08** `1104_audit_read.sql`, `GET /staff/audit` and booking history `GET /staff/bookings/:id/history`. IDs: ADMIN-17, ADMIN-04. Role: BE-A · Deps F01 audit · Size: M
+  Built (Architect): `packages/domain/src/admin/customer-value.ts`, `customerValueRoutes`: `GET /staff/customers/:id/credits`, `POST .../credit-adjust {packageId, delta, note}`, `POST .../wallet-adjust {deltaSatang, note}`, `POST /staff/packages/:id/extend {newExpiresOn, reason}`. New permissions `customer.adjust` (front desk, owner) and `package.extend` (owner). Every POST needs an Idempotency-Key. F06's functions raise `credit:*`, `wallet:*`, `package:*` messages; they map to `reason_required`, `below_zero`, `bad_input`, `not_found`, `customer_not_claimed`. Credit adjust is per package (the F06 function), not per customer.
+- [x] **F11-T08** `1104_audit_read.sql`, `GET /staff/audit` and booking history `GET /staff/bookings/:id/history`. IDs: ADMIN-17, ADMIN-04. Role: BE-A · Deps F01 audit · Size: M
   Tests first: search by staff, record and date; owner only; personal fields shown as changed, not the value; no write route exists.
-- [ ] **F11-T09** `1105_owner_setup.sql`, `GET /staff/setup`, `POST /staff/setup/done`. IDs: ADMIN-02. Role: BE-A · Deps F01 launch checks · Size: M
+  Built (Architect): `1104_booking_history.sql` (`public.booking_history`, plus a read policy for booq_owner on `audit_entry` so a definer function can read it), `packages/domain/src/admin/audit.ts`, `auditRoutes`: `GET /staff/audit` (owner, reads the table through its existing owner policy, so no new audit function was needed) and `GET /staff/bookings/:id/history` (front desk, owner). Personal values are never returned, only the field names.
+- [x] **F11-T09** `1105_owner_setup.sql`, `GET /staff/setup`, `POST /staff/setup/done`. IDs: ADMIN-02. Role: BE-A · Deps F01 launch checks · Size: M
   Tests first: steps 6 to 8 with done state; the tell-done click notifies P3 once; the page stays until Live; there is no address toggle (D54).
-- [ ] **F11-T10** `GET /staff/leave-calendar` (dates and status only) over `coach_leave_calendar`. IDs: ADMIN-08. Role: BE-B · Deps F07-T12 · Size: S
+  Built (Architect): `1105_owner_setup.sql` (`owner_setup_done` table, class S with a platform read policy; `app.owner_setup_view()`, `app.owner_tell_done()`), `packages/domain/src/admin/setup.ts`, `setupRoutes`: `GET /staff/setup`, `POST /staff/setup/done`. The three steps (brand, products_rules, people) are not registered in `app.setup_steps`, so they do not block Draft to Testing; the done tests are the design's assumption (Open item 2). Telling is refused after Go live.
+- [x] **F11-T10** `GET /staff/leave-calendar` (dates and status only) over `coach_leave_calendar`. IDs: ADMIN-08. Role: BE-B · Deps F07-T12 · Size: S
   Tests first: front desk sees no type or note; a coach is refused; another club empty.
+  Built (Architect): `GET /staff/leave-calendar?from=&to=` (permission `coach.read`) in `apps/web/src/api/coaches/routes.ts`, `leaveCalendar` in `packages/domain/src/coaches/staff.ts`; a range is at most 92 days.
 
 ## B. Mounts for routes owned by other features
 
-- [ ] **F11-T11** Check that every route in design §5 exists and is mounted, and list the gaps (closure expired packages, setup/* CRUD, package products). IDs: ADMIN-09 to ADMIN-15. Role: QA · Deps F04, F06, F09, F13 routes · Size: S
+- [x] **F11-T11** Check that every route in design §5 exists and is mounted, and list the gaps (closure expired packages, setup/* CRUD, package products). IDs: ADMIN-09 to ADMIN-15. Role: QA · Deps F04, F06, F09, F13 routes · Size: S
   Tests first: a table of route to feature to test; the role matrix covers each.
+  Built (Architect): `apps/web/src/server/admin-inventory.test.ts` lists every route of design §5 per page with its permission and the known gaps with their owners. Finding: the F01 club settings routes (`GET /settings`, `PUT /settings/:key`, `PUT /hours`, `POST/PUT /resources`, `PUT /support-window`) were built in `packages/domain/src/club` but never mounted; they are now mounted (and exported from the domain index) for A16. Still gaps owned elsewhere: F04 setup/* CRUD and `POST /staff/bookings`, F06 package-products and package-sale, F09 cancel, mark and closure routes, F10 rich menu, F01 `PUT /club/business`.
 
 ## C. Pages
 
