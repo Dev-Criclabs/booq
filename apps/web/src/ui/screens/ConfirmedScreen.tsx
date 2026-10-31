@@ -5,7 +5,7 @@ import { baht, bangkokTime } from '../../client/checkout';
 import { addFriendUrl, checkFriendship, markAsked, shouldAsk } from '../../client/friend';
 import { formatDate } from '../../client/format';
 import { clubHome } from '../../client/paths';
-import { icsFor, isId, loadPayment, type PaymentView } from '../../client/payment';
+import { icsFor, isId, loadConfirmation, loadPayment, type PaymentView } from '../../client/payment';
 import { clubName, useClub, useLiff } from '../../client/use-club';
 import { AddFriendAsk } from '../AddFriendAsk';
 import { Loading, StateScreen } from '../StateScreen';
@@ -39,7 +39,11 @@ export function ConfirmedScreen({ slug, initialLang }: { slug: string; initialLa
 
 function ConfirmedBody({ slug, lang, t, clubLabel, oaBasicId, liffId, liff }: { slug: string; lang: Lang; t: (k: string, v?: Record<string, string | number>) => string; clubLabel: string; oaBasicId: string | null; liffId: string | null; liff: ReturnType<typeof useLiff> }) {
   const f = useMemo(() => (typeof window === 'undefined' ? fetch : window.fetch.bind(window)), []);
-  const paymentId = useMemo(() => (typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('payment')), []);
+  const ids = useMemo(() => {
+    const q = typeof window === 'undefined' ? new URLSearchParams() : new URLSearchParams(window.location.search);
+    return { payment: q.get('payment'), order: q.get('order') };
+  }, []);
+  const paymentId = ids.payment ?? ids.order;
   const [p, setP] = useState<PaymentView | null>(null);
   const [state, setState] = useState<'loading' | 'ok' | 'offline' | 'not_confirmed'>('loading');
   const [attempt, setAttempt] = useState(0);
@@ -48,7 +52,7 @@ function ConfirmedBody({ slug, lang, t, clubLabel, oaBasicId, liffId, liff }: { 
   useEffect(() => {
     if (!isId(paymentId)) return;
     let live = true;
-    void loadPayment(slug, paymentId, f).then((r) => {
+    void (ids.payment ? loadPayment(slug, paymentId, f) : loadConfirmation(slug, paymentId, f)).then((r) => {
       if (!live) return;
       if (!r.ok) return setState(r.status === 404 ? 'not_confirmed' : 'offline');
       if (r.value.state !== 'confirmed') return setState('not_confirmed');
@@ -58,7 +62,7 @@ function ConfirmedBody({ slug, lang, t, clubLabel, oaBasicId, liffId, liff }: { 
     return () => {
       live = false;
     };
-  }, [slug, paymentId, f, attempt]);
+  }, [slug, paymentId, ids.payment, f, attempt]);
 
   // The add-the-account ask: only for a known non friend inside LIFF, once per session.
   useEffect(() => {
@@ -91,7 +95,7 @@ function ConfirmedBody({ slug, lang, t, clubLabel, oaBasicId, liffId, liff }: { 
   const court = b?.courtName ?? '';
   const start = b ? bangkokTime(b.startAt) : '';
   const end = b ? bangkokTime(b.endAt) : '';
-  const ics = b ? `data:text/calendar;charset=utf-8,${encodeURIComponent(icsFor(`${clubLabel} · ${t('P-0021', { court })}`, b.startAt, b.endAt, p.paymentId))}` : null;
+  const ics = b ? `data:text/calendar;charset=utf-8,${encodeURIComponent(icsFor(`${clubLabel} · ${t('P-0021', { court })}`, b.startAt, b.endAt, p.paymentId ?? p.orderId))}` : null;
   const shareText = b ? `${clubLabel} · ${t('P-0021', { court })} · ${formatDate(lang, day)} ${day.slice(0, 4)} · ${start}-${end}` : '';
   return (
     <div className="app checkout" data-screen="C12">
@@ -111,7 +115,7 @@ function ConfirmedBody({ slug, lang, t, clubLabel, oaBasicId, liffId, liff }: { 
               <div className="co-row"><span>{t('P-0109')}</span><span>{t('P-0110', { dateYear: `${formatDate(lang, day)} ${day.slice(0, 4)}` })}</span></div>
             </>
           ) : null}
-          <div className="co-row"><span>{t('P-0111')}</span><span>{baht(p.amountSatang)}</span></div>
+          {p.amountSatang > 0 ? <div className="co-row"><span>{t('P-0111')}</span><span>{baht(p.amountSatang)}</span></div> : <p className="co-note">{t('P-0365')}</p>}
           {p.receiptNumber ? <div className="co-row"><span>{t('P-0112', { receiptNumber: p.receiptNumber })}</span><span /></div> : null}
         </section>
         {ask ? <AddFriendAsk t={t} clubName={clubLabel} url={addFriendUrl(oaBasicId)} onDismiss={dismiss} /> : null}

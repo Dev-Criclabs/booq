@@ -97,3 +97,19 @@ describe('GET /payments/:id', () => {
     expect(stateOf('cancelled', null)).toBe('expired');
   });
 });
+
+describe('GET /orders/:id/confirmation (an order with nothing to pay)', () => {
+  const conf = (userId: string | null, id: string) =>
+    paymentStatusRoutes({ db })[1]!.handle({ session: userId ? { clubId: A, userId, roles: ['player'] } : null, input: { id } }, deps) as Promise<{ ok: boolean; status: number; body?: any }>;
+  it('is waiting while its bookings are held, and confirmed with the court, time and receipt once they are', async () => {
+    expect((await conf(P1, order)).body).toMatchObject({ state: 'waiting', paymentId: null, booking: { courtName: '2' } });
+    await tdb.query(`update public.booking set status = 'confirmed', hold_expires_at = null, confirmed_at = app.now() where order_id = $1`, [order]);
+    await tdb.query(`insert into public.receipt (club_id, order_id, kind, series, seq_no, number, vat_flag, customer_id, customer_name_snapshot, lines, total_satang) values ($1,$2,'sale','2027',1,'HTC-2027-000002',false,$3,'x','{}'::jsonb,0)`, [A, order, P1]);
+    expect((await conf(P1, order)).body).toMatchObject({ state: 'confirmed', receiptNumber: 'HTC-2027-000002', qrImageBase64: null });
+  });
+  it("another player's order, an unknown one and a guest are refused", async () => {
+    expect(await conf(P2, order)).toMatchObject({ ok: false, status: 404 });
+    expect(await conf(P1, '99999999-9999-4999-8999-999999999999')).toMatchObject({ ok: false, status: 404 });
+    expect(await conf(null, order)).toMatchObject({ ok: false, status: 401 });
+  });
+});

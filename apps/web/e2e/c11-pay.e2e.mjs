@@ -152,6 +152,29 @@ describe('C12 Confirmed (F05-T11)', () => {
   });
 });
 
+describe('wrong amount and an order with nothing to pay', () => {
+  it('checking: says the club is checking, keeps the hold, and does not look like waiting', async () => {
+    const { page, context } = await open(PAYPATH, () => ({ json: waiting({ state: 'checking', qrImageBase64: null }) }));
+    await page.getByTestId('checking').waitFor();
+    const t = await text(page);
+    assert.match(t, /Checking your payment/);
+    assert.match(t, /Slot held for/);
+    assert.doesNotMatch(t, /Waiting for your payment/);
+    await context.close();
+  });
+  it('C12 reads the order of a zero money booking: booked, no Paid row, no payment id', async () => {
+    const { page, context } = await openPage(browser, { liff, lang: 'en', me: { profile: person } });
+    await page.route('**/api/c/hunter/orders/*/confirmation', (r) => r.fulfill({ status: 200, json: confirmed({ paymentId: null, amountSatang: 0 }) }));
+    await page.goto(`${app.base}/c/hunter/confirmed?order=${ORDER}`);
+    await page.getByTestId('confirmed').waitFor();
+    const t = await text(page);
+    assert.match(t, /You're booked/);
+    assert.match(t, /No payment needed/);
+    assert.doesNotMatch(t, /Paid\s*฿/);
+    await context.close();
+  });
+});
+
 describe('layout at 320 px in both languages (CC-5)', () => {
   for (const lang of ['th', 'en']) {
     it(`${lang}: C11 and C12 do not scroll sideways and their buttons stay on one line`, async () => {

@@ -134,7 +134,7 @@ describe('C10 Checkout (F04-T17)', () => {
     assert.equal(bodies.pay[0].quoteHash, 'a'.repeat(64));
     assert.ok(page.url().includes('/checkout'));
     await page.getByTestId('pay').click();
-    await page.waitForURL('**/bookings');
+    await page.waitForURL('**/confirmed?order=o9');
     assert.equal(bodies.pay[1].quoteHash, 'c'.repeat(64));
     assert.notEqual(bodies.payHeaders[0], bodies.payHeaders[1]);
     await context.close();
@@ -181,7 +181,7 @@ describe('C11 hand-off and the checkout states (F04-T18; R8-AC1 to AC4)', () => 
     assert.match(await text(free.page), /No payment needed/);
     assert.match(await free.page.getByTestId('pay').innerText(), /Confirm booking/);
     await free.page.getByTestId('pay').click();
-    await free.page.waitForURL('**/bookings');
+    await free.page.waitForURL('**/confirmed?order=o2');
     await free.context.close();
   });
 

@@ -85,6 +85,7 @@ function PayBody({ slug, lang, t }: { slug: string; lang: Lang; t: (k: string, v
     return <StateScreen t={t} testId="wallet" titleKey="P-new.pay_wallet_title" textKey="P-new.pay_wallet_text" actionKey="P-0332" onAction={home} />;
   }
   if (p.state === 'confirmed') return <Loading />;
+  const checking = p.state === 'checking';
 
   const left = secondsLeft(p.holdExpiresAt, now);
   if (minutes.current === null && p.holdExpiresAt) minutes.current = Math.max(1, Math.round(left / 60));
@@ -104,6 +105,12 @@ function PayBody({ slug, lang, t }: { slug: string; lang: Lang; t: (k: string, v
           <small>{t('P-0085')}</small>
           <strong>{baht(p.amountSatang)}</strong>
         </section>
+        {checking ? (
+          <div className="co-banner" role="status" data-testid="checking">
+            <p><b>{t('P-new.pay_checking_title')}</b></p>
+            <p>{t('P-new.pay_checking_text')}</p>
+          </div>
+        ) : null}
         {p.qrImageBase64 ? (
           <>
             <div className="pay-qr" data-testid="qr">
@@ -114,16 +121,16 @@ function PayBody({ slug, lang, t }: { slug: string; lang: Lang; t: (k: string, v
             <p className="co-note">{t('P-new.pay_save_qr_hint')}</p>
           </>
         ) : null}
-        <ol className="pay-steps">
+        {checking ? null : <ol className="pay-steps">
           <li>{t('P-0087')}</li>
           <li>{t('P-0088')}</li>
           <li>{t('P-0089')}</li>
-        </ol>
-        <div className="pay-waiting" role="status" data-testid="waiting">
+        </ol>}
+        {checking ? null : <div className="pay-waiting" role="status" data-testid="waiting">
           <span className="spinner" aria-hidden="true" />
           <span>{t('P-0456')}</span>
-        </div>
-        <p className="co-note">{t('P-0457', { holdMinutes: minutes.current ?? 15 })}</p>
+        </div>}
+        {checking ? null : <p className="co-note">{t('P-0457', { holdMinutes: minutes.current ?? 15 })}</p>}
         {failure === 'offline' ? <p className="co-error" role="alert" data-testid="poll-error">{t('P-new.pay_open_failed')}</p> : null}
         {court ? <p className="co-note">{t('P-0021', { court })} · {time}</p> : null}
       </main>

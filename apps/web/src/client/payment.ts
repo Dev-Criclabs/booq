@@ -7,7 +7,8 @@ import type { Fetched } from './checkout';
 export type PaymentState = 'waiting' | 'checking' | 'confirmed' | 'wallet' | 'failed' | 'expired';
 
 export interface PaymentView {
-  paymentId: string;
+  /** null for an order confirmed with nothing to pay. */
+  paymentId: string | null;
   orderId: string;
   state: PaymentState;
   amountSatang: number;
@@ -34,6 +35,21 @@ export async function loadPayment(slug: string, id: string, f: typeof fetch): Pr
     return { ok: false, status: 0, code: 'offline' };
   }
 }
+
+/** C12 for an order that needed no payment (PAY-07): the same view, read from the order. */
+export async function loadConfirmation(slug: string, orderId: string, f: typeof fetch): Promise<Fetched<PaymentView>> {
+  try {
+    const res = await f(`/api/c/${encodeURIComponent(slug)}/orders/${encodeURIComponent(orderId)}/confirmation`, { credentials: 'same-origin', cache: 'no-store' });
+    const body = (await res.json().catch(() => ({}))) as PaymentView & { code?: unknown };
+    if (res.ok) return { ok: true, value: body };
+    return { ok: false, status: res.status, code: typeof body.code === 'string' ? body.code : 'offline' };
+  } catch {
+    return { ok: false, status: 0, code: 'offline' };
+  }
+}
+
+/** The address of C12 for an order with nothing to pay. */
+export const confirmedOrderPath = (slug: string, orderId: string) => `/c/${slug}/confirmed?order=${encodeURIComponent(orderId)}`;
 
 /** Whole seconds left until `iso` (never below 0). */
 export function secondsLeft(iso: string | null, now: number): number {

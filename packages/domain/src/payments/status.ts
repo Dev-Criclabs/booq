@@ -7,7 +7,8 @@ import type { Tx } from '../../../db/src/tx';
 export type PaymentState = 'waiting' | 'checking' | 'confirmed' | 'wallet' | 'failed' | 'expired';
 
 export interface PaymentStatus {
-  paymentId: string;
+  /** null for an order confirmed with no money to pay (credit or wallet covered it, PAY-07). */
+  paymentId: string | null;
   orderId: string;
   state: PaymentState;
   amountSatang: number;
@@ -57,5 +58,26 @@ export async function paymentStatus(tx: Tx, id: unknown): Promise<PaymentStatus>
     holdExpiresAt: state === 'waiting' || state === 'checking' ? (hold ? hold.toISOString() : null) : null,
     booking: b ? { courtName: b.name, startAt: b.start_at.toISOString(), endAt: b.end_at.toISOString() } : null,
     receiptNumber: receipt?.number ?? null,
+  };
+}
+
+/**
+ * C12 for an order that needed no payment (PAY-07, D64): the same shape as a payment, read from the order and its bookings. confirmed when its
+ * bookings are confirmed, else waiting. The amount is the money the order took (0), the receipt is the order's own.
+ */
+export async function orderConfirmation(tx: Tx, id: unknown): Promise<PaymentStatus> {
+  if (typeof id !== 'string' || !UUID.test(id)) throw new PaymentNotFound();
+  const o = (await tx.query<{ id: string; money_satang: number | null }>(`select id, money_satang from public.orders where id = $1 and priced_at is not null`, [id.toLowerCase()])).rows[0];
+  if (!o) throw new PaymentNotFound();
+  const live = (await tx.query<{ confirmed: number; total: number }>(
+    `select count(*) filter (where status = 'confirmed')::int as confirmed, count(*)::int as total from public.booking where order_id = $1`, [o.id])).rows[0]!;
+  const b = (await tx.query<{ name: string | null; start_at: Date; end_at: Date }>(
+    `select r.name, b.start_at, b.end_at from public.booking b left join public.resource r on r.club_id = b.club_id and r.id = b.resource_id
+      where b.order_id = $1 order by b.start_at, b.id limit 1`, [o.id])).rows[0];
+  const state: PaymentState = live.total > 0 && live.confirmed === live.total ? 'confirmed' : 'waiting';
+  const receipt = state === 'confirmed' ? (await tx.query<{ number: string }>(`select number from public.receipt where order_id = $1 and status = 'issued' order by issued_at limit 1`, [o.id])).rows[0] : undefined;
+  return {
+    paymentId: null, orderId: o.id, state, amountSatang: o.money_satang ?? 0, qrImageBase64: null, qrExpiresAt: null, holdExpiresAt: null,
+    booking: b ? { courtName: b.name, startAt: b.start_at.toISOString(), endAt: b.end_at.toISOString() } : null, receiptNumber: receipt?.number ?? null,
   };
 }

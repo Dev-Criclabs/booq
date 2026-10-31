@@ -6,6 +6,7 @@ import {
   type Choice, type QuoteView, type Refusal, type Wanted,
 } from '../../client/checkout';
 import { formatDate } from '../../client/format';
+import { confirmedOrderPath } from '../../client/payment';
 import { clubHome } from '../../client/paths';
 import { startTime, endTime } from '../../client/schedule';
 import { useClub, useLiff } from '../../client/use-club';
@@ -141,7 +142,7 @@ function CheckoutBody({ slug, lang, t, paused }: { slug: string; lang: Lang; t: 
       return setNotice('P-new.checkout_price_changed');
     }
     // Confirmed with no money to pay goes to the bookings; a running payment goes to C11 by its order (F05).
-    window.location.assign(r.value.kind === 'confirmed' ? `${clubHome(slug)}/bookings` : payPath(slug, r.value.started.orderId, r.value.started.payment.id));
+    window.location.assign(r.value.kind === 'confirmed' ? confirmedOrderPath(slug, r.value.orderId) : payPath(slug, r.value.started.orderId, r.value.started.payment.id));
   }, [choice, quote, paying, want, slug, f]);
 
   const again = useCallback(() => {
