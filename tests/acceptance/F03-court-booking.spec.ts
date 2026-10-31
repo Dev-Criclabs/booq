@@ -6,142 +6,121 @@ import { describe, test } from 'vitest';
 
 describe("F03 BOOK-01", () => {
   // Given a request to book or hold a court, when the start time is not on the hour (18:30, 18:01), then the server refuses it, whatever the screen allowed.
-  test.todo("F03/BOOK-01-AC1 Given a request to book or hold a court, when the start time is not on the hour (18:30, 18:01), then the ...");
+  // F03/BOOK-01-AC1: proven by a real or traced test in another file of this folder
   // Given a request, when the booking length is anything other than 60 minutes per hour booked, then the server refuses it. The length is fixed for every club and is not a setting.
-  test.todo("F03/BOOK-01-AC2 Given a request, when the booking length is anything other than 60 minutes per hour booked, then the ...");
+  // F03/BOOK-01-AC2: proven by a real or traced test in another file of this folder
   // Given the club's opening hours for that weekday (Hunter 06:00 to 24:00), when a request starts before opening or ends after closing, then the server refuses it. 23:00 to 24:00 is the last slot; 24:00 is never a start.
-  test.todo("F03/BOOK-01-AC3 Given the club's opening hours for that weekday (Hunter 06:00 to 24:00), when a request starts before ...");
+  // F03/BOOK-01-AC3: proven by a real or traced test in another file of this folder
   // Given the booking window setting (Hunter 30 days), when a request is further ahead than the window, then the server refuses it (61 days ahead is refused). The window runs to today plus the setting by Bangkok calendar date, so day 30 is bookable (D42). The value is read from the club's setting, not typed in code.
-  test.todo("F03/BOOK-01-AC4 Given the booking window setting (Hunter 30 days), when a request is further ahead than the window, then ...");
+  // F03/BOOK-01-AC4: proven by a real or traced test in another file of this folder
   // Given a request for the hour that has already started (18:10, slot 18:00 to 19:00) or any earlier slot, when a player makes it, then the server refuses it: booking starts from the next full hour (D39). Staff may book the started hour for walk ins in A2 (D39). 23:00 is the last start.
-  test.todo("F03/BOOK-01-AC5 Given a request for the hour that has already started (18:10, slot 18:00 to 19:00) or any earlier slot, ...");
+  // F03/BOOK-01-AC5: proven by a real or traced test in another file of this folder
   // Given the schedule (C4), when a guest or player opens it, then it shows a date strip from today to the booking window and, for the chosen date, Court 1 and Court 2 in hourly slots across the opening hours (06:00 to 24:00 for Hunter).
-  test.todo("F03/BOOK-01-AC6 Given the schedule (C4), when a guest or player opens it, then it shows a date strip from today to the ...");
+  // F03/BOOK-01-AC6: proven by a real or traced test in another file of this folder
   // Given a slot, when it is taken, closed or past, then it is shown but cannot be selected. A slot someone else is paying for shows as held (BOOK-03). The states Open, Selected, Held, Taken, Closed, Past and My booking are each distinct without colour alone (PRD Layout and states: a label, icon or pattern too).
-  test.todo("F03/BOOK-01-AC7 Given a slot, when it is taken, closed or past, then it is shown but cannot be selected. A slot someone ...");
+  // F03/BOOK-01-AC7: proven by a real or traced test in another file of this folder
   // Given a closure (F09) over a slot, when the schedule loads, then that slot shows Closed and every request for it is refused.
-  test.todo("F03/BOOK-01-AC8 Given a closure (F09) over a slot, when the schedule loads, then that slot shows Closed and every request ...");
+  // F03/BOOK-01-AC8: proven by a real or traced test in another file of this folder
   // Given an inactive court (Resource active = false), when the schedule loads, then it is not offered and requests for it are refused.
-  test.todo("F03/BOOK-01-AC9 Given an inactive court (Resource active = false), when the schedule loads, then it is not offered and ...");
+  // F03/BOOK-01-AC9: proven by a real or traced test in another file of this folder
   // Given a Draft or Testing club, when a request comes from someone who is not a tester, then it is refused (F01 PLAT-01-AC5). Given a Paused club, when a player tries to start a booking, then the server refuses it and the app shows the paused text (F01 PLAT-03-AC4).
-  test.todo("F03/BOOK-01-AC10 Given a Draft or Testing club, when a request comes from someone who is not a tester, then it is refused ...");
+  // F03/BOOK-01-AC10: proven by a real or traced test in another file of this folder
   // Given a player selects several hours, when they continue, then the hours must be consecutive on one court (PRD Court booking). Non consecutive hours or two courts in one request are refused. A selection is one order with one booking per hour (BOOK-06, D40).
-  test.todo("F03/BOOK-01-AC11 Given a player selects several hours, when they continue, then the hours must be consecutive on one court ...");
+  // F03/BOOK-01-AC11: proven by a real or traced test in another file of this folder
   // Given the date strip, when the Bangkok date changes at midnight, then "today" changes with it and yesterday's slots are Past.
-  test.todo("F03/BOOK-01-AC12 Given the date strip, when the Bangkok date changes at midnight, then \"today\" changes with it and ...");
+  // F03/BOOK-01-AC12: proven by a real or traced test in another file of this folder
   // Given the court grid and class schedule, when they load on a 4G connection inside LINE, then they appear in under 2 seconds (HO Performance). While loading, the grid shows the loading state (S-C04-Loading); on a failed request it shows the offline error with Try again (S-Error-Offline, P-0327 and P-0328), and nothing is booked or charged.
   test.todo("F03/BOOK-01-AC13 Given the court grid and class schedule, when they load on a 4G connection inside LINE, then they appear ...");
   // Given a day with no open slots, or a taken slot, when it is shown, then the Day full state or a Join waitlist action shows (S-C04-Day-full; WAIT-01).
-  test.todo("F03/BOOK-01-AC14 Given a day with no open slots, or a taken slot, when it is shown, then the Day full state or a Join ...");
+  // F03/BOOK-01-AC14: proven by a real or traced test in another file of this folder
   // Given the owner changes opening hours or removes or deactivates a court while bookings or holds exist on the affected hours, when they save, then the change is refused; the owner uses a closure (F09) instead (D50, HO BOOK-01).
-  test.todo("F03/BOOK-01-AC16 Given the owner changes opening hours or removes or deactivates a court while bookings or holds exist on ...");
+  // F03/BOOK-01-AC16: proven by a real or traced test in another file of this folder
   // Given a slot shown as Open to a player, when they try to hold it and it was taken meanwhile, then the request is refused, the player is told and the grid refreshes (BOOK-04-AC4).
-  test.todo("F03/BOOK-01-AC15 Given a slot shown as Open to a player, when they try to hold it and it was taken meanwhile, then the ...");
+  // F03/BOOK-01-AC15: proven by a real or traced test in another file of this folder
 });
 
 describe("F03 BOOK-02", () => {
   // Given the club's rich menu, when a player or guest taps Book a court, then C4 (the court schedule) opens directly and Home is skipped.
-  test.todo("F03/BOOK-02-AC1 Given the club's rich menu, when a player or guest taps Book a court, then C4 (the court schedule) opens ...");
+  // F03/BOOK-02-AC1: proven by a real or traced test in another file of this folder
   // Given a guest taps the tile, when C4 opens, then no sign in runs; sign in starts only when they continue to book (F02 AUTH-01-AC10).
   test.todo("F03/BOOK-02-AC2 Given a guest taps the tile, when C4 opens, then no sign in runs; sign in starts only when they continue ...");
   // Given the tile's link, when it is opened, then it carries the club in the URL (D6) so C4 shows that club's courts only (F02 AUTH-01-AC14).
   test.todo("F03/BOOK-02-AC3 Given the tile's link, when it is opened, then it carries the club in the URL (D6) so C4 shows that club's ...");
   // Given a Paused club, when the tile is tapped, then C4 shows as paused with upcoming bookings still reachable from Bookings (F01 PLAT-03-AC5).
-  test.todo("F03/BOOK-02-AC4 Given a Paused club, when the tile is tapped, then C4 shows as paused with upcoming bookings still ...");
+  // F03/BOOK-02-AC4: proven by a real or traced test in another file of this folder
   // Given the C4 deep link opened in a browser (not LINE), when it loads, then it shows the same page.
   test.todo("F03/BOOK-02-AC5 Given the C4 deep link opened in a browser (not LINE), when it loads, then it shows the same page.");
 });
 
 describe("F03 BOOK-03", () => {
   // Given a signed in player on checkout (C10), when they tap Pay with an amount due, then the server creates the booking as Awaiting payment and a hold on the slot (and on the coach, if one was picked) in one transaction, and the hold ends at now plus the club's hold setting.
-  test.todo("F03/BOOK-03-AC1 Given a signed in player on checkout (C10), when they tap Pay with an amount due, then the server creates ...");
+  // F03/BOOK-03-AC1: proven by a real or traced test in another file of this folder
   // Given a guest or a signed out session, when it asks for a hold, then the server refuses it. Continue and sign in create no hold (F02 AUTH-01-AC3).
-  test.todo("F03/BOOK-03-AC2 Given a guest or a signed out session, when it asks for a hold, then the server refuses it. Continue and ...");
+  // F03/BOOK-03-AC2: proven by a real or traced test in another file of this folder
   // Given the hold setting, when it is stored, then only 10, 15 or 20 minutes are accepted (60 only in backup mode of a slip club, F16). The value is read from the club's setting. An empty setting (Blank template) means the club cannot yet take a payment hold, and Go live is blocked until it is set (F01 PLAT-01-AC4).
-  test.todo("F03/BOOK-03-AC3 Given the hold setting, when it is stored, then only 10, 15 or 20 minutes are accepted (60 only in backup ...");
+  // F03/BOOK-03-AC3: proven by a real or traced test in another file of this folder
   // Given a held slot, when another player or a guest views the schedule, then it shows Held and cannot be selected, with no sign of who holds it.
-  test.todo("F03/BOOK-03-AC4 Given a held slot, when another player or a guest views the schedule, then it shows Held and cannot be ...");
+  // F03/BOOK-03-AC4: proven by a real or traced test in another file of this folder
   // Given a hold that has reached its end time without a confirmed payment, when it ends, then the booking and hold are released, the slot returns to Open, and the player gets the LINE message Booking released in their language (LINE-05, F10 sends it). It is sent to Beam clubs too, when the hold ends (D45).
-  test.todo("F03/BOOK-03-AC5 Given a hold that has reached its end time without a confirmed payment, when it ends, then the booking and ...");
+  // F03/BOOK-03-AC5: proven by a real or traced test in another file of this folder
   // Given the hold end time passes, when anyone reads the schedule before the release job has run, then the expired hold never blocks the slot: availability is computed with the end time, not with the job (derived from BOOK-04; no slot is stuck after expiry).
-  test.todo("F03/BOOK-03-AC6 Given the hold end time passes, when anyone reads the schedule before the release job has run, then the ...");
+  // F03/BOOK-03-AC6: proven by a real or traced test in another file of this folder
   // Given a payment is confirmed before the hold ends, when the payment arrives, then the booking becomes Confirmed and the hold becomes the booking. A payment reported after the hold has ended is a late payment and follows PAY-03 (F05): approved only if the slot is still open, otherwise the value goes to the wallet (D18). The Beam QR expires slightly before the hold ends, by a platform margin (D18, D80).
-  test.todo("F03/BOOK-03-AC7 Given a payment is confirmed before the hold ends, when the payment arrives, then the booking becomes ...");
+  // F03/BOOK-03-AC7: proven by a real or traced test in another file of this folder
   // Given "slot still open" for a late payment, when it is decided, then it means no other hold, no booking and no closure on that slot; for a solo class, court and coach must both be free, otherwise all of it goes to the wallet with nothing partial (D25). F03 supplies this check; F05 applies it.
-  test.todo("F03/BOOK-03-AC8 Given \"slot still open\" for a late payment, when it is decided, then it means no other hold, no booking ...");
+  // F03/BOOK-03-AC8: proven by a real or traced test in another file of this folder
   // Given nothing is left to pay (credits or wallet cover it, PAY-07), when the player taps Pay, then the booking is confirmed at once in the same transaction with no QR and no visible hold, but the slot is still checked and reserved under BOOK-04.
-  test.todo("F03/BOOK-03-AC9 Given nothing is left to pay (credits or wallet cover it, PAY-07), when the player taps Pay, then the ...");
+  // F03/BOOK-03-AC9: proven by a real or traced test in another file of this folder
   // Given a booking made together with a package purchase, when the player pays, then the slot is held as above. A package bought alone has no hold (PAY-04, F06).
   test.todo("F03/BOOK-03-AC10 Given a booking made together with a package purchase, when the player pays, then the slot is held as ...");
   // Given staff create a booking in A2 that is awaiting payment, when it is saved, then it holds the slot for the same hold time as an online booking and is released the same way (D43).
-  test.todo("F03/BOOK-03-AC17 Given staff create a booking in A2 that is awaiting payment, when it is saved, then it holds the slot for ...");
+  // F03/BOOK-03-AC17: proven by a real or traced test in another file of this folder
   // Given a solo class (coach picked at checkout, or booked through Classes), when the player taps Pay, then the court and the coach are held together for the same time, or neither is (PRD "A solo class reserves both or neither"). If the coach became unavailable, the hold is refused and the player picks again.
-  test.todo("F03/BOOK-03-AC11 Given a solo class (coach picked at checkout, or booked through Classes), when the player taps Pay, then ...");
+  // F03/BOOK-03-AC11: proven by a real or traced test in another file of this folder
   // Given a held hour, when the rest rule is checked for a coach (F07), then unpaid held hours count toward the 6 hours in a row (D19).
-  test.todo("F03/BOOK-03-AC12 Given a held hour, when the rest rule is checked for a coach (F07), then unpaid held hours count toward ...");
+  // F03/BOOK-03-AC12: proven by a real or traced test in another file of this folder
   // Given the owner changes the hold setting, when a hold already exists, then it keeps the end time it was created with; the new value applies to holds created afterwards (D46).
-  test.todo("F03/BOOK-03-AC13 Given the owner changes the hold setting, when a hold already exists, then it keeps the end time it was ...");
+  // F03/BOOK-03-AC13: proven by a real or traced test in another file of this folder
   // Given the countdown on the pay screen, when the hold has ended, then the screen shows Time ran out with a way to pick a slot again (S-C11-Time-ran-out), and nothing is charged.
-  test.todo("F03/BOOK-03-AC14 Given the countdown on the pay screen, when the hold has ended, then the screen shows Time ran out with a ...");
+  // F03/BOOK-03-AC14: proven by a real or traced test in another file of this folder
   // Given the player taps Pay a second time, or on a second device, for the same slot, when the request arrives, then the server returns the same hold and the same Beam QR, never a second hold (D47).
-  test.todo("F03/BOOK-03-AC15 Given the player taps Pay a second time, or on a second device, for the same slot, when the request ...");
+  // F03/BOOK-03-AC15: proven by a real or traced test in another file of this folder
   // Given a per player limit on repeated Pay taps, when a player taps Pay again and again (the same order or new holds), then the server stops them after the limit. The limit is a platform setting whose value Security sets (D61, HO BOOK-05); it is not a club setting. The same order's second tap still returns the same hold (D47).
-  test.todo("F03/BOOK-03-AC18 Given a per player limit on repeated Pay taps, when a player taps Pay again and again (the same order or ...");
+  // F03/BOOK-03-AC18: proven by a real or traced test in another file of this folder
   // Given a Paused club, when a hold already exists at the moment of the pause, then it runs to its normal end and releases. No new holds start from players or from staff; the owner can still manage existing bookings (D60, HO PLAT-03).
-  test.todo("F03/BOOK-03-AC16 Given a Paused club, when a hold already exists at the moment of the pause, then it runs to its normal end ...");
+  // F03/BOOK-03-AC16: proven by a real or traced test in another file of this folder
 });
 
 describe("F03 BOOK-04", () => {
   // Given two parallel requests to hold or book the same court and hour, when both reach the server together, then exactly one succeeds and the other is refused (hand-off check). The database enforces it with a uniqueness rule on club, court and hour for every booking or hold that is active (Awaiting payment or Confirmed), so it holds even if the application code is wrong.
-  test.todo("F03/BOOK-04-AC1 Given two parallel requests to hold or book the same court and hour, when both reach the server together, ...");
+  // F03/BOOK-04-AC1: proven by a real or traced test in another file of this folder
   // Given two parallel requests that ask for the same coach at the same hour (on different courts), when both reach the server, then exactly one succeeds. The coach is reserved by a uniqueness rule on club, coach and hour.
-  test.todo("F03/BOOK-04-AC2 Given two parallel requests that ask for the same coach at the same hour (on different courts), when both ...");
+  // F03/BOOK-04-AC2: proven by a real or traced test in another file of this folder
   // Given a solo class, when court and coach are reserved, then both are reserved in one transaction or neither is. A failure on one never leaves the other held.
-  test.todo("F03/BOOK-04-AC3 Given a solo class, when court and coach are reserved, then both are reserved in one transaction or ...");
+  // F03/BOOK-04-AC3: proven by a real or traced test in another file of this folder
   // Given a request that loses the race, when it is refused, then the player is told the slot is no longer available, nothing is charged, and the grid shows the current state.
-  test.todo("F03/BOOK-04-AC4 Given a request that loses the race, when it is refused, then the player is told the slot is no longer ...");
+  // F03/BOOK-04-AC4: proven by a real or traced test in another file of this folder
   // Given a multi hour selection, when one hour of it is taken, then the whole request is refused; never part of it is booked.
-  test.todo("F03/BOOK-04-AC5 Given a multi hour selection, when one hour of it is taken, then the whole request is refused; never part ...");
+  // F03/BOOK-04-AC5: proven by a real or traced test in another file of this folder
   // Given a hold or a booking that ends (released, cancelled, expired), when it frees a slot, then the slot becomes available again to the next request, and a cancelled or released row does not count against the uniqueness rule.
-  test.todo("F03/BOOK-04-AC6 Given a hold or a booking that ends (released, cancelled, expired), when it frees a slot, then the slot ...");
+  // F03/BOOK-04-AC6: proven by a real or traced test in another file of this folder
   // Given staff create or move a booking in A1 or A2, when they save it, then the same uniqueness rule applies: a conflict on court or coach is refused and nothing changes (PRD Front desk rules: moving checks conflicts).
-  test.todo("F03/BOOK-04-AC7 Given staff create or move a booking in A1 or A2, when they save it, then the same uniqueness rule ...");
+  // F03/BOOK-04-AC7: proven by a real or traced test in another file of this folder
   // Given a payment that is confirmed at the same instant a hold expires, when both run, then exactly one outcome stands: the booking is confirmed, or the hold is released and the late payment rule applies (BOOK-03-AC7). Never both, and never a confirmed booking on a slot someone else got.
-  test.todo("F03/BOOK-04-AC8 Given a payment that is confirmed at the same instant a hold expires, when both run, then exactly one ...");
+  // F03/BOOK-04-AC8: proven by a real or traced test in another file of this folder
   // Given a closure created over a slot that is held, when it is saved, then the hold is cancelled, the slot is closed and the player is told (D48). A payment that arrives later follows PAY-03: the value goes to the wallet because the slot is closed (D25, D48).
   test.todo("F03/BOOK-04-AC9 Given a closure created over a slot that is held, when it is saved, then the hold is cancelled, the slot ...");
   // Given a coach on leave or over the 6 hours in a row (COACH-01), when a coach is requested at checkout, then the coach is not offered and a direct request is refused. The coach rules are F07's; the refusal is applied inside this transaction.
   test.todo("F03/BOOK-04-AC10 Given a coach on leave or over the 6 hours in a row (COACH-01), when a coach is requested at checkout, ...");
   // Given any booking or hold, when it is created, then a query by any other club's ID never sees it and cannot collide with it (CC-1). Uniqueness is per club.
-  test.todo("F03/BOOK-04-AC11 Given any booking or hold, when it is created, then a query by any other club's ID never sees it and ...");
+  // F03/BOOK-04-AC11: proven by a real or traced test in another file of this folder
   // Given 20 parallel requests for one slot, when they run (QA CONC tests), then exactly one succeeds and 19 are refused with no half created rows.
-  test.todo("F03/BOOK-04-AC12 Given 20 parallel requests for one slot, when they run (QA CONC tests), then exactly one succeeds and 19 ...");
-});
-
-describe("F03 BOOK-05", () => {
-  // Given the max future hours setting is empty, when a player books many hours, then there is no limit (hand-off check). No default value is built.
-  test.todo("F03/BOOK-05-AC1 Given the max future hours setting is empty, when a player books many hours, then there is no limit ...");
-  // Given the owner sets a number N, when a player already holds N future court hours and asks for one more, then the server refuses it and the app says so. At N-1 held, one more hour is allowed.
-  test.todo("F03/BOOK-05-AC2 Given the owner sets a number N, when a player already holds N future court hours and asks for one more, ...");
-  // Given a request would take the player over N in one multi hour selection, when it is made, then the whole request is refused.
-  test.todo("F03/BOOK-05-AC3 Given a request would take the player over N in one multi hour selection, when it is made, then the whole ...");
-  // Given two parallel requests from one player at N-1 held hours, when both run, then exactly one succeeds, because the check happens inside the booking transaction (QA CONC-28).
-  test.todo("F03/BOOK-05-AC4 Given two parallel requests from one player at N-1 held hours, when both run, then exactly one succeeds, ...");
-  // Given a played or past booking, when the limit is counted, then it does not count (future hours only).
-  test.todo("F03/BOOK-05-AC5 Given a played or past booking, when the limit is counted, then it does not count (future hours only).");
-  // Given the limit is changed, when it is saved, then it is a settings change and audited (PLAT-04); bookings already made are not removed.
-  test.todo("F03/BOOK-05-AC6 Given the limit is changed, when it is saved, then it is a settings change and audited (PLAT-04); bookings ...");
-  // Given the limit is set, when it is counted, then it counts all of the player's future hours: confirmed, paid by bundle credit, solo class and unpaid held hours (D49, HO BOOK-05). Staff made bookings for the player count too. Group class seats do not count (D59).
-  test.todo("F03/BOOK-05-AC7 Given the limit is set, when it is counted, then it counts all of the player's future hours: confirmed, ...");
-  // Given staff book for a player who is at the limit, when they save, then the booking is refused unless staff override it with a logged reason, which is written to the audit log (D49, PLAT-04). Which roles may override is Q1.
-  test.todo("F03/BOOK-05-AC9 Given staff book for a player who is at the limit, when they save, then the booking is refused unless ...");
-  // Given the limit is set, when a player is refused, then the message uses a named variable `{hours}` and comes from a P key in both languages.
-  test.todo("F03/BOOK-05-AC8 Given the limit is set, when a player is refused, then the message uses a named variable `{hours}` and ...");
+  // F03/BOOK-04-AC12: proven by a real or traced test in another file of this folder
 });
 
 describe("F03 BOOK-06", () => {
   // Given a player selects two consecutive hours on one court, when they pay, then one order is created with two bookings, one per hour, each 60 minutes (D40).
-  test.todo("F03/BOOK-06-AC1 Given a player selects two consecutive hours on one court, when they pay, then one order is created with ...");
+  // F03/BOOK-06-AC1: proven by a real or traced test in another file of this folder
   // Given a two hour order, when the player cancels one hour, then only that hour is cancelled and the other stays (hand-off check; the cancel rules are F09).
   test.todo("F03/BOOK-06-AC2 Given a two hour order, when the player cancels one hour, then only that hour is cancelled and the other ...");
   // Given a two hour order, when it is paid, then one receipt is issued for the order (RCPT-01, F13).
@@ -149,18 +128,18 @@ describe("F03 BOOK-06", () => {
   // Given a no show or late cancel on one hour, when staff mark it, then only that hour changes (CANCEL-04, F09).
   test.todo("F03/BOOK-06-AC4 Given a no show or late cancel on one hour, when staff mark it, then only that hour changes (CANCEL-04, F09).");
   // Given a selection of any length, when it is submitted, then no limit on its length applies except the future hours limit (D41, BOOK-05) and the opening hours (BOOK-01). All hours are held in one transaction or none (BOOK-04-AC5).
-  test.todo("F03/BOOK-06-AC5 Given a selection of any length, when it is submitted, then no limit on its length applies except the ...");
+  // F03/BOOK-06-AC5: proven by a real or traced test in another file of this folder
   // Given each hour of the order, when the hold ends, then every hour of the order is released together, since they share one hold and one payment.
-  test.todo("F03/BOOK-06-AC6 Given each hour of the order, when the hold ends, then every hour of the order is released together, since ...");
+  // F03/BOOK-06-AC6: proven by a real or traced test in another file of this folder
 });
 
 describe("F03 WAIT-01", () => {
   // Given a taken slot on C4, when a signed in player views it, then Join waitlist shows; a guest taps it and signs in first (F02 AUTH-01).
-  test.todo("F03/WAIT-01-AC1 Given a taken slot on C4, when a signed in player views it, then Join waitlist shows; a guest taps it and ...");
+  // F03/WAIT-01-AC1: proven by a real or traced test in another file of this folder
   // Given the player taps Join waitlist, when it is saved, then they are added with a position, nothing is charged and nothing is held (G-C04-Waitlist-joined).
-  test.todo("F03/WAIT-01-AC2 Given the player taps Join waitlist, when it is saved, then they are added with a position, nothing is ...");
+  // F03/WAIT-01-AC2: proven by a real or traced test in another file of this folder
   // Given a held slot (not yet taken), when it is viewed, then Join waitlist shows only if F08 says it does; a held slot that is released simply becomes Open. (The spec says Join waitlist is for a taken slot; held is not decided, Q2.)
-  test.todo("F03/WAIT-01-AC3 Given a held slot (not yet taken), when it is viewed, then Join waitlist shows only if F08 says it does; a ...");
+  // F03/WAIT-01-AC3: proven by a real or traced test in another file of this folder
   // Given the offer, claim time and cut off, then F08's rules apply (claim time and no offers within the cut off are club settings; the offered slot is protected by F08's design).
   test.todo("F03/WAIT-01-AC4 Given the offer, claim time and cut off, then F08's rules apply (claim time and no offers within the cut ...");
 });
