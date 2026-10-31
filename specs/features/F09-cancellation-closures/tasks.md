@@ -33,7 +33,7 @@ Depends on: F01 (`cancel_window_hours`, `booking_window_days`, route wrapper T13
   Tests first: one transaction for the whole closure and a refusal above the platform limit; confirmed bookings cancel with full value, holds are released, group sessions cancel for everyone; the closure rows are inserted after the deletes; a Beam payment arriving later goes to the wallet (PAY-03); a race with a new booking leaves no double booking (CONC-13, bounded retry).
 - [x] **F09-T08b** Migration 1010: `app.end_closure`, `app.roll_closures`. IDs: CANCEL-03-AC9 to AC12. Role: BE-B · Deps T08a · Size: S
   Tests first: ending a closure frees the future slots and does not restore cancelled bookings; a repeat rule gains its occurrence once; a staff booking found in a new occurrence is cancelled with the same routine.
-- [ ] **F09-T09** Migration 1011: policies and grants, executable-by lists, table class, audit and test table registry entries. IDs: CC-1, CC-3, CANCEL-02. Role: BE-B · Deps T01 to T08b · Size: S
+- [x] **F09-T09** Migration 1011: policies and grants, executable-by lists, table class, audit and test table registry entries. IDs: CC-1, CC-3, CANCEL-02. Role: BE-B · Deps T01 to T08b · Size: S
   Tests first: the blind suite shows BOOQ staff read nothing; front desk and owner reach the marks and closures, a player only their own cancel; the route inventory test finds no refund route.
 
 ## C. Jobs and messages
