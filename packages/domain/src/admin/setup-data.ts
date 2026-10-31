@@ -37,6 +37,8 @@ export interface SetupResource {
   order: string;
   /** A product is switched off, never deleted: the table grants the app no delete (package products). */
   noDelete?: boolean;
+  /** A read only count shown in the list: its answer key and the select expression (promo codes: how many orders used the code). */
+  count?: { key: string; sql: string };
 }
 
 const bad = (field?: string): never => {
@@ -136,6 +138,7 @@ export const SETUP: Record<string, SetupResource> = {
   },
   'promo-codes': {
     path: 'promo-codes', table: 'promo_code', order: 'code_upper, id',
+    count: { key: 'usedCount', sql: "(select count(*)::int from public.promo_redemption r where r.club_id = promo_code.club_id and r.code_id = promo_code.id and r.status = 'counted')" },
     fields: [
       { key: 'code', column: 'code_upper', kind: 'text', required: true, upper: true },
       { key: 'kind', column: 'kind', kind: { enum: ['percent', 'fixed'] }, required: true },
@@ -162,10 +165,12 @@ function shape(r: SetupResource, row: Record<string, unknown>): Record<string, u
     const v = row[f.column];
     out[f.key] = f.kind === 'date' && v instanceof Date ? v.toISOString().slice(0, 10) : (v ?? null);
   }
+  if (r.count) out[r.count.key] = Number(row['used_count'] ?? 0);
   return out;
 }
 
-const cols = (r: SetupResource) => ['id', ...r.fields.map((f) => (f.kind === 'date' ? `to_char(${f.column}, 'YYYY-MM-DD') as ${f.column}` : f.column))].join(', ');
+const cols = (r: SetupResource) =>
+  ['id', ...r.fields.map((f) => (f.kind === 'date' ? `to_char(${f.column}, 'YYYY-MM-DD') as ${f.column}` : f.column)), ...(r.count ? [`${r.count.sql} as used_count`] : [])].join(', ');
 
 function rowId(v: unknown): string {
   if (typeof v !== 'string' || !UUID.test(v)) throw new AdminError('not_found');
