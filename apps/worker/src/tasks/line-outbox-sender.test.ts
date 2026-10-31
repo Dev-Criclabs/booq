@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
-import { createMessageBuilder, loadMessageDictionary, type LineTransport, type MessageBuilder } from '@booq/line';
+import { createMessageBuilder, loadMessageDictionary, type LineTransport, type MessageBuilder } from '@booq/line/server';
 import { resolve } from 'node:path';
 import { FakeClock, FakeLine, collectTexts, type ClubLineChannel } from '../../../../tests/fakes';
 import { OUTBOX_SENDER, runOutboxSender } from './line-outbox-sender';
