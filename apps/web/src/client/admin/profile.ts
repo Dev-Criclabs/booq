@@ -47,6 +47,8 @@ export interface OrderRow {
   walletSatang: number;
   createdAt: string;
   receipts: string[];
+  /** The ids of those receipts, in the same order (for the PDF link). */
+  receiptIds?: string[];
 }
 export interface Note {
   noteId: string;
@@ -82,6 +84,12 @@ const enc = encodeURIComponent;
 export const loadProfile = (slug: string, id: string, f: Fetch): Promise<Outcome<Profile>> => call<Profile>(slug, `/staff/customers/${enc(id)}`, f);
 export const loadBookings = (slug: string, id: string, f: Fetch) => call<BookingRow[]>(slug, `/staff/customers/${enc(id)}/bookings`, f);
 export const loadOrders = (slug: string, id: string, f: Fetch) => call<OrderRow[]>(slug, `/staff/customers/${enc(id)}/orders`, f);
+export interface CustomerReceipt { receiptId: string; number: string; kind: string; status: string; issuedAt: string; totalSatang: number; isTest: boolean }
+export const loadReceipts = (slug: string, id: string, f: Fetch) => call<CustomerReceipt[]>(slug, `/staff/customers/${enc(id)}/receipts`, f);
+/** The receipt PDF in the language shown (GET /staff/receipts/:id/pdf?lang=th|en). */
+export const receiptPdfHref = (slug: string, receiptId: string, lang: 'th' | 'en'): string => `/api/c/${enc(slug)}/staff/receipts/${enc(receiptId)}/pdf?lang=${lang}`;
+export const RECEIPT_KIND_KEY: Record<string, string> = { sale: 'A-new.prof_receipt_sale', wallet_credit: 'A-new.prof_receipt_wallet' };
+export const RECEIPT_STATUS_KEY: Record<string, string> = { issued: 'A-new.prof_receipt_issued', void: 'A-0307' };
 export const loadNotes = (slug: string, id: string, f: Fetch) => call<Note[]>(slug, `/staff/customers/${enc(id)}/notes`, f);
 export const loadValue = (slug: string, id: string, f: Fetch) => call<Value>(slug, `/staff/customers/${enc(id)}/credits`, f);
 

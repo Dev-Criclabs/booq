@@ -74,20 +74,20 @@ describe("F13 RCPT-02", () => {
 
 describe("F13 R1", () => {
   // Given the Owner or Accountant in A14, when they search by receipt number, customer name or date, then matching receipts of the club are listed, newest first.
-  test.todo("F13/R1-AC1 Given the Owner or Accountant in A14, when they search by receipt number, customer name or date, then ...");
+  // F13/R1-AC1: proven by a real or traced test in another file of this folder
   // Given a receipt in the list, when it is opened, then its PDF shows and a void action shows for the Owner only.
-  test.todo("F13/R1-AC2 Given a receipt in the list, when it is opened, then its PDF shows and a void action shows for the Owner only.");
+  // F13/R1-AC2: proven by a real or traced test in another file of this folder
   // Given the list, when it is exported, then it is a CSV for the club, audited, with names but no phone numbers or dates of birth for the Accountant (D35).
   test.todo("F13/R1-AC3 Given the list, when it is exported, then it is a CSV for the club, audited, with names but no phone ...");
   // Given test receipts, when the list loads, then they are excluded from the live list and appear only in test mode views (D33).
   test.todo("F13/R1-AC4 Given test receipts, when the list loads, then they are excluded from the live list and appear only in ...");
   // Given front desk, when they open A14, then they cannot (A14 is Owner and Accountant); a direct request is refused. Front desk reaches a customer's receipts through A6 (F11).
-  test.todo("F13/R1-AC5 Given front desk, when they open A14, then they cannot (A14 is Owner and Accountant); a direct request is ...");
+  // F13/R1-AC5: proven by a real or traced test in another file of this folder
 });
 
 describe("F13 R2", () => {
   // Given a date range, when the Owner or Accountant opens the A13 dashboard, then they see the reports below for that range, for their club only.
-  test.todo("F13/R2-AC1 Given a date range, when the Owner or Accountant opens the A13 dashboard, then they see the reports below ...");
+  // F13/R2-AC1: proven by a real or traced test in another file of this folder
   // Given cash received by type, then it totals money received by method (Beam, cash) from receipts in the range, excluding voids and test records (D33).
   // F13/R2-AC2: proven by a real or traced test in another file of this folder
   // Given revenue earned against package sales, then package sales are the money received for packages in the range, and revenue earned is credits used at their price per credit plus single sales (D119).
@@ -103,7 +103,7 @@ describe("F13 R2", () => {
   // Given promotion and partner performance, then the partner report shows redemptions, revenue, new customers and repeat bookings within 30 and 60 days; a restored code reduces the redemption count (PRD, D70).
   // F13/R2-AC8: proven by a real or traced test in another file of this folder
   // Given every report, when it is exported, then it is a CSV for the club with the same filters, audited (PLAT-04).
-  test.todo("F13/R2-AC9 Given every report, when it is exported, then it is a CSV for the club with the same filters, audited ...");
+  // F13/R2-AC9: proven by a real or traced test in another file of this folder
   // Given the Accountant, when they read a report that lists customers, then it shows names, never phone numbers or dates of birth (D35).
   // F13/R2-AC10: proven by a real or traced test in another file of this folder
   // Given front desk or a coach, when they request any report, then the server refuses (A13 is Owner and Accountant; coach pay is the coach's own earnings in K6).
@@ -114,19 +114,19 @@ describe("F13 R2", () => {
 
 describe("F13 R3", () => {
   // Given a month, when the Owner opens coach payouts, then each coach shows sessions delivered, the amount owed and adjustments with reasons.
-  test.todo("F13/R3-AC1 Given a month, when the Owner opens coach payouts, then each coach shows sessions delivered, the amount ...");
+  // F13/R3-AC1: proven by a real or traced test in another file of this folder
   // Given the pay model (an optional monthly base, plus a per session amount for solo classes, fixed or a percentage of the coaching portion, and for group classes; freelancers have no base), when the amount owed is calculated, then the owner's pay settings are used; they are empty until the owner sets them (hand-off open items), and an empty setting means that part is not calculated and is flagged, never invented.
-  test.todo("F13/R3-AC2 Given the pay model (an optional monthly base, plus a per session amount for solo classes, fixed or a ...");
+  // F13/R3-AC2: proven by a real or traced test in another file of this folder
   // Given a session, when it counts for pay, then the customer attended or was a no show; sessions cancelled within policy do not count (PRD).
-  test.todo("F13/R3-AC3 Given a session, when it counts for pay, then the customer attended or was a no show; sessions cancelled ...");
+  // F13/R3-AC3: proven by a real or traced test in another file of this folder
   // Given the coaching portion, when a percentage applies, then it applies to the coaching portion only, not the court fee (PRD).
-  test.todo("F13/R3-AC4 Given the coaching portion, when a percentage applies, then it applies to the coaching portion only, not ...");
+  // F13/R3-AC4: proven by a real or traced test in another file of this folder
   // Given a substitution, when pay is calculated, then pay goes to the coach who delivered the session (F07 R4).
-  test.todo("F13/R3-AC5 Given a substitution, when pay is calculated, then pay goes to the coach who delivered the session (F07 R4).");
+  // F13/R3-AC5: proven by a real or traced test in another file of this folder
   // Given an adjustment, when the Owner adds it, then a written reason is required and it is audited.
-  test.todo("F13/R3-AC6 Given an adjustment, when the Owner adds it, then a written reason is required and it is audited.");
+  // F13/R3-AC6: proven by a real or traced test in another file of this folder
   // Given the Owner marks a payout paid, when they save it, then it is recorded with who and when and cannot be edited later (append only); a correction is a new adjustment in the next period.
-  test.todo("F13/R3-AC7 Given the Owner marks a payout paid, when they save it, then it is recorded with who and when and cannot ...");
+  // F13/R3-AC7: proven by a real or traced test in another file of this folder
   // Given an Accountant, when they open payouts, then they may read and export but not mark paid; front desk cannot see them (HO Roles).
   // F13/R3-AC8: proven by a real or traced test in another file of this folder
   // Given a coach, when they open K6, then they see only their own earnings (F12).

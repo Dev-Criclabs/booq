@@ -80,14 +80,16 @@ Migration numbers are 0301 to 0399 and rise with task order (the migrator refuse
 
 - [ ] **F04-T17** C10 Checkout summary and C10P bundle bill from the hi-fi boards, all text by key, with the cancel window as `{hours}`. IDs: R4-AC5, R6-AC3, R8-AC3, TEXT-06. Role: FE-P · Deps T11, `packages/contract` schema · Size: M
   Tests first: a Playwright test per state (summary, bundle, price changed) written from the ACs, and the longest Thai string wraps without a clipped button.
-- [ ] **F04-T18** C11 handoff and the checkout error and offline states (P-0327, P-0328, P-0442). IDs: R8-AC1 to AC4. Role: FE-P · Deps T12d · Size: S
+  - Built so far (Architect, 31 Oct, partial): the C10 summary, coach pick, add-ons, code, bill and Pay on `/c/{slug}/checkout` (`apps/web/src/client/checkout.ts`, `ui/screens/CheckoutScreen.tsx`, `ui/checkout.css`, `app/c/[slug]/checkout`), `GET /add-ons` (new, `apps/web/src/api/add-ons`), pending keys in `locales/pending/f04-checkout.json`. Playwright (th and en, 320 px) in `apps/web/e2e/c10-checkout.e2e.mjs`: summary, add-ons as one expanding row, coach pick, refused code stays on the field, price changed. NOT done: the C10P bundle bill (the quote has no `bundleOffer` and Pay no `withBundle` until F04-T16 is built) and the cancel window `{hours}` text (no source in the quote or public config; needs `cancel_window_hours` served to the player).
+- [x] **F04-T18** C11 handoff and the checkout error and offline states (P-0327, P-0328, P-0442). IDs: R8-AC1 to AC4. Role: FE-P · Deps T12d · Size: S
   Tests first: a Playwright test for offline, paused and taken-slot, from the ACs.
+  - Built (Architect, 31 Oct): offline (P-0326 to P-0328), paused (P-0442), taken slot (`slot_unavailable` sends the player back to pick again), a refused or failed Pay (nothing booked or charged), bad address, guest signs in and returns, and the hand-off: a started payment goes to `/c/{slug}/pay/{orderId}` (C11, F05 FE owns the page; `payPath` in `client/checkout.ts`), a zero money order goes to the bookings. One Idempotency-Key per quote hash.
 - [ ] **F04-T20** A9, A9b, A10 setup screens (F11 owns the shell). IDs: R3-AC8, PROMO-01-AC12, R1-AC4. Role: FE-A · Deps T14 · Size: M
   Tests first: a Playwright test that an owner saves a price and a code and a front desk user cannot; the longest Thai strings do not break the layout.
 
 ## E. Sweep
 
-- [ ] **F04-T21** Acceptance sweep: this task is the tests. It closes every acceptance criterion of `requirements.md` (R1 to R8, PAY-07, PROMO-01) that has no test of its own, with a script that fails for an ID without one; no hard-coded text, no client amount, test orders excluded from reports. IDs: all F04 ACs, CC-2, CC-5, D33. Role: QA · Deps T12d, T14, T15 · Size: M
+- [x] **F04-T21** Acceptance sweep: this task is the tests. It closes every acceptance criterion of `requirements.md` (R1 to R8, PAY-07, PROMO-01) that has no test of its own, with a script that fails for an ID without one; no hard-coded text, no client amount, test orders excluded from reports. IDs: all F04 ACs, CC-2, CC-5, D33. Role: QA · Deps T12d, T14, T15 · Size: M
 
 ## Follow-up added by F08 (gate 3 of that feature, 30 Oct 2026)
 

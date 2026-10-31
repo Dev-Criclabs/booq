@@ -4,7 +4,7 @@ import { appendPage, csvHref, listPath, loadCustomers, nameOf, profilePath, type
 import { adminHasKey } from './i18n';
 
 // F11-T15 A5 Customers (ADMIN-06): the client side of the list.
-const row = (id: string, over: Partial<CustomerRow> = {}): CustomerRow => ({ customerId: id, name: 'Ploy', phone: '+66812345678', tags: [], claimState: null, signedIn: true, lastBookingAt: null, bookingCount: 0, createdAt: '2026-12-01T03:00:00Z', ...over });
+const row = (id: string, over: Partial<CustomerRow> = {}): CustomerRow => ({ customerId: id, name: 'Ploy', phone: '+66812345678', tags: [], claimState: null, signedIn: true, lastBookingAt: null, bookingCount: 0, createdAt: '2026-12-01T03:00:00Z', group: null, activePackage: null, walletSatang: 0, lastVisitAt: null, ...over });
 const reply = (status: number, json: unknown) => (async () => new Response(JSON.stringify(json), { status })) as unknown as typeof fetch;
 
 describe('list address', () => {
@@ -55,5 +55,19 @@ describe('money and text', () => {
       'A-new.cust_empty', 'A-new.cust_no_match', 'A-new.cust_more', 'A-new.cust_tag_label', 'A-new.cust_tag_placeholder', 'A-new.cust_search_label', 'A-new.cust_load_failed',
       'A-new.cust_forbidden', 'A-new.cust_retry', 'A-new.cust_no_name', 'A-new.cust_list_label', 'A-new.cust_open'];
     for (const lang of ['th', 'en'] as const) for (const k of keys) expect(adminHasKey(lang, k), `${lang} ${k}`).toBe(true);
+  });
+});
+
+describe('A5 chips and columns (1108)', () => {
+  it('status and group go to the server with the search; empty ones are left out', async () => {
+    const { listPath } = await import('./customers');
+    expect(listPath({ q: '', tag: '', status: 'no_visit', group: 'g1' })).toBe('/staff/customers?status=no_visit&group=g1');
+    expect(listPath({ q: ' a ', tag: '', status: '', group: '' })).toBe('/staff/customers?q=a');
+  });
+  it('the group chips are the club\'s groups, else those seen on the rows', async () => {
+    const { chipGroups } = await import('./customers');
+    const g = { id: 'g1', nameTh: 'ก', nameEn: 'A' };
+    expect(chipGroups([g], [])).toEqual([g]);
+    expect(chipGroups([], [row('1', { group: g }), row('2', { group: g }), row('3')])).toEqual([g]);
   });
 });

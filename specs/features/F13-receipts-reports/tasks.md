@@ -78,9 +78,9 @@ Depends on: F01 `club.receipt_prefix`, `vat_enabled`, T13 route wrapper, T18 gra
 
 ## F. QA
 
-- [ ] **F13-T20** Cross cutting suite: receipts never change after issue, no cash refund appears anywhere, test series isolation across Go live purge, a port failure rolls back the payment. IDs: RCPT-01, CC-3, CC-6, D33. Role: QA · Deps T04, T07 · Size: M
+- [x] **F13-T20** Cross cutting suite: receipts never change after issue, no cash refund appears anywhere, test series isolation across Go live purge, a port failure rolls back the payment. IDs: RCPT-01, CC-3, CC-6, D33. Role: QA · Deps T04, T07 · Size: M
   Tests first: the list above.
-- [ ] **F13-T21** Sweep: every RCPT-01 to RCPT-03 acceptance criterion has a named test; walk the F13 boards; file gaps with the ID. IDs: RCPT-01 to RCPT-03. Role: QA · Deps all · Size: S
+- [x] **F13-T21** Sweep: every RCPT-01 to RCPT-03 acceptance criterion has a named test; walk the F13 boards; file gaps with the ID. IDs: RCPT-01 to RCPT-03. Role: QA · Deps all · Size: S
   Tests first: a table of criteria to tests with none empty.
 
 Order: T01, T02, T03, T04, T05, T06, then T07, T08, T09, then T10 once F07 and F12 have their coach pay fields, then T11 (the order of the migration numbers), the routes, the screens, then F. About 21 tasks, each under a day. The R-Receipt boards are in the canvas backup (`docs/orchestrator/canvas-backup/12ae5a85-7762-44b9-9b19-9df906c1e373/project/R-Receipt-EN.dc.html` and `R-Receipt-TH.dc.html`); T06 and T16 build from them. The spec wins over the canvas, and the receipt sample data is wrong in places (`docs/canvas-gaps.md` B5 out of date order numbers and a wrong bundle expiry, B9 address placeholder note), so none of it is copied into code or tests.
