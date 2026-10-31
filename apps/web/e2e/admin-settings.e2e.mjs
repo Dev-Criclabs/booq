@@ -45,6 +45,8 @@ function server(state = {}) {
     if (path === '/hours') return { status: 200, body: { hours: s.setup.hours } };
     if (path === '/resources' && method === 'POST') return { status: 200, body: { id: 'c2' } };
     if (path.startsWith('/resources/') && method === 'PUT') return { status: 200, body: { id: 'c1' } };
+    if (path === '/staff/rich-menu' && method === 'GET') return s.menu ? s.menu() : undefined;
+    if (path === '/staff/rich-menu/labels') return s.menuPut ?? { status: 200, body: { build: 'queued' } };
     if (path === '/support-window') { s.setup = { ...s.setup, supportWindowUntil: body.on ? '2099-01-01T03:00:00Z' : null }; return { status: 200, body: { on: body.on, until: s.setup.supportWindowUntil } }; }
     return undefined;
   };
@@ -135,6 +137,58 @@ describe('A16 Settings, owner', () => {
     await page.getByTestId('support-toggle').click();
     await page.waitForFunction(() => !/\d/.test(document.querySelector('[data-testid="support-state"]')?.textContent ?? ''));
     assert.deepEqual(calls.filter((c) => c.path === '/support-window').map((c) => c.body), [{ on: true }, { on: false }]);
+    await context.close();
+  });
+});
+
+describe('A16 LINE menu labels', () => {
+  const TILES = [1, 2, 3, 4, 5, 6].map((tile) => ({ tile, th: tile === 1 ? 'จองคอร์ต' : null, en: tile === 1 ? 'Book' : null }));
+  it('shows the six tiles with their default words, saves only the changed ones, and follows the build until it is live', async () => {
+    let builds = 0;
+    const menu = () => {
+      const state = builds === 0 ? { build: null, requested: false } : builds < 3 ? { build: null, requested: true } : { build: { status: 'active', error: null, at: '2027-01-12T03:00:00Z', uploadedAt: '2027-01-12T03:01:00Z' }, requested: false };
+      if (builds > 0) builds += 1;
+      return { status: 200, body: { tiles: TILES, ...state } };
+    };
+    const { page, context, calls } = await open(server({ menu }));
+    await page.goto(`${app.base}${url}`);
+    await page.getByTestId('set-menu').waitFor();
+    assert.match(await page.getByTestId('tile-4').innerText(), /default: Packages/);
+    assert.equal(await page.getByTestId('tile-1-en').inputValue(), 'Book');
+    assert.equal(await page.getByTestId('tile-2-en').inputValue(), '');
+    assert.match(await page.getByTestId('menu-state').innerText(), /No menu has been made yet/);
+    await page.getByTestId('menu-save').click();
+    await page.getByTestId('menu-msg').waitFor();
+    assert.equal(calls.filter((c) => c.method === 'PUT' && c.path === '/staff/rich-menu/labels').length, 0);
+    await page.getByTestId('tile-4-en').fill('My packages');
+    await page.getByTestId('tile-1-th').fill('');
+    builds = 1;
+    await page.getByTestId('menu-save').click();
+    await page.waitForFunction(() => /Making the menu/.test(document.querySelector('[data-testid="menu-state"]')?.textContent ?? ''));
+    assert.deepEqual(calls.find((c) => c.method === 'PUT' && c.path === '/staff/rich-menu/labels').body, { labels: [{ tile: 1, th: null, en: 'Book' }, { tile: 4, th: null, en: 'My packages' }] });
+    await page.waitForFunction(() => /live in LINE/.test(document.querySelector('[data-testid="menu-state"]')?.textContent ?? ''), null, { timeout: 20000 });
+    await context.close();
+  });
+
+  it('a failed build shows its code and says the previous menu stays; a refused save is named', async () => {
+    const menu = () => ({ status: 200, body: { tiles: TILES, build: { status: 'failed', error: 'http_413', at: '2027-01-12T03:00:00Z', uploadedAt: null }, requested: false } });
+    const { page, context } = await open(server({ menu, menuPut: { status: 400, body: { code: 'bad_input' } } }));
+    await page.goto(`${app.base}${url}`);
+    await page.getByTestId('set-menu').waitFor();
+    assert.match(await page.getByTestId('menu-state').innerText(), /could not be made/);
+    assert.match(await page.getByTestId('menu-state').innerText(), /http_413/);
+    await page.getByTestId('tile-2-th').fill('ก');
+    await page.getByTestId('menu-save').click();
+    await page.waitForFunction(() => /not accepted/.test(document.querySelector('[data-testid="menu-msg"]')?.textContent ?? ''));
+    await context.close();
+  });
+
+  it('the card is not drawn when the menu cannot be read', async () => {
+    const { page, context } = await open(server());
+    await page.goto(`${app.base}${url}`);
+    await page.getByTestId('settings-page').waitFor();
+    await page.waitForTimeout(500);
+    assert.equal(await page.getByTestId('set-menu').count(), 0);
     await context.close();
   });
 });

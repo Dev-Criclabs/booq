@@ -3,12 +3,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { loadClubSetup, type ClubSetup } from '../../client/admin/club-setup';
 import { BUSINESS_KEYS, loadRules, type SettingRow } from '../../client/admin/rules';
 import { useAdmin } from './AdminFrame';
+import { RichMenuCard } from './RichMenuCard';
 import { RulesCards } from './RulesCard';
 import { BusinessCard, CourtsCard, HoursCard, SupportCard } from './SettingsBlocks';
 
 // A16 Settings (F11-T22; ADMIN-16; board H-A16-Settings): the owner's own setup in cards (booking rules, payment and waitlist, coaches and classes,
 // packages and wallet, opening hours, courts, business and tax, BOOQ support). The Accountant sees the business card, read only (D115). The six rich
-// menu tile labels are F10-T15's routes and the data export waits for its storage, so neither is drawn yet.
+// menu tile labels (F10-T15) are the LINE menu card; the data export waits for its storage, so it is not drawn yet.
 
 type Load = { kind: 'loading' } | { kind: 'ready'; setup: ClubSetup; rules: SettingRow[] } | { kind: 'error' } | { kind: 'forbidden' };
 
@@ -39,6 +40,7 @@ export function SettingsScreen() {
       {full && owner && setup.hours ? <HoursCard hours={setup.hours} onChanged={reload} /> : null}
       {full && owner && setup.resources ? <CourtsCard courts={setup.resources} locations={setup.locations ?? []} onChanged={reload} /> : null}
       <BusinessCard business={setup.business} canEdit={full && owner} onChanged={reload} />
+      {full && owner ? <RichMenuCard /> : null}
       {full && owner ? <SupportCard until={setup.supportWindowUntil ?? null} onChanged={reload} /> : null}
     </div>
   );

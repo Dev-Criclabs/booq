@@ -634,7 +634,23 @@
     "A-new.cls_err_window": "The days players can book are not set yet (Settings).",
     "A-new.cls_err_general": "That did not go through. Check your connection and try again.",
     "A-new.price_preview_unset": "Not set yet",
-    "A-new.price_edit_court_prices": "Edit court prices"
+    "A-new.price_edit_court_prices": "Edit court prices",
+    "A-new.set_menu_title": "LINE menu labels",
+    "A-new.set_menu_hint": "The words on the six tiles of your LINE menu. The links are fixed. Saving makes a new menu picture and sends it to LINE; this takes a short while.",
+    "A-new.set_menu_tile": "Tile {n}",
+    "A-new.set_menu_default": "default: {label}",
+    "A-new.set_menu_th": "Thai label",
+    "A-new.set_menu_en": "English label",
+    "A-new.set_menu_save": "Save labels",
+    "A-new.set_menu_queued": "Saved. The new menu is being made.",
+    "A-new.set_menu_none": "No menu has been made yet",
+    "A-new.set_menu_building": "Making the menu…",
+    "A-new.set_menu_active": "The menu is live in LINE",
+    "A-new.set_menu_failed": "The menu could not be made. The previous menu stays.",
+    "A-new.set_menu_uploaded": "Updated {date} {time}.",
+    "A-new.set_menu_code": "Reason code: {code}.",
+    "A-new.set_menu_err_long": "A label can be at most 40 characters so it fits the tile.",
+    "A-new.set_menu_err_input": "The labels were not accepted. Check them and try again."
   },
   "th": {
     "A-new.shell_nav_label": "หน้าแอดมินคลับ",
@@ -1270,6 +1286,22 @@
     "A-new.cls_err_window": "ยังไม่ได้ตั้งจำนวนวันที่ผู้เล่นจองได้ (ตั้งค่า)",
     "A-new.cls_err_general": "ดำเนินการไม่สำเร็จ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง",
     "A-new.price_preview_unset": "ยังไม่ได้ตั้ง",
-    "A-new.price_edit_court_prices": "แก้ราคาคอร์ต"
+    "A-new.price_edit_court_prices": "แก้ราคาคอร์ต",
+    "A-new.set_menu_title": "ข้อความบนเมนู LINE",
+    "A-new.set_menu_hint": "ข้อความบนหกปุ่มของเมนู LINE ลิงก์ถูกกำหนดไว้แล้ว เมื่อบันทึกระบบจะสร้างภาพเมนูใหม่และส่งไปที่ LINE ซึ่งใช้เวลาสักครู่",
+    "A-new.set_menu_tile": "ปุ่มที่ {n}",
+    "A-new.set_menu_default": "ค่าเริ่มต้น: {label}",
+    "A-new.set_menu_th": "ข้อความภาษาไทย",
+    "A-new.set_menu_en": "ข้อความภาษาอังกฤษ",
+    "A-new.set_menu_save": "บันทึกข้อความ",
+    "A-new.set_menu_queued": "บันทึกแล้ว กำลังสร้างเมนูใหม่",
+    "A-new.set_menu_none": "ยังไม่ได้สร้างเมนู",
+    "A-new.set_menu_building": "กำลังสร้างเมนู…",
+    "A-new.set_menu_active": "เมนูใช้งานอยู่ใน LINE",
+    "A-new.set_menu_failed": "สร้างเมนูไม่สำเร็จ เมนูเดิมยังคงอยู่",
+    "A-new.set_menu_uploaded": "อัปเดต {date} {time}",
+    "A-new.set_menu_code": "รหัสสาเหตุ: {code}",
+    "A-new.set_menu_err_long": "ข้อความยาวได้ไม่เกิน 40 ตัวอักษรเพื่อให้พอดีกับปุ่ม",
+    "A-new.set_menu_err_input": "ไม่รับข้อความเหล่านี้ ตรวจสอบแล้วลองอีกครั้ง"
   }
 }
