@@ -1,5 +1,5 @@
 {
-  "_note": "Proposed by BE-L for F10-T10 (D81, D91): text for the LINE messages that have no board (they use the Booking confirmed card style) and the few lines the boarded cards need beyond the existing L keys. Numbers to be assigned by Content (F10-T20); wording drafted, writers own it. Existing keys reused: L-0001, L-0004, L-0009 to L-0019, L-0021, L-0024, L-0031 to L-0041, L-0058; from locales/pending/f13.json: L-new.receipt_credit_used. Variables follow locales/README.md.",
+  "_note": "Proposed by BE-L for F10-T10 and the coach_message_hook kinds (D81, D91): text for the LINE messages that have no board (they use the Booking confirmed card style) and the few lines the boarded cards need beyond the existing L keys. Numbers to be assigned by Content (F10-T20); wording drafted, writers own it. Existing keys reused: L-0001, L-0004, L-0009 to L-0019, L-0021, L-0024, L-0031 to L-0041, L-0058; from locales/pending/f13.json: L-new.receipt_credit_used. Variables follow locales/README.md.",
   "en": {
     "L-new.msg_booked_title": "You're booked",
     "L-new.msg_time_range": "{startTime} to {endTime}",
@@ -31,7 +31,10 @@
     "L-new.msg_paused_title": "Your club is paused",
     "L-new.msg_paused_body": "Players cannot make new bookings until you resume.",
     "L-new.msg_cap_paid_over_title": "Over your LINE message plan",
-    "L-new.msg_cap_paid_over_body": "Your club passed its monthly LINE message limit. LINE bills the club for the extra messages this month."
+    "L-new.msg_cap_paid_over_body": "Your club passed its monthly LINE message limit. LINE bills the club for the extra messages this month.",
+    "L-new.msg_waitlist_ended_title": "Your waitlist place has ended",
+    "L-new.msg_waitlist_ended_body": "The class was cancelled, so its waitlist is closed.",
+    "L-new.msg_class_changed_title": "Your class has changed"
   },
   "th": {
     "L-new.msg_booked_title": "จองสำเร็จแล้ว",
@@ -64,6 +67,9 @@
     "L-new.msg_paused_title": "สโมสรของคุณหยุดชั่วคราว",
     "L-new.msg_paused_body": "ผู้เล่นจองใหม่ไม่ได้จนกว่าคุณจะเปิดอีกครั้ง",
     "L-new.msg_cap_paid_over_title": "เกินแพ็กเกจข้อความ LINE",
-    "L-new.msg_cap_paid_over_body": "สโมสรของคุณส่งข้อความ LINE เกินโควตาของเดือนนี้แล้ว LINE จะเรียกเก็บค่าข้อความส่วนเกินจากสโมสร"
+    "L-new.msg_cap_paid_over_body": "สโมสรของคุณส่งข้อความ LINE เกินโควตาของเดือนนี้แล้ว LINE จะเรียกเก็บค่าข้อความส่วนเกินจากสโมสร",
+    "L-new.msg_waitlist_ended_title": "สิทธิ์ในรายชื่อรอของคุณสิ้นสุดแล้ว",
+    "L-new.msg_waitlist_ended_body": "คลาสนี้ถูกยกเลิก รายชื่อรอจึงปิดแล้ว",
+    "L-new.msg_class_changed_title": "คลาสของคุณมีการเปลี่ยนแปลง"
   }
 }

@@ -10,7 +10,7 @@ import { checkoutRoutes } from '../checkout/routes';
 import { beamWebhookRoute } from './webhook';
 
 // F05-T08a to T08c: POST /api/webhooks/beam/{token} against the fake Beam's signed deliveries (PAY-02-AC4 to AC15;
-// D24, D32, D36, D71, D73). Skipped until the Architect's app.club_by_beam_webhook and app.record_payment_event land.
+// D24, D32, D36, D71, D72, D73), on the Architect's 0414 (club_by_beam_webhook, record_payment_event, fail_payment).
 const { A, COURT, ME } = IDS;
 const OWNER = '77777777-7777-4777-8777-777777777777';
 const HOUR = '2026-12-02T18:00:00+07:00';
@@ -87,7 +87,7 @@ async function paidOrder(): Promise<{ orderId: string; chargeId: string; payment
   return { orderId: b.orderId, chargeId, paymentId: b.payment.id };
 }
 
-describe.skip('POST /api/webhooks/beam/{token}', () => {
+describe('POST /api/webhooks/beam/{token}', () => {
   it('a signed success while the hold runs confirms the booking and records the event (PAY-02-AC4)', async () => {
     const o = await paidOrder();
     const rec = await beam.pay(o.chargeId, target());
@@ -130,6 +130,73 @@ describe.skip('POST /api/webhooks/beam/{token}', () => {
     expect(rec.response?.status).toBe(200);
     expect(await events()).toEqual([{ event_type: 'charge.succeeded', outcome: 'ignored', signature_ok: true }]);
     expect((await tdb.query(`select status from public.booking where order_id = $1`, [o.orderId])).rows).toEqual([{ status: 'awaiting_payment' }]);
+  });
+
+  it('a failed charge fails the payment and keeps the hold; the next tap gets a new charge (D72)', async () => {
+    const o = await paidOrder();
+    const rec = await beam.fail(o.chargeId, target());
+    expect(rec.response?.status).toBe(200);
+    expect((await tdb.query(`select status from public.payment where id = $1`, [o.paymentId])).rows).toEqual([{ status: 'failed' }]);
+    expect((await tdb.query(`select status from public.booking where order_id = $1`, [o.orderId])).rows).toEqual([{ status: 'awaiting_payment' }]);
+    expect(await events()).toEqual([{ event_type: 'charge.failed', outcome: 'failed', signature_ok: true }]);
+  });
+
+  // F05-T08b (PAY-02-AC6, AC11, AC12; D36, D77).
+  // The fake's charge record is what our lookup reads; a wrong amount is a charge Beam holds for another amount.
+  const beamCharges = () => (beam as unknown as { charges: Map<string, { amount: number }> }).charges;
+
+  it('a wrong amount, under or over, flags the owner, answers 200 and never confirms (PAY-02-AC6, D36)', async () => {
+    for (const delta of [-100, 100]) {
+      const o = await paidOrder();
+      beamCharges().get(o.chargeId)!.amount = 50000 + delta;
+      const rec = await beam.pay(o.chargeId, target());
+      expect(rec.response?.status).toBe(200);
+      expect((await tdb.query(`select status from public.booking where order_id = $1`, [o.orderId])).rows).toEqual([{ status: 'awaiting_payment' }]);
+      expect((await tdb.query(`select kind, status from public.owner_flag where payment_id = $1`, [o.paymentId])).rows).toEqual([{ kind: 'wrong_amount', status: 'open' }]);
+      await tdb.query(`update public.booking set status = 'released', release_reason = 'player', released_at = app.now(), hold_expires_at = null where order_id = $1`, [o.orderId]);
+      await tdb.query(`delete from public.occupancy where booking_id in (select id from public.booking where order_id = $1)`, [o.orderId]);
+    }
+    expect((await events()).map((e) => e.outcome)).toEqual(['mismatch', 'mismatch']);
+  });
+
+  it("a charge whose reference is another payment never matches; no flag (another club's charge is the same case)", async () => {
+    const o = await paidOrder();
+    (beamCharges().get(o.chargeId) as unknown as { referenceId: string }).referenceId = '00000000-0000-4000-8000-00000000f00d';
+    expect((await beam.pay(o.chargeId, target())).response?.status).toBe(200);
+    expect((await events()).map((e) => e.outcome)).toEqual(['mismatch']);
+    expect(Number((await tdb.query(`select count(*) from public.owner_flag`)).rows[0].count)).toBe(0);
+  });
+
+  it('a callback for an order made before a Pause is still processed (PAY-02-AC12)', async () => {
+    const o = await paidOrder();
+    await tdb.query(`update public.club set status = 'paused' where id = $1`, [A]);
+    expect((await beam.pay(o.chargeId, target())).response?.status).toBe(200);
+    expect((await tdb.query(`select status from public.booking where order_id = $1`, [o.orderId])).rows).toEqual([{ status: 'confirmed' }]);
+  });
+
+  // F05-T08c (PAY-02-AC9, AC14, AC15, PAY-01-AC7; D71, D75).
+  it('a validly signed callback for a charge we do not know answers 200, is recorded and alerts (D71)', async () => {
+    const o = await paidOrder();
+    const body = { ...beam.getCharge(o.chargeId), chargeId: 'ch_unknown_to_booq', status: 'SUCCEEDED' };
+    beamCharges().set('ch_unknown_to_booq', { ...beamCharges().get(o.chargeId)!, chargeId: 'ch_unknown_to_booq' } as never);
+    const rec = await beam.deliver('charge.succeeded', body as never, target());
+    expect(rec.response?.status).toBe(200);
+    expect((await events()).map((e) => e.outcome)).toEqual(['unknown_charge']);
+    expect(alerts).toEqual(['beam_unknown_charge']);
+  });
+
+  it('Beam unreachable on the lookup answers 500 so Beam retries, changes nothing and alerts', async () => {
+    const o = await paidOrder();
+    beamUrl = 'http://127.0.0.1:1';
+    expect((await beam.pay(o.chargeId, target())).response?.status).toBe(500);
+    expect(await events()).toEqual([]);
+    expect((await tdb.query(`select status from public.booking where order_id = $1`, [o.orderId])).rows).toEqual([{ status: 'awaiting_payment' }]);
+    expect(alerts).toEqual(['beam_unreachable']);
+    expect((await tdb.query(`select status, reason from platform.club_health where club_id = $1 and check_key = 'beam_charge'`, [A])).rows).toEqual([{ status: 'failed', reason: 'unreachable' }]);
+    // Beam retries later and Beam is back: the booking is confirmed once.
+    beamUrl = server.url;
+    expect((await target()(beam.deliveriesFor(o.chargeId)[0]!.delivery)).status).toBe(200);
+    expect((await tdb.query(`select status from public.booking where order_id = $1`, [o.orderId])).rows).toEqual([{ status: 'confirmed' }]);
   });
 
   it('an unknown token is not found', async () => {
