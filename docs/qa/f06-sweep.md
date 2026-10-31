@@ -87,3 +87,11 @@ Criteria R1 to R8 repeat in F04, F06, F07 and F13. The first F06 trace matched t
 ## Update, 31 Oct (main d709178)
 
 F06-T15 player package routes (0518): PKG-02-AC8 (an inactive or unpriced product is not offered) and R3-AC6 (a paused club refuses a package purchase) are now traced. PAY-04-AC1 is covered by `package-pay.routes.test.ts`. Open: PKG-01-AC10, PKG-02-AC9, PKG-03-AC2, PKG-03-AC6, R2-AC2, R2-AC8, R3-AC3.
+
+## F06-T22, T23, T24, 31 Oct (main 43b77b0)
+
+**T22 property and concurrency:** `F06-wallet-property.new.spec.ts`: five seeded runs of eight batches of four parallel wallet credits, spends and returns each; after every batch the ledger sum equals what was credited less what was spent and is never negative, and a spend may fail only for want of balance. Mutation checked: removing the wallet lock turns two seeds red, removing the balance check turns all five red. Already proved by the lane and traced by title: two parallel spends of the last baht (`wallet-functions.test.ts`), two parallel reserves of the last credit (`credit-functions.test.ts`), 20 parallel grants of one order (`package-functions.test.ts`), reserve, release and reclaim cycles (`credit-functions.test.ts` attempt 2).
+
+**T23 append-only and blind:** `F06-blind-and-append-only.new.spec.ts`: the platform role has no privilege of any kind on a customer bound F06 table (the product price list is setup, class S, and BOOQ staff may read it in a Draft or Testing club); it may execute no wallet, credit or package function; the app and worker roles have no write grant on the ledgers or the extension log; the wallet functions the app role may call are only the staff adjustment and the two pay time helpers, and a new wallet function must be listed. Update and delete on both ledgers as every role: `ledgers.test.ts`; trigger inventory including `package_extension`: `F13-cross-cutting.new.spec.ts`. Mutation checked: a grant to the platform role, or a grant on `wallet_spend` to the app role, turns it red. A withdraw or refund route does not exist: route inventory in `F09-cancellation-closures.new.spec.ts` and the function scan above.
+
+**T24 sweep:** 60 criteria, 51 with a test, 9 open as listed above (screens, the package expiring reminder producer, the owed to customers report formula, the group pack flow).
