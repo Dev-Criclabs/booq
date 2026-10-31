@@ -51,6 +51,11 @@ export class Reply<T> {
   constructor(readonly body: T, readonly options: { status?: number; setCookie?: string } = {}) {}
 }
 
+/** A handler returns this for a file (a receipt PDF): the transport sends the bytes with the type, never sniffed and never cached. */
+export class FileReply {
+  constructor(readonly bytes: Uint8Array, readonly options: { contentType: string; filename: string }) {}
+}
+
 export type RouteResult<T> =
   | { ok: true; status: 200; body: T }
   | { ok: false; status: number; code: string; params?: RouteParams };

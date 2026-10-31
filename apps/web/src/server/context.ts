@@ -13,6 +13,8 @@ import { mounts, type Mount } from './mounts';
 // credential for adding the export job (see docs/ops/worker.md).
 
 export interface WebConfig {
+  /** The folder with the language files (en.json, th.json, pending/), for the receipt PDF. Absent: the PDF routes answer 503 not_configured. */
+  localesDir?: string | null;
   sessionSeconds: number;
   maxBodyBytes: number;
   /** Import limits are platform config; until both are set the import answers 503 import_not_configured. */
@@ -48,6 +50,7 @@ export function readWebConfig(env: Record<string, string | undefined>): WebConfi
     sessionSeconds: Number(env['WEB_SESSION_SECONDS']),
     maxBodyBytes: Number(env['WEB_MAX_BODY_BYTES']),
     importLimits: rows ? { maxRows: Number(rows), stagingHours: Number(hours) } : null,
+    localesDir: env['LOCALES_DIR'] ?? null,
   };
 }
 

@@ -259,6 +259,18 @@ describe('placeOrder: entitlements and the ledger', () => {
     expect((await tdb.query(`select count(*)::int as n from public.promo_redemption where code_id = $1`, [id])).rows[0].n).toBe(1);
   });
 
+  it('with the real F06 port: a wallet that covers the quote is spent; one that has gone short refuses Pay (0511)', async () => {
+    // Seed the wallet with a staff adjustment (test data), the way a desk top-up of value is written.
+    await tdb.query(`insert into public.wallet_ledger (club_id, customer_id, change_satang, reason, staff_id, note, dedupe_key) values ($1,$2,20000,'adjust',$2,'test seed','seed-1')`, [A, ME]);
+    const r = await placeWith({ courtId: COURT, hours: [HOUR_A] }, { walletBalance: async () => 20000 });
+    expect((await tdb.query(`select sum(change_satang)::int as s from public.wallet_ledger where customer_id = $1`, [ME])).rows[0].s).toBe(0);
+    expect((await tdb.query(`select wallet_satang, money_satang from public.orders where id = $1`, [r.orderId])).rows[0]).toEqual({ wallet_satang: 20000, money_satang: 30000 });
+    // The quote still believes in 20000, but the ledger has nothing left: nothing is made.
+    const before = [await count('orders'), await count('booking')];
+    await expect(placeWith({ courtId: COURT, hours: ['2026-12-02T09:00:00+07:00'] }, { walletBalance: async () => 20000 })).rejects.toMatchObject({ code: 'credit_unavailable' });
+    expect([await count('orders'), await count('booking')]).toEqual(before);
+  });
+
   it('the default reservation writes nothing and asks F06 nothing when no credit or wallet is used', async () => {
     const r = await placeWith({ courtId: COURT, hours: [HOUR_A] });
     expect(r.reused).toBe(false);

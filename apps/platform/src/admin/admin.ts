@@ -13,6 +13,23 @@ export interface AdminActor {
 type Refusal = { ok: false; code: string } & Record<string, unknown>;
 export type RecordCheckResult = { ok: true } | Refusal;
 export type SetConfigResult = { ok: true } | Refusal;
+export interface LaunchItem {
+  item: string;
+  result: string;
+  owed_by: 'booq' | 'owner';
+  /** True for a check an admin records by hand; the others are worked out from the club's data. */
+  recorded: boolean;
+}
+export type LaunchResult = { ok: true; clubName: string; clubStatus: string; items: LaunchItem[] } | { ok: false; code: 'not_found' };
+export type ListConfigResult = { ok: true; config: Array<{ key: string; value: unknown }> } | { ok: false; code: 'not_found' };
+export interface LegalTexts { [kind: string]: { [language: string]: { title: string; body: string } } }
+export type LegalOverview = {
+  ok: true;
+  releases: Array<{ version: string; publishedAt: string; publishedBy: string | null }>;
+  /** The newest release with its texts, or null when nothing is published yet. */
+  current: { version: string; texts: LegalTexts } | null;
+};
+export type LegalOverviewResult = LegalOverview | { ok: false; code: 'not_found' };
 export type PublishLegalResult = { ok: true; version: string } | Refusal;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -101,5 +118,50 @@ export function createAdminService(deps: { db: PlatformDb }) {
     }
   }
 
-  return { recordLaunchCheck, setConfig, publishLegalRelease };
+  /** P4: the checks this club must pass to go live, with each result and which ones are recorded by hand. Any visible staff member may read it. */
+  async function launchOverview(staffId: string, clubId: string): Promise<LaunchResult> {
+    if (!UUID.test(staffId) || !UUID.test(clubId)) return { ok: false, code: 'not_found' };
+    const staff = await db.withPlatformTx({ staffId: null }, async (tx) => (await tx.query<Staff>('select id, display_name, role, active from platform.staff_by_id($1)', [staffId])).rows[0] ?? null);
+    if (!staff || !staff.active) return { ok: false, code: 'not_found' };
+    return db.withPlatformTx({ staffId: staff.id, staffLabel: staff.display_name, clubId }, async (tx) => {
+      const club = (await tx.query<{ status: string; name_en: string }>('select status, name_en from public.club where id = $1', [clubId])).rows[0];
+      if (!club) return { ok: false as const, code: 'not_found' as const };
+      const progress = (await tx.query<{ p: { launch?: Array<{ item: string; result: string; owed_by: 'booq' | 'owner' }> } | null }>('select platform.club_progress($1) as p', [clubId])).rows[0]?.p;
+      const kinds = new Map((await tx.query<{ check_key: string; kind: string }>('select check_key, kind from app.launch_producers')).rows.map((r) => [r.check_key, r.kind]));
+      return { ok: true as const, clubName: club.name_en, clubStatus: club.status, items: (progress?.launch ?? []).map((i) => ({ ...i, recorded: kinds.get(i.item) === 'recorded' })) };
+    });
+  }
+
+  /** P6 config: every platform value that is set. Any active staff member may read them (they hold no secrets); only an admin changes one. */
+  async function listConfig(staffId: string): Promise<ListConfigResult> {
+    if (!UUID.test(staffId)) return { ok: false, code: 'not_found' };
+    const staff = await db.withPlatformTx({ staffId: null }, async (tx) => (await tx.query<Staff>('select id, display_name, role, active from platform.staff_by_id($1)', [staffId])).rows[0] ?? null);
+    if (!staff || !staff.active) return { ok: false, code: 'not_found' };
+    const rows = await db.withPlatformTx({ staffId: staff.id, staffLabel: staff.display_name }, async (tx) => (await tx.query<{ key: string; value: unknown }>('select key, value from platform.config order by key')).rows);
+    return { ok: true, config: rows };
+  }
+
+  /** The notice: every release published and the texts of the newest, so a new one can start from it. Any staff member reads them. */
+  async function legalOverview(staffId: string): Promise<LegalOverviewResult> {
+    if (!UUID.test(staffId)) return { ok: false, code: 'not_found' };
+    const staff = await db.withPlatformTx({ staffId: null }, async (tx) => (await tx.query<Staff>('select id, display_name, role, active from platform.staff_by_id($1)', [staffId])).rows[0] ?? null);
+    if (!staff || !staff.active) return { ok: false, code: 'not_found' };
+    return db.withPlatformTx({ staffId: staff.id, staffLabel: staff.display_name }, async (tx) => {
+      const releases = (await tx.query<{ seq: number; version: string; published_at: Date; name: string | null }>(
+        `select r.seq, r.version, r.published_at, s.display_name as name from platform.legal_release r left join platform.platform_staff s on s.id = r.published_by order by r.seq desc`,
+      )).rows;
+      const newest = releases[0];
+      let current: LegalOverview['current'] = null;
+      if (newest) {
+        const texts: LegalTexts = {};
+        for (const t of (await tx.query<{ kind: string; language: string; title: string; body: string }>('select kind, language, title, body from platform.legal_text where seq = $1', [newest.seq])).rows) {
+          (texts[t.kind] ??= {})[t.language] = { title: t.title, body: t.body };
+        }
+        current = { version: newest.version, texts };
+      }
+      return { ok: true as const, releases: releases.map((r) => ({ version: r.version, publishedAt: r.published_at.toISOString(), publishedBy: r.name })), current };
+    });
+  }
+
+  return { recordLaunchCheck, setConfig, publishLegalRelease, launchOverview, listConfig, legalOverview };
 }
