@@ -1,8 +1,8 @@
 'use client';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { adminTranslator } from '../../client/admin/i18n';
-import { adminPath, bannersOf, BUILT, GROUP_KEY, isOwnerShell, loadShell, navFor, type ShellLoad } from '../../client/admin/shell';
-import { isLang, type Lang } from '../../client/i18n';
+import { adminPath, bannersOf, BUILT, GROUP_KEY, isOwnerShell, loadShell, navFor, type ShellLoad, type ShellState } from '../../client/admin/shell';
+import { isLang, type Lang, type T } from '../../client/i18n';
 import { cookieLang, langCookie } from '../../client/lang';
 import { signInPath } from '../../client/paths';
 import { LanguageToggle } from '../LanguageToggle';
@@ -13,6 +13,22 @@ import { Wordmark } from '../Wordmark';
 // may open comes from GET /staff/shell; the page's own routes refuse again (design 4). A guest signs in and comes back here.
 
 type View = { kind: 'loading' } | ShellLoad;
+
+/** What a page inside the shell needs: the club, the language and its text function, what the server listed for this person. */
+export interface AdminContext {
+  slug: string;
+  lang: Lang;
+  t: T;
+  shell: ShellState;
+  /** The server marks the owner by what it lists (see isOwnerShell). */
+  owner: boolean;
+}
+const Ctx = createContext<AdminContext | null>(null);
+export function useAdmin(): AdminContext {
+  const c = useContext(Ctx);
+  if (!c) throw new Error('useAdmin is used inside AdminFrame');  // i18n-ignore a programming error, never shown to a user
+  return c;
+}
 
 export function AdminFrame({ slug, initialLang, current, children }: { slug: string; initialLang: Lang; current?: string; children?: ReactNode }) {
   const [view, setView] = useState<View>({ kind: 'loading' });
@@ -88,7 +104,9 @@ export function AdminFrame({ slug, initialLang, current, children }: { slug: str
           </div>
         ) : null}
         <main className="adm-content" data-testid="adm-content">
-          {children ?? <p className="adm-welcome" data-testid="adm-welcome">{t('A-new.shell_welcome')}</p>}
+          <Ctx.Provider value={{ slug, lang, t, shell, owner: isOwnerShell(shell) }}>
+            {children ?? <p className="adm-welcome" data-testid="adm-welcome">{t('A-new.shell_welcome')}</p>}
+          </Ctx.Provider>
         </main>
       </div>
     </div>

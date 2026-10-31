@@ -11,7 +11,19 @@
     "A-new.shell_cap_over": "This month's LINE message limit has been reached",
     "A-new.shell_cap_text": "Bookings and payments are never blocked. Check your LINE plan with LINE.",
     "A-new.shell_token_title": "LINE cannot send messages for your club right now",
-    "A-new.shell_token_text": "LINE did not accept the club's connection. Message BOOQ and we will reconnect it."
+    "A-new.shell_token_text": "LINE did not accept the club's connection. Message BOOQ and we will reconnect it.",
+    "A-new.cust_empty": "There are no customers yet. Customers appear when they sign in with LINE or when you add a walk-in.",
+    "A-new.cust_no_match": "No customers match this search.",
+    "A-new.cust_more": "Show more",
+    "A-new.cust_tag_label": "Tag",
+    "A-new.cust_tag_placeholder": "Type a tag",
+    "A-new.cust_search_label": "Search customers",
+    "A-new.cust_load_failed": "The customers could not be loaded. Nothing was changed.",
+    "A-new.cust_forbidden": "Your role cannot open the customer list.",
+    "A-new.cust_retry": "Try again",
+    "A-new.cust_no_name": "No name yet",
+    "A-new.cust_list_label": "Customers",
+    "A-new.cust_open": "Open {name}"
   },
   "th": {
     "A-new.shell_nav_label": "หน้าแอดมินคลับ",
@@ -24,6 +36,18 @@
     "A-new.shell_cap_over": "ข้อความ LINE ของเดือนนี้ถึงขีดจำกัดแล้ว",
     "A-new.shell_cap_text": "การจองและการชำระเงินไม่ถูกบล็อก โปรดตรวจแพ็กเกจ LINE ของคลับกับ LINE",
     "A-new.shell_token_title": "ตอนนี้ LINE ส่งข้อความของคลับไม่ได้",
-    "A-new.shell_token_text": "LINE ไม่รับการเชื่อมต่อของคลับ ส่งข้อความหา BOOQ แล้วเราจะเชื่อมต่อใหม่ให้"
+    "A-new.shell_token_text": "LINE ไม่รับการเชื่อมต่อของคลับ ส่งข้อความหา BOOQ แล้วเราจะเชื่อมต่อใหม่ให้",
+    "A-new.cust_empty": "ยังไม่มีลูกค้า ลูกค้าจะปรากฏเมื่อเข้าสู่ระบบด้วย LINE หรือเมื่อคุณเพิ่ม walk-in",
+    "A-new.cust_no_match": "ไม่พบลูกค้าที่ตรงกับการค้นหา",
+    "A-new.cust_more": "ดูเพิ่ม",
+    "A-new.cust_tag_label": "แท็ก",
+    "A-new.cust_tag_placeholder": "พิมพ์แท็ก",
+    "A-new.cust_search_label": "ค้นหาลูกค้า",
+    "A-new.cust_load_failed": "โหลดรายชื่อลูกค้าไม่ได้ ยังไม่มีการเปลี่ยนแปลงใดๆ",
+    "A-new.cust_forbidden": "บทบาทของคุณเปิดรายชื่อลูกค้าไม่ได้",
+    "A-new.cust_retry": "ลองอีกครั้ง",
+    "A-new.cust_no_name": "ยังไม่มีชื่อ",
+    "A-new.cust_list_label": "ลูกค้า",
+    "A-new.cust_open": "เปิด {name}"
   }
 }
