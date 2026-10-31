@@ -79,7 +79,7 @@ describe('copy file (PDPA-01-AC3, AC6; A-17)', () => {
     await tdb.query(`insert into public.user_staff_note (club_id, user_id, note, created_by) values ($1,$2,'MARKER-staff-note',$3)`, [A, P1, DESK]);
     const r = await as(p1, (tx) => svc.create(tx, p1, { kind: 'copy' }));
     const files = await as(desk, (tx) => svc.copyFile(tx, desk, r.id));
-    expect(files.map((f) => f.name)).toEqual(['profile.csv', 'consents.csv']);
+    expect(files.map((f) => f.name)).toEqual(['profile.csv', 'consents.csv', 'coach-notes.csv', 'attendance.csv']);
     const all = files.map((f) => f.data).join('\n');
     expect(all).toContain('Somchai Own');
     expect(all).toContain('1990-05-01');

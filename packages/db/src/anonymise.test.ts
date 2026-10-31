@@ -83,8 +83,8 @@ describe('what staff see before they confirm (PDPA-01-AC5)', () => {
     await booking('confirmed', at(5, 28), at(6, 28));   // ended before now
     await booking('awaiting_payment', at(17), at(18), { hold: at(10) });
     await booking('awaiting_payment', at(19), at(20), { hold: at(8) });   // hold already ran out
-    expect(await impact()).toEqual({ future_bookings: 1, held_bookings: 1, coach_future_sessions: 0 });
-    expect(await impact(OTHER)).toEqual({ future_bookings: 0, held_bookings: 0, coach_future_sessions: 0 });
+    expect(await impact()).toEqual({ future_bookings: 1, held_bookings: 1, coach_future_sessions: 0, coach_notes_about: 0, coach_marks_of: 0 });
+    expect(await impact(OTHER)).toEqual({ future_bookings: 0, held_bookings: 0, coach_future_sessions: 0, coach_notes_about: 0, coach_marks_of: 0 });
   });
   it('only owner and front desk may ask; an unknown person is not found', async () => {
     for (const roles of [['player'], ['coach', 'player'], ['accountant', 'player']]) {
@@ -96,7 +96,7 @@ describe('what staff see before they confirm (PDPA-01-AC5)', () => {
     await tdb.query(`
       create function app.t_impact(p_club uuid, p_user uuid) returns jsonb language sql as $$ select '{"package_credits": 3, "wallet_satang": 12000}'::jsonb $$;
       insert into app.deletion_impact_handlers (handler_key, handler) values ('t', 'app.t_impact(uuid,uuid)'::regprocedure);`);
-    expect(await impact()).toEqual({ future_bookings: 0, held_bookings: 0, coach_future_sessions: 0, package_credits: 3, wallet_satang: 12000 });
+    expect(await impact()).toEqual({ future_bookings: 0, held_bookings: 0, coach_future_sessions: 0, coach_notes_about: 0, coach_marks_of: 0, package_credits: 3, wallet_satang: 12000 });
   });
 });
 
