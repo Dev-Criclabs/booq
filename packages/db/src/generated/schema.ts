@@ -1019,6 +1019,12 @@ export interface PublicOwnerNotice {
   seen_by: string | null;
 }
 
+export interface PublicOwnerSetupDone {
+  club_id: string;
+  done_at: string;
+  done_by: string;
+}
+
 export interface PublicPackageExtension {
   club_id: string;
   id: string;
@@ -1406,6 +1412,7 @@ export interface Tables {
   'public.orders': PublicOrders;
   'public.owner_flag': PublicOwnerFlag;
   'public.owner_notice': PublicOwnerNotice;
+  'public.owner_setup_done': PublicOwnerSetupDone;
   'public.package_extension': PublicPackageExtension;
   'public.package_product': PublicPackageProduct;
   'public.partner': PublicPartner;

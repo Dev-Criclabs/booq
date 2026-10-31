@@ -1,6 +1,6 @@
 import { FileReply, pagesFor, route, RouteError, type Route, type RouteContext } from '@booq/auth';
 import type { ClubContext, Db, Tx } from '@booq/db';
-import { addCustomer, creditAdjust, customerValue, extendPackage, mapValueError, requestHash, walletAdjust, withIdempotency, addCustomerNote, AdminError, type AdminErrorCode, customerBookings, customerNotes, customerOrders, customerProfile, customersCsv, listCustomers, setTag, shellState, staffCalendar } from '@booq/domain';
+import { ownerSetup, tellDone, auditLog, bookingHistory, addCustomer, creditAdjust, customerValue, extendPackage, mapValueError, requestHash, walletAdjust, withIdempotency, addCustomerNote, AdminError, type AdminErrorCode, customerBookings, customerNotes, customerOrders, customerProfile, customersCsv, listCustomers, setTag, shellState, staffCalendar } from '@booq/domain';
 
 // F11 club admin routes (design 4 to 6, prefix /api/c/{slug}). Thin handlers: resolve the club from the session and the path slug, open
 // the club transaction, call the service in packages/domain/src/admin, answer a body or a typed code. No club id is read from the input.
@@ -20,7 +20,7 @@ const inputOf = (ctx: RouteContext) => (ctx.input ?? {}) as Record<string, unkno
 
 const STATUS: Record<AdminErrorCode, number> = { bad_input: 400, not_found: 404, forbidden: 403, reason_required: 400, below_zero: 409, customer_not_claimed: 409 };
 // A refusal raised by an admin function in the database (BK001, message = the code).
-const DB_STATUS: Record<string, number> = { phone_in_use: 409, reason_required: 400 };
+const DB_STATUS: Record<string, number> = { phone_in_use: 409, reason_required: 400, club_not_available: 409 };
 
 async function inTx<T>(db: Db, c: ClubContext, fn: (tx: Tx) => Promise<T>): Promise<T> {
   try {
@@ -146,6 +146,46 @@ export function customerRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[] {
       const i = inputOf(ctx);
       return inTx(deps.db, c, (tx) => setTag(tx, i['id'], i['tag'], false));
     }),
+  ];
+}
+
+/** F11-T09: A0 Setup checklist (ADMIN-02): the owner's steps and "Tell BOOQ I'm done". Owner only. */
+export function setupRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[] {
+  return [
+    {
+      ...route({ method: 'GET', path: '/staff/setup', permission: 'setup.read' }, async (ctx) => {
+        const c = await sessionContext(deps, ctx);
+        return inTx(deps.db, c, (tx) => ownerSetup(tx));
+      }),
+      headers: NO_STORE,
+    },
+    route({ method: 'POST', path: '/staff/setup/done', permission: 'setup.done' }, async (ctx) => {
+      const c = await sessionContext(deps, ctx);
+      return inTx(deps.db, c, (tx) => tellDone(tx));
+    }),
+  ];
+}
+
+/**
+ * F11-T08: GET /staff/audit (A17, owner) and GET /staff/bookings/:id/history (A2, front desk and owner). Read only; there is no write or
+ * delete route for the log anywhere (ADMIN-17-AC, D28).
+ */
+export function auditRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[] {
+  return [
+    {
+      ...route({ method: 'GET', path: '/staff/audit', permission: 'audit.read' }, async (ctx) => {
+        const c = await sessionContext(deps, ctx);
+        return inTx(deps.db, c, (tx) => auditLog(tx, inputOf(ctx)));
+      }),
+      headers: NO_STORE,
+    },
+    {
+      ...route({ method: 'GET', path: '/staff/bookings/:id/history', permission: 'booking.create.staff' }, async (ctx) => {
+        const c = await sessionContext(deps, ctx);
+        return inTx(deps.db, c, (tx) => bookingHistory(tx, inputOf(ctx)['id']));
+      }),
+      headers: NO_STORE,
+    },
   ];
 }
 
