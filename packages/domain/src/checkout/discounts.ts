@@ -9,7 +9,7 @@ import { priceGroupFor } from '../price-group';
 //   cover those lines in any order. Add-ons are in scope only when the code includes them (D23).
 // - A code before its start date answers code_expired, as after its end date (one "outside its dates" reason).
 // - The birthday discount on a solo class covers the court and coach lines of its first hour (one solo
-//   class); package lines are F06's.
+//   class); on a package order it covers the first package line (one package a year, R5).
 // - With a non stackable code that loses to the birthday discount, the quote carries the birthday discount
 //   and says the code was not applied; nothing about the code is used up.
 
@@ -59,7 +59,7 @@ export type CodeRefusal =
   | { ok: false; code: 'code_not_for_solo_class' };
 
 export interface DiscountLine {
-  kind: 'court_hour' | 'coach' | 'add_on';
+  kind: 'court_hour' | 'coach' | 'add_on' | 'package';
   hourIndex: number;
   unitPriceSatang: number;
 }
@@ -69,6 +69,8 @@ export interface DiscountPlan {
   code: number[];
   codeApplied: boolean;
   birthdayApplied: boolean;
+  /** Which entitlement the birthday discount uses: one solo class or one package a year (R5). */
+  birthdayKind: 'solo_class' | 'package' | null;
 }
 
 /** Split `amount` across `prices` in proportion, in whole satang summing exactly; the largest remainders
@@ -133,11 +135,21 @@ export function checkCode(
 }
 
 /** Which lines the birthday discount covers, or null when the player has no entitlement here (R5). */
-function birthdayScope(lines: DiscountLine[], birthday: BirthdayInput | undefined, ctx: { onDate: string; dob: string | null }): boolean[] | null {
+function birthdayScope(
+  lines: DiscountLine[],
+  birthday: BirthdayInput | undefined,
+  ctx: { onDate: string; dob: string | null },
+): { kind: 'solo_class' | 'package'; scope: boolean[] } | null {
   if (!birthday || birthday.setting === null || ctx.dob === null) return null;
   if (ctx.dob.slice(5, 7) !== ctx.onDate.slice(5, 7)) return null;
-  if (birthday.usedKinds.includes('solo_class') || !lines.some((l) => l.kind === 'coach')) return null;
-  return lines.map((l) => l.hourIndex === 0 && (l.kind === 'court_hour' || l.kind === 'coach'));
+  if (lines.some((l) => l.kind === 'coach')) {
+    if (birthday.usedKinds.includes('solo_class')) return null;
+    return { kind: 'solo_class', scope: lines.map((l) => l.hourIndex === 0 && (l.kind === 'court_hour' || l.kind === 'coach')) };
+  }
+  // One package a year: the first package line of the order (R5).
+  const first = lines.findIndex((l) => l.kind === 'package');
+  if (first < 0 || birthday.usedKinds.includes('package')) return null;
+  return { kind: 'package', scope: lines.map((_, i) => i === first) };
 }
 
 /** Both discounts with the stacking rule (D65): stackable gives both, the code on the amounts after the
@@ -150,17 +162,18 @@ export function planDiscounts(
 ): DiscountPlan {
   const prices = lines.map((l) => l.unitPriceSatang);
   const zero = prices.map(() => 0);
-  const bScope = birthdayScope(lines, birthday, ctx);
-  const bday = bScope === null ? null : discountOn(prices, bScope, birthday!.setting!.kind, birthday!.setting!.value);
-  if (code === null) return { birthday: bday ?? zero, code: zero, codeApplied: false, birthdayApplied: bday !== null };
-  if (bday === null) return { birthday: zero, code: discountOn(prices, code.inScope, code.input.kind, code.input.value), codeApplied: true, birthdayApplied: false };
+  const b = birthdayScope(lines, birthday, ctx);
+  const bday = b === null ? null : discountOn(prices, b.scope, birthday!.setting!.kind, birthday!.setting!.value);
+  const kind = b?.kind ?? null;
+  if (code === null) return { birthday: bday ?? zero, code: zero, codeApplied: false, birthdayApplied: bday !== null, birthdayKind: bday !== null ? kind : null };
+  if (bday === null) return { birthday: zero, code: discountOn(prices, code.inScope, code.input.kind, code.input.value), codeApplied: true, birthdayApplied: false, birthdayKind: null };
   if (code.input.stackableWithBirthday) {
     const after = prices.map((p, i) => p - bday[i]!);
-    return { birthday: bday, code: discountOn(after, code.inScope, code.input.kind, code.input.value), codeApplied: true, birthdayApplied: true };
+    return { birthday: bday, code: discountOn(after, code.inScope, code.input.kind, code.input.value), codeApplied: true, birthdayApplied: true, birthdayKind: kind };
   }
   const alone = discountOn(prices, code.inScope, code.input.kind, code.input.value);
   const sum = (v: number[]) => v.reduce((a, b) => a + b, 0);
   return sum(alone) >= sum(bday)
-    ? { birthday: zero, code: alone, codeApplied: true, birthdayApplied: false }
-    : { birthday: bday, code: zero, codeApplied: false, birthdayApplied: true };
+    ? { birthday: zero, code: alone, codeApplied: true, birthdayApplied: false, birthdayKind: null }
+    : { birthday: bday, code: zero, codeApplied: false, birthdayApplied: true, birthdayKind: kind };
 }
