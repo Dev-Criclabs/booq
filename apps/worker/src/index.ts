@@ -7,3 +7,5 @@ export { IMPORT_STAGING_SWEEP, sweepImportStaging } from './tasks/import-staging
 export { CLUB_EXPORT, clubExportTask } from './tasks/club-export';
 export { HOLD_RELEASE, runHoldRelease, type HoldReleaseResult } from './tasks/hold-release';
 export { PACKAGE_EXPIRE, WALLET_EXPIRE, SESSION_START, runPackageExpire, runWalletExpire, runSessionStart, type ExpiryResult } from './tasks/f06-expiry';
+export { CLASS_GENERATE, CLASS_GENERATE_DISPATCH, classGenerateDispatch, generateClassSessions } from './tasks/class-generate';
+export { OFFER_EXPIRY, CLASS_BELOW_MINIMUM, runOfferExpiry, runClassBelowMinimum, type OfferExpiryResult, type ClassBelowMinimumResult } from './tasks/class-jobs';

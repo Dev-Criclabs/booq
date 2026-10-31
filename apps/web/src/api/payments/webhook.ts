@@ -12,6 +12,8 @@ import { readSecret } from '@booq/secrets';
 //   2. A callback on the key set that is not the club's active one (a test callback after Go live) is recorded
 //      `ignored` and answered 200; nothing else changes (design 5.3).
 //   3. A charge we do not know: recorded `unknown_charge`, P1 alert, 200 (D71).
+//   A bad signature and an unknown charge also fail the beam_webhook check on the console health tile (0799); a
+//   verified callback for a known charge sets it ok again. The rows carry codes only (PAY-02-AC14).
 //   4. Decide from Beam's own record, never the body: GET /charges/{id}. Beam unreachable answers 500 so Beam
 //      retries (D73). The amount, currency and reference must match the payment; a validly signed wrong amount is
 //      flagged for the owner, recorded `mismatch`, 200, never confirmed (D36, D77).
@@ -71,6 +73,7 @@ export function beamWebhookRoute(deps: BeamWebhookDeps): Route<unknown> {
       readSecret(tx, deps.privateKey(), clubId, set === 'live' ? 'beam_hmac_key_live' : 'beam_hmac_key_test', 'worker'));
     if (!hmacKey || !signatureOk(hmacKey, raw, ctx.headers?.['x-beam-signature'])) {
       deps.alerts.p1('beam_bad_signature', clubId);
+      await deps.worker.withClubTx(wctx, (tx) => tx.query(`select app.report_payment_health('beam_webhook', 'bad_signature')`));
       throw new RouteError(401, 'bad_signature');
     }
 
@@ -98,8 +101,11 @@ export function beamWebhookRoute(deps: BeamWebhookDeps): Route<unknown> {
         )).rows[0];
         if (!payment || payment.environment !== set) {
           await record(tx, event, 'unknown_charge');
+          await tx.query(`select app.report_payment_health('beam_webhook', 'unknown_charge')`);
           return { outcome: 'unknown_charge', alert: true as const };
         }
+        // A validly signed callback for a charge we know: the webhook check is ok again (0799).
+        await tx.query(`select app.report_payment_health('beam_webhook', null)`);
         // F05-T08b: the lookup, the amount check and apply_payment.
         return decide(deps, tx, clubId, set, hit.merchant_id, event, payment);
       }).then((r) => {

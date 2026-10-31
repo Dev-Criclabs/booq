@@ -38,7 +38,7 @@ describe('Tennis carries Hunter’s price data (R3-AC7, PLAT-05-AC12)', () => {
 
   it('applying copies the Adult and Student groups, one 50000 satang court rule for each, and the balls add-on', async () => {
     const r = await apply('tennis');
-    expect(r.pending).toEqual(['product']);
+    expect(r.pending).toEqual([]);                        // products load too since F06 0517 (template-products.test.ts)
     const g = (await tdb.query(`select name_en, rule from public.price_group where club_id = $1 order by position`, [CLUB])).rows;
     expect(g).toEqual([{ name_en: 'Adult', rule: { min_age: 18 } }, { name_en: 'Student', rule: { max_age: 17 } }]);
     const rules = (await tdb.query(`select g.name_en, r.day_type, r.peak, r.price_satang from public.court_price_rule r join public.price_group g on g.club_id = r.club_id and g.id = r.price_group_id where r.club_id = $1 order by g.position`, [CLUB])).rows;

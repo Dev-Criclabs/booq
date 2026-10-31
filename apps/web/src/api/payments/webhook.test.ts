@@ -105,6 +105,11 @@ describe('POST /api/webhooks/beam/{token}', () => {
     expect((await tdb.query(`select status from public.booking where order_id = $1`, [o.orderId])).rows).toEqual([{ status: 'awaiting_payment' }]);
     expect(await events()).toEqual([]);
     expect(alerts.every((a) => a === 'beam_bad_signature')).toBe(true);
+    const health = async () => (await tdb.query(`select status, reason from platform.club_health where club_id = $1 and check_key = 'beam_webhook'`, [A])).rows;
+    expect(await health()).toEqual([{ status: 'failed', reason: 'bad_signature' }]);
+    // A genuine callback afterwards confirms and sets the check ok again.
+    expect((await beam.pay(o.chargeId, target())).response?.status).toBe(200);
+    expect(await health()).toEqual([{ status: 'ok', reason: null }]);
   });
 
   it('a replayed old callback does nothing more (PAY-02-AC10)', async () => {
@@ -183,6 +188,9 @@ describe('POST /api/webhooks/beam/{token}', () => {
     expect(rec.response?.status).toBe(200);
     expect((await events()).map((e) => e.outcome)).toEqual(['unknown_charge']);
     expect(alerts).toEqual(['beam_unknown_charge']);
+    // Only codes reach the health tile: no order, charge, amount or person (PAY-02-AC14).
+    expect((await tdb.query(`select * from platform.club_health where club_id = $1 and check_key = 'beam_webhook'`, [A])).rows.map(({ changed_at: _c, checked_at: _k, ...r }) => r))
+      .toEqual([{ club_id: A, check_key: 'beam_webhook', status: 'failed', reason: 'unknown_charge' }]);
   });
 
   it('Beam unreachable on the lookup answers 500 so Beam retries, changes nothing and alerts', async () => {
