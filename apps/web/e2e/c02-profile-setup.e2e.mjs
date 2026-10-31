@@ -22,7 +22,7 @@ after(async () => {
 
 describe('C2 Profile setup (F02-T20)', () => {
   it('AUTH-02-AC6: a new player goes from sign in to C2 and on to payment with the slot kept', async () => {
-    const { page, context, calls } = await openPage(browser, { liff, lang: 'en', session: { status: 200, body: { state: 'pending_profile' } } });
+    const { page, context, calls } = await openPage(browser, { stubCheckout: true, liff, lang: 'en', session: { status: 200, body: { state: 'pending_profile' } } });
     await page.goto(`${app.base}/c/hunter/sign-in?next=${encodeURIComponent(NEXT)}`);
     await page.getByTestId('continue').waitFor();
     assert.equal(await page.locator('h1').innerText(), 'Hi, ploy.s');
@@ -45,7 +45,7 @@ describe('C2 Profile setup (F02-T20)', () => {
   });
 
   it('D152: a release published while on C2 asks for consent again, then signs up for the new version', async () => {
-    const { page, context, calls } = await openPage(browser, {
+    const { page, context, calls } = await openPage(browser, { stubCheckout: true,
       liff,
       lang: 'en',
       profile: (all) => (all.filter((c) => c.path.endsWith('/auth/profile')).length === 1 ? { status: 409, body: { code: 'notice_version_stale' } } : { status: 200, body: { state: 'active' } }),
@@ -70,7 +70,7 @@ describe('C2 Profile setup (F02-T20)', () => {
   });
 
   it('AUTH-02-AC2, AC3: without consent the screen says what is missing and nothing is sent', async () => {
-    const { page, context, calls } = await openPage(browser, { liff, lang: 'th' });
+    const { page, context, calls } = await openPage(browser, { stubCheckout: true, liff, lang: 'th' });
     await page.goto(setup(app.base));
     await page.locator('input[name=fullName]').fill('พลอย ศรีสุข');
     await page.locator('input[name=phone]').fill('0812345678');
@@ -82,7 +82,7 @@ describe('C2 Profile setup (F02-T20)', () => {
   });
 
   it('AUTH-02-AC2: a refusal from the server is shown next to the field', async () => {
-    const { page, context } = await openPage(browser, { liff, lang: 'en', profile: { status: 400, body: { code: 'invalid', fields: { phone: 'phone_invalid' } } } });
+    const { page, context } = await openPage(browser, { stubCheckout: true, liff, lang: 'en', profile: { status: 400, body: { code: 'invalid', fields: { phone: 'phone_invalid' } } } });
     await page.goto(setup(app.base));
     await page.locator('input[name=fullName]').fill('Ploy Srisuk');
     await page.locator('input[name=phone]').fill('12');
@@ -96,7 +96,7 @@ describe('C2 Profile setup (F02-T20)', () => {
 
   it('CC-5: in Thai at 320 px the consent line wraps inside its card, the button stays on one line, nothing scrolls sideways', async () => {
     for (const lang of ['th', 'en']) {
-      const { page, context } = await openPage(browser, { liff: { ...liff, displayName: 'ploy.srisuk.hunter.tennis.club' }, lang, width: 320, height: 568 });
+      const { page, context } = await openPage(browser, { stubCheckout: true, liff: { ...liff, displayName: 'ploy.srisuk.hunter.tennis.club' }, lang, width: 320, height: 568 });
       await page.goto(setup(app.base));
       await page.getByTestId('continue').waitFor();
       await page.getByTestId('continue').click(); // show every field message: the longest screen

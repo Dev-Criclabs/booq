@@ -23,7 +23,7 @@ after(async () => {
 
 describe('Personal details (C17)', () => {
   it('AUTH-01-AC9: a guest opening it signs in first and comes back to it', async () => {
-    const { page, context } = await openPage(browser, { liff: { ...liff, loggedIn: false }, lang: 'en', me: null });
+    const { page, context } = await openPage(browser, { stubCheckout: true, liff: { ...liff, loggedIn: false }, lang: 'en', me: null });
     await page.goto(`${app.base}${PAGE}`);
     await page.waitForURL((u) => u.pathname === '/c/hunter/sign-in');
     assert.equal(new URL(page.url()).searchParams.get('next'), PAGE);
@@ -32,7 +32,7 @@ describe('Personal details (C17)', () => {
 
   it('AUTH-02-AC18, AC19, AC15: the date of birth is editable any number of times, read back with the international year', async () => {
     const me = { profile: profile() };
-    const { page, context, calls } = await openPage(browser, { liff, lang: 'en', me });
+    const { page, context, calls } = await openPage(browser, { stubCheckout: true, liff, lang: 'en', me });
     await page.goto(`${app.base}${PAGE}`);
     await page.getByTestId('save').waitFor();
     assert.equal(await page.getByTestId('dob-readout').innerText(), '14 March 1994');
@@ -50,7 +50,7 @@ describe('Personal details (C17)', () => {
 
   it('AUTH-02-AC26: the language toggle changes the screen and is saved on the player record', async () => {
     const me = { profile: profile() };
-    const { page, context, calls } = await openPage(browser, { liff, lang: 'en', me });
+    const { page, context, calls } = await openPage(browser, { stubCheckout: true, liff, lang: 'en', me });
     await page.goto(`${app.base}${PAGE}`);
     await page.getByTestId('save').waitFor();
     await page.getByRole('button', { name: 'ไทย', exact: true }).click();
@@ -65,7 +65,7 @@ describe('Personal details (C17)', () => {
   it('CC-5: at 320 px with the longest strings and messages, nothing scrolls sideways and Save stays on one line', async () => {
     for (const lang of ['th', 'en']) {
       const me = { profile: { ...profile(), language: lang, fullName: 'ศรีสุขสวัสดิ์วัฒนาพงศ์ไพบูลย์ ณ อยุธยา', dateOfBirth: null } };
-      const { page, context } = await openPage(browser, { liff: { ...liff, displayName: 'ploy.srisuk.hunter.tennis.club' }, lang, me, width: 320, height: 568 });
+      const { page, context } = await openPage(browser, { stubCheckout: true, liff: { ...liff, displayName: 'ploy.srisuk.hunter.tennis.club' }, lang, me, width: 320, height: 568 });
       await page.goto(`${app.base}${PAGE}`);
       await page.getByTestId('save').waitFor();
       await page.locator('input[name=dobYear]').fill('19'); // partly filled: shows the date message
@@ -100,7 +100,7 @@ describe('date of birth step (Student items)', () => {
 
   it('AUTH-02-AC11: with no date on file the field is required; a date under 18 goes on with the item kept', async () => {
     const me = { profile: { ...profile(), dateOfBirth: null }, groupFor: under18 };
-    const { page, context, calls } = await openPage(browser, { liff, lang: 'th', me });
+    const { page, context, calls } = await openPage(browser, { stubCheckout: true, liff, lang: 'th', me });
     await page.goto(step(app.base));
     await page.getByTestId('continue').waitFor();
     await page.screenshot({ path: join(SHOTS, 'dob-step-th.png') });
@@ -120,7 +120,7 @@ describe('date of birth step (Student items)', () => {
 
   it('AUTH-02-AC12: a date making the player 18 or older says the item is for under 18', async () => {
     const me = { profile: { ...profile(), dateOfBirth: null }, groupFor: under18 };
-    const { page, context } = await openPage(browser, { liff, lang: 'en', me });
+    const { page, context } = await openPage(browser, { stubCheckout: true, liff, lang: 'en', me });
     await page.goto(step(app.base));
     await page.locator('select[name=dobDay]').selectOption('14');
     await page.locator('select[name=dobMonth]').selectOption('3');
