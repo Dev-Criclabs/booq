@@ -83,6 +83,7 @@ const fonts = {
 
 // Sara am (U+0E33) is drawn as its two visual parts, nikhahit (U+0E4D) and sara aa (U+0E32): the renderer otherwise
 // places the composite badly after some consonants (แนะนำ ran into the next letter). It looks the same; only the image uses it.
+// i18n-ignore a character substitution for the renderer, not text anyone reads
 const drawable = (script: Script, text: string) => (script === 'th' ? text.replace(/\u0E33/g, '\u0E4D\u0E32') : text);
 
 function measure(script: Script, text: string, size: number): number {
