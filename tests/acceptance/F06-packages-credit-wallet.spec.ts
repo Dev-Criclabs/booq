@@ -45,7 +45,7 @@ describe("F06 PKG-02", () => {
   // Given a Student package product, when a player 18 or older tries to buy it, then the server refuses (F04 R1-AC6).
   // F06/PKG-02-AC6: proven by a real or traced test in another file of this folder
   // Given a package product with no price set, when C9 loads, then it is not offered (an empty setting is not free).
-  test.todo("F06/PKG-02-AC7 Given a package product with no price set, when C9 loads, then it is not offered (an empty setting is not ...");
+  // F06/PKG-02-AC7: proven by a real or traced test in another file of this folder
   // Given a product the owner marks inactive, when C9 loads, then it is not offered; packages already owned keep working.
   test.todo("F06/PKG-02-AC8 Given a product the owner marks inactive, when C9 loads, then it is not offered; packages already owned ...");
   // Given the validity and expiry shown on C9, C10P and C12P, when they are shown, then they come from the product and the computed expiry date, with the international year in both languages.
@@ -56,7 +56,7 @@ describe("F06 PKG-02", () => {
 
 describe("F06 PKG-03", () => {
   // Given a package with credits left, when it is 14 days and again 3 days before its expiry date, then the player gets the Package expiring LINE message once each, in their language (F10; sent even at 80 percent of the cap, D29).
-  test.todo("F06/PKG-03-AC1 Given a package with credits left, when it is 14 days and again 3 days before its expiry date, then the ...");
+  // F06/PKG-03-AC1: proven by a real or traced test in another file of this folder
   // Given a package with no credits left, when its reminder dates arrive, then no reminder is sent.
   test.todo("F06/PKG-03-AC2 Given a package with no credits left, when its reminder dates arrive, then no reminder is sent.");
   // Given a package reaches its expiry (23:59 Bangkok on the expiry date), when the expiry job runs, then one `expire` ledger row removes the credits that are left and the package shows Expired; credits are lost (PRD).
@@ -77,25 +77,44 @@ describe("F06 PKG-03", () => {
   // F06/PKG-03-AC10: proven by a real or traced test in another file of this folder
 });
 
-describe("F06 R1", () => {
-  // Given a booking that uses a package credit, when it is submitted, then a `reserve` row is written for the credit type that fits (court hour, solo class by tier and customer type, group session by customer type) in the same transaction as the booking (F04 R4-AC7).
-  // F06/R1-AC1: proven by a real or traced test in another file of this folder
-  // Given a reserved credit and a booking cancelled 12 hours or more before start, when F09 cancels it, then a `return` row puts the credit back to its own package (D21).
-  // F06/R1-AC2: proven by a real or traced test in another file of this folder
-  // Given a reserved credit and a session that starts, when the session slot starts, then a `use` row is written (once the session starts).
-  // F06/R1-AC3: proven by a real or traced test in another file of this folder
-  // Given a late cancel (under the cancel window) or a no show, when F09 or staff mark it, then a `forfeit` row is written and the credit is not returned (CANCEL-01, CANCEL-04).
-  // F06/R1-AC4: proven by a real or traced test in another file of this folder
-  // Given staff reverse a no show or late cancel, when they do it, then the credit comes back by a new row, not by editing the old one; what it does for coach pay is F09 and QA Q-14 (not decided here).
-  // F06/R1-AC5: proven by a real or traced test in another file of this folder
-  // Given a mixed payment (credit, wallet and money) cancelled 12 hours or more ahead, when F09 returns value, then package credit returns to the package, money paid (Beam or cash) goes to the wallet with the reason `refund`, wallet use returns to the wallet with the reason `return`, add-ons return with the booking, and a used promo code or birthday entitlement is restored (D21, D78).
-  // F06/R1-AC6: proven by a real or traced test in another file of this folder
-  // Given a club closure (F09), when it cancels a booking, then the full value returns whatever the time (PRD) as the same moves.
-  // F06/R1-AC7: proven by a real or traced test in another file of this folder
-  // Given a booking made partly by credit and the hold ends without payment, when the hold is released, then the reserved credit returns to the package and any wallet spend returns to the wallet by new rows (F04 R7-AC6).
-  // F06/R1-AC8: proven by a real or traced test in another file of this folder
-  // Given a solo pack credit and a coach added at court checkout, when the order is priced, then no `reserve` row is written on the solo package (COACH-03, F04 R2-AC4).
-  // F06/R1-AC9: proven by a real or traced test in another file of this folder
-  // Given a solo class booked through Classes with a solo pack credit, when it is confirmed, then the credit covers the coaching line only and the court is paid by a bundle hour, wallet or money (COACH-04).
-  test.todo("F06/R1-AC10 Given a solo class booked through Classes with a solo pack credit, when it is confirmed, then the credit ...");
+describe("F06 R2", () => {
+  // Given a checkout, when the wallet has a balance, then it is applied after package credit and before money, for the amount left only (D22, F04 R4-AC1).
+  // F06/R2-AC1: proven by a real or traced test in another file of this folder
+  // Given the wallet balance on C14 and the checkout, when it is shown, then it is shown in baht (whole when whole, else two decimals, D69).
+  test.todo("F06/R2-AC2 Given the wallet balance on C14 and the checkout, when it is shown, then it is shown in baht (whole when ...");
+  // Given a referral reward (F14), when it is due, then a `referral_reward` row is written for the amount the owner set; if the amount is empty, nothing is written.
+  // F06/R2-AC3: proven by a real or traced test in another file of this folder
+  // Given value returned to the wallet for a late payment, wrong amount or duplicate payment, when it is written, then the row carries the matching reason and the money received is the amount (D78), and a late payment or wrong amount credit gets its own receipt (D37, D79).
+  // F06/R2-AC4: proven by a real or traced test in another file of this folder
+  // Given a wallet spend, when it is saved, then a `spend` row is written in the same transaction as the order.
+  // F06/R2-AC5: proven by a real or traced test in another file of this folder
+  // Given an `import` row from a CSV import, when it is written, then it uses the reason `import` with the owner as actor (F01 PLAT-06-AC3).
+  // F06/R2-AC6: proven by a real or traced test in another file of this folder
+  // Given the wallet, when a staff member credits or debits it, then the reason `adjust`, a written reason and an audit entry are required (PKG-01-AC4).
+  // F06/R2-AC7: proven by a real or traced test in another file of this folder
+  // Given "value owed to customers" in reports, when it is computed, then it is unused package credit plus wallet balances, shown separately (D57, F11 ADMIN-14).
+  test.todo("F06/R2-AC8 Given \"value owed to customers\" in reports, when it is computed, then it is unused package credit plus ...");
+});
+
+describe("F06 R3", () => {
+  // Given a player buys a package alone, when they pay, then the package is created only after the Beam callback is verified (F05 PAY-04); nothing is created if the QR time ends unpaid.
+  // F06/R3-AC1: proven by a real or traced test in another file of this folder
+  // Given a player buys a bundle with a booking (Flow H), when they pay, then it is one order and one bill; the bundle is created and one hour is used now with a `reserve` row for the booking, in the same transaction.
+  // F06/R3-AC2: proven by a real or traced test in another file of this folder
+  // Given a player buys a group pack from the class screen (Flow I), when they pay, then the pack is created and one session is used now, leaving the rest.
+  test.todo("F06/R3-AC3 Given a player buys a group pack from the class screen (Flow I), when they pay, then the pack is created ...");
+  // Given a purchase is confirmed, when it is saved, then the package gets its expiry (PKG-02-AC2), a receipt is issued (F13) and the C12P confirmation shows the credits added, the expiry date and Book now.
+  // F06/R3-AC4: proven by a real or traced test in another file of this folder
+  // Given a purchase by staff at the desk (G-A02c), when they take cash, then it follows PAY-06 and creates the package the same way.
+  // F06/R3-AC5: proven by a real or traced test in another file of this folder
+  // Given a package order for a Paused club, when a player tries to buy, then the server refuses (F01 PLAT-03).
+  test.todo("F06/R3-AC6 Given a package order for a Paused club, when a player tries to buy, then the server refuses (F01 PLAT-03).");
+  // Given a package bought together with a booking whose payment arrives late so the booking cannot be confirmed, when it is handled, then all of it goes to the wallet, with nothing partly created (D87, PAY-03).
+  // F06/R3-AC7: proven by a real or traced test in another file of this folder
+  // Given the owner sells a package, when it is a Student product, then the buyer must be under 18 (PKG-02-AC6).
+  // F06/R3-AC8: proven by a real or traced test in another file of this folder
+  // Given a payment arrives after a package order was cancelled (a package bought alone whose QR time ended), when it is reported, then the value goes to the wallet with the reason `late_payment` and its own receipt (D74, D78, PAY-04, F05 PAY-04-AC5); no package is created.
+  // F06/R3-AC9: proven by a real or traced test in another file of this folder
+  // Given the reminder days (14 and 3), the cancel window and the hold time, when text or settings use them, then the numbers are variables in the text and settings in code, never typed in a key (D116).
+  // F06/R3-AC10: proven by a real or traced test in another file of this folder
 });

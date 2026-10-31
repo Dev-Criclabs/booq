@@ -59,3 +59,6 @@ traced("F03/BOOK-06-AC6", "Given each hour of the order, when the hold ends, the
 traced("F03/WAIT-01-AC1", "Given a taken slot on C4, when a signed in player views it, then Join waitlist s", [{ file: "packages/db/src/waitlist-entry.test.ts", has: "WAIT-01-AC1" }, { file: "packages/db/src/waitlist-functions.test.ts", has: "WAIT-01-AC1" }]);
 traced("F03/WAIT-01-AC2", "Given the player taps Join waitlist, when it is saved, then they are added with ", [{ file: "packages/db/src/waitlist-handlers.test.ts", has: "WAIT-01-AC2" }]);
 traced("F03/WAIT-01-AC3", "Given a held slot (not yet taken), when it is viewed, then Join waitlist shows o", [{ file: "packages/db/src/waitlist-functions.test.ts", has: "WAIT-01-AC3" }, { file: "packages/db/src/release-offer-ended.test.ts", has: "WAIT-01-AC3" }]);
+
+// Criteria the lane's tests name by ID (added 31 Oct): the trace checks the ID is still cited in those files.
+traced("F03/WAIT-01-AC4", "Given the offer, claim time and cut off, then F08's rules apply (claim time and ", [{ file: "apps/worker/src/tasks/class-jobs.test.ts", has: "WAIT-01-AC4" }]);

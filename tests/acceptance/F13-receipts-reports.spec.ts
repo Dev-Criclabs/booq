@@ -6,35 +6,35 @@ import { describe, test } from 'vitest';
 
 describe("F13 RCPT-01", () => {
   // Given a club's first real payment after Go live, when its receipt is issued, then its number is 000001 of the club's series for that Bangkok year (D4, D106).
-  test.todo("F13/RCPT-01-AC1 Given a club's first real payment after Go live, when its receipt is issued, then its number is 000001 of ...");
+  // F13/RCPT-01-AC1: proven by a real or traced test in another file of this folder
   // Given receipts issued one after another, when they are numbered, then the numbers are consecutive with no gap and no repeat, per club, and two clubs have independent sequences.
-  test.todo("F13/RCPT-01-AC2 Given receipts issued one after another, when they are numbered, then the numbers are consecutive with no ...");
+  // F13/RCPT-01-AC2: proven by a real or traced test in another file of this folder
   // Given 20 payments confirmed in parallel, when receipts are issued, then the numbers are consecutive (QA CONC-21): the number is taken in the same transaction as the confirmation, so a confirmation that fails leaves no gap and a confirmation that succeeds always has its number.
-  test.todo("F13/RCPT-01-AC3 Given 20 payments confirmed in parallel, when receipts are issued, then the numbers are consecutive (QA ...");
+  // F13/RCPT-01-AC3: proven by a real or traced test in another file of this folder
   // Given an order of several hours (one order, one booking per hour), when it is confirmed, then one receipt is issued for the order (BOOK-06, D40).
-  test.todo("F13/RCPT-01-AC4 Given an order of several hours (one order, one booking per hour), when it is confirmed, then one receipt ...");
+  // F13/RCPT-01-AC4: proven by a real or traced test in another file of this folder
   // Given an order confirmed with no money paid (credit, wallet or a 100 percent code), when it is confirmed, then a receipt is still issued in the same series, showing how it was paid (D64, PAY-07).
-  test.todo("F13/RCPT-01-AC5 Given an order confirmed with no money paid (credit, wallet or a 100 percent code), when it is confirmed, ...");
+  // F13/RCPT-01-AC5: proven by a real or traced test in another file of this folder
   // Given a late payment credited to the wallet (PAY-03), a payment after a package order was cancelled (PAY-04), a wrong amount credit or a duplicate payment credit (F05), when the value is credited, then a receipt is issued in the same series for the money received (D37, D74, D79, D112).
-  test.todo("F13/RCPT-01-AC6 Given a late payment credited to the wallet (PAY-03), a payment after a package order was cancelled ...");
+  // F13/RCPT-01-AC6: proven by a real or traced test in another file of this folder
   // Given a cash payment taken by front desk (PAY-06), when it is saved, then a receipt is issued in the same series.
   // F13/RCPT-01-AC7: proven by a real or traced test in another file of this folder
   // Given a package bought alone or with a booking, when it is confirmed, then it gets a receipt (one per order).
   // F13/RCPT-01-AC8: proven by a real or traced test in another file of this folder
   // Given the Owner voids a receipt, when they save it with a written reason, then the receipt keeps its number and shows Void with the reason, the number is never reused, and the void is audited with the owner's name (PLAT-04). Front desk, Accountant, coach and player cannot void.
-  test.todo("F13/RCPT-01-AC9 Given the Owner voids a receipt, when they save it with a written reason, then the receipt keeps its ...");
+  // F13/RCPT-01-AC9: proven by a real or traced test in another file of this folder
   // Given a void without a reason, when it is submitted, then the server refuses.
   // F13/RCPT-01-AC10: proven by a real or traced test in another file of this folder
   // Given a reprint, when a receipt is downloaded again, then the PDF is marked as a copy and keeps the original number and date (PRD).
-  test.todo("F13/RCPT-01-AC11 Given a reprint, when a receipt is downloaded again, then the PDF is marked as a copy and keeps the ...");
+  // F13/RCPT-01-AC11: proven by a real or traced test in another file of this folder
   // Given a receipt, when it is issued, then it is never edited; a correction is a void and a new receipt (append only, D28 pattern).
-  test.todo("F13/RCPT-01-AC12 Given a receipt, when it is issued, then it is never edited; a correction is a void and a new receipt ...");
+  // F13/RCPT-01-AC12: proven by a real or traced test in another file of this folder
   // Given a void, when it is saved, then it only marks the receipt; nothing changes on the booking, credits or wallet (D106).
   // F13/RCPT-01-AC13: proven by a real or traced test in another file of this folder
   // Given the format HTC‑2027‑000001, then the prefix is set in P2 step 1 and required before Go live, and the number runs per club per Bangkok year: the sequence restarts each Bangkok year and the year part is the Bangkok year of issue (D106).
-  test.todo("F13/RCPT-01-AC14 Given the format HTC‑2027‑000001, then the prefix is set in P2 step 1 and required before Go live, and the ...");
+  // F13/RCPT-01-AC14: proven by a real or traced test in another file of this folder
   // Given a club in Testing, when a test payment is made, then its receipt takes a number from its own non legal test series, marked as a test on screen and in the PDF, never from the real sequence; test receipts are purged at Go live, and the first real receipt is 000001 (D4, D33, PLAT-07).
-  test.todo("F13/RCPT-01-AC15 Given a club in Testing, when a test payment is made, then its receipt takes a number from its own non ...");
+  // F13/RCPT-01-AC15: proven by a real or traced test in another file of this folder
   // Given value goes back to the wallet on a cancel or a closure, when it is returned, then no credit note and no receipt is issued (D119); the cancel sheet and the wallet history show the movement.
   test.todo("F13/RCPT-01-AC16 Given value goes back to the wallet on a cancel or a closure, when it is returned, then no credit note and ...");
   // Given the canvas samples (numbers out of date order, a 5 Jan bundle with expiry 9 Apr), when tests are written, then they are not copied (Gaps B5).
@@ -57,42 +57,19 @@ describe("F13 RCPT-02", () => {
   // Given the balls add-on, when it is on a receipt, then it reads "Balls (Set of 3 balls)" in English and "ลูกเทนนิส (ชุด 3 ลูก)" in Thai.
   // F13/RCPT-02-AC7: proven by a real or traced test in another file of this folder
   // Given a player in Profile (C17), when they open Receipts, then they see their own receipts newest first with a PDF button; a reprint is in the player's language, and staff may print either language (D119).
-  test.todo("F13/RCPT-02-AC8 Given a player in Profile (C17), when they open Receipts, then they see their own receipts newest first ...");
+  // F13/RCPT-02-AC8: proven by a real or traced test in another file of this folder
   // Given a receipt page size, then it is A4 (HO Screen inventory).
   // F13/RCPT-02-AC9: proven by a real or traced test in another file of this folder
   // Given the note "Issued automatically. No signature required." (L-0061), when the PDF is produced, then it appears from its key.
   // F13/RCPT-02-AC10: proven by a real or traced test in another file of this folder
   // Given a receipt for a wallet credit (late payment, wrong amount), when it is produced, then it states what it is for in words from keys (money received and credited to the wallet).
-  test.todo("F13/RCPT-02-AC11 Given a receipt for a wallet credit (late payment, wrong amount), when it is produced, then it states what ...");
+  // F13/RCPT-02-AC11: proven by a real or traced test in another file of this folder
   // Given a PDF in the player's browser or in LINE, when it is downloaded, then it opens as a file the player can save; it is served only to its owner (CC-3).
   // F13/RCPT-02-AC12: proven by a real or traced test in another file of this folder
   // Given a test receipt, when produced, then it carries a clear test mark (RCPT-01-AC15).
   // F13/RCPT-02-AC13: proven by a real or traced test in another file of this folder
   // Given the canvas note that address and branch are placeholders, when the receipt is built, then the real values are used (Gaps B9).
   // F13/RCPT-02-AC14: proven by a real or traced test in another file of this folder
-});
-
-describe("F13 RCPT-03", () => {
-  // Given a Bangkok day, when the Owner or Accountant runs the daily close in A14, then it totals each payment method received that day (Beam, cash, and the others per Q7), in satang, from receipts of that day.
-  test.todo("F13/RCPT-03-AC1 Given a Bangkok day, when the Owner or Accountant runs the daily close in A14, then it totals each payment ...");
-  // Given the day boundary, then it is Bangkok midnight (the club closes at 24:00); a payment at 23:59 is in that day and one at 00:00 is in the next.
-  // F13/RCPT-03-AC2: proven by a real or traced test in another file of this folder
-  // Given a void on a receipt, when the daily close is run, then the voided receipt is shown as void and not counted in the totals, and a void made on a later day shows on the day it is made (D119).
-  test.todo("F13/RCPT-03-AC3 Given a void on a receipt, when the daily close is run, then the voided receipt is shown as void and not ...");
-  // Given test receipts, when the close is run, then they are excluded (D33).
-  test.todo("F13/RCPT-03-AC4 Given test receipts, when the close is run, then they are excluded (D33).");
-  // Given late payment and wrong amount wallet credits, when the close is run, then the money received is counted in the method it arrived by (Beam), and listed as credited to the wallet (D37, D79).
-  test.todo("F13/RCPT-03-AC5 Given late payment and wrong amount wallet credits, when the close is run, then the money received is ...");
-  // Given an order paid by credit or wallet only, when the close is run, then no money is counted; the close lists money methods (Beam, cash) and shows wallet use and credit use as separate non money lines (D119).
-  test.todo("F13/RCPT-03-AC6 Given an order paid by credit or wallet only, when the close is run, then no money is counted; the close ...");
-  // Given a close, when it is exported, then it is a CSV or PDF for the club and the export is audited (F01 PLAT-06-AC15).
-  // F13/RCPT-03-AC7: proven by a real or traced test in another file of this folder
-  // Given an Accountant, when they run the close, then they see totals and receipt numbers and customer names, no phone numbers or dates of birth (D35).
-  test.todo("F13/RCPT-03-AC8 Given an Accountant, when they run the close, then they see totals and receipt numbers and customer names, ...");
-  // Given a closed day, when a receipt is later issued for it (a payment reported late), then it belongs to the day it was issued, not the earlier day (the sequence is by issue time).
-  test.todo("F13/RCPT-03-AC9 Given a closed day, when a receipt is later issued for it (a payment reported late), then it belongs to ...");
-  // Given a closed day, then it is not reopened (D119); a payment reported late, or a void, belongs to the day it is made.
-  // F13/RCPT-03-AC10: proven by a real or traced test in another file of this folder
 });
 
 describe("F13 R1", () => {
@@ -112,25 +89,25 @@ describe("F13 R2", () => {
   // Given a date range, when the Owner or Accountant opens the A13 dashboard, then they see the reports below for that range, for their club only.
   test.todo("F13/R2-AC1 Given a date range, when the Owner or Accountant opens the A13 dashboard, then they see the reports below ...");
   // Given cash received by type, then it totals money received by method (Beam, cash) from receipts in the range, excluding voids and test records (D33).
-  test.todo("F13/R2-AC2 Given cash received by type, then it totals money received by method (Beam, cash) from receipts in the ...");
+  // F13/R2-AC2: proven by a real or traced test in another file of this folder
   // Given revenue earned against package sales, then package sales are the money received for packages in the range, and revenue earned is credits used at their price per credit plus single sales (D119).
-  test.todo("F13/R2-AC3 Given revenue earned against package sales, then package sales are the money received for packages in the ...");
+  // F13/R2-AC3: proven by a real or traced test in another file of this folder
   // Given value still owed to customers, then it is unused package credit plus wallet balances, shown separately (D57), as of the end of the range.
-  test.todo("F13/R2-AC4 Given value still owed to customers, then it is unused package credit plus wallet balances, shown ...");
+  // F13/R2-AC4: proven by a real or traced test in another file of this folder
   // Given the occupancy heatmap, then it shows booked hours over bookable hours (open hours less closures) per court by day and hour; held hours are not counted, and test records and cancelled bookings are excluded (D119).
-  test.todo("F13/R2-AC5 Given the occupancy heatmap, then it shows booked hours over bookable hours (open hours less closures) per ...");
+  // F13/R2-AC5: proven by a real or traced test in another file of this folder
   // Given online against staff bookings and the no show rate, then bookings are split by source (online or staff created) and the no show rate is no shows over played plus no show bookings.
-  test.todo("F13/R2-AC6 Given online against staff bookings and the no show rate, then bookings are split by source (online or ...");
+  // F13/R2-AC6: proven by a real or traced test in another file of this folder
   // Given new against returning, then a customer is new in the range when their first paid booking falls in it.
   test.todo("F13/R2-AC7 Given new against returning, then a customer is new in the range when their first paid booking falls in it.");
   // Given promotion and partner performance, then the partner report shows redemptions, revenue, new customers and repeat bookings within 30 and 60 days; a restored code reduces the redemption count (PRD, D70).
-  test.todo("F13/R2-AC8 Given promotion and partner performance, then the partner report shows redemptions, revenue, new customers ...");
+  // F13/R2-AC8: proven by a real or traced test in another file of this folder
   // Given every report, when it is exported, then it is a CSV for the club with the same filters, audited (PLAT-04).
-  // F13/R2-AC9: proven by a real or traced test in another file of this folder
+  test.todo("F13/R2-AC9 Given every report, when it is exported, then it is a CSV for the club with the same filters, audited ...");
   // Given the Accountant, when they read a report that lists customers, then it shows names, never phone numbers or dates of birth (D35).
   // F13/R2-AC10: proven by a real or traced test in another file of this folder
   // Given front desk or a coach, when they request any report, then the server refuses (A13 is Owner and Accountant; coach pay is the coach's own earnings in K6).
-  test.todo("F13/R2-AC11 Given front desk or a coach, when they request any report, then the server refuses (A13 is Owner and ...");
+  // F13/R2-AC11: proven by a real or traced test in another file of this folder
   // Given every report, then each has an acceptance check from its formula; the formulas are in R5 as a proposal awaiting the user's approval, with D119 fixing revenue earned and occupancy.
   test.todo("F13/R2-AC12 Given every report, then each has an acceptance check from its formula; the formulas are in R5 as a ...");
 });
@@ -151,9 +128,9 @@ describe("F13 R3", () => {
   // Given the Owner marks a payout paid, when they save it, then it is recorded with who and when and cannot be edited later (append only); a correction is a new adjustment in the next period.
   test.todo("F13/R3-AC7 Given the Owner marks a payout paid, when they save it, then it is recorded with who and when and cannot ...");
   // Given an Accountant, when they open payouts, then they may read and export but not mark paid; front desk cannot see them (HO Roles).
-  test.todo("F13/R3-AC8 Given an Accountant, when they open payouts, then they may read and export but not mark paid; front desk ...");
+  // F13/R3-AC8: proven by a real or traced test in another file of this folder
   // Given a coach, when they open K6, then they see only their own earnings (F12).
-  test.todo("F13/R3-AC9 Given a coach, when they open K6, then they see only their own earnings (F12).");
+  // F13/R3-AC9: proven by a real or traced test in another file of this folder
   // Given the canvas samples in K6 and A07 that disagree on who is freelance, when tests are written, then they are not copied (Gaps B4).
   test.todo("F13/R3-AC10 Given the canvas samples in K6 and A07 that disagree on who is freelance, when tests are written, then ...");
 });
