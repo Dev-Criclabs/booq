@@ -11,8 +11,9 @@ Depends on: F01 (route wrapper, permissions, settings, audit, import, staff), F0
 - [x] **F11-T01** Permissions fragment `f11.ts` (`staff.shell`, `calendar.read`, `setup.read`, `setup.done`, `customer.write`, `customer.export`, `price.read`, `closure.write`) and the page to permission map. IDs: ADMIN-01. Role: BE-A · Deps F01-T13 · Size: S
   Tests first: the map has no page without a permission; the union of two roles; the role matrix passes.
   Built (Architect): `packages/auth/src/permissions/f11.ts`, `packages/auth/src/admin-pages.ts` (`ADMIN_PAGES`, `pagesFor(roles)`). `closure.write` is declared here; F09's closure routes use the name and must not declare it again. A4 is not in the map (F16).
-- [ ] **F11-T02** `GET /staff/shell` (pages, banners, club). IDs: ADMIN-01. Role: BE-A · Deps T01, F10 `staff/line/status` · Size: M
+- [x] **F11-T02** `GET /staff/shell` (pages, banners, club). IDs: ADMIN-01. Role: BE-A · Deps T01, F10 `staff/line/status` · Size: M
   Tests first: front desk does not get Reports, Pricing, Settings, Staff; front desk plus accountant get both sets; a Paused club shows the banner with the reason; the LINE banners only for the owner; A4 absent for a Beam club.
+  Built (Architect): `1106_shell_banners.sql` (`app.shell_state()`, taken from the F11 block out of task order), `packages/domain/src/admin/shell.ts`, `shellRoutes` in `apps/web/src/api/admin/routes.ts`. A4 is never listed (F16).
 - [ ] **F11-T03** `1101_staff_calendar.sql` and `GET /staff/calendar`. IDs: ADMIN-03. Role: BE-A · Deps F03, F07, F08 · Size: M
   Tests first: held, confirmed, closure, solo and class cells; names only, no phone; range over 7 days refused; another club empty; accountant refused.
 - [ ] **F11-T04** `1102_customer_list_tags.sql`, `GET /staff/customers`, tags routes, customer CSV via `POST /staff/customers/export`. IDs: ADMIN-06. Role: BE-A · Deps F01-T25 · Size: M
