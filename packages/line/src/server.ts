@@ -9,3 +9,4 @@ export { RICH_MENU_IMAGE, RichMenuLayoutError, labelsHash, layoutRichMenu, rende
 export { probeLine } from './probe/probe';
 export { RICH_MENU_DEFAULT_KEYS, RICH_MENU_PAGES, resolveLabels, richMenuObject, type RichMenuArea, type RichMenuObject, type StoredLabel } from './rich-menu/menu';
 export { createRichMenuHttpApi, type RichMenuApi, type RichMenuCallResult, type RichMenuHttpApiOptions } from './rich-menu/api';
+export { createLineUsageHttpApi, type ConsumptionResult, type LineUsageApi, type LineUsageHttpApiOptions, type QuotaResult } from './usage/api';

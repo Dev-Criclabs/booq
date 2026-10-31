@@ -179,6 +179,27 @@ describe('availability and leave (coach, owner)', () => {
   });
 });
 
+describe('GET /staff/leave-calendar (front desk, owner; F11-T10)', () => {
+  it('shows dates, hours and status and the coach name, never the type or the note', async () => {
+    await ok(call('POST', '/coach/leave', coach(), {}, { startDate: '2026-12-03', endDate: '2026-12-04', type: 'sick', note: 'private' }));
+    for (const s of [desk(), owner()]) {
+      const r = await ok<{ coachName: string; startDate: string; endDate: string; status: string }[]>(call('GET', '/staff/leave-calendar', s, { from: '2026-12-01', to: '2026-12-31' }));
+      expect(r).toEqual([expect.objectContaining({ coachName: 'Coach One', startDate: '2026-12-03', endDate: '2026-12-04', status: 'pending', fromHour: null })]);
+      expect(JSON.stringify(r)).not.toMatch(/sick|private|type|note/);
+    }
+  });
+  it('only leave overlapping the range; a bad range is bad input; a coach, a player and another club are refused', async () => {
+    await ok(call('POST', '/coach/leave', coach(), {}, { startDate: '2026-12-03', endDate: '2026-12-03' }));
+    expect(await ok(call('GET', '/staff/leave-calendar', desk(), { from: '2026-12-10', to: '2026-12-20' }))).toEqual([]);
+    expect(await ok<unknown[]>(call('GET', '/staff/leave-calendar', desk(), { from: '2026-12-03', to: '2026-12-03' }))).toHaveLength(1);
+    expect(await refused(call('GET', '/staff/leave-calendar', desk(), { from: '2026-12-05', to: '2026-12-01' }))).toMatchObject({ status: 400 });
+    expect(await refused(call('GET', '/staff/leave-calendar', desk(), { from: 'x', to: 'y' }))).toMatchObject({ status: 400 });
+    expect(await refused(call('GET', '/staff/leave-calendar', coach(), { from: '2026-12-01', to: '2026-12-02' }))).toMatchObject({ status: 403 });
+    expect(await refused(call('GET', '/staff/leave-calendar', as(PLAYER, ['player']), { from: '2026-12-01', to: '2026-12-02' }))).toMatchObject({ status: 403 });
+    expect(await refused(call('GET', '/staff/leave-calendar', desk(), { slug: 'club-b', from: '2026-12-01', to: '2026-12-02' }))).toMatchObject({ status: 404 });
+  });
+});
+
 describe('leave decisions, flags and substitution (owner)', () => {
   it('the owner lists requests with the note, decides once; a second decision is bad input', async () => {
     const { leaveId } = await ok<{ leaveId: string }>(call('POST', '/coach/leave', coach(), {}, { startDate: '2026-12-03', endDate: '2026-12-03', type: 'sick', note: 'private' }));

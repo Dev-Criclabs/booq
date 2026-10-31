@@ -15,6 +15,8 @@ export interface SupportSetup {
   settings: Array<{ key: string; value: unknown }>;
   features: Array<{ feature_key: string; enabled: boolean }>;
   featureKeys?: Array<{ feature_key: string; requires_payment_option: 'beam' | 'slip' | null }>;
+  health?: Array<{ check_key: string; status: 'ok' | 'failed'; reason: string | null; checked_at: string }>;
+  checkRequestedAt?: string | null;
 }
 export interface OwnerInvite { status: 'none' | 'pending' | 'expired' | 'redeemed'; expires_at?: string }
 export interface ClubView {

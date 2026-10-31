@@ -5,7 +5,8 @@ import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
 import { encryptSecret, generateKeyPair } from '@booq/secrets';
 import { FakeClock, FakeLine, collectActions } from '../../../../tests/fakes';
 import { closeTestDatabase } from '../testing/teardown';
-import { createLineSender } from './line-sender-setup';
+import { createLineSender, createLineUsageDeps } from './line-sender-setup';
+import { runLineUsageSync } from './line-usage';
 
 // The real sender as main.ts builds it (F10-T08 to T10 wired, orchestrator 31 Oct): the HTTP transport against the fake
 // LINE's server, the club token decrypted from club_secret with the worker key, the dictionary from locales/*, and View
@@ -87,5 +88,21 @@ describe('createLineSender', () => {
       [A, P, JSON.stringify({ order_id: order }), `confirmed:${order}`]);
     await createLineSender(worker, { lineApiBaseUrl: served.url, linePushTimeoutMs: 2000, localesDir: resolve(__dirname, '../../../../locales'), privateKey: keys.privateKey }).run();
     expect(collectActions(line.pushes({ clubId: A })[0]!.messages[0])).toEqual([]);
+  });
+});
+
+describe('createLineUsageDeps (F10-T13)', () => {
+  it('reads LINE’s consumption over HTTP with the club’s decrypted token into this month’s usage row', async () => {
+    const { order } = await booking();
+    await tdb.query(`insert into public.message_outbox (club_id, user_id, kind, params, dedupe_key, send_at) values ($1,$2,'booking_confirmed',$3::jsonb,$4, now() - interval '1 minute')`,
+      [A, P, JSON.stringify({ order_id: order }), `confirmed:${order}`]);
+    await createLineSender(worker, { lineApiBaseUrl: served.url, linePushTimeoutMs: 2000, localesDir: resolve(__dirname, '../../../../locales'), privateKey: keys.privateKey }).run();
+    await tdb.query(`update public.line_connection set line_plan_kind = 'paid', plan_message_limit = 500 where club_id = $1`, [A]);
+    const r = await runLineUsageSync(worker, createLineUsageDeps({ lineApiBaseUrl: served.url, linePushTimeoutMs: 2000, privateKey: keys.privateKey }));
+    expect(r).toMatchObject({ clubs: 1, fromLine: 1, errors: 0 });
+    // The fake LINE has no quota route (its answer is 404): the plan limit from P2 step 4 is used, and the check says so.
+    expect((await tdb.query(`select used, line_consumption, message_limit, source from platform.club_line_usage where club_id = $1`, [A])).rows)
+      .toEqual([{ used: 1, line_consumption: 1, message_limit: 500, source: 'line' }]);
+    expect((await tdb.query(`select status, reason from platform.club_health where club_id = $1 and check_key = 'line_usage'`, [A])).rows[0]).toEqual({ status: 'failed', reason: 'http_404' });
   });
 });

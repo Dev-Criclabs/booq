@@ -1,4 +1,4 @@
-import { createClaimService } from '@booq/domain';
+import { createClaimService, type ExportStorage } from '@booq/domain';
 import { createDbRateLimiter } from '@booq/auth';
 import { createDbDirectory, createProfileService, createPublicConfigService, createSignInService, type LineVerifier, type RouteSession, type ServeDeps } from '@booq/auth';
 import type { Db } from '@booq/db';
@@ -9,10 +9,21 @@ import { mounts, type Mount } from './mounts';
 // The web app's composition root (F02, F01): the one place that wires the database, the LINE
 // verifier and the clock into the services and the route table. Settings are read from the
 // environment when the first request arrives (not at build), with no defaults.
-// Not wired yet: the export routes, until DevOps picks the storage provider and the queue
-// credential for adding the export job (see docs/ops/worker.md).
+// The export routes are mounted (mounts.ts) and answer 503 export_not_configured until `exports` below is given: the storage provider
+// and the queue credential for adding the export job are DevOps's to choose (see docs/ops/worker.md).
+
+/** What the owner's data export needs at run time (F01-T25, PLAT-06-AC11): the private bucket, the life of a link, and the way to add the worker job. */
+export interface ExportRuntime {
+  storage: ExportStorage;
+  /** Longest life of a link in seconds (assumption A-14: 24 hours). Platform config, no default. */
+  linkSeconds: number;
+  /** Adds the worker task; the payload carries ids only. */
+  enqueue(task: string, payload: { clubId: string; exportId: string }): Promise<void>;
+}
 
 export interface WebConfig {
+  /** Absent: POST /exports and GET /exports/:id answer 503 export_not_configured. Not read from the environment yet (no provider chosen). */
+  exports?: ExportRuntime | null;
   /** The folder with the language files (en.json, th.json, pending/), for the receipt PDF. Absent: the PDF routes answer 503 not_configured. */
   localesDir?: string | null;
   sessionSeconds: number;
@@ -28,22 +39,22 @@ const WHOLE = /^[1-9][0-9]*$/;
 export function readWebConfig(env: Record<string, string | undefined>): WebConfig & { databaseUrl: string } {
   const required = ['DATABASE_URL', 'WEB_SESSION_SECONDS', 'WEB_MAX_BODY_BYTES'] as const;
   const missing = required.filter((n) => !env[n]);
-  if (missing.length) throw new Error(`web settings missing: ${missing.join(', ')}`);
+  if (missing.length) throw new Error(`web settings missing: ${missing.join(', ')}`);  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
   for (const n of ['WEB_SESSION_SECONDS', 'WEB_MAX_BODY_BYTES'] as const) {
-    if (!WHOLE.test(env[n]!)) throw new Error(`${n} must be a whole number above zero`);
+    if (!WHOLE.test(env[n]!)) throw new Error(`${n} must be a whole number above zero`);  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
   }
   const rows = env['IMPORT_MAX_ROWS'];
   const hours = env['IMPORT_STAGING_HOURS'];
-  if ((rows && !hours) || (!rows && hours)) throw new Error('IMPORT_MAX_ROWS and IMPORT_STAGING_HOURS are set together or not at all');
-  if (rows && (!WHOLE.test(rows) || !WHOLE.test(hours!))) throw new Error('IMPORT_MAX_ROWS and IMPORT_STAGING_HOURS must be whole numbers above zero');
+  if ((rows && !hours) || (!rows && hours)) throw new Error('IMPORT_MAX_ROWS and IMPORT_STAGING_HOURS are set together or not at all');  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
+  if (rows && (!WHOLE.test(rows) || !WHOLE.test(hours!))) throw new Error('IMPORT_MAX_ROWS and IMPORT_STAGING_HOURS must be whole numbers above zero');  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
   const rl = env['WEB_SIGNIN_RATE_LIMIT'];
   const rw = env['WEB_SIGNIN_RATE_WINDOW_SECONDS'];
-  if ((rl && !rw) || (!rl && rw)) throw new Error('WEB_SIGNIN_RATE_LIMIT and WEB_SIGNIN_RATE_WINDOW_SECONDS are set together or not at all');
-  if (rl && (!WHOLE.test(rl) || !WHOLE.test(rw!))) throw new Error('WEB_SIGNIN_RATE_LIMIT and WEB_SIGNIN_RATE_WINDOW_SECONDS must be whole numbers above zero');
+  if ((rl && !rw) || (!rl && rw)) throw new Error('WEB_SIGNIN_RATE_LIMIT and WEB_SIGNIN_RATE_WINDOW_SECONDS are set together or not at all');  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
+  if (rl && (!WHOLE.test(rl) || !WHOLE.test(rw!))) throw new Error('WEB_SIGNIN_RATE_LIMIT and WEB_SIGNIN_RATE_WINDOW_SECONDS must be whole numbers above zero');  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
   // The caller's address is hashed with this key before it is counted; no default, and never printed.
   const rk = env['WEB_RATE_LIMIT_KEY'];
-  if (rl && !rk) throw new Error('WEB_RATE_LIMIT_KEY is required when the sign-in rate limit is set');
-  if (rk && rk.length < 32) throw new Error('WEB_RATE_LIMIT_KEY must be at least 32 characters');
+  if (rl && !rk) throw new Error('WEB_RATE_LIMIT_KEY is required when the sign-in rate limit is set');  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
+  if (rk && rk.length < 32) throw new Error('WEB_RATE_LIMIT_KEY must be at least 32 characters');  // i18n-ignore start up setting error, read by the operator in the log, never shown to a user
   return {
     signInRateLimit: rl ? { limit: Number(rl), windowSeconds: Number(rw), hmacKey: rk! } : null,
     databaseUrl: env['DATABASE_URL']!,

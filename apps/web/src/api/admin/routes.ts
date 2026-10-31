@@ -1,6 +1,6 @@
 import { FileReply, pagesFor, route, RouteError, type Route, type RouteContext } from '@booq/auth';
 import type { ClubContext, Db, Tx } from '@booq/db';
-import { addCustomer, creditAdjust, customerValue, extendPackage, mapValueError, requestHash, walletAdjust, withIdempotency, addCustomerNote, AdminError, type AdminErrorCode, customerBookings, customerNotes, customerOrders, customerProfile, customersCsv, listCustomers, setTag, shellState, staffCalendar } from '@booq/domain';
+import { createSetup, deleteSetup, listSetup, listTierPrices, putTierPrice, SETUP, updateSetup, ownerSetup, tellDone, auditLog, bookingHistory, addCustomer, creditAdjust, customerValue, extendPackage, mapValueError, requestHash, walletAdjust, withIdempotency, addCustomerNote, AdminError, type AdminErrorCode, customerBookings, customerNotes, customerOrders, customerProfile, customersCsv, listCustomers, setTag, shellState, staffCalendar } from '@booq/domain';
 
 // F11 club admin routes (design 4 to 6, prefix /api/c/{slug}). Thin handlers: resolve the club from the session and the path slug, open
 // the club transaction, call the service in packages/domain/src/admin, answer a body or a typed code. No club id is read from the input.
@@ -18,9 +18,9 @@ const NO_STORE = { 'Cache-Control': 'no-store' } as const;
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const inputOf = (ctx: RouteContext) => (ctx.input ?? {}) as Record<string, unknown>;
 
-const STATUS: Record<AdminErrorCode, number> = { bad_input: 400, not_found: 404, forbidden: 403, reason_required: 400, below_zero: 409, customer_not_claimed: 409 };
+const STATUS: Record<AdminErrorCode, number> = { bad_input: 400, not_found: 404, forbidden: 403, reason_required: 400, below_zero: 409, customer_not_claimed: 409, duplicate: 409, in_use: 409 };
 // A refusal raised by an admin function in the database (BK001, message = the code).
-const DB_STATUS: Record<string, number> = { phone_in_use: 409, reason_required: 400 };
+const DB_STATUS: Record<string, number> = { phone_in_use: 409, reason_required: 400, club_not_available: 409 };
 
 async function inTx<T>(db: Db, c: ClubContext, fn: (tx: Tx) => Promise<T>): Promise<T> {
   try {
@@ -31,6 +31,9 @@ async function inTx<T>(db: Db, c: ClubContext, fn: (tx: Tx) => Promise<T>): Prom
     if (e instanceof AdminError) throw new RouteError(STATUS[e.code], e.code, Object.keys(e.detail).length ? (e.detail as never) : undefined);
     const err = e as { code?: string; message?: string };
     if (err.code === 'BK001' && err.message) throw new RouteError(DB_STATUS[err.message] ?? 409, err.message);
+    if (err.code === '23505') throw new RouteError(409, 'duplicate');
+    if (err.code === '23503') throw new RouteError(409, 'in_use');
+    if (err.code === '23514' || err.code === '22P02' || err.code === '22003' || err.code === '22007') throw new RouteError(400, 'bad_input');
     if (err.code === '42501') throw new RouteError(403, 'forbidden');
     if (err.code === 'P0001' && err.message?.includes('invalid range')) throw new RouteError(400, 'bad_input');
     if (err.code === 'P0001' && err.message?.startsWith('customers: ')) throw new RouteError(/unknown/.test(err.message) ? 404 : 400, /unknown/.test(err.message) ? 'not_found' : 'bad_input');
@@ -149,6 +152,46 @@ export function customerRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[] {
   ];
 }
 
+/** F11-T09: A0 Setup checklist (ADMIN-02): the owner's steps and "Tell BOOQ I'm done". Owner only. */
+export function setupRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[] {
+  return [
+    {
+      ...route({ method: 'GET', path: '/staff/setup', permission: 'setup.read' }, async (ctx) => {
+        const c = await sessionContext(deps, ctx);
+        return inTx(deps.db, c, (tx) => ownerSetup(tx));
+      }),
+      headers: NO_STORE,
+    },
+    route({ method: 'POST', path: '/staff/setup/done', permission: 'setup.done' }, async (ctx) => {
+      const c = await sessionContext(deps, ctx);
+      return inTx(deps.db, c, (tx) => tellDone(tx));
+    }),
+  ];
+}
+
+/**
+ * F11-T08: GET /staff/audit (A17, owner) and GET /staff/bookings/:id/history (A2, front desk and owner). Read only; there is no write or
+ * delete route for the log anywhere (ADMIN-17-AC, D28).
+ */
+export function auditRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[] {
+  return [
+    {
+      ...route({ method: 'GET', path: '/staff/audit', permission: 'audit.read' }, async (ctx) => {
+        const c = await sessionContext(deps, ctx);
+        return inTx(deps.db, c, (tx) => auditLog(tx, inputOf(ctx)));
+      }),
+      headers: NO_STORE,
+    },
+    {
+      ...route({ method: 'GET', path: '/staff/bookings/:id/history', permission: 'booking.create.staff' }, async (ctx) => {
+        const c = await sessionContext(deps, ctx);
+        return inTx(deps.db, c, (tx) => bookingHistory(tx, inputOf(ctx)['id']));
+      }),
+      headers: NO_STORE,
+    },
+  ];
+}
+
 const KEY = /^[\x21-\x7e]{1,200}$/;
 
 /** The Idempotency-Key the transport passes from the header. Every change of value needs one (F11 design 7). */
@@ -183,4 +226,31 @@ export function customerValueRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[]
     change('/staff/customers/:id/wallet-adjust', 'customer.adjust', (tx, i, b) => walletAdjust(tx, i['id'], { deltaSatang: b['deltaSatang'], note: b['note'] })),
     change('/staff/packages/:id/extend', 'package.extend', (tx, i, b) => extendPackage(tx, i['id'], { newExpiresOn: b['newExpiresOn'], reason: b['reason'] })),
   ];
+}
+
+/**
+ * F04-T14 / F11 A9, A9b, A10: the owner's setup data (price groups, court prices, coach tiers and their prices, add-ons, partners, promo
+ * codes). Reads need `price.read` (front desk and accountant see the prices; the row policies of promo codes and partners decide the rest),
+ * writes need `price.write` (owner only). A change applies to new orders only; every write is audited by the table.
+ */
+export function setupDataRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[] {
+  const out: AdminRoute<unknown>[] = [];
+  const mk = <T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, permission: string, fn: (tx: Tx, i: Record<string, unknown>, b: unknown) => Promise<T>): AdminRoute<T> =>
+    ({
+      ...route({ method, path, permission }, async (ctx) => {
+        const c = await sessionContext(deps, ctx);
+        return inTx(deps.db, c, (tx) => fn(tx, inputOf(ctx), ctx.body));
+      }),
+      ...(method === 'GET' ? { headers: NO_STORE } : {}),
+    });
+  for (const r of Object.values(SETUP)) {
+    const base = `/staff/setup/${r.path}`;
+    out.push(mk('GET', base, 'price.read', (tx) => listSetup(tx, r)));
+    out.push(mk('POST', base, 'price.write', (tx, _i, b) => createSetup(tx, r, b)));
+    out.push(mk('PUT', `${base}/:id`, 'price.write', (tx, i, b) => updateSetup(tx, r, i['id'], b)));
+    out.push(mk('DELETE', `${base}/:id`, 'price.write', (tx, i) => deleteSetup(tx, r, i['id'])));
+  }
+  out.push(mk('GET', '/staff/setup/coach-tier-prices', 'price.read', (tx) => listTierPrices(tx)));
+  out.push(mk('PUT', '/staff/setup/coach-tier-prices', 'price.write', (tx, _i, b) => putTierPrice(tx, b)));
+  return out;
 }

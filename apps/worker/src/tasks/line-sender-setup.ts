@@ -1,9 +1,10 @@
 import type { Db } from '@booq/db';
 import { createDeepLinks, type LinkClub } from '@booq/line';
-import { createLineHttpTransport, createMessageBuilder, createRichMenuHttpApi, loadMessageDictionary } from '@booq/line/server';
+import { createLineHttpTransport, createLineUsageHttpApi, createMessageBuilder, createRichMenuHttpApi, loadMessageDictionary } from '@booq/line/server';
 import { readSecret } from '@booq/secrets';
 import { runOutboxSender, type OutboxSenderDeps, type OutboxSenderResult } from './line-outbox-sender';
 import type { RichMenuBuildDeps } from './line-rich-menu';
+import type { LineUsageDeps } from './line-usage';
 
 // The real outbox sender for main.ts (F10-T08 to T10): the message dictionary (locales/* and pending, D81), the builder
 // with F02's deep links (the club's LIFF id, loaded once per club per tick through app.club_liff_id), the Messaging API
@@ -41,6 +42,15 @@ export function createRichMenuBuildDeps(settings: LineSenderSettings & { lineApi
   return {
     api: createRichMenuHttpApi({ baseUrl: settings.lineApiBaseUrl, dataBaseUrl: settings.lineApiDataBaseUrl, timeoutMs: settings.linePushTimeoutMs }),
     dictionary: { th: loadMessageDictionary('th', settings.localesDir), en: loadMessageDictionary('en', settings.localesDir) },
+    readToken: (tx, clubId) => readSecret(tx, settings.privateKey, clubId, 'line_channel_token', 'worker'),
+  };
+}
+
+/** The real dependencies of line_usage_sync and line_health (F10-T13): LINE's quota and consumption calls and the club
+ *  token, with the push timeout. */
+export function createLineUsageDeps(settings: Pick<LineSenderSettings, 'lineApiBaseUrl' | 'linePushTimeoutMs' | 'privateKey'>): LineUsageDeps {
+  return {
+    api: createLineUsageHttpApi({ baseUrl: settings.lineApiBaseUrl, timeoutMs: settings.linePushTimeoutMs }),
     readToken: (tx, clubId) => readSecret(tx, settings.privateKey, clubId, 'line_channel_token', 'worker'),
   };
 }

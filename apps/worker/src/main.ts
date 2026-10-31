@@ -12,7 +12,9 @@ import { runHoldRelease } from './tasks/hold-release';
 import { PACKAGE_EXPIRE, SESSION_START, WALLET_EXPIRE, runPackageExpire, runSessionStart, runWalletExpire } from './tasks/f06-expiry';
 import { CLASS_GENERATE, CLASS_GENERATE_DISPATCH, classGenerateDispatch, generateClassSessions } from './tasks/class-generate';
 import { runClassBelowMinimum, runOfferExpiry } from './tasks/class-jobs';
-import { createLineSender, createRichMenuBuildDeps } from './tasks/line-sender-setup';
+import { runConnectionChecks } from './tasks/connection-check';
+import { createLineSender, createLineUsageDeps, createRichMenuBuildDeps } from './tasks/line-sender-setup';
+import { LINE_HEALTH, LINE_USAGE_SYNC, runLineHealth, runLineUsageSync } from './tasks/line-usage';
 import { RICH_MENU_BUILD, richMenuBuildTask } from './tasks/line-rich-menu';
 import { BEAM_RECONCILE, PACKAGE_ORDER_EXPIRY, runBeamReconcile, runPackageOrderExpiry } from './tasks/payment-jobs';
 import { startTicker } from './ticker';
@@ -40,6 +42,7 @@ const lineSettings = {
   privateKey: loadDecryptKey(),
 };
 const lineSender = createLineSender(db, lineSettings);
+const lineUsage = createLineUsageDeps(lineSettings);
 
 const worker = await startWorker({
   connectionString: config.queueUrl,
@@ -76,6 +79,13 @@ const worker = await startWorker({
     [PACKAGE_ORDER_EXPIRY]: async () => {
       await runPackageOrderExpiry(db);
     },
+    // F10-T13: LINE's usage figures per club (every 10 minutes) and the daily token check.
+    [LINE_USAGE_SYNC]: async () => {
+      await runLineUsageSync(db, lineUsage);
+    },
+    [LINE_HEALTH]: async () => {
+      await runLineHealth(db, lineUsage);
+    },
   },
   crontab: buildCrontab(config),
 });
@@ -93,12 +103,19 @@ const offerExpiry = startTicker({ everyMs: config.offerExpiryTickSeconds * 1000,
 const classBelowMin = startTicker({ everyMs: config.classBelowMinTickSeconds * 1000, run: () => runClassBelowMinimum(db), onError: () => undefined });
 // outbox_sender (F10): LINE messages from the outbox, every config.outboxSenderTickSeconds (design 8: 30 seconds).
 const outboxSender = startTicker({ everyMs: config.outboxSenderTickSeconds * 1000, run: () => lineSender.run(), onError: () => undefined });
+// connection_check (D167): the console's "Test all again". The worker opens the stored secrets and probes LINE and Beam; same tick and settings as the sender.
+const privateKey = loadDecryptKey();
+const connectionCheck = startTicker({
+  everyMs: config.outboxSenderTickSeconds * 1000,
+  run: () => runConnectionChecks(db, { privateKey, lineApiBaseUrl: config.lineApiBaseUrl, probeTimeoutMs: config.linePushTimeoutMs }),
+  onError: () => undefined,
+});
 
 let stopping = false;
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, () => {
     if (stopping) return;
     stopping = true;
-    void Promise.all([holdRelease.stop(), offerExpiry.stop(), classBelowMin.stop(), outboxSender.stop()]).then(() => worker.stop()).then(() => db.end()).then(() => process.exit(0));
+    void Promise.all([holdRelease.stop(), offerExpiry.stop(), classBelowMin.stop(), outboxSender.stop(), connectionCheck.stop()]).then(() => worker.stop()).then(() => db.end()).then(() => process.exit(0));
   });
 }

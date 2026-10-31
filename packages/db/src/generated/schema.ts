@@ -653,6 +653,16 @@ export interface PublicCoach {
   created_at: string;
 }
 
+export interface PublicCoachAttendance {
+  club_id: string;
+  booking_id: string;
+  coach_id: string;
+  mark: string;
+  marked_at: string;
+  changed_at: string;
+  is_test: boolean;
+}
+
 export interface PublicCoachAvailabilityRule {
   club_id: string;
   id: string;
@@ -681,6 +691,19 @@ export interface PublicCoachLeave {
   decided_at: string | null;
   is_test: boolean;
   created_at: string;
+}
+
+export interface PublicCoachNote {
+  club_id: string;
+  id: string;
+  coach_id: string;
+  booking_id: string | null;
+  class_session_id: string | null;
+  customer_id: string | null;
+  body: string;
+  created_at: string;
+  updated_at: string;
+  is_test: boolean;
 }
 
 export interface PublicCoachPay {
@@ -1017,6 +1040,12 @@ export interface PublicOwnerNotice {
   created_at: string;
   seen_at: string | null;
   seen_by: string | null;
+}
+
+export interface PublicOwnerSetupDone {
+  club_id: string;
+  done_at: string;
+  done_by: string;
 }
 
 export interface PublicPackageExtension {
@@ -1377,8 +1406,10 @@ export interface Tables {
   'public.club_template_copy': PublicClubTemplateCopy;
   'public.club_tester': PublicClubTester;
   'public.coach': PublicCoach;
+  'public.coach_attendance': PublicCoachAttendance;
   'public.coach_availability_rule': PublicCoachAvailabilityRule;
   'public.coach_leave': PublicCoachLeave;
+  'public.coach_note': PublicCoachNote;
   'public.coach_pay': PublicCoachPay;
   'public.coach_payout': PublicCoachPayout;
   'public.coach_payout_adjustment': PublicCoachPayoutAdjustment;
@@ -1406,6 +1437,7 @@ export interface Tables {
   'public.orders': PublicOrders;
   'public.owner_flag': PublicOwnerFlag;
   'public.owner_notice': PublicOwnerNotice;
+  'public.owner_setup_done': PublicOwnerSetupDone;
   'public.package_extension': PublicPackageExtension;
   'public.package_product': PublicPackageProduct;
   'public.partner': PublicPartner;

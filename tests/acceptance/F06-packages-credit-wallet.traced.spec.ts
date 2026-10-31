@@ -55,3 +55,6 @@ traced("F06/R3-AC2", "Given a player buys a bundle with a booking (Flow H), when
 traced("F06/R3-AC4", "Given a purchase is confirmed, when it is saved, then the package gets its expir", [{ file: "packages/db/src/package-functions.test.ts", has: "creates the package with the product snapshot and credits" }, { file: "packages/db/src/apply-payment-package.test.ts", has: "grant, reserve, receipt, message" }]);
 traced("F06/R3-AC5", "Given a purchase by staff at the desk (G-A02c), when they take cash, then it fol", [{ file: "packages/db/src/take-cash.test.ts", has: "is allowed for a package order: the package is granted" }]);
 traced("F06/R3-AC9", "Given a payment arrives after a package order was cancelled (a package bought al", [{ file: "packages/db/src/apply-payment-edges.test.ts", has: "a cancelled package order does the same" }]);
+
+// Added by trace-lane.py: criteria the lane's tests name by ID.
+traced("F06/PKG-03-AC6", "Given an extension, when the reminder dates of the new expiry arrive, then remin", [{ file: "packages/db/src/package-reminders.test.ts", has: "PKG-03-AC6" }]);

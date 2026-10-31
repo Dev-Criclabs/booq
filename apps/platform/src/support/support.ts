@@ -22,12 +22,17 @@ export interface SupportSetup {
   features: Array<{ feature_key: string; enabled: boolean }>;
   /** Every switch that exists (app.feature_keys), with the payment option it needs: the club only has a row once one is set. */
   featureKeys: Array<{ feature_key: string; requires_payment_option: 'beam' | 'slip' | null }>;
+  /** The last result of each connection check (codes only) and when a recheck was asked for and has not been answered yet (D167). */
+  health: Array<{ check_key: string; status: 'ok' | 'failed'; reason: string | null; checked_at: string }>;
+  checkRequestedAt: string | null;
 }
 
 export type GetSetupResult = { ok: true; setup: SupportSetup } | { ok: false; code: 'not_found' };
 export type PutSetupResult =
   | { ok: true; changed: string[]; pendingOwnerContact?: string; connectionTest?: TestOutcome }
-  | { ok: false; code: 'not_found' | 'look_only' | 'invalid' | 'section_unavailable' | 'step_up_required' };
+  | { ok: false; code: 'not_found' | 'look_only' | 'invalid' | 'section_unavailable' | 'step_up_required' }
+  /** The probe on the typed values failed and the staff member did not choose to save anyway: nothing was written (D167). */
+  | { ok: false; code: 'connection_test_failed'; connectionTest: TestOutcome };
 export type TestConnectionResult = ({ ok: true } & TestOutcome) | { ok: false; code: 'not_found' | 'invalid' | 'section_unavailable' };
 
 // The club columns the support view shows: setup and the owner contact (decision D2). Not the
@@ -278,6 +283,8 @@ export function createSupportService(deps: { db: PlatformDb; connections?: Conne
         settings: (await q('select key, value from public.club_setting where club_id = $1 order by key')) as SupportSetup['settings'],
         features: (await q('select feature_key, enabled from public.club_feature where club_id = $1 order by feature_key')) as SupportSetup['features'],
         featureKeys: (await tx.query('select feature_key, requires_payment_option from app.feature_keys order by feature_key')).rows as SupportSetup['featureKeys'],
+        health: (await q('select check_key, status, reason, checked_at from platform.club_health where club_id = $1 order by check_key')) as SupportSetup['health'],
+        checkRequestedAt: (await tx.query<{ at: string | null }>('select requested_at as at from platform.connection_check_request where club_id = $1', [clubId])).rows[0]?.at ?? null,
       };
     });
     return result ? { ok: true, setup: result } : refused(staff, clubId, 'read');
@@ -303,6 +310,13 @@ export function createSupportService(deps: { db: PlatformDb; connections?: Conne
       if (gate === 'ok') {
         const prepared = await deps.connections.prepare(section as 'line' | 'payments', body);
         if (!prepared.ok) return { ok: false, code: 'invalid' };
+        const t = prepared.plan.test;
+        if (t && t.result === 'fail' && !prepared.plan.saveAnyway) {
+          await db.withPlatformTx({ staffId: staff.id, clubId, staffLabel: staff.display_name }, (tx) =>
+            p6(tx, 'club.connection_tested', clubId, { connection: section === 'line' ? 'line' : 'beam', result: 'fail', code: t.code, saved: false }),
+          );
+          return { ok: false, code: 'connection_test_failed', connectionTest: t };
+        }
         connection = { connections: deps.connections, plan: prepared.plan };
       }
     }
@@ -361,6 +375,20 @@ export function createSupportService(deps: { db: PlatformDb; connections?: Conne
     return r;
   }
 
+  /** "Test all again" (D167): asks the worker to recheck the stored LINE and Beam values. The console never opens a stored secret. */
+  async function requestConnectionCheck(staffId: string, clubId: string): Promise<{ ok: true; requestedAt: string } | { ok: false; code: 'not_found' }> {
+    const staff = validId(staffId) ? await loadStaff(staffId) : null;
+    if (!staff) return { ok: false, code: 'not_found' };
+    if (!validId(clubId)) return refused(staff, clubId, 'check');
+    try {
+      const at = await db.withPlatformTx({ staffId: staff.id, clubId, staffLabel: staff.display_name }, async (tx) => (await tx.query<{ at: Date }>('select platform.request_connection_check($1) as at', [clubId])).rows[0]!.at);
+      return { ok: true, requestedAt: new Date(at).toISOString() };
+    } catch (e) {
+      if (/connection_check:forbidden/.test((e as Error).message ?? '')) return refused(staff, clubId, 'check');
+      throw e;
+    }
+  }
+
   async function closeSession(staffId: string, clubId: string): Promise<{ ok: true } | { ok: false; code: 'not_found' }> {
     const staff = validId(staffId) && validId(clubId) ? await loadStaff(staffId) : null;
     if (!staff) return { ok: false, code: 'not_found' };
@@ -378,5 +406,5 @@ export function createSupportService(deps: { db: PlatformDb; connections?: Conne
     });
   }
 
-  return { getSetup, putSetup, closeSession, testConnection };
+  return { getSetup, putSetup, closeSession, testConnection, requestConnectionCheck };
 }

@@ -54,7 +54,7 @@ export const CLUB = { nameTh: 'ฮันเตอร์ เทนนิส ค�
  * function of the calls so far), `notice` GET /public/notice/{kind} as { privacy: { th: doc } }; every API call is recorded,
  * so a test can prove nothing was created.
  */
-export async function openPage(browser, { liff, club = CLUB, session = { status: 200, body: { state: 'active' } }, profile = { status: 200, body: { state: 'active' } }, notice = null, me = undefined, lang, width = 375, height = 812 } = {}) {
+export async function openPage(browser, { liff, club = CLUB, session = { status: 200, body: { state: 'active' } }, profile = { status: 200, body: { state: 'active' } }, notice = null, me = undefined, schedule = null, lang, width = 375, height = 812 } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, locale: 'th-TH' });
   if (lang) await context.addCookies([{ name: 'lang', value: lang, url: 'http://localhost' }]);
   const page = await context.newPage();
@@ -73,6 +73,15 @@ export async function openPage(browser, { liff, club = CLUB, session = { status:
     if (path.endsWith('/auth/profile') && req.method() === 'POST') {
       const r = typeof profile === 'function' ? profile(calls) : profile;
       return route.fulfill({ status: r.status, json: r.body });
+    }
+    if (schedule && /\/api\/c\/[^/]+\/(courts|schedule(\/days)?)$/.test(path)) {
+      // `schedule`: { courts, days, dayFor(date) } or { offline: true }.
+      if (schedule.offline) return route.abort('internetdisconnected');
+      if (path.endsWith('/courts')) return route.fulfill({ status: 200, json: schedule.courts });
+      if (path.endsWith('/schedule/days')) return route.fulfill({ status: 200, json: { days: schedule.days ?? [] } });
+      const date = new URL(req.url()).searchParams.get('date');
+      if (schedule.delayMs) await new Promise((r) => setTimeout(r, schedule.delayMs));
+      return route.fulfill({ status: 200, json: schedule.dayFor(date) });
     }
     if (path.endsWith('/me/profile')) {
       // `me`: undefined or null is a guest (401); otherwise { profile, groupFor(dob) } kept in memory.

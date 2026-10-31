@@ -36,6 +36,7 @@ export function ConsoleNav({ current }: { current: Section }) {
   return (
     <aside className="side">
       <div className="brand">
+        {/* i18n-ignore the product name */}
         <strong>BOOQ</strong>
         <span>{t('X-0001')}</span>
       </div>
