@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
 import { consoleSessionSweep } from './console-session-sweep';
+import { closeTestDatabase } from '../testing/teardown';
 
 // The sweep removes expired challenges, sessions past the absolute limit and empty login states, and nothing else.
 let tdb: TestDatabase;
@@ -17,7 +18,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   await worker.end();
-  await tdb.close();
+  await closeTestDatabase(tdb);
 });
 
 describe('console_session_sweep', () => {

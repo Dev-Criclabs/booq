@@ -63,7 +63,7 @@ export function LegalScreen() {
       <ConsoleNav current="legal" />
       <main className="page wide" data-testid="legal">
         <h1>{t('X-new.legal_title')}</h1>
-        <p>{t('X-new.legal_intro', { clubName: '{clubName}', legalName: '{legalName}' })}</p>
+        <p className="lede">{t('X-new.legal_intro', { clubName: '{clubName}', legalName: '{legalName}' })}</p>
         {state.kind === 'loading' ? <p aria-busy="true">…</p> : null}
         {state.kind === 'error' ? (
           <p role="alert" data-testid="load-error">
