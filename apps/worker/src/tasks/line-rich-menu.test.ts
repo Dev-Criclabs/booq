@@ -4,6 +4,7 @@ import { createDb, type Db } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
 import { loadMessageDictionary, type RichMenuApi } from '@booq/line/server';
 import { FakeClock, FakeLine } from '../../../../tests/fakes';
+import { closeTestDatabase } from '../testing/teardown';
 import { buildRichMenu } from './line-rich-menu';
 import { closeTestDatabase } from '../testing/teardown';
 
