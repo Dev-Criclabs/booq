@@ -2,7 +2,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import type { Failure, SupportSetup } from './club';
 import { t } from './i18n';
-import { COURT_TYPES, courtDraft, courtsPatch, featuresPatch, hoursDraft, hoursPatch, newCourt, saveSection, SPORTS, WEEKDAYS, type CourtDraft, type HoursDraft } from './support-edit';
+import { applicableSwitches, COURT_TYPES, courtDraft, courtsPatch, featuresPatch, hoursDraft, hoursPatch, newCourt, newLocation, saveSection, SPORTS, WEEKDAYS, type CourtDraft, type HoursDraft } from './support-edit';
 
 // The support view's editing (P3b), for a club that BOOQ may change: opening hours, courts and switches. Each part is saved on its
 // own and only what changed is sent. A court is switched off, not deleted, and a new court goes into the club's first location.
@@ -11,16 +11,18 @@ import { COURT_TYPES, courtDraft, courtsPatch, featuresPatch, hoursDraft, hoursP
 export function SupportEditor({ id, support, busy, onSaved, onError }: { id: string; support: SupportSetup; busy: boolean; onSaved(): Promise<void>; onError(key: string): void }) {
   const [hours, setHours] = useState<HoursDraft>(() => hoursDraft(support.hours));
   const [courts, setCourts] = useState<Record<string, CourtDraft>>(() => Object.fromEntries(support.resources.map((r) => [r.id, courtDraft(r)])));
-  const [features, setFeatures] = useState<Record<string, boolean>>(() => Object.fromEntries(support.features.map((f) => [f.feature_key, f.enabled])));
+  const switches = applicableSwitches(support);
+  const [features, setFeatures] = useState<Record<string, boolean>>(() => Object.fromEntries(switches.map((f) => [f.key, f.enabled])));
+  const [place, setPlace] = useState('');
   const [fresh, setFresh] = useState({ name: '', sport: 'tennis' });
-  const [problem, setProblem] = useState<{ part: 'hours' | 'courts' | 'new'; key: string; where?: string } | null>(null);
+  const [problem, setProblem] = useState<{ part: 'hours' | 'courts' | 'new' | 'place' | 'features'; key: string; where?: string } | null>(null);
   const [saving, setSaving] = useState(false);
 
   // A reload after a save brings new data; the drafts start from it.
   useEffect(() => {
     setHours(hoursDraft(support.hours));
     setCourts(Object.fromEntries(support.resources.map((r) => [r.id, courtDraft(r)])));
-    setFeatures(Object.fromEntries(support.features.map((f) => [f.feature_key, f.enabled])));
+    setFeatures(Object.fromEntries(applicableSwitches(support).map((f) => [f.key, f.enabled])));
   }, [support]);
 
   async function send(section: 'resources-hours' | 'features', body: unknown) {
@@ -46,6 +48,13 @@ export function SupportEditor({ id, support, busy, onSaved, onError }: { id: str
     if (p.resources.length === 0) return setProblem({ part: 'courts', key: 'X-new.support_court_none_changed' });
     void send('resources-hours', { resources: p.resources });
   }
+  function onAddLocation(e: FormEvent) {
+    e.preventDefault();
+    const l = newLocation(place);
+    if (!l.ok) return setProblem({ part: 'place', key: l.key });
+    setPlace('');
+    void send('resources-hours', { locations: [l.location] });
+  }
   function onAddCourt(e: FormEvent) {
     e.preventDefault();
     const c = newCourt(support.locations, fresh);
@@ -55,13 +64,13 @@ export function SupportEditor({ id, support, busy, onSaved, onError }: { id: str
   }
   function onSaveFeatures(e: FormEvent) {
     e.preventDefault();
-    const changed = featuresPatch(Object.fromEntries(support.features.map((f) => [f.feature_key, f.enabled])), features);
-    if (Object.keys(changed).length === 0) return setProblem({ part: 'courts', key: 'X-new.support_court_none_changed' });
+    const changed = featuresPatch(Object.fromEntries(applicableSwitches(support).map((f) => [f.key, f.enabled])), features);
+    if (Object.keys(changed).length === 0) return setProblem({ part: 'features', key: 'X-new.support_court_none_changed' });
     void send('features', { features: changed });
   }
 
   const off = busy || saving;
-  const say = (part: 'hours' | 'courts' | 'new') => (problem?.part === part ? <p role="alert" className="error" data-testid={`support-problem-${part}`}>{t(problem.key)}{problem.where ? ` (${problem.where})` : ''}</p> : null);
+  const say = (part: 'hours' | 'courts' | 'new' | 'place' | 'features') => (problem?.part === part ? <p role="alert" className="error" data-testid={`support-problem-${part}`}>{t(problem.key)}{problem.where ? ` (${problem.where})` : ''}</p> : null);
 
   return (
     <div data-testid="support-editor">
@@ -118,6 +127,13 @@ export function SupportEditor({ id, support, busy, onSaved, onError }: { id: str
         {support.resources.length > 0 ? <button type="submit" className="btn" disabled={off} data-testid="save-courts">{t('X-new.support_save_courts')}</button> : null}
       </form>
 
+      <form onSubmit={onAddLocation} className="form" data-testid="add-location-form" noValidate>
+        <p className="sub">{support.locations.length === 0 ? t('X-new.support_court_no_location') : support.locations.map((l) => l.name).join(' · ')}</p>
+        <div className="field"><label htmlFor="new-location">{t('X-0079')}</label><input id="new-location" value={place} onChange={(e) => setPlace(e.target.value)} /></div>
+        {say('place')}
+        <button type="submit" className="btn secondary" disabled={off} data-testid="add-location">{t('X-0081')}</button>
+      </form>
+
       <form onSubmit={onAddCourt} className="form" data-testid="add-court-form" noValidate>
         <div className="field"><label htmlFor="new-court-name">{t('X-new.support_court_name')}</label><input id="new-court-name" value={fresh.name} onChange={(e) => setFresh({ ...fresh, name: e.target.value })} /></div>
         <div className="field">
@@ -132,11 +148,12 @@ export function SupportEditor({ id, support, busy, onSaved, onError }: { id: str
 
       <h3>{t('X-new.support_features')}</h3>
       <form onSubmit={onSaveFeatures} className="form" data-testid="features-form" noValidate>
-        {support.features.length === 0 ? <p>{t('X-new.support_none')}</p> : null}
-        {support.features.map((f) => (
-          <label key={f.feature_key} className="check"><input type="checkbox" checked={features[f.feature_key] ?? false} onChange={(e) => setFeatures({ ...features, [f.feature_key]: e.target.checked })} data-testid={`feature-${f.feature_key}`} /> {f.feature_key}</label>
+        {switches.length === 0 ? <p>{t('X-new.support_none')}</p> : null}
+        {switches.map((f) => (
+          <label key={f.key} className="check"><input type="checkbox" checked={features[f.key] ?? false} onChange={(e) => setFeatures({ ...features, [f.key]: e.target.checked })} data-testid={`feature-${f.key}`} /> {t(`X-new.feature_${f.key}`)}</label>
         ))}
-        {support.features.length > 0 ? <button type="submit" className="btn" disabled={off} data-testid="save-features">{t('X-new.support_save_features')}</button> : null}
+        {say('features')}
+        {switches.length > 0 ? <button type="submit" className="btn" disabled={off} data-testid="save-features">{t('X-new.support_save_features')}</button> : null}
       </form>
 
       <h3>{t('X-new.support_settings')}</h3>

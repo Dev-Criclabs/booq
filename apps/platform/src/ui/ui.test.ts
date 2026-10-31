@@ -7,7 +7,7 @@ import { BASICS_FIELDS, changeStatus, errorKey as clubErrorKey, issueWebhookToke
 import { loadLaunch, MARK_KEY, openChecks, recordResult } from './launch';
 import { isKnown, KNOWN, labelKey, loadConfig, parse, saveValue, show } from './config';
 import { check, emptyTexts, fromCurrent, loadLegal, publish, when, kindKey, languageKey, partKey, KINDS, LANGUAGES, PARTS } from './legal';
-import { courtDraft, courtsPatch, featuresPatch, hoursDraft, hoursPatch, newCourt, saveSection, trimSeconds, WEEKDAYS } from './support-edit';
+import { applicableSwitches, courtDraft, courtsPatch, featuresPatch, hoursDraft, hoursPatch, newCourt, newLocation, saveSection, trimSeconds, WEEKDAYS } from './support-edit';
 import { counts, FILTER_KEY, loadClubs, STATUS_KEY, visible, type ClubRow } from './clubs';
 import { safeNext, signInWithCode, signInWithPassword, stepUp } from './auth';
 import { deactivate, errorKey, invite, loadTeam, resetFactor } from './staff';
@@ -352,11 +352,22 @@ describe('support view editing', () => {
   it('courts: only the changed fields of the changed courts are sent, an empty players box clears it', () => {
     const d = courtDraft(court);
     expect(d).toEqual({ name: 'Court 1', sport: 'tennis', type: 'outdoor', lights: true, max_players: '4', active: true });
-    expect(courtDraft({ ...court, type: null, max_players: null, lights: undefined })).toMatchObject({ type: '', max_players: '', lights: false });
+    expect(courtDraft({ id: 'r9', name: 'Court 9', sport: 'tennis', type: null, max_players: null, active: true })).toMatchObject({ type: '', max_players: '', lights: false });
     const base = { r1: d, r2: { ...d, name: 'Court 2' } };
     expect(courtsPatch(base, base)).toEqual({ ok: true, resources: [] });
     expect(courtsPatch(base, { ...base, r1: { ...d, name: ' Centre ', active: false, max_players: '' } })).toEqual({ ok: true, resources: [{ id: 'r1', name: 'Centre', active: false, max_players: null }] });
     expect(courtsPatch(base, { ...base, r2: { ...base.r2, type: '', sport: 'padel', lights: false } })).toEqual({ ok: true, resources: [{ id: 'r2', sport: 'padel', type: null, lights: false }] });
+  });
+  it('switches: the catalogue is filtered by payment option, an absent row is off', () => {
+    const f = [{ feature_key: 'a', enabled: true }];
+    const cat = [{ feature_key: 'a', requires_payment_option: null }, { feature_key: 'b', requires_payment_option: null }, { feature_key: 's', requires_payment_option: 'slip' }];
+    const sup = (option: string | null) => ({ club: { payment_option: option }, features: f, featureKeys: cat }) as never;
+    expect(applicableSwitches(sup('beam'))).toEqual([{ key: 'a', enabled: true }, { key: 'b', enabled: false }]);
+    expect(applicableSwitches(sup('slip')).map((k) => k.key)).toEqual(['a', 'b', 's']);
+  });
+  it('location: a name is needed and at most 100 characters', () => {
+    expect(newLocation(' Main ')).toEqual({ ok: true, location: { name: 'Main' } });
+    for (const bad of ['', '  ', 'x'.repeat(101)]) expect(newLocation(bad)).toEqual({ ok: false, key: 'X-new.support_location_name' });
   });
   it('courts: a name cannot be emptied and players must be a whole number above zero', () => {
     const d = courtDraft(court);

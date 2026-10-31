@@ -67,8 +67,20 @@ export function courtsPatch(was: Record<string, CourtDraft>, now: Record<string,
   return { ok: true, resources };
 }
 
+/** The switches that apply to this club: those every club has, and those that need the payment option it chose. A switch with no row is off. */
+export function applicableSwitches(support: SupportSetup): Array<{ key: string; enabled: boolean }> {
+  const option = support.club['payment_option'] ?? null;
+  const have = new Map(support.features.map((f) => [f.feature_key, f.enabled]));
+  const catalogue = support.featureKeys ?? support.features.map((f) => ({ feature_key: f.feature_key, requires_payment_option: null }));
+  return catalogue.filter((k) => k.requires_payment_option === null || k.requires_payment_option === option).map((k) => ({ key: k.feature_key, enabled: have.get(k.feature_key) ?? false }));
+}
 export const featuresPatch = (was: Record<string, boolean>, now: Record<string, boolean>): Record<string, boolean> =>
   Object.fromEntries(Object.entries(now).filter(([k, v]) => was[k] !== undefined && was[k] !== v));
+
+export function newLocation(name: string): { ok: true; location: { name: string } } | { ok: false; key: 'X-new.support_location_name' } {
+  const n = name.trim();
+  return n === '' || n.length > 100 ? { ok: false, key: 'X-new.support_location_name' } : { ok: true, location: { name: n } };
+}
 
 const down: Failure = { kind: 'error', key: 'X-new.club_unavailable' };
 export async function saveSection(f: Fetch, id: string, section: 'resources-hours' | 'features', body: unknown): Promise<{ kind: 'saved' } | Failure> {

@@ -25,7 +25,7 @@ const DETAIL = {
   },
   counts: { bookingsConfirmed30d: 7, lineMessagesSent30d: 120 },
 };
-const SUPPORT = (over = {}) => ({ setup: { mode: 'edit', club: club(), hours: [{ weekday: 1, open: '06:00', close: '22:00' }], locations: [], resources: [{ id: 'r1', name: 'Court 1', sport: 'tennis', active: true }], settings: [], features: [{ feature_key: 'coaches', enabled: true }], ...over } });
+const SUPPORT = (over = {}) => ({ setup: { mode: 'edit', club: club(), hours: [{ weekday: 1, open: '06:00', close: '22:00' }], locations: [], resources: [{ id: 'r1', name: 'Court 1', sport: 'tennis', active: true }], settings: [], features: [{ feature_key: 'coach_add_at_checkout', enabled: true }], featureKeys: [{ feature_key: 'coach_add_at_checkout', requires_payment_option: null }, { feature_key: 'slip_only_thing', requires_payment_option: 'slip' }], ...over } });
 
 /** A console serving this club to an admin. `over` replaces any answer ("METHOD /path" -> answer or function). */
 const api = ({ role = 'platform_admin', support = SUPPORT(), invite = { status: 'none' }, over = {} } = {}) => (method, path, body) => {
@@ -56,7 +56,7 @@ describe('the club page', () => {
     assert.equal(await page.locator('#h-1-open').inputValue(), '06:00');
     assert.equal(await page.locator('#h-1-close').inputValue(), '22:00');
     assert.equal(await page.locator('#c-r1-name').inputValue(), 'Court 1');
-    assert.equal(await page.getByTestId('feature-coaches').isChecked(), true);
+    assert.equal(await page.getByTestId('feature-coach_add_at_checkout').isChecked(), true);
     await page.screenshot({ path: join(SHOTS, 'club.png'), fullPage: true });
     await context.close();
   });
@@ -71,7 +71,7 @@ describe('the club page', () => {
     assert.equal(await page.getByTestId('support-editor').count(), 0, 'no editing in read-only mode');
     assert.match(await page.getByTestId('hours').innerText(), /Monday 06:00–22:00/);
     assert.match(await page.getByTestId('courts').innerText(), /Court 1 · tennis/);
-    assert.match(await page.getByTestId('features').innerText(), /coaches · On/);
+    assert.match(await page.getByTestId('features').innerText(), /coach_add_at_checkout · On/);
     assert.equal(await page.locator('#b-name_en').getAttribute('readonly'), '');
     assert.equal(await page.getByTestId('webhook-line').isDisabled(), true);
     await context.close();
@@ -291,15 +291,30 @@ describe('the club page', () => {
     await none.context.close();
   });
 
+  it('adding a location sends just its name; an empty name is refused before sending', async () => {
+    const over = { [`PUT /clubs/${ID}/support/setup/resources-hours`]: { status: 200, body: { changed: ['locations'] } } };
+    const { page, context, calls } = await openPage(browser, api({ over }), { width: 1024, height: 900 });
+    await page.goto(`${app.base}/clubs/${ID}`);
+    await page.getByTestId('add-location-form').waitFor();
+    await page.getByTestId('add-location').click();
+    assert.equal(calls.filter((c) => c.method === 'PUT').length, 0);
+    await page.locator('#new-location').fill(' Main ');
+    await page.getByTestId('add-location').click();
+    await page.getByTestId('notice').waitFor();
+    assert.deepEqual(calls.find((c) => c.method === 'PUT').body, { locations: [{ name: 'Main' }] });
+    await context.close();
+  });
+
   it('switches: only a changed one is sent; club settings say they cannot be changed yet', async () => {
-    const over = { [`PUT /clubs/${ID}/support/setup/features`]: { status: 200, body: { changed: ['coaches'] } } };
+    const over = { [`PUT /clubs/${ID}/support/setup/features`]: { status: 200, body: { changed: ['coach_add_at_checkout'] } } };
     const { page, context, calls } = await openPage(browser, api({ over }), { width: 1024, height: 900 });
     await page.goto(`${app.base}/clubs/${ID}`);
     await page.getByTestId('features-form').waitFor();
-    await page.getByTestId('feature-coaches').uncheck();
+    assert.equal(await page.getByTestId('feature-slip_only_thing').count(), 0);
+    await page.getByTestId('feature-coach_add_at_checkout').uncheck();
     await page.getByTestId('save-features').click();
     await page.getByTestId('notice').waitFor();
-    assert.deepEqual(calls.find((c) => c.method === 'PUT').body, { features: { coaches: false } });
+    assert.deepEqual(calls.find((c) => c.method === 'PUT').body, { features: { coach_add_at_checkout: false } });
     assert.match(await page.getByTestId('support-editor').innerText(), /Club settings cannot be changed here yet\./);
     await context.close();
   });

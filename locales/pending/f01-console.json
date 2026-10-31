@@ -236,6 +236,10 @@
     "X-new.support_court_none_changed": "Nothing was changed.",
     "X-new.support_save_features": "Save switches",
     "X-new.support_settings_note": "Club settings cannot be changed here yet.",
-    "X-new.support_saved": "Saved."
+    "X-new.support_saved": "Saved.",
+    "X-new.support_location_name": "Give the location a name.",
+    "X-new.feature_slip_checking": "Slip checking",
+    "X-new.feature_backup_mode": "Backup mode",
+    "X-new.feature_coach_add_at_checkout": "Coach added at checkout"
   }
 }
