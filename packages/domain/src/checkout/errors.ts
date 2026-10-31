@@ -28,6 +28,7 @@ export const CHECKOUT_TEXT_KEYS = {
   payment_unavailable: 'P-new.payment_unavailable',
   order_not_found: 'P-new.order_not_found',
   spot_gone: 'P-new.spot_gone',
+  session_not_available: 'P-new.session_not_available',
   customer_not_found: 'A-new.customer_not_found',
 } as const;
 

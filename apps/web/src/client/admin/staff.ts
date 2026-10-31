@@ -45,6 +45,8 @@ export function inviteBody(choice: 'coach' | readonly ('front_desk' | 'accountan
   return choice.length > 0 ? { kind: 'staff', roles: [...choice] } : null;
 }
 export const createInvite = (slug: string, body: ReturnType<typeof inviteBody>, f: Fetch) => call<{ id: string; token: string }>(slug, '/staff/invites', f, { method: 'POST', body });
+/** Ends a waiting invite now: it leaves the list and can no longer be used (the server audits it). */
+export const cancelInvite = (slug: string, id: string, f: Fetch) => call<{ ok: true }>(slug, `/staff/invites/${encodeURIComponent(id)}/cancel`, f, { method: 'POST', body: {} });
 /** `/c/{slug}/join?invite={token}` (F02 design): the address the invited person opens; the token is shown once. */
 export const inviteLink = (origin: string, slug: string, token: string): string => `${origin}/c/${slug}/join?invite=${encodeURIComponent(token)}`;
 

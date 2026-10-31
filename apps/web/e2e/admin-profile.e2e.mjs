@@ -23,7 +23,8 @@ const P = `/staff/customers/${ID}`;
 const profile = (over = {}) => ({ customerId: ID, displayName: 'Ploy', fullName: 'Ploy Srisuk', phone: '+66812345678', language: 'en', level: 'beginner', dateOfBirth: '1994-03-14', claimState: null, signedIn: true, active: true, tags: ['Partner gym'], createdAt: '2026-12-01T03:00:00Z', ...over });
 const booking = (n, over = {}) => ({ bookingId: `b${n}`, orderId: `o${n}`, type: 'court', courtName: '1', coachName: null, classNameTh: null, classNameEn: null, startAt: `2025-01-0${n}T10:00:00Z`, endAt: `2025-01-0${n}T11:00:00Z`, status: 'confirmed', source: 'online', cancelKind: null, cancelOutcome: null, ...over });
 const VALUE = { packages: [{ packageId: 'p1', nameTh: 'แพ็กเกจ 10 ชั่วโมง', nameEn: '10 hour bundle', creditType: 'court_hour', creditsTotal: 10, creditsLeft: 7, status: 'active', purchasedAt: '2027-01-09T03:00:00Z', expiresAt: '2027-04-09T03:00:00Z' }], wallet: { balanceSatang: 50000, ledger: [{ at: '2027-01-10T03:00:00Z', change: 50000, reason: 'cancel', note: null }] }, creditLedger: [] };
-const ORDERS = [{ orderId: 'o1', status: 'paid', source: 'online', kind: 'sale', totalSatang: 50000, moneySatang: 50000, creditValueSatang: 0, walletSatang: 0, createdAt: '2027-01-01T03:00:00Z', receipts: ['HTC-2027-000001'] }];
+const ORDERS = [{ orderId: 'o1', status: 'paid', source: 'online', kind: 'sale', totalSatang: 50000, moneySatang: 50000, creditValueSatang: 0, walletSatang: 0, createdAt: '2027-01-01T03:00:00Z', receipts: ['HTC-2027-000001'], receiptIds: ['r1'] }];
+const RECEIPTS = [{ receiptId: 'r1', number: 'HTC-2027-000001', kind: 'sale', status: 'issued', issuedAt: '2027-01-01T03:00:00Z', totalSatang: 50000, isTest: false }, { receiptId: 'r2', number: 'HTC-2027-000002', kind: 'wallet_credit', status: 'void', issuedAt: '2027-01-02T03:00:00Z', totalSatang: 10000, isTest: true }];
 
 function server(state = {}) {
   const s = { profile: profile(), bookings: [booking(1), booking(2, { status: 'cancelled' }), booking(3, { type: 'class_seat', classNameEn: 'Adult beginner clinic', classNameTh: 'คลินิกมือใหม่ผู้ใหญ่', courtName: '2' })], value: VALUE, notes: [], orders: ORDERS, ...state };
@@ -31,6 +32,7 @@ function server(state = {}) {
     if (path === P && method === 'GET') return { status: 200, body: s.profile };
     if (path === `${P}/bookings`) return { status: 200, body: s.bookings };
     if (path === `${P}/orders`) return { status: 200, body: s.orders };
+    if (path === `${P}/receipts`) return { status: 200, body: s.receipts ?? RECEIPTS };
     if (path === `${P}/credits`) return { status: 200, body: s.value };
     if (path === `${P}/notes` && method === 'GET') return { status: 200, body: s.notes };
     if (path === `${P}/notes` && method === 'POST') { s.notes = [{ noteId: 'n1', note: body.note, by: 'Front desk', at: '2027-01-12T03:00:00Z' }, ...s.notes]; return { status: 200, body: { noteId: 'n1' } }; }
@@ -62,7 +64,7 @@ describe('A6 Customer profile', () => {
     assert.match(recent, /Adult beginner clinic/);
     assert.match(recent, /Cancelled/);
     assert.equal(await page.getByTestId('prof-back').getAttribute('href'), '/c/hunter/admin/customers');
-    assert.equal(await page.getByRole('tab').count(), 4);
+    assert.equal(await page.getByRole('tab').count(), 5);
     await page.screenshot({ path: join(SHOTS, 'admin-profile.png'), fullPage: true });
     await context.close();
   });
@@ -81,6 +83,22 @@ describe('A6 Customer profile', () => {
     await page.getByTestId('tab-credits').click();
     assert.equal(await page.getByTestId('wallet-balance').innerText(), '฿500');
     assert.match(await page.getByTestId('packages').innerText(), /10 hour bundle · 7 of 10 left/);
+    await context.close();
+  });
+
+  it('the Receipts tab lists the customer\'s receipts with status and a PDF link in the language shown; an order\'s receipt number links to its PDF', async () => {
+    const { page, context } = await open(server());
+    await page.goto(`${app.base}${url}`);
+    await page.getByTestId('tab-receipts').click();
+    await page.getByTestId('receipts-table').waitFor();
+    const t = await page.getByTestId('receipts-table').innerText();
+    assert.match(t, /HTC-2027-000002/);
+    assert.match(t, /Wallet top up/);
+    assert.match(t, /Void/);
+    assert.match(t, /Test/);
+    assert.equal(await page.getByTestId('receipt-pdf-r1').getAttribute('href'), '/api/c/hunter/staff/receipts/r1/pdf?lang=en');
+    await page.getByTestId('tab-purchases').click();
+    assert.equal(await page.getByTestId('order-receipt-HTC-2027-000001').getAttribute('href'), '/api/c/hunter/staff/receipts/r1/pdf?lang=en');
     await context.close();
   });
 

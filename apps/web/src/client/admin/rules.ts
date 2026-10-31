@@ -53,9 +53,25 @@ export function draftOf(row: SettingRow): string {
   if (row.unset || row.value === null || row.value === undefined) return '';
   const v = row.value;
   if (Array.isArray(v)) return v.join(', ');
-  if (typeof v === 'object') return `${String((v as { kind?: unknown }).kind)} ${String((v as { value?: unknown }).value)}`;
+  if (typeof v === 'object') {
+    // The server holds a percent as basis points and a fixed amount as satang; the owner reads percent and baht.
+    const o = v as { kind?: unknown; value?: unknown };
+    return typeof o.value === 'number' ? `${String(o.kind)} ${hundredths(o.value)}` : `${String(o.kind)} ${String(o.value)}`;
+  }
   return String(v);
 }
+
+/** 1000 -> "10", 1250 -> "12.5", 50 -> "0.5": hundredths as typed, with no floating point. */
+export const hundredths = (n: number): string => {
+  const whole = Math.floor(n / 100);
+  const rest = n % 100;
+  return rest === 0 ? String(whole) : `${whole}.${String(rest).padStart(2, '0').replace(/0$/, '')}`;
+};
+/** "10" or "12.5" to hundredths (1000, 1250); null when it is not a number with at most two decimals. */
+export const toHundredths = (text: string): number | null => {
+  const m = /^(\d{1,7})(?:\.(\d{1,2}))?$/.exec(text.trim());
+  return m ? Number(m[1]) * 100 + (m[2] ? Number(m[2].padEnd(2, '0')) : 0) : null;
+};
 
 export type Parsed = { ok: true; value: unknown } | { ok: false; key: string };
 export function parseDraft(row: SettingRow, draft: string): Parsed {
@@ -79,8 +95,11 @@ export function parseDraft(row: SettingRow, draft: string): Parsed {
     }
     case 'discount': {
       const [kind, amount, ...rest] = text.split(/\s+/);
-      if (rest.length > 0 || !(DISCOUNT_KINDS as readonly string[]).includes(kind ?? '') || !/^\d+$/.test(amount ?? '')) return { ok: false, key: 'A-new.set_err_discount' };
-      return { ok: true, value: { kind, value: Number(amount) } };
+      const h = toHundredths(amount ?? '');
+      if (rest.length > 0 || !(DISCOUNT_KINDS as readonly string[]).includes(kind ?? '') || h === null) return { ok: false, key: 'A-new.set_err_discount' };
+      // A percent is held as basis points (10% = 1000) and a fixed amount as satang (฿50 = 5000), at most 100%.
+      if (kind === 'percent' && h > 10000) return { ok: false, key: 'A-new.set_err_discount' };
+      return { ok: true, value: { kind, value: h } };
     }
   }
 }
