@@ -63,3 +63,7 @@ traced("F04/R7-AC3", "Given an order, when it is confirmed, then one receipt is 
 traced("F04/R7-AC6", "Given an order is released or cancelled before payment, when the hold ends, then", [{ file: "packages/db/src/order-functions.test.ts", has: "R7-AC6" }, { file: "packages/domain/src/checkout/pay.test.ts", has: "R7-AC6" }]);
 traced("F04/R8-AC1", "Given a slot is taken between selection and Pay, when the player taps Pay, then ", [{ file: "packages/domain/src/checkout/pay.test.ts", has: "R8-AC1" }, { file: "apps/web/src/api/checkout/pay.routes.test.ts", has: "R8-AC1" }]);
 traced("F04/R8-AC4", "Given a guest reaches checkout, when they have not signed in, then sign in runs ", [{ file: "apps/web/src/api/checkout/pay.routes.test.ts", has: "R8-AC4" }, { file: "apps/web/src/api/checkout/routes.test.ts", has: "R8-AC4" }]);
+
+// Added by trace-lane.py: criteria the lane's tests name by ID.
+traced("F04/R1-AC7", "Given a player under 18, when they buy an Adult item, then it is allowed (D62, H", [{ file: "packages/domain/src/checkout/pricing.test.ts", has: "R1-AC7" }]);
+traced("F04/R3-AC7", "Given the add-on name for balls, when it is shown anywhere, then the English is ", [{ file: "packages/db/src/price-template.test.ts", has: "R3-AC7" }]);

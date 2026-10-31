@@ -23,6 +23,7 @@ Questions already open elsewhere are not repeated: `canvas-gaps.md` C1 (correcte
 | # | Pri | Req | Question | Waits |
 |---|---|---|---|---|
 | Q-16 | B | CANCEL-03 | D48 answers a closure over a held slot (the hold is cancelled and the player told; a later payment follows PAY-03) and D118 covers repeat closures and expired packages. **Still open:** a closure over a group session and over a booking already played | CONC-13 |
+| Q-36 | B | CANCEL-04-AC9 | AC9 says the no show timing is read from a club setting (empty until the owner sets it). D118 says staff mark a no show only after the slot ends and nothing else; the lane's test confirms no setting is read. Is AC9 removed? | CANCEL-04-AC9 test |
 | Q-18 | B | PROMO-02 | "Friend's first paid booking is played": does a booking paid with credits or wallet count as paid? If the friend's first booking is cancelled or a no show, does the reward wait for the next one? One reward per referred friend? | PROMO-02 tests |
 
 ## Payments, receipts (F05, F13)

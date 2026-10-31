@@ -4,11 +4,6 @@
 // and keep the ID at the start of the title (tests/acceptance/coverage.spec.ts checks every criterion appears).
 import { describe, test } from 'vitest';
 
-describe("F11 ADMIN-01", () => {
-  // Given a front desk user, when they open the sidebar, then Reports, Pricing, Settings and Staff are not listed and a direct request to them is refused; given a person who is Front desk and Accountant, then the sidebar lists the pages of both
-  test.todo("F11/ADMIN-01 Given a front desk user, when they open the sidebar, then Reports, Pricing, Settings and Staff are not ...");
-});
-
 describe("F11 ADMIN-02", () => {
   // Given a club in Draft, when the owner finishes steps 6 to 8 and taps Tell BOOQ I'm done, then BOOQ is notified and the page stays until Go live
   test.todo("F11/ADMIN-02 Given a club in Draft, when the owner finishes steps 6 to 8 and taps Tell BOOQ I'm done, then BOOQ is ...");
@@ -19,34 +14,9 @@ describe("F11 ADMIN-03", () => {
   test.todo("F11/ADMIN-03 Given a booking, when staff drag it to a slot where the court is held, then the move is refused and ...");
 });
 
-describe("F11 ADMIN-04", () => {
-  // Given a booking whose slot ended, when staff mark no show without a reason, then it is refused; with a reason it is saved and audited
-  test.todo("F11/ADMIN-04 Given a booking whose slot ended, when staff mark no show without a reason, then it is refused; with a ...");
-});
-
-describe("F11 ADMIN-05", () => {
-  // Given Hunter on Beam, when the owner opens the menu, then A4 is not listed and its route answers 404
-  test.todo("F11/ADMIN-05 Given Hunter on Beam, when the owner opens the menu, then A4 is not listed and its route answers 404");
-});
-
 describe("F11 ADMIN-06", () => {
   // Given a front desk user, when they press Export CSV, then the file holds only their club's customers and an audit entry is written
   test.todo("F11/ADMIN-06 Given a front desk user, when they press Export CSV, then the file holds only their club's customers and ...");
-});
-
-describe("F11 ADMIN-07", () => {
-  // Given staff adjust a wallet without a reason, when they save, then it is refused; with a reason a ledger row is added
-  test.todo("F11/ADMIN-07 Given staff adjust a wallet without a reason, when they save, then it is refused; with a reason a ledger ...");
-});
-
-describe("F11 ADMIN-08", () => {
-  // Given a pending leave request, when the owner approves it, then affected sessions are flagged for a substitute and the coach is told
-  test.todo("F11/ADMIN-08 Given a pending leave request, when the owner approves it, then affected sessions are flagged for a ...");
-});
-
-describe("F11 ADMIN-09", () => {
-  // Given a session below its minimum, when the owner cancels it, then every player gets full credit back and a LINE message
-  test.todo("F11/ADMIN-09 Given a session below its minimum, when the owner cancels it, then every player gets full credit back and ...");
 });
 
 describe("F11 ADMIN-10", () => {
@@ -62,29 +32,4 @@ describe("F11 ADMIN-11", () => {
 describe("F11 ADMIN-12", () => {
   // Given a code, when it is saved with a stacking choice, then the choice is audited
   test.todo("F11/ADMIN-12 Given a code, when it is saved with a stacking choice, then the choice is audited");
-});
-
-describe("F11 ADMIN-13", () => {
-  // Given a closure over booked slots, when staff confirm, then each booking is cancelled with full value back and the slots vanish from booking
-  test.todo("F11/ADMIN-13 Given a closure over booked slots, when staff confirm, then each booking is cancelled with full value back ...");
-});
-
-describe("F11 ADMIN-14", () => {
-  // Given an accountant, when they open Reports, then they can read and export but not change a booking, price or balance, and no phone number or date of birth shows
-  test.todo("F11/ADMIN-14 Given an accountant, when they open Reports, then they can read and export but not change a booking, price ...");
-});
-
-describe("F11 ADMIN-15", () => {
-  // Given a receipt, when an accountant tries to void it, then it is refused; an owner voids with a reason and the number is kept
-  test.todo("F11/ADMIN-15 Given a receipt, when an accountant tries to void it, then it is refused; an owner voids with a reason and ...");
-});
-
-describe("F11 ADMIN-16", () => {
-  // Given the owner turns on Allow BOOQ to make changes, when 24 hours pass, then it turns off by itself and the change is audited
-  test.todo("F11/ADMIN-16 Given the owner turns on Allow BOOQ to make changes, when 24 hours pass, then it turns off by itself and ...");
-});
-
-describe("F11 ADMIN-17", () => {
-  // Given the owner assigns Coach and Front desk to one person, when they sign in, then both surfaces open; no one can edit or delete a log entry
-  test.todo("F11/ADMIN-17 Given the owner assigns Coach and Front desk to one person, when they sign in, then both surfaces open; no ...");
 });

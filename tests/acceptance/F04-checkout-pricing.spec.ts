@@ -18,7 +18,7 @@ describe("F04 R1", () => {
   // Given a Student item (a package, class or price sold only to under 18) and a player who is 18 or older, when they try to buy it, then the server refuses (PRD "Student packages can only be bought by customers under 18").
   test.todo("F04/R1-AC6 Given a Student item (a package, class or price sold only to under 18) and a player who is 18 or older, ...");
   // Given a player under 18, when they buy an Adult item, then it is allowed (D62, HO PROMO-01). Only Student items are closed to players 18 or older (R1-AC6).
-  test.todo("F04/R1-AC7 Given a player under 18, when they buy an Adult item, then it is allowed (D62, HO PROMO-01). Only Student ...");
+  // F04/R1-AC7: proven by a real or traced test in another file of this folder
 });
 
 describe("F04 R2", () => {
@@ -56,7 +56,7 @@ describe("F04 R3", () => {
   // Given a booking is cancelled 12 hours or more ahead, when F09 returns value, then its add-ons return with the booking (D21); F04 records add-on lines against the booking they belong to so this works.
   // F04/R3-AC6: proven by a real or traced test in another file of this folder
   // Given the add-on name for balls, when it is shown anywhere, then the English is "Balls (Set of 3 balls)" and the Thai is "ลูกเทนนิส (ชุด 3 ลูก)" on every screen and receipt.
-  test.todo("F04/R3-AC7 Given the add-on name for balls, when it is shown anywhere, then the English is \"Balls (Set of 3 balls)\" ...");
+  // F04/R3-AC7: proven by a real or traced test in another file of this folder
   // Given the owner edits add-ons in A9b, when they save, then it is audited (PLAT-04) and the change applies to new orders only.
   test.todo("F04/R3-AC8 Given the owner edits add-ons in A9b, when they save, then it is audited (PLAT-04) and the change applies ...");
 });
