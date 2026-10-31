@@ -41,6 +41,20 @@ beforeEach(async () => {
       c.release();
     }
   }
+  const C = '66666666-6666-4666-8666-666666666661';
+  {
+    const c = await tdb.pool.connect();
+    try {
+      await c.query('begin');
+      await c.query(`insert into public.app_user (club_id, id, line_user_id, full_name) values ($1,$2,'LC1','Coach One')`, [A, C]);
+      await c.query(`insert into public.app_user_role (club_id, user_id, role) values ($1,$2,'player'), ($1,$2,'coach')`, [A, C]);
+      await c.query(`insert into public.coach (club_id, id) values ($1,$2)`, [A, C]);
+      await c.query(`insert into public.coach_pay (club_id, coach_id, monthly_base_satang, solo_pay_kind, solo_pay_value) values ($1,$2,1000000,'fixed',30000)`, [A, C]);
+      await c.query('commit');
+    } finally {
+      c.release();
+    }
+  }
   // Two cash payments in club A and one in club B, all on 20 December 2026.
   for (const [club, cents] of [[A, 50000], [A, 30000], [B, 99000]] as const) {
     const c = await tdb.pool.connect();
@@ -66,10 +80,14 @@ describe('route table', () => {
     expect(routes.map((r) => `${r.def.method} ${r.def.path} ${r.def.permission}`).sort()).toEqual([
       'GET /staff/daily-close daily-close.run',
       'GET /staff/daily-close/csv daily-close.run',
+      'GET /staff/coach-pay payout.read',
+      'GET /staff/coach-pay/csv payout.read',
       'GET /staff/reports/:name report.read',
       'GET /staff/reports/:name/csv report.read',
       'POST /staff/daily-close daily-close.run',
-    ]);
+      'POST /staff/coach-pay/:id/adjustments payout.adjust',
+      'POST /staff/coach-pay/:id/paid payout.pay',
+    ].sort());
   });
 });
 
@@ -138,5 +156,67 @@ describe('daily close (RCPT-03)', () => {
   it("does not show one club's close to another", async () => {
     await run('POST', '/staff/daily-close', owner, {}, { day: '2026-12-20' });
     expect(await run('GET', '/staff/daily-close', sess(OWNER_B, ['owner', 'player'], B), { day: '2026-12-20' })).toMatchObject({ body: { closed: false, totals: { money_total_satang: 99000 } } });
+  });
+});
+
+describe('coach payouts (R3, D115)', () => {
+  const month = { month: '2026-12' };
+  const rowsOf = async (s = owner) => ((await run('GET', '/staff/coach-pay', s, month)) as { body: Array<Record<string, any>> }).body;
+  it('the owner and the accountant read the month; front desk, a coach and a player are refused; the month must be YYYY-MM', async () => {
+    for (const s of [owner, sess(ACC, ['accountant', 'player'])]) {
+      expect(await run('GET', '/staff/coach-pay', s, month)).toMatchObject({ ok: true, body: [{ coach_name: 'Coach One', status: 'open', base_satang: 1000000, amount_satang: 1000000, adjustments_satang: 0, total_satang: 1000000, flags: [] }] });
+    }
+    for (const s of [sess(DESK, ['front_desk', 'player']), sess(COACH, ['coach', 'player']), sess(PLAYER, ['player'])]) {
+      expect(await run('GET', '/staff/coach-pay', s, month)).toMatchObject({ ok: false, status: 403 });
+    }
+    expect(await run('GET', '/staff/coach-pay', null, month)).toMatchObject({ ok: false, status: 401 });
+    for (const bad of [{}, { month: '2026-13' }, { month: 'x' }, { month: '2026-12-15' }]) {
+      expect(await run('GET', '/staff/coach-pay', owner, bad), JSON.stringify(bad)).toMatchObject({ ok: false, status: 400, code: 'bad_input' });
+    }
+    expect((await run('GET', '/staff/coach-pay', sess(OWNER_B, ['owner', 'player'], B), month) as { body: unknown[] }).body).toEqual([]);
+  });
+  it('the CSV has the same rows and is audited', async () => {
+    const r = await run('GET', '/staff/coach-pay/csv', sess(ACC, ['accountant', 'player']), month);
+    expect((r as { body: FileReply }).body.options.filename).toBe('coach-payouts-2026-12.csv');
+    const lines = text(r).replace(/^\uFEFF/, '').trim().split(/\r?\n/);
+    expect(lines[0]).toBe('coach_id,coach_name,status,solo_sessions,group_sessions,base_satang,solo_pay_satang,group_pay_satang,flags,amount_satang,adjustments_satang,total_satang,paid_at');
+    expect(lines[1]).toContain('Coach One,open,0,0,1000000,0,0,,1000000,0,1000000');
+    expect((await audits()).at(-1)).toEqual({ name: 'coach-payouts', from: '2026-12-01', to: '2026-12-01', rows: 1 });
+  });
+  it('only the owner adjusts, with a reason, and marks paid; the accountant cannot; a paid month takes no more adjustments', async () => {
+    const id = (await rowsOf())[0]!.payout_id as string;
+    const acc = sess(ACC, ['accountant', 'player']);
+    expect(await run('POST', '/staff/coach-pay/:id/adjustments', acc, { id }, { delta_satang: 100, reason: 'x' })).toMatchObject({ ok: false, status: 403 });
+    expect(await run('POST', '/staff/coach-pay/:id/paid', acc, { id })).toMatchObject({ ok: false, status: 403 });
+    for (const body of [undefined, {}, { delta_satang: 100 }, { delta_satang: 0, reason: 'x' }, { delta_satang: 1.5, reason: 'x' }, { delta_satang: 100, reason: 'x', extra: 1 }]) {
+      expect(await run('POST', '/staff/coach-pay/:id/adjustments', owner, { id }, body), JSON.stringify(body)).toMatchObject({ ok: false, status: 400 });
+    }
+    expect(await run('POST', '/staff/coach-pay/:id/adjustments', owner, { id }, { delta_satang: 100, reason: '   ' })).toMatchObject({ ok: false, status: 400, code: 'reason_required' });
+    expect(await run('POST', '/staff/coach-pay/:id/adjustments', owner, { id: 'nope' }, { delta_satang: 100, reason: 'x' })).toMatchObject({ ok: false, status: 404 });
+    expect(await run('POST', '/staff/coach-pay/:id/adjustments', owner, { id }, { delta_satang: 2500, reason: 'Bonus' })).toMatchObject({ ok: true });
+    expect((await rowsOf())[0]).toMatchObject({ adjustments_satang: 2500, total_satang: 1002500 });
+    expect(await run('POST', '/staff/coach-pay/:id/paid', owner, { id })).toMatchObject({ ok: true, body: { id } });
+    expect((await rowsOf())[0]).toMatchObject({ status: 'paid' });
+    expect(await run('POST', '/staff/coach-pay/:id/paid', owner, { id })).toMatchObject({ ok: false, status: 409, code: 'already_paid' });
+    expect(await run('POST', '/staff/coach-pay/:id/adjustments', owner, { id }, { delta_satang: 1, reason: 'late' })).toMatchObject({ ok: false, status: 409, code: 'already_paid' });
+    expect(await run('POST', '/staff/coach-pay/:id/paid', sess(OWNER_B, ['owner', 'player'], B), { id })).toMatchObject({ ok: false, status: 404, code: 'not_found' });
+  });
+  it('marking paid is refused while the pay is unset (409 amount_unset)', async () => {
+    await tdb.query(`update public.coach_pay set solo_pay_kind = null, solo_pay_value = null`);
+    await tdb.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'online')`, [A, PLAYER]);
+    const c = await tdb.pool.connect();
+    try {
+      await c.query('begin');
+      await c.query('set local session_replication_role = replica');
+      const o = (await c.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'online') returning id`, [A, PLAYER])).rows[0].id as string;
+      await c.query(`insert into public.booking (club_id, order_id, type, resource_id, customer_id, coach_id, start_at, end_at, status, source, created_by, confirmed_at)
+                     values ($1,$2,'solo_class',gen_random_uuid(),$3,'66666666-6666-4666-8666-666666666661','2026-12-10T03:00:00Z','2026-12-10T04:00:00Z','confirmed','online',$3, now())`, [A, o, PLAYER]);
+      await c.query('commit');
+    } finally {
+      c.release();
+    }
+    const row = (await rowsOf())[0]!;
+    expect(row).toMatchObject({ amount_satang: null, flags: ['solo_pay_unset'], total_satang: null });
+    expect(await run('POST', '/staff/coach-pay/:id/paid', owner, { id: row.payout_id })).toMatchObject({ ok: false, status: 409, code: 'amount_unset' });
   });
 });
