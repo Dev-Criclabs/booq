@@ -63,9 +63,9 @@ Depends on: F01 (`cancel_window_hours`, `booking_window_days`, route wrapper T13
 
 ## F. QA
 
-- [ ] **F09-T18** Concurrency and no cash suite: two cancels at once, a cancel racing a closure, a Beam callback racing a cancel, a return repeated, a closure racing a new booking; the route inventory has no refund. IDs: CANCEL-01-AC14, CANCEL-02, CANCEL-03-AC15, CC-4. Role: QA · Deps T06b, T08a · Size: M
+- [x] **F09-T18** Concurrency and no cash suite: two cancels at once, a cancel racing a closure, a Beam callback racing a cancel, a return repeated, a closure racing a new booking; the route inventory has no refund. IDs: CANCEL-01-AC14, CANCEL-02, CANCEL-03-AC15, CC-4. Role: QA · Deps T06b, T08a · Size: M
   Tests first: the suite is the task (20 parallel requests per case).
-- [ ] **F09-T19** Acceptance sweep: every acceptance criterion of CANCEL-01 to CANCEL-04 has a named test, with the F06 R1-AC6, AC7 and AC10 cases listed against the F06 sweep; walk the F09 boards; file gaps with the ID. IDs: CANCEL-01 to CANCEL-04. Role: QA · Deps all · Size: M
+- [x] **F09-T19** Acceptance sweep: every acceptance criterion of CANCEL-01 to CANCEL-04 has a named test, with the F06 R1-AC6, AC7 and AC10 cases listed against the F06 sweep; walk the F09 boards; file gaps with the ID. IDs: CANCEL-01 to CANCEL-04. Role: QA · Deps all · Size: M
   Tests first: a table of criteria to tests with none empty.
 
 Order: T01 to T05, T06a, T06b, T07, T08a, T08b, T09 (migration order, T03 early), T10, T11, T12, T13, T17 early, then the screens, then F. About 21 tasks, each under a day. The screens use T17's keys: a screen task starts with the keys that exist and adds the rest in `locales/pending/F09.json`.

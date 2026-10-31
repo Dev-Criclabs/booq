@@ -83,9 +83,9 @@ Depends on: F01 (settings `group_min_players`, `group_max_players`, `below_min_a
 
 ## F. QA
 
-- [ ] **F08-T20** Concurrency suite: two takers of the last seat, an offer and a walk-in racing for one slot, two claims for one offer, an offer expiring while its claim pays, cancel and advance in one transaction. IDs: CLASS-01-AC4, CLASS-01-AC18, CLASS-02-AC6, AC7, AC14, WAIT-01-AC2, CC-4. Role: QA · Deps T06, T07 · Size: M
+- [x] **F08-T20** Concurrency suite: two takers of the last seat, an offer and a walk-in racing for one slot, two claims for one offer, an offer expiring while its claim pays, cancel and advance in one transaction. IDs: CLASS-01-AC4, CLASS-01-AC18, CLASS-02-AC6, AC7, AC14, WAIT-01-AC2, CC-4. Role: QA · Deps T06, T07 · Size: M
   Tests first: the suite is the task (20 parallel requests per case). Fixture rule (CLASS-01-AC18): no fixture or test copies the canvas sample sessions of C7, C16 or A08 (Gaps B1, B2); fixtures are built from the templates in the test itself.
-- [ ] **F08-T21** Acceptance sweep: every acceptance criterion of CLASS-01, CLASS-02 and WAIT-01 has a named test; walk the F08 boards; file gaps with the ID. IDs: CLASS-01, CLASS-02, WAIT-01. Role: QA · Deps all · Size: M
+- [x] **F08-T21** Acceptance sweep: every acceptance criterion of CLASS-01, CLASS-02 and WAIT-01 has a named test; walk the F08 boards; file gaps with the ID. IDs: CLASS-01, CLASS-02, WAIT-01. Role: QA · Deps all · Size: M
   Tests first: a table of criteria to tests with none empty.
 
 Order: T01 to T04, then T05a, T05b, T05c and T06 once the cross-feature tasks are merged, T07 to T09, T10, T11, T12 to T14, T19 early, then the screens, then F. About 21 tasks, each under a day. The screens use T19's keys: a screen task starts with the keys that exist and adds the rest in `locales/pending/F08.json`.
