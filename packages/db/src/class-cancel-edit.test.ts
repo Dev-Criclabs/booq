@@ -119,6 +119,27 @@ describe('app.cancel_session (CLASS-01-AC11, AC13)', () => {
     expect((await hooks()).filter((x) => x.kind === 'waitlist_ended')).toEqual([{ kind: 'waitlist_ended', usr: P3, params: { entry_id: e, session_id: session }, dedupe: `waitlist_ended:${e}` }]);
   });
 
+  it('writes one cancel record per paid seat with the kind and the session reason; a held seat has none (1013)', async () => {
+    const p1 = await seat(P1);
+    const p2 = await seat(P2);
+    await seat(P3, 'awaiting_payment');
+    expect(await cancel(session, 'below_minimum')).toMatchObject({ ok: true, res: { r: { seats: 3 } } });
+    const rows = (await tdb.query(`select booking_id, kind, outcome, version, reason, by_user, credit_lost from public.booking_cancel order by booking_id`)).rows;
+    expect(rows.map((r) => r.booking_id).sort()).toEqual([p1, p2].sort());
+    for (const r of rows) expect(r).toMatchObject({ kind: 'club_cancel', outcome: 'returned', version: 1, reason: 'below_minimum', by_user: OWNER, credit_lost: false });
+  });
+
+  it('the closure reason records kind closure with no person (1013)', async () => {
+    const paid = await seat(P1);
+    const worker = createDb({ connectionString: tdb.url, max: 2, role: 'booq_worker' });
+    try {
+      await worker.withClubTx({ clubId: A, userId: null, roles: ['guest'] as never, source: 'job' as const }, (tx) => tx.query(`select app.cancel_session($1, 'closure')`, [session]));
+    } finally {
+      await worker.end();
+    }
+    expect((await tdb.query(`select booking_id, kind, reason, by_user from public.booking_cancel`)).rows).toEqual([{ booking_id: paid, kind: 'closure', reason: 'closure', by_user: null }]);
+  });
+
   it('the reason closure: the worker role cancels with no person and seats go back as closure; other reasons are refused to the worker (0919)', async () => {
     const paid = await seat(P1);
     const worker = createDb({ connectionString: tdb.url, max: 2, role: 'booq_worker' });
