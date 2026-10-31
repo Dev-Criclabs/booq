@@ -40,6 +40,7 @@ const RUN: Record<string, string[]> = {
   'app.end_closure(uuid,timestamp with time zone,text)': ['booq_app'],
   'app.closures_due_roll()': ['booq_app', 'booq_worker'],
   'app.roll_closure(uuid)': ['booq_app', 'booq_worker'],
+  'app.closure_unmessaged(uuid)': ['booq_app'],
   'app.mark_no_show(uuid,text)': ['booq_app'],
   'app.mark_late_cancel(uuid,text)': ['booq_app'],
   'app.reverse_mark(uuid,text)': ['booq_app'],
