@@ -143,3 +143,28 @@
 .adm-chip-row { margin-bottom: 16px; }
 .adm-chip-btn { border: 1px solid var(--ln); background: var(--cd); color: var(--ink); border-radius: 999px; padding: 6px 14px; font: inherit; font-size: 13px; cursor: pointer; overflow-wrap: anywhere; text-align: left; }
 .adm-chip-btn[aria-pressed="true"] { background: var(--dk); color: #fff; border-color: var(--dk); }
+
+/* A1 Calendar (H-A01): the grid, the colour key and the cells. Colours are the board's: online and staff are green and blue, awaiting is amber, classes teal and violet, closed grey. */
+.adm-key { display: flex; flex-wrap: wrap; gap: 8px 16px; list-style: none; margin: 0 0 12px; padding: 0; font-size: 13px; color: var(--mu); }
+.adm-key li { display: inline-flex; align-items: center; gap: 6px; }
+.adm-cal-dot { width: 12px; height: 12px; border-radius: 4px; display: inline-block; flex: none; }
+.adm-cal { min-width: 480px; table-layout: fixed; }
+.adm-cal th, .adm-cal td { padding: 4px 6px; vertical-align: middle; }
+.adm-cal thead th { text-align: center; }
+.adm-cal tbody th { width: 64px; font-size: 12px; color: var(--mu); }
+.adm-cal-sub { display: block; text-transform: none; letter-spacing: 0; font-weight: 400; }
+.adm-cal-cell { height: 48px; }
+.adm-cal-btn { width: 100%; min-height: 40px; border: 0; border-radius: 8px; padding: 4px 8px; font: inherit; font-size: 12px; text-align: left; color: var(--ink); background: transparent; cursor: pointer; overflow-wrap: anywhere; }
+.adm-cal-btn[draggable="true"] { cursor: grab; }
+.adm-cal-btn[aria-pressed="true"] { outline: 2px solid var(--dk); }
+.adm-cal-online, .adm-cal-cell.adm-cal-online .adm-cal-btn { background: #d7efdc; }
+.adm-cal-staff, .adm-cal-cell.adm-cal-staff .adm-cal-btn { background: #d6e6f7; }
+.adm-cal-awaiting, .adm-cal-cell.adm-cal-awaiting .adm-cal-btn { background: #f5ecc9; }
+.adm-cal-solo, .adm-cal-cell.adm-cal-solo .adm-cal-btn { background: #cfeaea; }
+.adm-cal-group, .adm-cal-cell.adm-cal-group .adm-cal-btn { background: #e3dcf3; }
+.adm-cal-closed, .adm-cal-cell.adm-cal-closed .adm-cal-btn { background: #e4e4e4; }
+td.adm-cal-cell { background: transparent; }
+.adm-cal-off { background: repeating-linear-gradient(45deg, #f1efe9, #f1efe9 6px, #e9e6de 6px, #e9e6de 12px); }
+.adm-cal-free { text-align: center; }
+.adm-cal-add { display: inline-block; width: 100%; min-height: 40px; line-height: 40px; color: var(--mu); text-decoration: none; border-radius: 8px; }
+.adm-cal-add:hover, .adm-cal-add:focus-visible { background: var(--tn); color: var(--hd); }
