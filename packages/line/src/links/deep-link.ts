@@ -108,3 +108,36 @@ export function createDeepLinks(deps: { club(clubId: string): LinkClub | null })
     },
   };
 }
+
+/**
+ * The six rich menu tiles, in tile order (F10 design 5.5, LINE-02-AC1; D54: fixed, not editable).
+ * Tile 1 Book a court opens C4 directly as a guest page (BOOK-02-AC1, AUTH-01-AC10); My bookings and
+ * Refer a friend need a person, so those pages start sign in first (AUTH-01-AC9).
+ */
+export const RICH_MENU_PAGES: readonly PlayerPage[] = [
+  { page: 'book' },
+  { page: 'solo_classes' },
+  { page: 'group_classes' },
+  { page: 'packages' },
+  { page: 'bookings' },
+  { page: 'refer' },
+];
+
+/** The six tile links for a club's LIFF app, in tile order. */
+export function richMenuLinks(liffId: string): string[] {
+  return RICH_MENU_PAGES.map((p) => liffLink(liffId, p));
+}
+
+/**
+ * Where a LIFF link lands (design 3.1): LINE opens the endpoint /c/{slug} with the extra path and
+ * query in `liff.state`. The address it names, inside this club only, or null when there is none or
+ * it would leave the club's path (then the endpoint page itself is shown).
+ */
+export function liffStateTarget(slug: string, search: string): string | null {
+  const state = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search).get('liff.state');
+  if (!state) return null;
+  if (!state.startsWith('/') || state.startsWith('//') || /[\\\r\n\0]/.test(state) || state.length > 2048) return null;
+  const [path = ''] = state.split('?');
+  if (/(^|\/)\.\.?(\/|$)/.test(path) || path.includes('//')) return null;
+  return `${clubPath(slug, { page: 'home' })}${state}`;
+}

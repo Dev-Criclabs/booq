@@ -151,7 +151,7 @@ Staff bookings (A2) call the same pricing with `source = staff`: `POST /staff/or
 
 ### 5.3 Owner setup (screens A9, A9b, A10 are F11)
 
-`GET/POST/PUT` on `/setup/price-groups`, `/setup/court-prices`, `/setup/coach-tier-prices`, `/setup/add-ons`, `/setup/partners`, `/setup/promo-codes`. Permission `pricing.write` (owner only; read for front desk where needed to take bookings and for the accountant to read). Every write is audited (R3-AC8, PROMO-01-AC12) and **applies to new orders only**; deleting a price used by a held or paid order is not possible (the lines hold copies). Settings used here (birthday discount, cancel window) come from F01's registry.
+`GET/POST/PUT` on `/setup/price-groups`, `/setup/court-prices`, `/setup/coach-tier-prices`, `/setup/add-ons`, `/setup/partners`, `/setup/promo-codes`. Permission `price.write` (owner only; read for front desk where needed to take bookings and for the accountant to read). Every write is audited (R3-AC8, PROMO-01-AC12) and **applies to new orders only**; deleting a price used by a held or paid order is not possible (the lines hold copies). Settings used here (birthday discount, cancel window) come from F01's registry.
 
 ## 6. Jobs
 
