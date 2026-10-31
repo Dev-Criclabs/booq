@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, addMonths, bangkokDay, bangkokTime, className, countKinds, initials, levelKey, mondayOf, monthStart, phases, playerTotal } from './view';
+import { addDays, addMonths, bangkokDay, bangkokTime, className, countKinds, groupByDay, initials, isFullDay, levelKey, mondayOf, monthName, monthStart, phases, playerTotal, weekRange } from './view';
 
 // F12 coach portal view helpers (CPORT-01, CPORT-02, CPORT-06): Bangkok times and days, the week, Done and Next, the counts.
 describe('Bangkok time and day', () => {
@@ -60,5 +60,24 @@ describe('counts, names and levels', () => {
     expect(initials('  ann ')).toBe('AN');
     expect(initials('สมชาย ใจดี')).toBe('สใ');
     expect(initials('')).toBe('');
+  });
+});
+
+describe('the week on K2', () => {
+  it('names the month in the reader\'s language with the international year calendar, and the week range in one month or across two', () => {
+    expect(monthName('en', '2027-01-11')).toBe('January');
+    expect(monthName('th', '2027-01-11')).toBe('มกราคม');
+    expect(weekRange('en', '2027-01-11')).toEqual({ sameMonth: true, vars: { startDay: 11, endDay: 17, month: 'January', startMonth: 'January', endMonth: 'January' } });
+    expect(weekRange('en', '2026-12-28')).toMatchObject({ sameMonth: false, vars: { startDay: 28, endDay: 3, startMonth: 'December', endMonth: 'January' } });
+    expect(weekRange('th', '2026-12-28').vars.endMonth).toBe('มกราคม');
+  });
+  it('groups items by their Bangkok day, keeping the order, and a late night item belongs to the next day', () => {
+    const items = [{ start_at: '2026-12-10T00:00:00Z' }, { start_at: '2026-12-10T16:00:00Z' }, { start_at: '2026-12-10T17:00:00Z' }, { start_at: '2026-12-11T03:00:00Z' }];
+    expect(groupByDay(items).map((g) => [g.day, g.items.length])).toEqual([['2026-12-10', 2], ['2026-12-11', 2]]);
+    expect(groupByDay([])).toEqual([]);
+  });
+  it('a leave from midnight to midnight is a full day', () => {
+    expect(isFullDay('2026-12-10T17:00:00Z', '2026-12-11T17:00:00Z')).toBe(true);
+    expect(isFullDay('2026-12-11T06:00:00Z', '2026-12-11T10:00:00Z')).toBe(false);
   });
 });

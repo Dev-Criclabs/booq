@@ -8,7 +8,15 @@
     "K-new.held": "Waiting for payment",
     "K-new.needs_attention": "Owner is checking",
     "K-new.group_players": "{booked} of {maxPlayers} players",
-    "K-new.group_players_level": "{booked} of {maxPlayers} players · {level}"
+    "K-new.group_players_level": "{booked} of {maxPlayers} players · {level}",
+    "K-new.week_range_months": "{startDay} {startMonth} to {endDay} {endMonth}",
+    "K-new.week_empty": "Nothing this week.",
+    "K-new.schedule_solo": "{studentName} · {court}",
+    "K-new.schedule_group": "{className} · {booked} of {maxPlayers}",
+    "K-new.schedule_group_full": "{className} · full",
+    "K-new.leave_pending": "Waiting for the owner",
+    "K-new.schedule_leave": "{leaveType} · {status}",
+    "K-new.blocked_court": "{court} · {reason} · until {time}"
   },
   "th": {
     "K-new.not_coach": "หน้านี้สำหรับโค้ชของสโมสร ขอให้เจ้าของเพิ่มคุณเป็นโค้ช",
@@ -19,6 +27,14 @@
     "K-new.held": "รอชำระเงิน",
     "K-new.needs_attention": "เจ้าของกำลังตรวจสอบ",
     "K-new.group_players": "ผู้เล่น {booked} จาก {maxPlayers} คน",
-    "K-new.group_players_level": "ผู้เล่น {booked} จาก {maxPlayers} คน · {level}"
+    "K-new.group_players_level": "ผู้เล่น {booked} จาก {maxPlayers} คน · {level}",
+    "K-new.week_range_months": "{startDay} {startMonth} ถึง {endDay} {endMonth}",
+    "K-new.week_empty": "สัปดาห์นี้ไม่มีรายการ",
+    "K-new.schedule_solo": "{studentName} · {court}",
+    "K-new.schedule_group": "{className} · {booked} จาก {maxPlayers}",
+    "K-new.schedule_group_full": "{className} · เต็ม",
+    "K-new.leave_pending": "รอเจ้าของพิจารณา",
+    "K-new.schedule_leave": "{leaveType} · {status}",
+    "K-new.blocked_court": "{court} · {reason} · ถึง {time}"
   }
 }

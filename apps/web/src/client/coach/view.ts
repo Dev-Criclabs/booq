@@ -82,3 +82,36 @@ export function initials(name: string): string {
   const first = (w: string) => Array.from(w)[0] ?? '';
   return (words.length >= 2 ? first(words[0]!) + first(words[1]!) : Array.from(words[0] ?? '').slice(0, 2).join('')).toUpperCase();
 }
+
+/** The long month name, in the reader's language and always with the international calendar: January, มกราคม. */
+export function monthName(lang: Lang, day: string): string {
+  const f = new Intl.DateTimeFormat(`${lang === 'th' ? 'th-TH' : 'en-GB'}-u-ca-gregory-nu-latn`, { timeZone: 'UTC', month: 'long' });
+  return f.format(new Date(`${day}T12:00:00Z`));
+}
+
+/** The variables of the week range line of K2: `{startDay} to {endDay} {month}` within a month, or both months when the week crosses one. */
+export function weekRange(lang: Lang, monday: string) {
+  const sunday = addDays(monday, 6);
+  const sameMonth = monday.slice(0, 7) === sunday.slice(0, 7);
+  return {
+    sameMonth,
+    vars: { startDay: Number(monday.slice(8, 10)), endDay: Number(sunday.slice(8, 10)), month: monthName(lang, sunday), startMonth: monthName(lang, monday), endMonth: monthName(lang, sunday) },
+  };
+}
+
+/** Items grouped by their Bangkok day, in order (each group keeps the order the server gave: by start). */
+export function groupByDay<T extends { start_at: string }>(items: readonly T[]): Array<{ day: string; items: T[] }> {
+  const out: Array<{ day: string; items: T[] }> = [];
+  for (const it of items) {
+    const day = bangkokDay(it.start_at);
+    const last = out[out.length - 1];
+    if (last && last.day === day) last.items.push(it);
+    else out.push({ day, items: [it] });
+  }
+  return out;
+}
+
+/** A leave that covers whole days (it starts at Bangkok midnight and ends at a Bangkok midnight). */
+export function isFullDay(startIso: string, endIso: string): boolean {
+  return bangkokTime(startIso) === '00:00' && bangkokTime(endIso) === '00:00';
+}
