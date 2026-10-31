@@ -82,3 +82,7 @@ traced("F04/PROMO-01-AC12", "Given the owner creates or edits a code, when it is
 traced("F04/R6-AC1", "Given a player with no court hour credit and a full price court order, when chec", [{ file: "apps/web/src/api/checkout/bundle-offer.routes.test.ts", has: "R6-AC1" }]);
 traced("F04/R6-AC2", "Given the player declines, when they continue, then checkout is the full price o", [{ file: "apps/web/src/api/checkout/bundle-offer.routes.test.ts", has: "R6-AC2" }]);
 traced("F04/R6-AC4", "Given a player who already has court hours, when checkout loads, then no prompt ", [{ file: "apps/web/src/api/checkout/bundle-offer.routes.test.ts", has: "R6-AC4" }]);
+
+// F04-T21 (31 Oct): by title.
+traced("F04/R3-AC2", "Given an active add-on with a price, when the player adds it, then it is a line ", [{ file: "packages/domain/src/checkout/pricing.test.ts", has: "an add-on with a price and active is a line at that price, linked to the first hour" }]);
+traced("F04/R6-AC3", "Given the player accepts, when they continue, then the order becomes the bundle ", [{ file: "packages/db/src/apply-payment-package.test.ts", has: "grants the package, reserves what the order allocated, then confirms" }]);

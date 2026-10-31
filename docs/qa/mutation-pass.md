@@ -79,3 +79,13 @@ The three survivors guard the same thing twice (defence in depth). No test is mi
 | Desk package sale: the quote read with `forCustomer: false` | green, equivalent: front desk and owner can read the buyer's date of birth through the ordinary route, so both paths give the same answer. It would matter if staff could not read it |
 | Notification switches: default promotions on, default reminders off, a save that writes the other switch | red |
 
+
+## F13-T20, F06-T22, T23, F04-T21 suites, run 31 Oct
+
+| Test | Edit | Result |
+|---|---|---|
+| F13 cross cutting | the update guard on `receipt` removed; the truncate guard removed; a credit note kind added; a refunded payment status added | red (4 of 4) |
+| F06 wallet property | the wallet lock removed from `wallet_spend` | red (2 of 5 seeds) |
+| F06 wallet property | the balance check removed from `wallet_spend` | red (5 of 5 seeds) |
+| F06 blind | a platform grant on the wallet ledger; the app role granted `wallet_spend` | red (2 of 2) |
+| F04 closure | a Thai constant in `pricing.ts`; an English sentence in `pay.ts`; a client amount kept by the quote parser | red (3 of 3) |
