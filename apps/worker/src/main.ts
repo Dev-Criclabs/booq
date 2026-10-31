@@ -13,7 +13,8 @@ import { PACKAGE_EXPIRE, SESSION_START, WALLET_EXPIRE, runPackageExpire, runSess
 import { CLASS_GENERATE, CLASS_GENERATE_DISPATCH, classGenerateDispatch, generateClassSessions } from './tasks/class-generate';
 import { runClassBelowMinimum, runOfferExpiry } from './tasks/class-jobs';
 import { runConnectionChecks } from './tasks/connection-check';
-import { createLineSender, createRichMenuBuildDeps } from './tasks/line-sender-setup';
+import { createLineSender, createLineUsageDeps, createRichMenuBuildDeps } from './tasks/line-sender-setup';
+import { LINE_HEALTH, LINE_USAGE_SYNC, runLineHealth, runLineUsageSync } from './tasks/line-usage';
 import { RICH_MENU_BUILD, richMenuBuildTask } from './tasks/line-rich-menu';
 import { BEAM_RECONCILE, PACKAGE_ORDER_EXPIRY, runBeamReconcile, runPackageOrderExpiry } from './tasks/payment-jobs';
 import { CLOSURE_ROLL, runClosureRoll } from './tasks/closure-roll';
@@ -42,6 +43,7 @@ const lineSettings = {
   privateKey: loadDecryptKey(),
 };
 const lineSender = createLineSender(db, lineSettings);
+const lineUsage = createLineUsageDeps(lineSettings);
 
 const worker = await startWorker({
   connectionString: config.queueUrl,
@@ -77,6 +79,13 @@ const worker = await startWorker({
     },
     [PACKAGE_ORDER_EXPIRY]: async () => {
       await runPackageOrderExpiry(db);
+    },
+    // F10-T13: LINE's usage figures per club (every 10 minutes) and the daily token check.
+    [LINE_USAGE_SYNC]: async () => {
+      await runLineUsageSync(db, lineUsage);
+    },
+    [LINE_HEALTH]: async () => {
+      await runLineHealth(db, lineUsage);
     },
     [CLOSURE_ROLL]: async () => {
       await runClosureRoll(db, { listClubIds: () => listClubIds(db) });

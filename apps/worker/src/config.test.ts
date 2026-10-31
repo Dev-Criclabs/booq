@@ -26,6 +26,8 @@ const ENV = {
   LOCALES_DIR: '/srv/booq/locales',
   WORKER_BEAM_RECONCILE_CRON: '*/5 * * * *',
   WORKER_PACKAGE_ORDER_EXPIRY_CRON: '* * * * *',
+  WORKER_LINE_USAGE_SYNC_CRON: '*/10 * * * *',
+  WORKER_LINE_HEALTH_CRON: '37 20 * * *',
   WORKER_CLOSURE_ROLL_CRON: '11 17 * * *',
 };
 
@@ -55,6 +57,8 @@ describe('readWorkerConfig', () => {
       localesDir: '/srv/booq/locales',
       beamReconcileCron: '*/5 * * * *',
       packageOrderExpiryCron: '* * * * *',
+      lineUsageSyncCron: '*/10 * * * *',
+      lineHealthCron: '37 20 * * *',
       closureRollCron: '11 17 * * *',
     });
   });
@@ -139,6 +143,14 @@ describe('F09 closure roll schedule', () => {
   });
 });
 
+describe('F10 LINE usage schedules', () => {
+  it.each(['WORKER_LINE_USAGE_SYNC_CRON', 'WORKER_LINE_HEALTH_CRON'])('%s is required and must be five cron fields', (n) => {
+    const { [n]: _gone, ...rest } = ENV as Record<string, string>;
+    expect(() => readWorkerConfig(rest)).toThrow(new RegExp(n));
+    expect(() => readWorkerConfig({ ...ENV, [n]: 'every ten minutes' })).toThrow(new RegExp(n));
+  });
+});
+
 describe('console session limit', () => {
   it.each(['0', '-5', 'abc', '2.5', ''])('refuses %j', (v) => {
     expect(() => readWorkerConfig({ ...ENV, WORKER_CONSOLE_SESSION_ABSOLUTE_SECONDS: v })).toThrow(/WORKER_CONSOLE_SESSION_ABSOLUTE_SECONDS/);
@@ -146,15 +158,17 @@ describe('console session limit', () => {
 });
 
 describe('buildCrontab', () => {
-  it('schedules housekeeping, the club dispatches, the two sweeps, the three F06 sweeps, the two F05 jobs and the F09 closure roll, one line each', () => {
+  it('schedules housekeeping, the club dispatches, the two sweeps, the three F06 sweeps, the two F05 jobs, the two F10 usage jobs and the F09 closure roll, one line each', () => {
     expect(buildCrontab({
       housekeepingCron: '*/5 * * * *', importSweepCron: '17 * * * *', rateLimitSweepCron: '41 * * * *', payTapPruneCron: '23 * * * *', classGenerateCron: '5 17 * * *', consoleSweepCron: '53 * * * *',
       packageExpireCron: '*/5 * * * *', walletExpireCron: '7 17 * * *', sessionStartCron: '* * * * *',
-      beamReconcileCron: '*/5 * * * *', packageOrderExpiryCron: '* * * * *', closureRollCron: '11 17 * * *',
+      beamReconcileCron: '*/5 * * * *', packageOrderExpiryCron: '* * * * *',
+      lineUsageSyncCron: '*/10 * * * *', lineHealthCron: '37 20 * * *', closureRollCron: '11 17 * * *',
     })).toBe(
       '*/5 * * * * housekeeping\n17 * * * * import_staging_dispatch\n41 * * * * rate_limit_sweep\n23 * * * * pay_tap_prune_dispatch\n5 17 * * * class_generate_dispatch\n53 * * * * console_session_sweep\n'
         + '*/5 * * * * package_expire\n7 17 * * * wallet_expire\n* * * * * session_start\n'
         + '*/5 * * * * beam_reconcile\n* * * * * package_order_expiry\n'
+        + '*/10 * * * * line_usage_sync\n37 20 * * * line_health\n'
         + '11 17 * * * closure_roll\n',
     );
   });
