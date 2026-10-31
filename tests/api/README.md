@@ -18,3 +18,10 @@ Not covered by this gate test (done by the lanes' own route tests or by the row 
 ## Files and PDFs
 
 The receipt PDF routes and the export file path are covered by the lanes' tests: `apps/web/src/api/receipts/routes.test.ts` (another player's and another club's receipt are 404, staff always get a copy, the PDF is 503 when the language files are missing, only the owner voids), `packages/receipts/src/pdf.test.ts` (same file byte for byte, copy mark, longest Thai and English names), `packages/db/src/import-export.test.ts` (the export file path must be under the club id; a finished export cannot change who asked) and `packages/auth/src/serve.test.ts` (files are sent with their type, `no-store` and `nosniff`). QA adds no duplicate; if a file route is mounted without those, the role matrix above still gates it.
+
+## Over-HTTP smoke test (`http-smoke.spec.ts`, QA-API-1)
+
+`serveRoutes` puts the path slug into every route's `input`. A handler that counts or checks the keys of its `input` therefore refuses a valid request over HTTP while its own test, which calls `handle()` without the slug, passes. This is what happened to the owner settings routes (400 `invalid_input`). The smoke test sends one valid request per at-risk family through `serveRoutes` with a real database and a signed in owner or player: the club settings family (settings, business, hours, resources, support window), the player profile, customers, invites and the typed setup routes, plus a reads sweep over the staff, person and public families. On main before the fix the five settings family steps answered 400; they are `it.fails` until the fix (platform lane 2, c939a55) reaches main. Remove `.fails` then.
+
+Not covered one by one: the families whose handlers read named fields or `ctx.body` (auth, receipts void, daily close, line friend, classes end). Their lane tests call `handle()` with a body, which is the same object `serveRoutes` passes, so the slug cannot reach them.
+
