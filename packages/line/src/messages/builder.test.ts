@@ -12,11 +12,13 @@ import { money } from './format';
 const LOCALES = resolve(__dirname, '../../../../locales');
 const dict = { th: loadMessageDictionary('th', LOCALES), en: loadMessageDictionary('en', LOCALES) };
 const LIFF = '2012300015-WIi1jtLB';
+// A stand in for F02's deep link helper (createDeepLinks): the extra path is relative to the club's LIFF endpoint
+// (/c/{slug}), so it follows the LIFF id directly and never names the club again.
 const links = {
-  link: (club: string, target: LinkTarget) =>
-    target.page === 'booking' ? `https://liff.line.me/${LIFF}/c/${club}/bookings/${target.bookingId}`
-      : target.page === 'calendar' ? `https://liff.line.me/${LIFF}/c/${club}/bookings/${target.bookingId}/calendar`
-        : `https://liff.line.me/${LIFF}/c/${club}/${target.page}`,
+  link: (_club: string, target: LinkTarget) =>
+    target.page === 'booking' ? `https://liff.line.me/${LIFF}/bookings/${target.bookingId}`
+      : target.page === 'calendar' ? `https://liff.line.me/${LIFF}/bookings/${target.bookingId}/calendar`
+        : `https://liff.line.me/${LIFF}/${target.page}`,
 };
 const builder = createMessageBuilder({ dictionary: (l) => dict[l], links });
 
