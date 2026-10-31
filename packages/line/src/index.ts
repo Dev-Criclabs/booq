@@ -6,3 +6,4 @@ export { createMessageBuilder, fill, MessageTextError, type Dictionary, type Lin
 export { loadMessageDictionary } from './messages/dictionary';
 export type { MessageFacts, MessageHour } from './messages/facts';
 export { RICH_MENU_IMAGE, RichMenuLayoutError, labelsHash, layoutRichMenu, renderRichMenu, type RenderedRichMenu, type RichMenuLabel, type RichMenuLabels } from './rich-menu/render';
+export { clubPath, createDeepLinks, DeepLinkError, liffLink, playerPath, type LinkClub, type PlayerPage } from './links/deep-link';

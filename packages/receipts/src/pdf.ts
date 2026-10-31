@@ -1,4 +1,5 @@
-import { createRequire } from 'node:module';
+import type { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import PDFDocument from 'pdfkit';
 import { buildReceiptDocument, type ReceiptDocument, type RenderInput } from './model';
 
@@ -7,10 +8,13 @@ import { buildReceiptDocument, type ReceiptDocument, type RenderInput } from './
 // is a file regenerated. Sarabun (SIL Open Font License) carries both Thai and Latin text, so one font file serves both
 // languages and Thai marks are shaped by the font's own tables. The draw code holds no words: only numbers and layout.
 
-const require = createRequire(import.meta.url);
+// Taken through process.getBuiltinModule so a bundler leaves the lookup to Node at runtime.
+const require = (process.getBuiltinModule('node:module') as { createRequire: typeof createRequire }).createRequire(import.meta.url);
+// The font folder is found from the package's own package.json, so a bundler sees no .ttf import.
+const SARABUN = dirname(require.resolve('@expo-google-fonts/sarabun/package.json'));
 const FONT = {
-  regular: require.resolve('@expo-google-fonts/sarabun/400Regular/Sarabun_400Regular.ttf'),
-  bold: require.resolve('@expo-google-fonts/sarabun/700Bold/Sarabun_700Bold.ttf'),
+  regular: join(SARABUN, '400Regular', 'Sarabun_400Regular.ttf'),
+  bold: join(SARABUN, '700Bold', 'Sarabun_700Bold.ttf'),
 };
 
 const PAGE = { width: 595.28, height: 841.89, margin: 48 };
