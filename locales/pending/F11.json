@@ -346,7 +346,19 @@
     "A-new.promo_err_input": "The server did not accept these values. Check them and try again.",
     "A-new.promo_err_not_found": "This no longer exists. Reload the page.",
     "A-new.promo_err_forbidden": "Only the owner can open promotions.",
-    "A-new.promo_err_general": "The change was not saved. Check your connection and try again."
+    "A-new.promo_err_general": "The change was not saved. Check your connection and try again.",
+    "A-new.cust_chips_label": "Filter by type, package or visit",
+    "A-new.cust_expiring_unset": "Expiring soon needs the number of days before a package ends that the club reminds players. The club has not set it yet (Settings, packages and wallet).",
+    "A-new.cust_package": "{name} · {remaining} left",
+    "A-new.prof_receipts_empty": "No receipts yet.",
+    "A-new.prof_receipt_sale": "Sale",
+    "A-new.prof_receipt_wallet": "Wallet top up",
+    "A-new.prof_receipt_issued": "Issued",
+    "A-new.prof_receipt_pdf": "PDF",
+    "A-new.prof_receipt_test": "Test",
+    "A-new.staff_invite_cancel": "Cancel invite",
+    "A-new.staff_invite_cancel_confirm": "Cancel this invite? The link will stop working.",
+    "A-new.staff_invite_cancelled": "The invite was cancelled and its link no longer works."
   },
   "th": {
     "A-new.shell_nav_label": "หน้าแอดมินคลับ",
@@ -694,6 +706,18 @@
     "A-new.promo_err_input": "เซิร์ฟเวอร์ไม่รับค่าเหล่านี้ ตรวจสอบแล้วลองอีกครั้ง",
     "A-new.promo_err_not_found": "รายการนี้ไม่มีอยู่แล้ว โปรดโหลดหน้าใหม่",
     "A-new.promo_err_forbidden": "เฉพาะเจ้าของเท่านั้นที่เปิดโปรโมชันได้",
-    "A-new.promo_err_general": "บันทึกการเปลี่ยนแปลงไม่สำเร็จ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง"
+    "A-new.promo_err_general": "บันทึกการเปลี่ยนแปลงไม่สำเร็จ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง",
+    "A-new.cust_chips_label": "กรองตามประเภท แพ็กเกจ หรือการมาเล่น",
+    "A-new.cust_expiring_unset": "“ใกล้หมดอายุ” ต้องใช้จำนวนวันก่อนแพ็กเกจหมดอายุที่สโมสรเตือนผู้เล่น ซึ่งสโมสรยังไม่ได้ตั้งค่า (ตั้งค่า ส่วนแพ็กเกจและกระเป๋าเงิน)",
+    "A-new.cust_package": "{name} · เหลือ {remaining}",
+    "A-new.prof_receipts_empty": "ยังไม่มีใบเสร็จ",
+    "A-new.prof_receipt_sale": "ขาย",
+    "A-new.prof_receipt_wallet": "เติมเงินกระเป๋า",
+    "A-new.prof_receipt_issued": "ออกแล้ว",
+    "A-new.prof_receipt_pdf": "PDF",
+    "A-new.prof_receipt_test": "ทดสอบ",
+    "A-new.staff_invite_cancel": "ยกเลิกคำเชิญ",
+    "A-new.staff_invite_cancel_confirm": "ยกเลิกคำเชิญนี้ใช่ไหม ลิงก์จะใช้ไม่ได้อีก",
+    "A-new.staff_invite_cancelled": "ยกเลิกคำเชิญแล้ว ลิงก์ใช้ไม่ได้อีก"
   }
 }

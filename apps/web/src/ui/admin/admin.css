@@ -138,3 +138,8 @@
 .adm-court h3 { margin: 0; }
 .adm-court .adm-field { max-width: 360px; }
 @media (max-width: 900px) { .adm-hours-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .adm-hours-row .adm-day { grid-column: 1 / -1; } .adm-hours-row .adm-check { grid-column: 1 / -1; } }
+
+/* A5 filter chips (H-A05): a row of toggles under the search. */
+.adm-chip-row { margin-bottom: 16px; }
+.adm-chip-btn { border: 1px solid var(--ln); background: var(--cd); color: var(--ink); border-radius: 999px; padding: 6px 14px; font: inherit; font-size: 13px; cursor: pointer; overflow-wrap: anywhere; text-align: left; }
+.adm-chip-btn[aria-pressed="true"] { background: var(--dk); color: #fff; border-color: var(--dk); }
