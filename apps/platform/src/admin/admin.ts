@@ -22,6 +22,14 @@ export interface LaunchItem {
 }
 export type LaunchResult = { ok: true; clubName: string; clubStatus: string; items: LaunchItem[] } | { ok: false; code: 'not_found' };
 export type ListConfigResult = { ok: true; config: Array<{ key: string; value: unknown }> } | { ok: false; code: 'not_found' };
+export interface LegalTexts { [kind: string]: { [language: string]: { title: string; body: string } } }
+export type LegalOverview = {
+  ok: true;
+  releases: Array<{ version: string; publishedAt: string; publishedBy: string | null }>;
+  /** The newest release with its texts, or null when nothing is published yet. */
+  current: { version: string; texts: LegalTexts } | null;
+};
+export type LegalOverviewResult = LegalOverview | { ok: false; code: 'not_found' };
 export type PublishLegalResult = { ok: true; version: string } | Refusal;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -133,5 +141,27 @@ export function createAdminService(deps: { db: PlatformDb }) {
     return { ok: true, config: rows };
   }
 
-  return { recordLaunchCheck, setConfig, publishLegalRelease, launchOverview, listConfig };
+  /** The notice: every release published and the texts of the newest, so a new one can start from it. Any staff member reads them. */
+  async function legalOverview(staffId: string): Promise<LegalOverviewResult> {
+    if (!UUID.test(staffId)) return { ok: false, code: 'not_found' };
+    const staff = await db.withPlatformTx({ staffId: null }, async (tx) => (await tx.query<Staff>('select id, display_name, role, active from platform.staff_by_id($1)', [staffId])).rows[0] ?? null);
+    if (!staff || !staff.active) return { ok: false, code: 'not_found' };
+    return db.withPlatformTx({ staffId: staff.id, staffLabel: staff.display_name }, async (tx) => {
+      const releases = (await tx.query<{ seq: number; version: string; published_at: Date; name: string | null }>(
+        `select r.seq, r.version, r.published_at, s.display_name as name from platform.legal_release r left join platform.platform_staff s on s.id = r.published_by order by r.seq desc`,
+      )).rows;
+      const newest = releases[0];
+      let current: LegalOverview['current'] = null;
+      if (newest) {
+        const texts: LegalTexts = {};
+        for (const t of (await tx.query<{ kind: string; language: string; title: string; body: string }>('select kind, language, title, body from platform.legal_text where seq = $1', [newest.seq])).rows) {
+          (texts[t.kind] ??= {})[t.language] = { title: t.title, body: t.body };
+        }
+        current = { version: newest.version, texts };
+      }
+      return { ok: true as const, releases: releases.map((r) => ({ version: r.version, publishedAt: r.published_at.toISOString(), publishedBy: r.name })), current };
+    });
+  }
+
+  return { recordLaunchCheck, setConfig, publishLegalRelease, launchOverview, listConfig, legalOverview };
 }

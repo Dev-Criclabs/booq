@@ -12,6 +12,8 @@ import { profileRoutes } from '../api/profile/routes';
 import { staffRoutes } from '../api/staff/routes';
 import { dobHistoryRoutes } from '../api/dob-history/routes';
 import { lineFriendRoutes } from '../api/line/friend/routes';
+import { createReceiptPdf } from '../api/receipts/pdf';
+import { receiptRoutes } from '../api/receipts/routes';
 import { importRoutes } from '../api/import/routes';
 import { noticeRoutes } from '../api/notice/routes';
 import type { WebConfig } from './context';
@@ -51,6 +53,7 @@ export const mounts: readonly Mount[] = [
   (m) => staffRoutes({ db: m.db }),
   (m) => dobHistoryRoutes({ db: m.db }),
   (m) => lineFriendRoutes({ db: m.db }),
+  (m) => receiptRoutes({ db: m.db, pdf: createReceiptPdf(m.config.localesDir ?? null) }),
   (m) => [publicScheduleRoutes, playerBookingRoutes, staffBookingRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
   (m) => noticeRoutes({ db: m.db, clubBySlug: m.clubBySlug }),
   (m) => profileRoutes({ db: m.db, service: () => createProfileEditService({ today: () => bangkokDate(m.now()) }) }),
