@@ -1,18 +1,20 @@
 'use client';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { ConnectionEditor } from './ConnectionEditor';
 import { ConsoleNav } from './ConsoleNav';
 import { loadClub, type ClubView, type Failure } from './club';
 import { t } from './i18n';
 import { StepUpPanel } from './StepUpPanel';
 import { SupportEditor } from './SupportEditor';
 import {
-  basicsFrom, checkBasics, checkPlan, clockTime, createClub, dayOf, emptyBasics, FIELD_KEY, OPTION_KEY, PAYMENT_OPTIONS, saveBasics, savePaymentOption, savePlan, slugify,
+  basicsFrom, checkBasics, checkPlan, clockTime, createClub, DATE_PATTERN, dayOf, emptyBasics, FIELD_KEY, OPTION_KEY, PAYMENT_OPTIONS, saveBasics, savePaymentOption, savePlan, slugify,
   STEP_HEADER_KEY, STEP_TITLE_KEY, STEPS, stepNumber, type BasicField, type BasicValues, type PaymentOption, type Problem, type Step,
 } from './wizard';
 
 // /clubs/new and /clubs/{id}/setup?step=n (P2): the five steps of setting up a new club. Step 1 creates the club as a Draft; each
 // later step saves into the draft. The plan text is display copy from the language files; nothing about price is stored.
-// LINE and payment keys cannot be entered here yet (no API); the pages say so. English only; text by key.
+// LINE and Beam values are tested as they are typed and saved only if the check passes, unless the staff member saves anyway (D167).
+// Slip checking details have no API yet. English only; text by key.
 
 type Load = { kind: 'loading' } | { kind: 'error'; key: string; signIn?: boolean } | { kind: 'ready'; club: ClubView };
 type Go = Step | 'stay' | 'finish';
@@ -166,8 +168,8 @@ export function WizardScreen({ id, step }: { id?: string; step: Step }) {
                 <p><strong>{t('X-0064')}</strong></p>
                 <p className="sub">{t('X-0065')}</p>
                 <p className="sub">{t('X-0066')}</p>
-                <div className="field"><label htmlFor="w-trial">{t('X-0067')}</label><input id="w-trial" data-testid="w-trial" placeholder="YYYY-MM-DD" inputMode="numeric" value={plan.trial} disabled={locked} onChange={(e) => setPlan({ ...plan, trial: e.target.value })} /></div>
-                <div className="field"><label htmlFor="w-billing">{t('X-0069')}</label><input id="w-billing" data-testid="w-billing" placeholder="YYYY-MM-DD" inputMode="numeric" value={plan.billing} disabled={locked} onChange={(e) => setPlan({ ...plan, billing: e.target.value })} /></div>
+                <div className="field"><label htmlFor="w-trial">{t('X-0067')}</label><input id="w-trial" data-testid="w-trial" placeholder={DATE_PATTERN} inputMode="numeric" value={plan.trial} disabled={locked} onChange={(e) => setPlan({ ...plan, trial: e.target.value })} /></div>
+                <div className="field"><label htmlFor="w-billing">{t('X-0069')}</label><input id="w-billing" data-testid="w-billing" placeholder={DATE_PATTERN} inputMode="numeric" value={plan.billing} disabled={locked} onChange={(e) => setPlan({ ...plan, billing: e.target.value })} /></div>
                 <p className="sub">{t('X-0070')}</p>
                 {planProblem ? <p role="alert" className="error" data-testid="w-problem-plan">{t(planProblem)}</p> : null}
                 <Buttons />
@@ -187,7 +189,7 @@ export function WizardScreen({ id, step }: { id?: string; step: Step }) {
               <section className="card" data-testid="step-line-form">
                 <h2>{t('X-0140')}</h2>
                 <p className="sub">{t('X-0097')}</p>
-                <p className="notice" data-testid="not-available">{t('X-new.wizard_not_available')}</p>
+                <ConnectionEditor id={id!} kind="line" canEdit={!locked} askStepUp={(run) => setPending({ run })} onNotice={setNotice} onSaved={() => { setSaved(clockTime(new Date())); }} />
                 <Buttons plain />
               </section>
             ) : null}
@@ -199,12 +201,16 @@ export function WizardScreen({ id, step }: { id?: string; step: Step }) {
                 {PAYMENT_OPTIONS.map((o) => (
                   <label key={o} className="check">
                     <input type="radio" name="payment_option" value={o} checked={option === o} disabled={locked} onChange={() => setOption(o)} data-testid={`option-${o}`} />
-                    {' '}<strong>{t(OPTION_KEY[o].title)}</strong> <span className="sub">{t(OPTION_KEY[o].text)}</span>
+                    {' '}<strong>{t(OPTION_KEY[o].nameKey)}</strong> <span className="sub">{t(OPTION_KEY[o].aboutKey)}</span>
                   </label>
                 ))}
-                <p className="notice" data-testid="not-available">{t('X-new.wizard_keys_not_available')}</p>
                 <Buttons last />
               </form>
+            ) : null}
+            {step === 'payments' ? (
+              <section className="card" data-testid="step-payments-keys">
+                <ConnectionEditor id={id!} kind="payments" canEdit={!locked} option={option} askStepUp={(run) => setPending({ run })} onNotice={setNotice} onSaved={() => { setSaved(clockTime(new Date())); void reload(); }} />
+              </section>
             ) : null}
           </>
         ) : null}

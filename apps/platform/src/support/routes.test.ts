@@ -15,7 +15,7 @@ beforeEach(async () => {
         db: pdb,
         connections: createConnections({
           encryptKey: 'unused-in-these-tests',
-          line: { check: async () => ({ ok: true as const }) },
+          line: { check: async (i: { channelAccessToken: string }) => (i.channelAccessToken === 'BAD' ? { ok: false as const, code: 'messaging_api_token_rejected' } : { ok: true as const }) },
           beam: { check: async () => ({ ok: true as const }) },
         } as never),
       }),
@@ -45,6 +45,10 @@ describe('support setup', () => {
     await h.tdb.query(`update public.club set status = 'live' where id = $1`, [CLUB]);
     const r = await h.call('PUT', `/clubs/${CLUB}/support/setup/basics`, { body: { name_en: 'X' }, as: 'spec' });
     expect([r.status, r.body]).toEqual([409, { code: 'look_only' }]);
+  });
+  it('a failed test is 409 connection_test_failed with the code, and the body carries no secret', async () => {
+    const r = await h.call('PUT', `/clubs/${CLUB}/support/setup/line`, { body: { line_channel_token: 'BAD', test: true }, as: 'spec' });
+    expect([r.status, r.body]).toEqual([409, { code: 'connection_test_failed', connectionTest: { result: 'fail', code: 'messaging_api_token_rejected' } }]);
   });
   it('the connection sections need a fresh second factor (SR-16)', async () => {
     const r = await h.call('PUT', `/clubs/${CLUB}/support/setup/line`, { body: {}, as: 'spec', fresh: false });

@@ -18,7 +18,7 @@ The spec wins over the canvas. Boards are H-K1 to H-K6 (T- twins exist).
 ## Rules that apply to every CPORT ID
 
 - Coach portal is mobile at 375 px, inside LINE, signed in with LINE. A coach sees only their own data: not other coaches' schedules, customer payments or club revenue (HO Roles). A person who is also a player or staff holds a set of roles (D1), and every club person also holds the Player role (D115) and the Coach role adds nothing beyond its own rights.
-- Club ID scope, server side permissions, audit on changes (PLAT-04), PDPA (session notes are staff and coach only, never shown to the player), Thai and English from K keys (TEXT-01 to TEXT-06).
+- Club ID scope, server side permissions, audit on changes (PLAT-04), PDPA (session notes are staff and coach only, never shown in the app; included in the player's data export, D171), Thai and English from K keys (TEXT-01 to TEXT-06).
 - Rest rule: a coach teaches at most 6 hours in a row (setting, default 6); "in a row" means back to back hours, unpaid held hours count, a group class counts until cancelled (D19).
 - All bookings are 60 minutes on the hour.
 
