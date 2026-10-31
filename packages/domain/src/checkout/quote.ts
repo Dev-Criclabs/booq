@@ -49,6 +49,18 @@ export interface CreditFit {
 export interface QuoteView extends Quote {
   /** The club's cancel window for the summary's policy line, `{hours}` (R4-AC5); null while unset. */
   cancelWindowHours: number | null;
+  /** R6: the club's court bundle offered on a full price court order of a player with no court hour credit; null when
+   *  not offered. Not part of quote_hash: declining changes nothing (R6-AC2). */
+  bundleOffer: BundleOffer | null;
+}
+
+export interface BundleOffer {
+  productId: string;
+  priceSatang: number;
+  /** The bundle's hours, for `{hours}` on C10c. */
+  hours: number;
+  /** One hour of this booking is paid from the bundle (R6, C10P). */
+  hoursUsedNow: 1;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -189,6 +201,7 @@ export async function quoteFor(tx: Tx, customerId: string, req: QuoteRequest, so
     coachTierId: coach?.tierId ?? null,
     coachSource: coach?.source ?? null,
   };
+  const credits = fit.priceGroupId === null ? [] : await sources.eligibleCredits(tx, customerId, fit);
   const result = priceOrder({
     onDate: club.today,
     dob: person.dob,
@@ -197,7 +210,7 @@ export async function quoteFor(tx: Tx, customerId: string, req: QuoteRequest, so
     coachTierPrices: tierPrices.rows.map((p) => ({ tierId: p.tier_id, priceGroupId: p.price_group_id, priceSatang: p.price_satang })),
     addOns: addOns.rows.map((a) => ({ id: a.id, priceSatang: a.price_satang, active: a.active })),
     selection: { courtId: req.courtId, hours: req.hours, coach, addOnIds: req.addOnIds },
-    credits: fit.priceGroupId === null ? [] : await sources.eligibleCredits(tx, customerId, fit),
+    credits,
     walletBalanceSatang: await sources.walletBalance(tx, customerId),
     code,
     birthday: { setting: terms.birthdayDiscount, usedKinds: used },
@@ -206,7 +219,25 @@ export async function quoteFor(tx: Tx, customerId: string, req: QuoteRequest, so
     if (result.code === 'code_below_minimum') throw new CheckoutError(result.code, { amount: result.minSpendSatang });
     throw new CheckoutError(result.code);
   }
-  return { ...result.quote, cancelWindowHours: terms.cancelWindowHours };
+  const quote = result.quote;
+  // R6 (design 4.7): a court order (no coach) at full price (no discount, no credit used) by a player with no court hour
+  // credit at all is offered the club's court bundle, when one is for sale to them.
+  const fullPriceCourt = coach === null && quote.discountSatang === 0 && quote.creditValueSatang === 0 && quote.lines.some((l) => l.kind === 'court_hour');
+  const bundleOffer = fullPriceCourt && !credits.some((c) => c.lineKind === 'court_hour') ? await courtBundle(tx, fit.priceGroupId) : null;
+  return { ...quote, cancelWindowHours: terms.cancelWindowHours, bundleOffer };
+}
+
+/** The club's court bundle for this buyer: an active court hour product with a price, of no price group or the buyer's.
+ *  With more than one, the club's first (oldest) is offered. None (or no price set) is no prompt (R6-AC1). */
+async function courtBundle(tx: Tx, priceGroupId: string | null): Promise<BundleOffer | null> {
+  const p = one(await tx.query<{ id: string; price_satang: number; credits: number }>(
+    `select id, price_satang, credits from public.package_product
+      where club_id = app.club_id() and credit_type = 'court_hour' and active and price_satang is not null
+        and (price_group_id is null or price_group_id is not distinct from $1::uuid)
+      order by created_at, id limit 1`,
+    [priceGroupId],
+  ));
+  return p ? { productId: p.id, priceSatang: p.price_satang, hours: p.credits, hoursUsedNow: 1 } : null;
 }
 
 /** The ports until F07 and F14 are read here: no coach, no referral codes; and the reserve through F06's port. */

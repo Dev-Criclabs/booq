@@ -48,6 +48,7 @@ describe('staff routes', () => {
       'GET /staff/invites staff.manage',
       'POST /staff/:userId/deactivate staff.manage',
       'POST /staff/invites staff.manage',
+      'POST /staff/invites/:id/cancel staff.manage',
       'PUT /staff/:userId/roles roles.assign',
     ]);
   });
@@ -84,6 +85,25 @@ describe('staff routes', () => {
     expect(JSON.stringify((await run('GET', '/staff/invites', owner)))).not.toContain(token);
     expect(await run('POST', '/staff/invites', owner, { kind: 'owner' })).toMatchObject({ ok: false, status: 400, code: 'invalid_invite' });
     expect(await run('POST', '/staff/invites', owner, { kind: 'coach', roles: ['coach'], extra: 1 })).toMatchObject({ ok: false, status: 400, code: 'bad_input' });
+  });
+
+  it('POST /staff/invites/:id/cancel ends a pending staff invite so it leaves the list and cannot be redeemed; a used, repeated, unknown or bad id is refused', async () => {
+    const { id } = ((await run('POST', '/staff/invites', owner, { kind: 'staff', roles: ['front_desk'] })) as { body: { id: string } }).body;
+    expect(((await run('GET', '/staff/invites', owner)) as { body: unknown[] }).body).toHaveLength(1);
+    expect(await run('POST', '/staff/invites/:id/cancel', owner, { id })).toMatchObject({ ok: true });
+    expect(((await run('GET', '/staff/invites', owner)) as { body: unknown[] }).body).toHaveLength(0);
+    expect((await tdb.query(`select expires_at <= app.now() as gone from public.club_invite where id = $1`, [id])).rows[0].gone).toBe(true);
+    expect(await run('POST', '/staff/invites/:id/cancel', owner, { id })).toMatchObject({ ok: false, status: 404 });
+    expect(await run('POST', '/staff/invites/:id/cancel', owner, { id: 'nope' })).toMatchObject({ ok: false, status: 400 });
+    const used = ((await run('POST', '/staff/invites', owner, { kind: 'coach' })) as { body: { id: string } }).body.id;
+    await tdb.query(`update public.club_invite set used_at = app.now(), used_by_user = $2 where id = $1`, [used, DESK]);
+    expect(await run('POST', '/staff/invites/:id/cancel', owner, { id: used })).toMatchObject({ ok: false, status: 404 });
+    expect((await tdb.query(`select count(*)::int as n from public.audit_entry where action = 'invite.cancelled'`)).rows[0].n).toBe(1);
+  });
+
+  it('an Owner cannot be invited or assigned here: the owner role comes only from the platform owner invite', async () => {
+    expect(await run('POST', '/staff/invites', owner, { kind: 'staff', roles: ['owner'] })).toMatchObject({ ok: false, status: 400, code: 'invalid_invite' });
+    expect(await run('PUT', '/staff/:userId/roles', owner, { userId: DESK, roles: ['owner', 'player'] })).toMatchObject({ ok: false });
   });
 
   it('with no invite life configured the route answers 503 not_configured', async () => {

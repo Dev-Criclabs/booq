@@ -41,7 +41,7 @@ describe("F04 R3", () => {
   // Given the add-on name for balls, when it is shown anywhere, then the English is "Balls (Set of 3 balls)" and the Thai is "ลูกเทนนิส (ชุด 3 ลูก)" on every screen and receipt.
   // F04/R3-AC7: proven by a real or traced test in another file of this folder
   // Given the owner edits add-ons in A9b, when they save, then it is audited (PLAT-04) and the change applies to new orders only.
-  test.todo("F04/R3-AC8 Given the owner edits add-ons in A9b, when they save, then it is audited (PLAT-04) and the change applies ...");
+  // F04/R3-AC8: proven by a real or traced test in another file of this folder
 });
 
 describe("F04 R4", () => {
@@ -67,37 +67,6 @@ describe("F04 R4", () => {
   test.todo("F04/R4-AC11 Given any amount shown to the player, when it is whole baht, then it shows without decimals (฿1,300); ...");
   // Given a Paused club, when a player starts checkout, then the server refuses (F01 PLAT-03-AC4).
   // F04/R4-AC10: proven by a real or traced test in another file of this folder
-});
-
-describe("F04 PROMO-01", () => {
-  // Given a code is applied, when a second code is entered, then the second is refused; one code per order.
-  // F04/PROMO-01-AC1: proven by a real or traced test in another file of this folder
-  // Given a code that is stackable with the birthday discount and a player entitled to the birthday discount, when the order is priced, then both apply. Given a code that is not stackable, then the one giving the larger discount applies and the other is not used up (D65, HO PROMO-01).
-  // F04/PROMO-01-AC2: proven by a real or traced test in another file of this folder
-  // Given a code with a percentage discount, when priced, then the discount is calculated on the items in the code's scope only and rounds half up to the satang; add-ons are excluded unless the code says so (D23).
-  // F04/PROMO-01-AC3: proven by a real or traced test in another file of this folder
-  // Given a code with a fixed THB discount larger than the price of the items in scope, when priced, then the discount is capped at that price (never a negative price).
-  // F04/PROMO-01-AC4: proven by a real or traced test in another file of this folder
-  // Given a code outside its dates, for the wrong audience (Adult or Student), for items outside its scope, or whose minimum spend is not met, when it is entered, then it is refused with a reason. Minimum spend is checked on the order total before credits and wallet are applied (D68).
-  // F04/PROMO-01-AC5: proven by a real or traced test in another file of this folder
-  // Given a first time only code and a player who has a paid booking already, when the code is entered, then it is refused.
-  // F04/PROMO-01-AC6: proven by a real or traced test in another file of this folder
-  // Given a total cap or a per customer cap, when two players (or one player twice) use the code in parallel at the last use, then exactly one succeeds (QA CONC-23). A use is counted at Pay and restored when the hold ends without payment or the booking is cancelled 12 hours or more ahead (D66, HO PROMO-01).
-  // F04/PROMO-01-AC7: proven by a real or traced test in another file of this folder
-  // Given a partner code on a solo class, when it is entered, then it is not accepted: partner codes on solo classes are parked for later (Gaps A4). The PARTNER100 example on the C10b canvas board is a canvas bug.
-  // F04/PROMO-01-AC8: proven by a real or traced test in another file of this folder
-  // Given a code of another club, or one that does not exist, when it is entered, then the answer is the same "code not valid" (CC-1).
-  // F04/PROMO-01-AC9: proven by a real or traced test in another file of this folder
-  // Given a discount on an order of several hours, when it is priced, then it is split across the hours by each hour's price (D67). Given one hour is cancelled 12 hours or more ahead, then that hour's share of the discount is restored; the code use is restored only when every hour of the order is cancelled (D67, D21). F04 records the share per hour and which order used which code.
-  // F04/PROMO-01-AC10: proven by a real or traced test in another file of this folder
-  // Given a referral code from a friend, when a new player enters it at checkout, then it is the one code of the order and gives the friend discount (an empty setting until the owner sets it); a player cannot use their own referral code (blocked by LINE ID and phone, PROMO-02, F14).
-  // F04/PROMO-01-AC11: proven by a real or traced test in another file of this folder
-  // Given a code use is restored (release or cancel), when the partner report counts redemptions, then the restored use is no longer counted (D70).
-  // F04/PROMO-01-AC14: proven by a real or traced test in another file of this folder
-  // Given the owner creates or edits a code, when it is saved, then it is audited (PLAT-04) and a change applies to new orders only.
-  test.todo("F04/PROMO-01-AC12 Given the owner creates or edits a code, when it is saved, then it is audited (PLAT-04) and a change ...");
-  // Given a promo discount makes the amount due zero, when the player pays, then PAY-07 applies.
-  // F04/PROMO-01-AC13: proven by a real or traced test in another file of this folder
 });
 
 describe("F04 R6", () => {

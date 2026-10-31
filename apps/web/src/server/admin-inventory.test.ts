@@ -28,7 +28,7 @@ const BUILT: Record<string, string[]> = {
   A5: ['GET /staff/customers customer.contact.read', 'GET /staff/customers/csv customer.export', 'POST /staff/customers/:id/tags customer.write', 'DELETE /staff/customers/:id/tags/:tag customer.write'],
   A6: [
     'GET /staff/customers/:id customer.contact.read', 'GET /staff/customers/:id/bookings customer.contact.read', 'GET /staff/customers/:id/orders customer.contact.read',
-    'GET /staff/customers/:id/notes customer.contact.read', 'POST /staff/customers/:id/notes customer.write', 'GET /staff/customers/:id/credits customer.contact.read',
+    'GET /staff/customers/:id/notes customer.contact.read', 'GET /staff/customers/:id/receipts customer.contact.read', 'POST /staff/customers/:id/notes customer.write', 'GET /staff/customers/:id/credits customer.contact.read',
     'POST /staff/customers/:id/credit-adjust customer.adjust', 'POST /staff/customers/:id/wallet-adjust customer.adjust', 'POST /staff/packages/:id/extend package.extend',
     'GET /customers/:id/dob-history customer.dob-history.read', 'GET /claims claim.handle', 'POST /claims/:id/confirm claim.handle', 'POST /claims/:id/reject claim.handle',
     'GET /data-requests datarequest.handle', 'POST /data-requests/:id/handle datarequest.handle',
@@ -49,6 +49,7 @@ const BUILT: Record<string, string[]> = {
     'GET /staff/setup/court-prices price.read', 'POST /staff/setup/court-prices price.write', 'PUT /staff/setup/court-prices/:id price.write', 'DELETE /staff/setup/court-prices/:id price.write',
     'GET /staff/setup/coach-tiers price.read', 'POST /staff/setup/coach-tiers price.write', 'PUT /staff/setup/coach-tiers/:id price.write', 'DELETE /staff/setup/coach-tiers/:id price.write',
     'GET /staff/setup/coach-tier-prices price.read', 'PUT /staff/setup/coach-tier-prices price.write',
+    'GET /staff/setup/package-products price.read', 'POST /staff/setup/package-products price.write', 'PUT /staff/setup/package-products/:id price.write',
     'GET /staff/setup/add-ons price.read', 'POST /staff/setup/add-ons price.write', 'PUT /staff/setup/add-ons/:id price.write', 'DELETE /staff/setup/add-ons/:id price.write',
   ],
   A10: [
@@ -60,18 +61,17 @@ const BUILT: Record<string, string[]> = {
     'GET /staff/reports/:name report.read', 'GET /staff/reports/:name/csv report.read', 'GET /staff/daily-close daily-close.run', 'GET /staff/daily-close/csv daily-close.run', 'POST /staff/daily-close daily-close.run'],
   A14: ['GET /staff/receipts receipt.list', 'GET /staff/receipts/:id/pdf receipt.print', 'POST /staff/receipts/:id/void receipt.void'],
   A16: [
-    'PUT /club/business club.business.write',
+    'PUT /club/business club.business.write', 'GET /club/setup settings.business.read',
     'GET /settings settings.business.read', 'PUT /settings/:key settings.write', 'PUT /hours hours.write', 'POST /resources resource.write', 'PUT /resources/:id resource.write',
     'PUT /support-window support-window.write',
     'POST /exports export.run', 'GET /exports/:id export.run',
   ],
-  A17: ['GET /staff staff.manage', 'POST /staff/invites staff.manage', 'GET /staff/invites staff.manage', 'PUT /staff/:userId/roles roles.assign', 'POST /staff/:userId/deactivate staff.manage', 'GET /staff/audit audit.read'],
+  A17: ['GET /staff staff.manage', 'POST /staff/invites staff.manage', 'GET /staff/invites staff.manage', 'PUT /staff/:userId/roles roles.assign', 'POST /staff/:userId/deactivate staff.manage', 'GET /staff/audit audit.read', 'GET /staff/audit/record-types audit.read', 'POST /staff/invites/:id/cancel staff.manage'],
 };
 
 // Routes the design needs that another feature owns and that are not mounted yet (F11 design 5; the owner of each is named).
 const GAPS: Record<string, string[]> = {
   A2: ['POST /staff/bookings (F03)', 'GET /staff/bookings/:id/cancel-preview (F09)', 'POST /staff/bookings/:id/cancel (F09)', 'POST /staff/bookings/:id/mark (F09)', 'POST /staff/bookings/:id/mark/reverse (F09)', 'POST /staff/orders/:id/package-sale (F06)'],
-  A9: ['GET /staff/setup/package-products (F06)'],
   A12: ['POST /staff/closures/preview (F09)', 'POST /staff/closures (F09)', 'GET /staff/closures (F09)', 'POST /staff/closures/:id/end (F09)', 'GET /staff/closures/:id/expired-packages (F09)'],
   A13: ['GET /staff/reports/owed (F06)'],
   A16: ['GET /staff/rich-menu (F10)', 'PUT /staff/rich-menu/labels (F10)'],

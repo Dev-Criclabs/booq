@@ -1,0 +1,140 @@
+/* Club admin console (F11; boards H-A01-Calendar, S-A01-Paused, H-A07-Coaches). Palette D from player.css. Everything is under .adm so the
+   player app is untouched. 1280 px is the design width; below 900 px the sidebar becomes a strip on top. Thai runs longer and taller:
+   labels truncate on one line, banners wrap their text, content scrolls, buttons never wrap (CC-5). */
+.adm { display: grid; grid-template-columns: 220px minmax(0, 1fr); min-height: 100dvh; background: var(--g); color: var(--ink); }
+.adm-side { background: var(--dk); color: var(--od); display: flex; flex-direction: column; padding: 20px 14px; gap: 16px; min-width: 0; position: sticky; top: 0; height: 100dvh; overflow-y: auto; }
+.adm-brand .wordmark { color: var(--od); }
+.adm nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.adm-group { margin-bottom: 14px; }
+.adm-group-title { margin: 0 0 6px 10px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.7; }
+.adm nav li > a, .adm nav li > span { display: block; padding: 9px 12px; border-radius: 10px; color: inherit; text-decoration: none; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.adm nav li > a:hover { background: rgba(255, 255, 255, 0.1); }
+.adm nav li > a[aria-current='page'] { background: var(--ac); color: var(--ink); font-weight: 700; }
+.adm nav li > span[aria-disabled='true'] { opacity: 0.55; cursor: default; }
+.adm-foot { margin-top: auto; }
+.adm-foot .lang-toggle { color: var(--od); }
+.adm-main { min-width: 0; display: flex; flex-direction: column; }
+.adm-top { display: flex; align-items: center; justify-content: space-between; padding: 14px 28px; border-bottom: 1px solid var(--ln); min-height: 56px; }
+.adm-club { font-weight: 600; color: var(--hd); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adm-banners { display: flex; flex-direction: column; gap: 10px; padding: 14px 28px 0; }
+.adm-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; border-radius: 14px; background: #f5ecc9; color: var(--ink); border: 1px solid rgba(29, 36, 31, 0.12); }
+.adm-banner-line_token { background: #f3e1dc; color: #7a3e33; }
+.adm-banner-title { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.adm-banner-text { margin: 4px 0 0; font-size: 14px; color: inherit; opacity: 0.85; overflow-wrap: anywhere; }
+.adm-btn { display: inline-flex; align-items: center; justify-content: center; height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--hd); color: #fff; font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; text-decoration: none; cursor: pointer; flex: none; }
+.adm-content { padding: 24px 28px; min-width: 0; overflow-x: auto; }
+.adm-welcome { color: var(--mu); }
+.adm-state { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; }
+.adm-state h1 { margin: 0; font-size: 22px; color: var(--hd); overflow-wrap: anywhere; }
+.adm-state p { margin: 0; max-width: 420px; color: var(--mu); overflow-wrap: anywhere; }
+@media (max-width: 900px) {
+  .adm { grid-template-columns: minmax(0, 1fr); }
+  .adm-side { position: static; height: auto; flex-direction: row; align-items: center; flex-wrap: wrap; padding: 12px 16px; gap: 10px 16px; }
+  .adm-side nav { order: 3; width: 100%; overflow-x: auto; }
+  .adm-side nav .adm-group { display: inline-block; vertical-align: top; margin: 0 12px 0 0; }
+  .adm-side nav ul { flex-direction: row; }
+  .adm-group-title { display: none; }
+  .adm-foot { margin-top: 0; margin-left: auto; }
+  .adm-top, .adm-banners, .adm-content { padding-left: 16px; padding-right: 16px; }
+  .adm-banner { flex-direction: column; align-items: flex-start; }
+}
+/* The wordmark of the player app is sized for a phone; here it fits the 220 px sidebar. */
+.adm-brand .wordmark { text-align: left; }
+.adm-brand .wordmark .w1 { font-size: 30px; letter-spacing: 0.06em; }
+.adm-brand .wordmark .w2 { font-size: 11px; letter-spacing: 0.3em; }
+
+/* Shared by the pages: a head with the title and an action, filters, tables that scroll sideways rather than break, chips. */
+.adm-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+.adm-head h1 { margin: 0; font-size: 24px; color: var(--hd); overflow-wrap: anywhere; }
+.adm-count { font-weight: 400; color: var(--mu); }
+.adm-muted { color: var(--mu); }
+.adm-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.adm-filters { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.adm-grow { flex: 1 1 260px; }
+.adm-field input, .adm-field select, .adm-field textarea { width: 100%; height: 40px; padding: 0 14px; border: 1px solid var(--ln); border-radius: 999px; background: var(--cd); color: var(--ink); font: inherit; font-size: 14px; min-width: 0; }
+.adm-field textarea { height: auto; padding: 10px 14px; border-radius: 14px; }
+.adm-btn-ghost { background: none; color: var(--hd); border: 1px solid var(--hd); }
+.adm-btn:disabled { opacity: 0.6; cursor: default; }
+.adm-table-wrap { background: var(--cd); border-radius: 16px; overflow-x: auto; margin-bottom: 16px; border: 1px solid var(--ln); }
+.adm-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 640px; }
+.adm-table th, .adm-table td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--ln); vertical-align: top; }
+.adm-table thead th { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mu); font-weight: 600; white-space: nowrap; }
+.adm-table tbody th { font-weight: 600; }
+.adm-table tbody th a { color: var(--hd); text-decoration: none; overflow-wrap: anywhere; }
+.adm-table tbody tr:last-child > * { border-bottom: 0; }
+.adm-table td { overflow-wrap: anywhere; }
+.adm-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.adm-chip { display: inline-block; padding: 3px 10px; border-radius: 999px; background: var(--tn); color: var(--hd); font-size: 12px; font-weight: 500; overflow-wrap: anywhere; }
+.adm-chip-walkin { background: #f5ecc9; }
+.adm-table td.adm-nowrap { white-space: nowrap; overflow-wrap: normal; }
+
+/* A6 Customer profile */
+.adm-prof-head h1 { margin: 0 0 4px; font-size: 26px; color: var(--hd); overflow-wrap: anywhere; }
+.adm-prof-head p { margin: 4px 0; overflow-wrap: anywhere; }
+.adm-chip-x { margin-left: 6px; border: 0; background: none; color: inherit; cursor: pointer; font: inherit; padding: 0 2px; }
+.adm-chip-add { border: 1px dashed var(--hd); background: none; cursor: pointer; font: inherit; font-size: 12px; }
+.adm-inline { display: inline-flex; gap: 8px; align-items: center; }
+.adm-inline input { height: 34px; padding: 0 12px; border: 1px solid var(--ln); border-radius: 999px; font: inherit; font-size: 13px; min-width: 0; width: 160px; }
+.adm-tabs { display: flex; gap: 6px; margin: 18px 0; overflow-x: auto; border-bottom: 1px solid var(--ln); }
+.adm-tabs button { border: 0; background: none; padding: 10px 16px; font: inherit; font-size: 14px; font-weight: 500; color: var(--mu); cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; }
+.adm-tabs button[aria-selected='true'] { color: var(--hd); border-bottom-color: var(--hd); font-weight: 700; }
+.adm-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.adm-tile { background: var(--cd); border: 1px solid var(--ln); border-radius: 16px; padding: 16px; min-width: 0; }
+.adm-tile p { margin: 0; overflow-wrap: anywhere; }
+.adm-tile-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--mu); margin-bottom: 6px !important; }
+.adm-tile-value { font-size: 22px; font-weight: 700; color: var(--hd); }
+.adm-card { background: var(--cd); border: 1px solid var(--ln); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; min-width: 0; }
+.adm-card h2 { margin: 0 0 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--mu); overflow-wrap: anywhere; }
+.adm-card h3 { margin: 16px 0 8px; font-size: 14px; color: var(--hd); }
+.adm-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.adm-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.adm-list li { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+.adm-list li > span:first-child { overflow-wrap: anywhere; min-width: 0; flex: 1 1 240px; }
+.adm-notes { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.adm-notes p { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.adm-form { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.adm-form .adm-field { width: 100%; display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--mu); }
+.adm-error { color: #7a3e33; margin: 0; overflow-wrap: anywhere; }
+.adm-ok { color: var(--hd); margin: 0; }
+.adm-content a { color: var(--hd); }
+.adm-content a.adm-btn { color: #fff; }
+.adm-content a.adm-btn-ghost { color: var(--hd); }
+
+/* A17 Staff and audit log */
+.adm-h2 { margin: 24px 0 12px; font-size: 20px; color: var(--hd); }
+.adm-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.adm-card .adm-field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--mu); margin-bottom: 12px; max-width: 420px; }
+.adm-linkbox { margin-top: 14px; padding: 14px; border-radius: 14px; background: #f5ecc9; display: flex; flex-direction: column; gap: 10px; }
+.adm-linkbox p { margin: 0; overflow-wrap: anywhere; }
+.adm-linkbox input { width: 100%; height: 40px; padding: 0 14px; border: 1px solid var(--ln); border-radius: 999px; font: inherit; font-size: 13px; min-width: 0; }
+.adm-roles { display: flex; flex-direction: column; gap: 8px; }
+.adm-roles p { margin: 0; overflow-wrap: anywhere; }
+.adm-check { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.adm-audit td:nth-child(4) { min-width: 260px; }
+.adm-change { font-size: 13px; color: var(--mu); overflow-wrap: anywhere; }
+.adm-table td .adm-btn, .adm-table td .adm-btn-ghost { height: 34px; font-size: 13px; padding: 0 14px; }
+/* A visually hidden label is positioned against its box, so it cannot sit outside a table that scrolls sideways. */
+.adm-table-wrap, .adm-field, .adm-card { position: relative; }
+
+/* A0 Setup checklist */
+.adm-import { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--ln); }
+.adm-import h3 { margin: 0 0 6px; }
+.adm-file { position: relative; cursor: pointer; }
+.adm-file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.adm-card h2 .adm-chip { margin-left: 8px; text-transform: none; letter-spacing: 0; }
+
+/* A16 Settings */
+.adm-rule { padding: 12px 0; border-top: 1px solid var(--ln); }
+.adm-rule:first-of-type { border-top: 0; padding-top: 0; }
+.adm-rule-label { display: block; font-weight: 600; margin-bottom: 6px; overflow-wrap: anywhere; }
+.adm-rule-control { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.adm-rule-control select, .adm-rule-control input { height: 38px; padding: 0 12px; border: 1px solid var(--ln); border-radius: 999px; background: var(--cd); font: inherit; font-size: 14px; min-width: 0; max-width: 100%; }
+.adm-rule-control input { width: 110px; }
+.adm-hours-row { display: grid; grid-template-columns: minmax(90px, 140px) 100px 100px minmax(0, 1fr); gap: 10px; align-items: center; width: 100%; }
+.adm-hours-row input[type='text'], .adm-hours-row input:not([type]), .adm-hours-row input[inputmode] { height: 38px; padding: 0 12px; border: 1px solid var(--ln); border-radius: 999px; font: inherit; font-size: 14px; min-width: 0; width: 100%; }
+.adm-day { overflow-wrap: anywhere; font-weight: 500; }
+.adm-court { border: 1px solid var(--ln); border-radius: 14px; padding: 14px 16px; margin: 0 0 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.adm-court legend { padding: 0 6px; font-weight: 700; color: var(--hd); overflow-wrap: anywhere; }
+.adm-court h3 { margin: 0; }
+.adm-court .adm-field { max-width: 360px; }
+@media (max-width: 900px) { .adm-hours-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .adm-hours-row .adm-day { grid-column: 1 / -1; } .adm-hours-row .adm-check { grid-column: 1 / -1; } }

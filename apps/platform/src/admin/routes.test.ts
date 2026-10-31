@@ -88,6 +88,11 @@ describe('config', () => {
     expect((await h.call('PUT', '/config/tester_invite_ttl_hours', { body: { value: 0 }, as: 'admin' })).body).toEqual({ code: 'invalid' });
     expect((await h.call('PUT', '/config/tester_invite_ttl_hours', { body: { value: null }, as: 'admin' })).status).toBe(400);
   });
+  it('the Message BOOQ address must be an http or https address (D178)', async () => {
+    for (const bad of ['line', 'ftp://x.test/a', 42, '']) expect((await h.call('PUT', '/config/booq_support_line_url', { body: { value: bad }, as: 'admin' })).body, String(bad)).toEqual({ code: 'invalid' });
+    expect((await h.call('PUT', '/config/booq_support_line_url', { body: { value: 'https://line.me/R/ti/p/@booq' }, as: 'admin' })).status).toBe(200);
+    expect((await h.tdb.query(`select value from platform.config where key = 'booq_support_line_url'`)).rows[0].value).toBe('https://line.me/R/ti/p/@booq');
+  });
   it('a specialist and a stale second factor are refused; a malformed key is 404', async () => {
     expect((await h.call('PUT', '/config/invite_ttl_hours', { body: { value: 1 }, as: 'spec' })).status).toBe(403);
     expect((await h.call('PUT', '/config/invite_ttl_hours', { body: { value: 1 }, as: 'admin', fresh: false })).body).toEqual({ code: 'step_up_required' });

@@ -83,3 +83,7 @@ Criteria R1 to R8 repeat in F04, F06, F07 and F13. The first F06 trace matched t
 | R2-AC8 | Value owed to customers in reports (credit plus wallet): report formula awaiting approval (F13 R2-AC12). |
 | R3-AC3 | Group pack bought from the class screen: the flow is not built. |
 | R3-AC6 | A package order for a Paused club is refused: no test names it; QA will add one against the pay route. |
+
+## Update, 31 Oct (main d709178)
+
+F06-T15 player package routes (0518): PKG-02-AC8 (an inactive or unpriced product is not offered) and R3-AC6 (a paused club refuses a package purchase) are now traced. PAY-04-AC1 is covered by `package-pay.routes.test.ts`. Open: PKG-01-AC10, PKG-02-AC9, PKG-03-AC2, PKG-03-AC6, R2-AC2, R2-AC8, R3-AC3.

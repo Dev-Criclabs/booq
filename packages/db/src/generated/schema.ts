@@ -161,6 +161,12 @@ export interface PlatformConfig {
   value: unknown;
 }
 
+export interface PlatformConnectionCheckRequest {
+  club_id: string;
+  requested_at: string;
+  requested_by: string;
+}
+
 export interface PlatformConsoleChallenge {
   id_hash: string;
   staff_id: string;
@@ -1365,6 +1371,7 @@ export interface Tables {
   'platform.club_line_usage': PlatformClubLineUsage;
   'platform.club_usage_daily': PlatformClubUsageDaily;
   'platform.config': PlatformConfig;
+  'platform.connection_check_request': PlatformConnectionCheckRequest;
   'platform.console_challenge': PlatformConsoleChallenge;
   'platform.console_login_state': PlatformConsoleLoginState;
   'platform.console_session': PlatformConsoleSession;

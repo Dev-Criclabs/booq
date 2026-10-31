@@ -1,6 +1,6 @@
 import { FileReply, pagesFor, route, RouteError, type Route, type RouteContext } from '@booq/auth';
 import type { ClubContext, Db, Tx } from '@booq/db';
-import { createSetup, deleteSetup, listSetup, listTierPrices, putTierPrice, SETUP, updateSetup, ownerSetup, tellDone, auditLog, bookingHistory, addCustomer, creditAdjust, customerValue, extendPackage, mapValueError, requestHash, walletAdjust, withIdempotency, addCustomerNote, AdminError, type AdminErrorCode, customerBookings, customerNotes, customerOrders, customerProfile, customersCsv, listCustomers, setTag, shellState, staffCalendar } from '@booq/domain';
+import { createSetup, deleteSetup, listSetup, listTierPrices, putTierPrice, SETUP, updateSetup, ownerSetup, tellDone, auditLog, bookingHistory, addCustomer, creditAdjust, customerValue, extendPackage, mapValueError, requestHash, walletAdjust, withIdempotency, addCustomerNote, AdminError, type AdminErrorCode, customerBookings, customerNotes, customerOrders, customerProfile, customerReceipts, customersCsv, listCustomers, setTag, shellState, staffCalendar } from '@booq/domain';
 
 // F11 club admin routes (design 4 to 6, prefix /api/c/{slug}). Thin handlers: resolve the club from the session and the path slug, open
 // the club transaction, call the service in packages/domain/src/admin, answer a body or a typed code. No club id is read from the input.
@@ -18,9 +18,9 @@ const NO_STORE = { 'Cache-Control': 'no-store' } as const;
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const inputOf = (ctx: RouteContext) => (ctx.input ?? {}) as Record<string, unknown>;
 
-const STATUS: Record<AdminErrorCode, number> = { bad_input: 400, not_found: 404, forbidden: 403, reason_required: 400, below_zero: 409, customer_not_claimed: 409, duplicate: 409, in_use: 409 };
+const STATUS: Record<AdminErrorCode, number> = { bad_input: 400, not_found: 404, forbidden: 403, reason_required: 400, below_zero: 409, customer_not_claimed: 409, duplicate: 409, in_use: 409, peak_not_defined: 400 };
 // A refusal raised by an admin function in the database (BK001, message = the code).
-const DB_STATUS: Record<string, number> = { phone_in_use: 409, reason_required: 400, club_not_available: 409 };
+const DB_STATUS: Record<string, number> = { phone_in_use: 409, reason_required: 400, club_not_available: 409, setting_unset: 409 };
 
 async function inTx<T>(db: Db, c: ClubContext, fn: (tx: Tx) => Promise<T>): Promise<T> {
   try {
@@ -91,7 +91,7 @@ export function customerRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[] {
       ...route({ method: 'GET', path: '/staff/customers', permission: 'customer.contact.read' }, async (ctx) => {
         const c = await sessionContext(deps, ctx);
         const i = inputOf(ctx);
-        return inTx(deps.db, c, (tx) => listCustomers(tx, i['q'], i['tag'], i['cursor']));
+        return inTx(deps.db, c, (tx) => listCustomers(tx, i['q'], i['tag'], i['cursor'], i['status'], i['group']));
       }),
       headers: NO_STORE,
     },
@@ -121,6 +121,13 @@ export function customerRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[] {
       ...route({ method: 'GET', path: '/staff/customers/:id/orders', permission: 'customer.contact.read' }, async (ctx) => {
         const c = await sessionContext(deps, ctx);
         return inTx(deps.db, c, (tx) => customerOrders(tx, inputOf(ctx)['id']));
+      }),
+      headers: NO_STORE,
+    },
+    {
+      ...route({ method: 'GET', path: '/staff/customers/:id/receipts', permission: 'customer.contact.read' }, async (ctx) => {
+        const c = await sessionContext(deps, ctx);
+        return inTx(deps.db, c, (tx) => customerReceipts(tx, inputOf(ctx)['id']));
       }),
       headers: NO_STORE,
     },
@@ -179,6 +186,13 @@ export function auditRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[] {
       ...route({ method: 'GET', path: '/staff/audit', permission: 'audit.read' }, async (ctx) => {
         const c = await sessionContext(deps, ctx);
         return inTx(deps.db, c, (tx) => auditLog(tx, inputOf(ctx)));
+      }),
+      headers: NO_STORE,
+    },
+    {
+      ...route({ method: 'GET', path: '/staff/audit/record-types', permission: 'audit.read' }, async (ctx) => {
+        const c = await sessionContext(deps, ctx);
+        return inTx(deps.db, c, async (tx) => (await tx.query<{ t: string }>(`select app.audit_record_types() as t`)).rows.map((r) => r.t));
       }),
       headers: NO_STORE,
     },
@@ -248,7 +262,7 @@ export function setupDataRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[] {
     out.push(mk('GET', base, 'price.read', (tx) => listSetup(tx, r)));
     out.push(mk('POST', base, 'price.write', (tx, _i, b) => createSetup(tx, r, b)));
     out.push(mk('PUT', `${base}/:id`, 'price.write', (tx, i, b) => updateSetup(tx, r, i['id'], b)));
-    out.push(mk('DELETE', `${base}/:id`, 'price.write', (tx, i) => deleteSetup(tx, r, i['id'])));
+    if (!r.noDelete) out.push(mk('DELETE', `${base}/:id`, 'price.write', (tx, i) => deleteSetup(tx, r, i['id'])));
   }
   out.push(mk('GET', '/staff/setup/coach-tier-prices', 'price.read', (tx) => listTierPrices(tx)));
   out.push(mk('PUT', '/staff/setup/coach-tier-prices', 'price.write', (tx, _i, b) => putTierPrice(tx, b)));
