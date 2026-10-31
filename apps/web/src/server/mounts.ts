@@ -1,4 +1,4 @@
-import { businessRoute, createClaimService, createDataRequestService, createExportService, createImportService, createProfileEditService, hoursRoute, quoteSources, normalizePhone, resourceRoutes, settingsRoutes, supportWindowRoute } from '@booq/domain';
+import { businessRoute, clubSetupRoute, createClaimService, createDataRequestService, createExportService, createImportService, createProfileEditService, hoursRoute, quoteSources, normalizePhone, resourceRoutes, settingsRoutes, supportWindowRoute } from '@booq/domain';
 import { createRedactingLogger, RouteError, type Route } from '@booq/auth';
 import { beamGateway } from '@booq/beam';
 import { loadDecryptKey } from '@booq/secrets';
@@ -16,12 +16,14 @@ import { profileRoutes } from '../api/profile/routes';
 import { staffRoutes } from '../api/staff/routes';
 import { dobHistoryRoutes } from '../api/dob-history/routes';
 import { lineFriendRoutes } from '../api/line/friend/routes';
+import { notificationPrefRoutes } from '../api/line/prefs/routes';
 import { createReceiptPdf } from '../api/receipts/pdf';
 import { receiptRoutes } from '../api/receipts/routes';
 import { reportRoutes } from '../api/reports/routes';
 import { importRoutes } from '../api/import/routes';
 import { noticeRoutes } from '../api/notice/routes';
 import { playerPackageRoutes } from '../api/packages/routes';
+import { staffPackageRoutes } from '../api/packages/staff';
 import type { WebConfig } from './context';
 
 // The route registry. Each feature adds ONE line to `mounts` and keeps its routes in plain form
@@ -73,11 +75,13 @@ export const mounts: readonly Mount[] = [
   (m) => staffRoutes({ db: m.db }),
   (m) => dobHistoryRoutes({ db: m.db }),
   (m) => lineFriendRoutes({ db: m.db }),
+  (m) => notificationPrefRoutes({ db: m.db }),
   (m) => receiptRoutes({ db: m.db, pdf: createReceiptPdf(m.config.localesDir ?? null) }),
   (m) => playerPackageRoutes({ db: m.db, clubBySlug: m.clubBySlug }),
+  (m) => staffPackageRoutes({ db: m.db, clubBySlug: m.clubBySlug, sources: quoteSources }),
   (m) => reportRoutes({ db: m.db }),
   (m) => Object.values(settingsRoutes(m.db)),
-  (m) => [businessRoute(m.db)],
+  (m) => [businessRoute(m.db), clubSetupRoute(m.db)],
   (m) => [publicScheduleRoutes, playerBookingRoutes, staffBookingRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
   (m) => noticeRoutes({ db: m.db, clubBySlug: m.clubBySlug }),
   (m) => [publicClassRoutes, playerClassRoutes, staffClassRoutes].flatMap((f) => f({ db: m.db, now: m.now, clubBySlug: m.clubBySlug })),

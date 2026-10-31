@@ -12,6 +12,19 @@ export interface ShellState {
   paused: { reason: string; since: string } | null;
   lineCap: 'alert' | 'reminders_stopped' | 'over_limit' | null;
   lineTokenReason: string | null;
+  /** D178: the Message BOOQ address, sent to the owner only while the club is Paused; null when BOOQ has set none. */
+  booqSupportLineUrl: string | null;
+}
+
+/** The button's address, only if it is a web address (http or https): anything else is not linked. */
+export function supportHref(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    return u.protocol === 'https:' || u.protocol === 'http:' ? u.href : null;
+  } catch {
+    return null;
+  }
 }
 
 export type ShellLoad = { kind: 'ready'; shell: ShellState } | { kind: 'guest' } | { kind: 'forbidden' } | { kind: 'not_found' } | { kind: 'offline' };
@@ -25,7 +38,7 @@ export async function loadShell(slug: string, f: Fetch): Promise<ShellLoad> {
     if (!res.ok) return { kind: 'offline' };
     const body = (await res.json().catch(() => null)) as Partial<ShellState> | null;
     if (!body || !Array.isArray(body.pages) || !body.club) return { kind: 'offline' };
-    return { kind: 'ready', shell: { pages: body.pages, club: body.club, paused: body.paused ?? null, lineCap: body.lineCap ?? null, lineTokenReason: body.lineTokenReason ?? null } };
+    return { kind: 'ready', shell: { pages: body.pages, club: body.club, paused: body.paused ?? null, lineCap: body.lineCap ?? null, lineTokenReason: body.lineTokenReason ?? null, booqSupportLineUrl: body.booqSupportLineUrl ?? null } };
   } catch {
     return { kind: 'offline' };
   }
@@ -58,7 +71,7 @@ export const NAV: readonly NavItem[] = [
 ];
 export const GROUP_KEY: Record<Exclude<NavGroup, 'top'>, string> = { front: 'A-0156', setup: 'A-0157', finance: 'A-0164' };
 /** Pages whose screen exists. A page the person may open but whose screen is not built yet is shown, not linked. Each page task adds its segment. */
-export const BUILT: ReadonlySet<string> = new Set<string>(['customers', 'staff']);
+export const BUILT: ReadonlySet<string> = new Set<string>(['customers', 'settings', 'setup', 'staff']);
 
 export interface NavSection {
   group: NavGroup;

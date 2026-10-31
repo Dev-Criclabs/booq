@@ -249,6 +249,7 @@ describe('launch page', () => {
 describe('settings page', () => {
   it('every setting the page knows has a text key that exists', () => {
     expect(KNOWN.length).toBeGreaterThan(10);
+    expect(KNOWN.find((k) => k.key === 'booq_support_line_url')?.kind).toBe('url');
     for (const { key } of KNOWN) expect(hasKey(labelKey(key)), key).toBe(true);
     expect(isKnown('pay_tap_limit_count')).toBe(true);
     expect(isKnown('invented')).toBe(false);
@@ -264,6 +265,8 @@ describe('settings page', () => {
     expect(parse('number', '1.5')).toEqual({ ok: true, value: 1.5 });
     for (const bad of ['', '0', '-1', 'abc', '1e3', '1,5', ' ']) expect(parse('number', bad), bad).toEqual({ ok: false, key: 'X-new.config_number_needed' });
     expect(parse('list', '[{"key":"a"}]')).toEqual({ ok: true, value: [{ key: 'a' }] });
+    expect(parse('url', ' https://line.me/R/ti/p/@booq ')).toEqual({ ok: true, value: 'https://line.me/R/ti/p/@booq' });
+    for (const bad of ['', 'line.me', 'ftp://x.test', 'javascript:alert(1)']) expect(parse('url', bad), bad).toEqual({ ok: false, key: 'X-new.config_url_needed' });
     for (const bad of ['', '{}', '"x"', '[', 'null']) expect(parse('list', bad), bad).toEqual({ ok: false, key: 'X-new.config_json_needed' });
     expect(show(5)).toBe('5');
     expect(show([{ a: 1 }])).toBe('[{"a":1}]');

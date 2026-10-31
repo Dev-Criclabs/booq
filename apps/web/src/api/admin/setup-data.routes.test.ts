@@ -85,7 +85,9 @@ describe('price groups and court prices (A9b)', () => {
     const r = await call('POST', '/staff/setup/court-prices', owner(), {}, { priceGroupId: g, priceSatang: 50000 });
     expect(r.body).toMatchObject({ priceGroupId: g, dayType: 'any', peak: 'any', priceSatang: 50000 });
     expect(await call('POST', '/staff/setup/court-prices', owner(), {}, { priceGroupId: g, priceSatang: 60000 })).toMatchObject({ ok: false, status: 409, code: 'duplicate' });
-    expect(await call('POST', '/staff/setup/court-prices', owner(), {}, { priceGroupId: g, dayType: 'weekend', peak: 'peak', priceSatang: 1 })).toMatchObject({ ok: false, status: 400, params: { field: 'peak' } });
+    expect(await call('POST', '/staff/setup/court-prices', owner(), {}, { priceGroupId: g, dayType: 'weekend', peak: 'peak', priceSatang: 1 })).toMatchObject({ ok: false, status: 400, code: 'peak_not_defined', params: { field: 'peak' } });
+    expect(await call('POST', '/staff/setup/court-prices', owner(), {}, { priceGroupId: g, dayType: 'weekend', peak: 'off_peak', priceSatang: 1 })).toMatchObject({ ok: false, code: 'peak_not_defined' });
+    expect(await call('POST', '/staff/setup/court-prices', owner(), {}, { priceGroupId: g, dayType: 'weekend', peak: 'sometimes', priceSatang: 1 })).toMatchObject({ ok: false, code: 'bad_input' });
     expect(await call('POST', '/staff/setup/court-prices', owner(), {}, { priceGroupId: g })).toMatchObject({ ok: false, status: 400, params: { field: 'priceSatang' } });
     expect(await call('POST', '/staff/setup/court-prices', owner(), {}, { priceGroupId: g, dayType: 'weekend', priceSatang: 12.5 })).toMatchObject({ ok: false, status: 400 });
     expect(await call('POST', '/staff/setup/court-prices', owner(), {}, { priceGroupId: '99999999-9999-4999-8999-999999999999', priceSatang: 1 })).toMatchObject({ ok: false, status: 409, code: 'in_use' });

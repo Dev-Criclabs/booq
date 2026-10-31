@@ -22,6 +22,13 @@ export interface CustomerRow {
   lastBookingAt: string | null;
   bookingCount: number;
   createdAt: string;
+  /** The price group the date of birth falls in (the board's Adult or Student); null without a date of birth or when not exactly one group fits. */
+  group: { id: string; nameTh: string; nameEn: string } | null;
+  /** The active package that ends soonest, with credits left; null when there is none. */
+  activePackage: { nameTh: string; nameEn: string; creditsLeft: number; expiresAt: string } | null;
+  walletSatang: number;
+  /** The latest confirmed booking whose hour has started. */
+  lastVisitAt: string | null;
 }
 
 export interface CustomerPage {
@@ -33,10 +40,18 @@ export interface CustomerPage {
 interface Row {
   id: string; display_name: string | null; full_name: string | null; phone: string | null; tags: string[]; claim_state: 'unclaimed' | null;
   signed_in: boolean; last_booking_at: Date | null; booking_count: number; created_at: Date;
+  group_id: string | null; group_name_th: string | null; group_name_en: string | null; package_name_th: string | null; package_name_en: string | null;
+  package_credits_left: number | null; package_expires_at: Date | null; wallet_satang: string | number; last_visit_at: Date | null;
 }
 const map = (r: Row): CustomerRow => ({
   customerId: r.id, name: r.full_name ?? r.display_name, phone: r.phone, tags: r.tags, claimState: r.claim_state, signedIn: r.signed_in,
   lastBookingAt: r.last_booking_at ? r.last_booking_at.toISOString() : null, bookingCount: r.booking_count, createdAt: r.created_at.toISOString(),
+  group: r.group_id ? { id: r.group_id, nameTh: r.group_name_th ?? '', nameEn: r.group_name_en ?? '' } : null,
+  activePackage: r.package_expires_at
+    ? { nameTh: r.package_name_th ?? '', nameEn: r.package_name_en ?? '', creditsLeft: r.package_credits_left ?? 0, expiresAt: r.package_expires_at.toISOString() }
+    : null,
+  walletSatang: Number(r.wallet_satang),
+  lastVisitAt: r.last_visit_at ? r.last_visit_at.toISOString() : null,
 });
 
 const text = (v: unknown, max: number): string | null => {
@@ -57,11 +72,18 @@ function decodeCursor(c: unknown): { name: string; id: string } | null {
   }
 }
 
-/** GET /staff/customers?q=&tag=&cursor=: the club's customers by name, 50 a page. */
-export async function listCustomers(tx: Tx, q: unknown, tag: unknown, cursor: unknown): Promise<CustomerPage> {
+/**
+ * GET /staff/customers?q=&tag=&status=&group=&cursor=: the club's customers by name, 50 a page. status is active_package, expiring_soon or
+ * no_visit (the H-A05 chips); group is a price group id (Adult, Student).
+ */
+export async function listCustomers(tx: Tx, q: unknown, tag: unknown, cursor: unknown, status?: unknown, group?: unknown): Promise<CustomerPage> {
   const after = decodeCursor(cursor);
-  const r = await tx.query<Row>(`select * from public.customer_list($1, $2, $3, $4, $5)`,
-    [text(q, 100), text(tag, 40), after?.name ?? null, after?.id ?? null, PAGE + 1]);
+  const st = text(status, 20);
+  if (st !== null && !['active_package', 'expiring_soon', 'no_visit'].includes(st)) return bad();
+  const gr = text(group, 40);
+  if (gr !== null && !UUID.test(gr)) return bad();
+  const r = await tx.query<Row>(`select * from public.customer_list($1, $2, $3, $4, $5, $6, $7)`,
+    [text(q, 100), text(tag, 40), after?.name ?? null, after?.id ?? null, PAGE + 1, st, gr ? gr.toLowerCase() : null]);
   const rows = r.rows.slice(0, PAGE);
   const last = rows[rows.length - 1];
   const more = r.rows.length > PAGE && last;
@@ -161,7 +183,7 @@ export async function customerOrders(tx: Tx, id: unknown) {
   return r.rows.map((o) => ({
     orderId: o.order_id as string, status: o.status as string, source: o.source as string, kind: o.kind as string, totalSatang: o.total_satang as number,
     moneySatang: o.money_satang as number, creditValueSatang: o.credit_value_satang as number, walletSatang: o.wallet_satang as number,
-    createdAt: new Date(o.created_at).toISOString(), receipts: o.receipts as string[],
+    createdAt: new Date(o.created_at).toISOString(), receipts: o.receipts as string[], receiptIds: o.receipt_ids as string[],
   }));
 }
 
@@ -190,4 +212,21 @@ export async function addCustomerNote(tx: Tx, id: unknown, note: unknown): Promi
   const r = await tx.query<{ id: string }>(
     `insert into public.user_staff_note (club_id, user_id, note, created_by) values (app.club_id(), $1, $2, app.user_id()) returning id`, [customerId(id), note.trim()]);
   return { noteId: r.rows[0]!.id };
+}
+
+export interface CustomerReceipt {
+  receiptId: string;
+  number: string;
+  kind: string;
+  status: string;
+  issuedAt: string;
+  totalSatang: number;
+  isTest: boolean;
+}
+
+/** GET /staff/customers/:id/receipts: the person's receipts, newest first (front desk, owner; the PDF is GET /staff/receipts/:id/pdf). */
+export async function customerReceipts(tx: Tx, id: unknown): Promise<CustomerReceipt[]> {
+  await customerProfile(tx, id);
+  const r = await tx.query(`select id, number, kind, status, issued_at, total_satang, is_test from public.receipt where customer_id = $1 order by issued_at desc, id desc`, [customerId(id)]);
+  return r.rows.map((x) => ({ receiptId: x.id, number: x.number, kind: x.kind, status: x.status, issuedAt: new Date(x.issued_at).toISOString(), totalSatang: Number(x.total_satang), isTest: x.is_test }));
 }

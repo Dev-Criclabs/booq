@@ -85,6 +85,17 @@ describe('GET /staff/shell', () => {
     expect((await shell(as(OWNER, ['owner', 'player']))).body).toMatchObject({ lineCap: 'alert', lineTokenReason: 'http_401' });
     expect((await shell(as(DESK, ['front_desk', 'player']))).body).toMatchObject({ lineCap: null, lineTokenReason: null });
   });
+  it('the Message BOOQ address shows to the owner only, only while Paused, and only when the platform set one (D178)', async () => {
+    await tdb.query(`update public.club set status = 'paused' where id = $1`, [A]);
+    await tdb.query(`insert into public.club_pause (club_id, paused_at, pause_reason, paused_by) values ($1, app.now(), 'maintenance', $2)`, [A, PSTAFF]);
+    expect((await shell(as(OWNER, ['owner', 'player']))).body!['booqSupportLineUrl']).toBeNull();
+    await tdb.query(`insert into platform.config (key, value) values ('booq_support_line_url', '"https://line.me/R/ti/p/@booq"'::jsonb)`);
+    expect((await shell(as(OWNER, ['owner', 'player']))).body!['booqSupportLineUrl']).toBe('https://line.me/R/ti/p/@booq');
+    expect((await shell(as(DESK, ['front_desk', 'player']))).body!['booqSupportLineUrl']).toBeNull();
+    await tdb.query(`update public.club set status = 'live' where id = $1`, [A]);
+    await tdb.query(`update public.club_pause set resumed_at = app.now(), resume_reason = 'ok', resumed_by = $2 where club_id = $1`, [A, PSTAFF]);
+    expect((await shell(as(OWNER, ['owner', 'player']))).body!['booqSupportLineUrl']).toBeNull();
+  });
   it('A4 is never listed', async () => {
     expect((await shell(as(OWNER, ['owner', 'player']))).body!['pages']).not.toContain('A4');
   });
