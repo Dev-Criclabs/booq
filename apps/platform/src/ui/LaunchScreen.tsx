@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { itemKey, LAUNCH_KEY, RESULT_KEY, SETUP_KEY, changeStatus, type Failure } from './club';
 import { ConsoleNav } from './ConsoleNav';
+import { STATUS_KEY, type Status } from './clubs';
 import { loadLaunch, MARK_KEY, openChecks, RECORD_RESULTS, recordResult, type Launch, type RecordResult } from './launch';
 import { t } from './i18n';
 import { StepUpPanel } from './StepUpPanel';
@@ -86,13 +87,19 @@ export function LaunchScreen({ id }: { id: string }) {
 
         {launch ? (
           <>
-            <h1>{t('X-new.launch_title', { clubName: launch.clubName })}</h1>
+            <div className="head">
+              <div>
+                <h1>{t('X-new.launch_title', { clubName: launch.clubName })}</h1>
+              </div>
+              <span className={`pill ${launch.clubStatus}`} data-testid="status">{t(STATUS_KEY[launch.clubStatus as Status] ?? 'X-0029')}</span>
+            </div>
             {launch.clubStatus !== 'testing' ? <p data-testid="not-testing">{t('X-new.launch_not_testing')}</p> : !isAdmin ? <p data-testid="admin-only">{t('X-new.launch_admin_only')}</p> : null}
-            <h2>{t('X-0178')}</h2>
+            <section aria-labelledby="golive-title">
+            <h2 id="golive-title">{t('X-0178')}</h2>
             {launch.items.length === 0 ? <p data-testid="empty">{t('X-new.launch_empty')}</p> : (
               <ul className="checks" data-testid="checks">
                 {launch.items.map((i) => (
-                  <li key={i.item} data-testid={`check-${i.item}`}>
+                  <li key={i.item} data-testid={`check-${i.item}`} data-state={i.result === 'pass' ? 'done' : i.result === 'fail' ? 'fail' : 'wait'}>
                     <strong>{t(itemKey({ ...LAUNCH_KEY, ...SETUP_KEY }, i.item))}</strong> · <span data-testid={`result-${i.item}`}>{t(RESULT_KEY[i.result] ?? 'X-new.result_pending')}</span> · {t(i.owed_by === 'owner' ? 'X-0215' : 'X-new.club_owed_booq')} · {t(i.recorded ? 'X-new.launch_by_hand' : 'X-new.launch_derived')}
                     {canRecord && i.recorded ? (
                       <span className="row">
@@ -118,6 +125,7 @@ export function LaunchScreen({ id }: { id: string }) {
                 <span className="sub">{t('X-0188')}</span>
               </p>
             ) : null}
+            </section>
           </>
         ) : null}
       </main>

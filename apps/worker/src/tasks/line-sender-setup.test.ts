@@ -4,6 +4,7 @@ import { createDb, type Db } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
 import { encryptSecret, generateKeyPair } from '@booq/secrets';
 import { FakeClock, FakeLine, collectActions } from '../../../../tests/fakes';
+import { closeTestDatabase } from '../testing/teardown';
 import { createLineSender } from './line-sender-setup';
 
 // The real sender as main.ts builds it (F10-T08 to T10 wired, orchestrator 31 Oct): the HTTP transport against the fake
@@ -44,7 +45,7 @@ beforeEach(async () => {
 afterEach(async () => {
   await served?.close();
   await worker?.end();
-  await tdb?.close();
+  if (tdb) await closeTestDatabase(tdb);
 });
 
 /** A confirmed one hour booking of P, with its order (fixture rows, triggers off). */

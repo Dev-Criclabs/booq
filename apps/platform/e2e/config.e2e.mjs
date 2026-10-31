@@ -16,7 +16,7 @@ after(async () => {
   app?.stop();
 });
 
-const api = ({ role = 'platform_admin', values = { invite_ttl_hours: 72, pay_tap_limit_count: 5, required_launch_checks: [{ key: 'line_test', owed_by: 'booq' }], some_future_key: { a: 1 } }, over = {} } = {}) => {
+const api = ({ role = 'platform_admin', values = { line_cap_alert_percent: 70, invite_ttl_hours: 72, pay_tap_limit_count: 5, required_launch_checks: [{ key: 'line_test', owed_by: 'booq' }], some_future_key: { a: 1 } }, over = {} } = {}) => {
   const state = { ...values };
   return (method, path, body) => {
     const key = `${method} ${path}`;
@@ -47,6 +47,18 @@ describe('platform settings', () => {
     assert.match(await page.getByTestId('others').innerText(), /some_future_key: \{"a":1\}/);
     assert.equal(await page.getByTestId('nav-config').getAttribute('aria-current'), 'page');
     await page.screenshot({ path: join(SHOTS, 'config.png'), fullPage: true });
+    await context.close();
+  });
+
+  it('the LINE message cap values are fixed by the product: shown, read only, with no save control', async () => {
+    const { page, context, calls } = await openPage(browser, api(), { width: 1024, height: 900 });
+    await page.goto(`${app.base}/config`);
+    await page.getByTestId('settings').waitFor();
+    assert.equal(await page.locator('#v-line_cap_alert_percent').inputValue(), '70');
+    assert.equal(await page.locator('#v-line_cap_alert_percent').getAttribute('readonly'), '');
+    assert.equal(await page.getByTestId('fixed-line_cap_alert_percent').innerText(), 'Fixed by the product.');
+    for (const k of ['line_cap_alert_percent', 'line_cap_reminders_stop_percent', 'line_cap_over_limit_percent']) assert.equal(await page.getByTestId(`save-${k}`).count(), 0, k);
+    assert.equal(calls.filter((c) => c.method === 'PUT').length, 0);
     await context.close();
   });
 

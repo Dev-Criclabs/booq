@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
+import { closeTestDatabase } from '../testing/teardown';
 import { DEFAULT_JOB_SPEC } from '../policy';
 import { clubTask } from '../task-wrapper';
 import { CLASS_GENERATE, classGenerateDispatch, generateClassSessions } from './class-generate';
@@ -67,7 +68,7 @@ beforeEach(async () => {
 afterEach(async () => {
   await worker.end();
   await app.end();
-  await tdb.close();
+  await closeTestDatabase(tdb);
 });
 
 describe('class_generate (CLASS-01-AC2, AC3, AC9)', () => {

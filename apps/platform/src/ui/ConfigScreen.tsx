@@ -54,7 +54,7 @@ export function ConfigScreen() {
       <ConsoleNav current="config" />
       <main className="page wide" data-testid="config">
         <h1>{t('X-new.config_title')}</h1>
-        <p>{t('X-new.config_intro')}</p>
+        <p className="lede">{t('X-new.config_intro')}</p>
         {state.kind === 'loading' ? <p aria-busy="true">…</p> : null}
         {state.kind === 'error' ? (
           <p role="alert" data-testid="load-error">
@@ -66,17 +66,22 @@ export function ConfigScreen() {
           <>
             {!isAdmin ? <p data-testid="admin-only">{t('X-new.config_admin_only')}</p> : null}
             <ul className="settings" data-testid="settings">
-              {KNOWN.map(({ key, kind }) => (
+              {KNOWN.map(({ key, kind, fixed }) => (
                 <li key={key} data-testid={`setting-${key}`}>
                   <form onSubmit={(e) => onSave(e, key, kind)} className="form inline">
                     <label htmlFor={`v-${key}`}>{t(labelKey(key))}</label>
                     {Object.hasOwn(values, key) ? null : <span className="sub" data-testid={`unset-${key}`}>{t('X-new.config_not_set')}</span>}
-                    {kind === 'list' ? (
+                    {fixed ? (
+                      <>
+                        <input id={`v-${key}`} value={drafts[key] ?? ''} readOnly aria-describedby={`fixed-${key}`} />
+                        <span className="sub" id={`fixed-${key}`} data-testid={`fixed-${key}`}>{t('X-new.config_fixed')}</span>
+                      </>
+                    ) : kind === 'list' ? (
                       <textarea id={`v-${key}`} rows={4} value={drafts[key] ?? ''} readOnly={!isAdmin} onChange={(e) => setDrafts({ ...drafts, [key]: e.target.value })} />
                     ) : (
                       <input id={`v-${key}`} inputMode="decimal" value={drafts[key] ?? ''} readOnly={!isAdmin} onChange={(e) => setDrafts({ ...drafts, [key]: e.target.value })} />
                     )}
-                    {isAdmin ? <button type="submit" className="btn small" disabled={busy} data-testid={`save-${key}`}>{t('X-new.config_save')}</button> : null}
+                    {isAdmin && !fixed ? <button type="submit" className="btn small" disabled={busy} data-testid={`save-${key}`}>{t('X-new.config_save')}</button> : null}
                     {message?.for === key ? <p role={message.error ? 'alert' : 'status'} className={message.error ? 'error' : 'ok'} data-testid={`message-${key}`}>{t(message.key)}</p> : null}
                   </form>
                 </li>
