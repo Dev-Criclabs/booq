@@ -48,8 +48,9 @@ body { background: var(--g); color: var(--ink); font-family: var(--font); -webki
 .lang-toggle .sep { opacity: 0.5; }
 
 /* C1 Welcome (H-C01-Welcome) */
-.welcome { height: 100dvh; background: var(--dk); color: var(--od); }
-.welcome-hero { position: relative; flex: 1 1 auto; min-height: 190px; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
+/* The page grows with its text and scrolls as a whole: no club name length is set (D179), so the hero never clips. */
+.welcome { min-height: 100dvh; background: var(--dk); color: var(--od); }
+.welcome-hero { position: relative; flex: 1 0 auto; min-height: 190px; padding-bottom: 24px; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
 .welcome-hero .court { position: absolute; inset: 40px 48px -40px; border: 1.5px solid rgba(255, 255, 255, 0.14); border-radius: 6px; }
 .welcome-hero .court::before { content: ''; position: absolute; inset: 0 48px; border-left: 1.5px solid rgba(255, 255, 255, 0.14); border-right: 1.5px solid rgba(255, 255, 255, 0.14); }
 .welcome-hero .court::after { content: ''; position: absolute; left: 0; right: 0; top: 150px; border-top: 1.5px solid rgba(255, 255, 255, 0.14); }
@@ -58,7 +59,7 @@ body { background: var(--g); color: var(--ink); font-family: var(--font); -webki
 .wordmark .w1 { font-size: 52px; letter-spacing: 0.12em; line-height: 1; }
 .wordmark .w2 { font-size: 15px; letter-spacing: 0.42em; }
 .sheet {
-  flex: 0 1 auto; max-height: calc(100dvh - 190px); overflow-y: auto; display: flex; flex-direction: column; gap: 16px;
+  flex: none; display: flex; flex-direction: column; gap: 16px;
   padding: 28px 24px calc(30px + env(safe-area-inset-bottom)); background: var(--g); color: var(--ink); border-radius: 28px 28px 0 0;
 }
 .sheet > * { flex: none; }

@@ -76,7 +76,7 @@ describe('C1 Welcome (F02-T19)', () => {
         lang,
         width: 320,
         height: 568,
-        club: { ...(await import('./harness.mjs')).CLUB, nameTh: 'ฮันเตอร์ เทนนิส แอนด์ แบดมินตัน สปอร์ตคลับ ลำลูกกา', nameEn: 'Hunter Tennis and Badminton Sports Club Lam Lukka' },
+        club: { ...(await import('./harness.mjs')).CLUB, nameTh: 'ฮันเตอร์ เทนนิส แอนด์ แบดมินตัน สปอร์ตคลับ ลำลูกกา', nameEn: 'Hunter Tennis and Wellness Club for Every Age and Level of Experience in Bangkok and Nearby Provinces' },
       });
       await page.goto(signIn(app.base, '/c/hunter/checkout?court=12&date=2027-09-29&from=23:00&to=24:00'));
       await page.getByTestId('line-login').waitFor();
@@ -88,10 +88,11 @@ describe('C1 Welcome (F02-T19)', () => {
           const lh = parseFloat(getComputedStyle(s).lineHeight) || parseFloat(getComputedStyle(s).fontSize) * 1.6;
           return { text: s.textContent, squashed: b.getBoundingClientRect().height < 44, lines: Math.round(s.getBoundingClientRect().height / lh), cut: s.scrollWidth > s.clientWidth + 1 };
         }),
-        sheetScrolls: getComputedStyle(document.querySelector('.sheet')).overflowY === 'auto',
+        // QA-UI-1, D179: the hero grows with the club name; its last line is never under the sheet.
+        nameShown: document.querySelector('.wordmark').getBoundingClientRect().bottom <= document.querySelector('.sheet').getBoundingClientRect().top,
       }));
       assert.equal(report.sideways, false, `${lang}: the page scrolls sideways`);
-      assert.equal(report.sheetScrolls, true);
+      assert.equal(report.nameShown, true, `${lang}: the club name runs under the sheet`);
       for (const b of report.buttons) {
         assert.equal(b.lines, 1, `${lang}: "${b.text}" wraps`);
         assert.equal(b.cut, false, `${lang}: "${b.text}" is cut`);
