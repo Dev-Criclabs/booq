@@ -22,6 +22,7 @@ import { reportRoutes } from '../api/reports/routes';
 import { importRoutes } from '../api/import/routes';
 import { noticeRoutes } from '../api/notice/routes';
 import { playerPackageRoutes } from '../api/packages/routes';
+import { staffPackageRoutes } from '../api/packages/staff';
 import type { WebConfig } from './context';
 
 // The route registry. Each feature adds ONE line to `mounts` and keeps its routes in plain form
@@ -75,6 +76,7 @@ export const mounts: readonly Mount[] = [
   (m) => lineFriendRoutes({ db: m.db }),
   (m) => receiptRoutes({ db: m.db, pdf: createReceiptPdf(m.config.localesDir ?? null) }),
   (m) => playerPackageRoutes({ db: m.db, clubBySlug: m.clubBySlug }),
+  (m) => staffPackageRoutes({ db: m.db, clubBySlug: m.clubBySlug, sources: quoteSources }),
   (m) => reportRoutes({ db: m.db }),
   (m) => Object.values(settingsRoutes(m.db)),
   (m) => [businessRoute(m.db)],

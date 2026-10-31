@@ -152,12 +152,12 @@ Conventions as FA §9: typed codes, no text, 404 for out of reach; amounts in sa
 | `GET /api/c/{slug}/packages` | public (guest) | Active products for C9: named public columns only (D103); price per credit and saving computed server side (saving per D173, migration 0519: credits × the matching single price − the package price; null when that price is unset or varies) |
 | `GET /api/c/{slug}/me/credits` | own | Packages with credits left, expiry and status, and wallet balance for C14 |
 | `GET /api/c/{slug}/me/ledger?kind=credit\|wallet&cursor=` | own | History of movements, newest first, with the reason key and booking reference |
-| `POST /api/c/{slug}/staff/customers/{id}/wallet-adjust` | `wallet.adjust` (front desk, owner) | `wallet_adjust` with a note |
-| `POST /api/c/{slug}/staff/customers/{id}/credit-adjust` | `credit.adjust` (front desk, owner) | `credit_adjust` with a note |
-| `POST /api/c/{slug}/staff/packages/{id}/extend` | `package.extend` (owner) | `extend_package` |
-| `POST /api/c/{slug}/staff/orders/{id}/package-sale` | `payment.cash` (front desk, owner) | Staff package sale at the desk with cash, reason code (F05 PAY-06); calls `grant_package` |
-| `GET /api/c/{slug}/staff/customers/{id}/credits` | front desk, owner | The same views for A6 |
-| `GET /api/c/{slug}/staff/reports/owed` | owner, accountant | Value owed: unused credit and wallet balances shown separately (D57); consumed by F13 |
+| `POST /api/c/{slug}/staff/customers/{id}/wallet-adjust` | `customer.adjust` (front desk, owner) | `wallet_adjust` with a note; built by F11-T07 (D174) |
+| `POST /api/c/{slug}/staff/customers/{id}/credit-adjust` | `customer.adjust` (front desk, owner) | `credit_adjust` with a note; built by F11-T07 (D174) |
+| `POST /api/c/{slug}/staff/packages/{id}/extend` | `package.extend` (owner) | `extend_package`; built by F11-T07, name declared by F11 (D174) |
+| `POST /api/c/{slug}/staff/customers/{id}/package-sale` | `payment.cash` (front desk, owner) | Staff package sale at the desk with cash, reason code (F05 PAY-06), Idempotency-Key (D174): refuses a Paused club, places the package order for the customer as the package Pay does (the Student rule applies), then `app.take_cash`, which grants the package through the `grant_package` port and issues the receipt |
+| `GET /api/c/{slug}/staff/customers/{id}/credits` | front desk, owner | The same views for A6; built by F11-T07 (D174) |
+| `GET /api/c/{slug}/staff/reports/value-owed` | `report.read` (owner, accountant) | Value owed: unused credit and wallet balances shown separately (D57); F13's report (D174) |
 
 Checkout, Pay and the Beam callback are F04's and F05's routes. There is no route that withdraws or refunds wallet value (PKG-01-AC9, CANCEL-02).
 
@@ -178,9 +178,9 @@ Time rules live in query predicates, not in jobs (FA §5.1).
 |---|---|---|---|---|---|---|
 | Read own credits, wallet, ledger | yes | yes | yes | yes | yes | no |
 | Read any customer's credits and wallet | no | no | yes | names only (D35) | yes | no |
-| `wallet.adjust`, `credit.adjust` | no | no | yes | no | yes | no |
+| `customer.adjust` (wallet and credit adjust; F11's name, D174) | no | no | yes | no | yes | no |
 | `package.extend` | no | no | no | no | yes | no |
-| Cash package sale | no | no | yes | no | yes | no |
+| Cash package sale (`payment.cash`, declared in F06's permission file and reused by F05, D174) | no | no | yes | no | yes | no |
 | Products read (public) | yes | yes | yes | yes | yes | setup view (class S) |
 | Value owed report | no | no | no | yes | yes | no |
 
