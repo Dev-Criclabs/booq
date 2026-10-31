@@ -2,7 +2,7 @@
 
 Swept on 31 Oct 2026 against `specs/features/F06-packages-credit-wallet/requirements.md`. BE-W (the commerce lane) was still on its last tasks (T13, T26).
 
-**Result: 60 criteria. 49 covered by lane tests (traced), 3 new QA tests, 0 findings in F06 itself, 8 still open (each with its reason).** One related finding is in the F09 sweep: QA-F09-1.
+**Result: 60 criteria. 48 covered by lane tests (traced), 3 new QA tests, 0 findings in F06 itself, 9 still open (each with its reason).** One related finding is in the F09 sweep: QA-F09-1.
 
 The commerce lane tested the ledgers well (`ledgers`: sign rules, append only for every role, the balance equals the ledger sum after random movements, the check at commit; `credit-functions`, `credit-functions-b`, `wallet-functions`, `package-functions`, `package-tables`, `balance-views`, `apply-payment-package`, `apply-payment-edges`). `F06-packages-credit-wallet.traced.spec.ts` holds a pointer test per covered criterion.
 
@@ -70,3 +70,16 @@ QA wrote: the expiry rule with the month end and year end cases (PKG-02-AC3, D20
 | R3-AC8 | Given the owner sells a package, when it is a Student product, then the buyer must be under 18 (PKG- | Covered by a lane test (traced) |
 | R3-AC9 | Given a payment arrives after a package order was cancelled (a package bought alone whose QR time en | Covered by a lane test (traced) |
 | R3-AC10 | Given the reminder days (14 and 3), the cancel window and the hold time, when text or settings use t | New QA test |
+
+## Correction, 31 Oct
+
+Criteria R1 to R8 repeat in F04, F06, F07 and F13. The first F06 trace matched them by ID, so 17 of them pointed at another feature's lane test (a coach, report or checkout test that also cites its own R1-AC1). Those links were wrong. They are removed and the F06 criteria are mapped by hand to the real wallet, credit and package tests. The same filter (by feature path) was applied to F04, F07 and F13. The open list is now these nine:
+
+| Criterion | Why it is open |
+|---|---|
+| PKG-01-AC10, PKG-02-AC9, R2-AC2 | C14 history, validity text on C9/C10P/C12P and the wallet amount in baht: screens (Playwright). |
+| PKG-02-AC8 | An inactive product is not offered on C9: the product list route is not built. |
+| PKG-03-AC2, PKG-03-AC6 | No reminder for a used up package, and reminders follow the new date after an extension: the package expiring producer (LINE-05-AC7) is not built. |
+| R2-AC8 | Value owed to customers in reports (credit plus wallet): report formula awaiting approval (F13 R2-AC12). |
+| R3-AC3 | Group pack bought from the class screen: the flow is not built. |
+| R3-AC6 | A package order for a Paused club is refused: no test names it; QA will add one against the pay route. |

@@ -15,10 +15,11 @@ import { qrExpiryTime, type KeySet, type PaymentGateway } from './gateway';
 // reached, or the margin is unset: release and raise the P1 alert only. The player gets payment_unavailable.
 // The P1 alert is a failed check in platform.club_health (F05-T04c), written in the release's transaction.
 
-export type PaymentAlertKind = 'beam_unreachable' | 'beam_keys_missing' | 'beam_key_check_failed' | 'qr_margin_unset';
+export type PaymentAlertKind = 'beam_unreachable' | 'beam_keys_missing' | 'beam_key_check_failed' | 'qr_margin_unset' | 'package_qr_unset';
 
 // Each alert is also a failed check in platform.club_health for the console health tile (F05-T04c, 0699).
-const HEALTH: Record<PaymentAlertKind, [check: 'beam_keys' | 'beam_charge', reason: string]> = {
+// A club's own unset package QR time is the owner's setting, not a Beam fault: an alert, no health row.
+const HEALTH: Partial<Record<PaymentAlertKind, [check: 'beam_keys' | 'beam_charge', reason: string]>> = {
   beam_keys_missing: ['beam_keys', 'keys_missing'],
   beam_key_check_failed: ['beam_keys', 'key_refused'],
   beam_unreachable: ['beam_charge', 'unreachable'],
@@ -49,6 +50,8 @@ interface ChargeContext {
   amount_satang: number;
   hold_expires_at: string | null;
   qr_expiry_margin_seconds: number | null;
+  has_bookings: boolean;
+  package_qr_minutes: number | null;
 }
 
 interface Stored {
@@ -80,9 +83,17 @@ export async function startPayment(deps: StartPaymentDeps, ctx: ClubContext, ord
     const c = (await tx.query<{ c: ChargeContext }>('select app.payment_charge_context($1) as c', [paymentId])).rows[0]!.c;
     const apiKey = c.merchant_id === null ? null : await readSecret(tx, deps.privateKey, ctx.clubId, c.environment === 'live' ? 'beam_api_key_live' : 'beam_api_key_test');
     if (c.merchant_id === null || apiKey === null) return { kind: 'refuse', alert: 'beam_keys_missing', flag: true };
-    const expiry = c.hold_expires_at === null ? null : qrExpiryTime(c.hold_expires_at, c.qr_expiry_margin_seconds, deps.now());
-    if (expiry === null || !expiry.ok) return { kind: 'refuse', alert: 'qr_margin_unset', flag: false };
-    return { kind: 'charge', paymentId, set: c.environment, merchantId: c.merchant_id, apiKey, amount: c.amount_satang, expiryTime: expiry.expiryTime };
+    let expiryTime: string;
+    if (!c.has_bookings) {
+      // A package bought alone: no hold, the QR lives the club's package_qr_minutes (D74); unset is no payment.
+      if (c.package_qr_minutes === null) return { kind: 'refuse', alert: 'package_qr_unset', flag: false };
+      expiryTime = new Date(deps.now().getTime() + c.package_qr_minutes * 60_000).toISOString();
+    } else {
+      const expiry = c.hold_expires_at === null ? null : qrExpiryTime(c.hold_expires_at, c.qr_expiry_margin_seconds, deps.now());
+      if (expiry === null || !expiry.ok) return { kind: 'refuse', alert: 'qr_margin_unset', flag: false };
+      expiryTime = expiry.expiryTime;
+    }
+    return { kind: 'charge', paymentId, set: c.environment, merchantId: c.merchant_id, apiKey, amount: c.amount_satang, expiryTime };
   });
   if (prepared.kind === 'stored') return prepared.result;
   if (prepared.kind === 'refuse') return refuse(deps, ctx, orderId, prepared.alert, prepared.flag);
@@ -116,9 +127,12 @@ export async function startPayment(deps: StartPaymentDeps, ctx: ClubContext, ord
 
 async function refuse(deps: StartPaymentDeps, ctx: ClubContext, orderId: string, alert: PaymentAlertKind, flag: boolean): Promise<StartedPayment> {
   await deps.db.withClubTx(ctx, async (tx) => {
-    await tx.query(`select app.release_hold($1, 'payment_unavailable')`, [orderId]);
+    // An order with bookings releases its hold; a package bought alone has none, so it is ended instead (0416).
+    const released = (await tx.query<{ r: boolean }>(`select app.release_hold($1, 'payment_unavailable') as r`, [orderId])).rows[0]?.r === true;
+    if (!released) await tx.query(`select app.end_package_order($1, 'payment_unavailable')`, [orderId]);
     if (flag) await tx.query('select app.flag_key_check_failed()');
-    await tx.query('select app.report_payment_health($1, $2)', HEALTH[alert]);
+    const health = HEALTH[alert];
+    if (health) await tx.query('select app.report_payment_health($1, $2)', health);
   });
   deps.alerts.p1(alert, ctx.clubId);
   return unavailable;

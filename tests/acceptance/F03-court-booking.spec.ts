@@ -132,14 +132,3 @@ describe("F03 BOOK-06", () => {
   // Given each hour of the order, when the hold ends, then every hour of the order is released together, since they share one hold and one payment.
   // F03/BOOK-06-AC6: proven by a real or traced test in another file of this folder
 });
-
-describe("F03 WAIT-01", () => {
-  // Given a taken slot on C4, when a signed in player views it, then Join waitlist shows; a guest taps it and signs in first (F02 AUTH-01).
-  // F03/WAIT-01-AC1: proven by a real or traced test in another file of this folder
-  // Given the player taps Join waitlist, when it is saved, then they are added with a position, nothing is charged and nothing is held (G-C04-Waitlist-joined).
-  // F03/WAIT-01-AC2: proven by a real or traced test in another file of this folder
-  // Given a held slot (not yet taken), when it is viewed, then Join waitlist shows only if F08 says it does; a held slot that is released simply becomes Open. (The spec says Join waitlist is for a taken slot; held is not decided, Q2.)
-  // F03/WAIT-01-AC3: proven by a real or traced test in another file of this folder
-  // Given the offer, claim time and cut off, then F08's rules apply (claim time and no offers within the cut off are club settings; the offered slot is protected by F08's design).
-  test.todo("F03/WAIT-01-AC4 Given the offer, claim time and cut off, then F08's rules apply (claim time and no offers within the cut ...");
-});
