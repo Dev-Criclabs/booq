@@ -92,13 +92,13 @@ describe("F04 PAY-07", () => {
   // Given the same, when the order is confirmed, then the slot is still reserved under the uniqueness rule (BOOK-04): a taken slot refuses the order and nothing is used up.
   test.todo("F04/PAY-07-AC2 Given the same, when the order is confirmed, then the slot is still reserved under the uniqueness rule ...");
   // Given a 100 percent promo code makes the amount due zero, when the player taps Pay, then the order confirms the same way with no Beam charge.
-  test.todo("F04/PAY-07-AC3 Given a 100 percent promo code makes the amount due zero, when the player taps Pay, then the order ...");
+  // F04/PAY-07-AC3: proven by a real or traced test in another file of this folder
   // Given the order confirms, when it is saved, then the Booking confirmed LINE card is sent (LINE-04, F10), and the booking is Confirmed with its credit and wallet rows written in the same transaction.
   test.todo("F04/PAY-07-AC4 Given the order confirms, when it is saved, then the Booking confirmed LINE card is sent (LINE-04, F10), ...");
   // Given the credit or wallet rows and the booking, when any step fails, then none is saved (all or nothing).
   test.todo("F04/PAY-07-AC5 Given the credit or wallet rows and the booking, when any step fails, then none is saved (all or nothing).");
   // Given an order where money paid is zero (credits, wallet or a 100 percent code covered it), when it is confirmed, then a receipt is still issued in the same numbered series, showing how it was paid (credit, wallet), and the LINE card shows that receipt number (D64, HO PAY-07, RCPT-01).
-  test.todo("F04/PAY-07-AC6 Given an order where money paid is zero (credits, wallet or a 100 percent code covered it), when it is ...");
+  // F04/PAY-07-AC6: proven by a real or traced test in another file of this folder
 });
 
 describe("F04 PROMO-01", () => {
@@ -113,19 +113,19 @@ describe("F04 PROMO-01", () => {
   // Given a code outside its dates, for the wrong audience (Adult or Student), for items outside its scope, or whose minimum spend is not met, when it is entered, then it is refused with a reason. Minimum spend is checked on the order total before credits and wallet are applied (D68).
   test.todo("F04/PROMO-01-AC5 Given a code outside its dates, for the wrong audience (Adult or Student), for items outside its scope, or ...");
   // Given a first time only code and a player who has a paid booking already, when the code is entered, then it is refused.
-  test.todo("F04/PROMO-01-AC6 Given a first time only code and a player who has a paid booking already, when the code is entered, then ...");
+  // F04/PROMO-01-AC6: proven by a real or traced test in another file of this folder
   // Given a total cap or a per customer cap, when two players (or one player twice) use the code in parallel at the last use, then exactly one succeeds (QA CONC-23). A use is counted at Pay and restored when the hold ends without payment or the booking is cancelled 12 hours or more ahead (D66, HO PROMO-01).
   test.todo("F04/PROMO-01-AC7 Given a total cap or a per customer cap, when two players (or one player twice) use the code in parallel ...");
   // Given a partner code on a solo class, when it is entered, then it is not accepted: partner codes on solo classes are parked for later (Gaps A4). The PARTNER100 example on the C10b canvas board is a canvas bug.
-  test.todo("F04/PROMO-01-AC8 Given a partner code on a solo class, when it is entered, then it is not accepted: partner codes on solo ...");
+  // F04/PROMO-01-AC8: proven by a real or traced test in another file of this folder
   // Given a code of another club, or one that does not exist, when it is entered, then the answer is the same "code not valid" (CC-1).
   test.todo("F04/PROMO-01-AC9 Given a code of another club, or one that does not exist, when it is entered, then the answer is the same ...");
   // Given a discount on an order of several hours, when it is priced, then it is split across the hours by each hour's price (D67). Given one hour is cancelled 12 hours or more ahead, then that hour's share of the discount is restored; the code use is restored only when every hour of the order is cancelled (D67, D21). F04 records the share per hour and which order used which code.
-  test.todo("F04/PROMO-01-AC10 Given a discount on an order of several hours, when it is priced, then it is split across the hours by ...");
+  // F04/PROMO-01-AC10: proven by a real or traced test in another file of this folder
   // Given a referral code from a friend, when a new player enters it at checkout, then it is the one code of the order and gives the friend discount (an empty setting until the owner sets it); a player cannot use their own referral code (blocked by LINE ID and phone, PROMO-02, F14).
-  test.todo("F04/PROMO-01-AC11 Given a referral code from a friend, when a new player enters it at checkout, then it is the one code of ...");
+  // F04/PROMO-01-AC11: proven by a real or traced test in another file of this folder
   // Given a code use is restored (release or cancel), when the partner report counts redemptions, then the restored use is no longer counted (D70).
-  test.todo("F04/PROMO-01-AC14 Given a code use is restored (release or cancel), when the partner report counts redemptions, then the ...");
+  // F04/PROMO-01-AC14: proven by a real or traced test in another file of this folder
   // Given the owner creates or edits a code, when it is saved, then it is audited (PLAT-04) and a change applies to new orders only.
   test.todo("F04/PROMO-01-AC12 Given the owner creates or edits a code, when it is saved, then it is audited (PLAT-04) and a change ...");
   // Given a promo discount makes the amount due zero, when the player pays, then PAY-07 applies.
@@ -140,7 +140,7 @@ describe("F04 R5", () => {
   // Given the player has already used the entitlement for that type this year, when checkout loads, then it does not apply again.
   test.todo("F04/R5-AC3 Given the player has already used the entitlement for that type this year, when checkout loads, then it ...");
   // Given a player with no date of birth on file, when checkout loads, then no birthday discount applies (D12; adults may add a date of birth voluntarily).
-  test.todo("F04/R5-AC4 Given a player with no date of birth on file, when checkout loads, then no birthday discount applies (D12; ...");
+  // F04/R5-AC4: proven by a real or traced test in another file of this folder
   // Given a booking that used the entitlement is cancelled 12 hours or more ahead, when F09 returns value, then the entitlement is restored (D21).
   test.todo("F04/R5-AC5 Given a booking that used the entitlement is cancelled 12 hours or more ahead, when F09 returns value, ...");
   // Given a code that does not stack with the birthday discount, when the order is priced, then the larger discount wins (D65); the birthday entitlement is used only if it is the discount that applies.
@@ -166,9 +166,9 @@ describe("F04 R7", () => {
   // Given an order, when it is confirmed, then one receipt is issued for the order (F13), including the wallet part and credit part as methods.
   test.todo("F04/R7-AC3 Given an order, when it is confirmed, then one receipt is issued for the order (F13), including the wallet ...");
   // Given an order created in Testing, when it is stored, then it is flagged as test and excluded from reports and the receipt series (PLAT-07, D33).
-  test.todo("F04/R7-AC4 Given an order created in Testing, when it is stored, then it is flagged as test and excluded from reports ...");
+  // F04/R7-AC4: proven by a real or traced test in another file of this folder
   // Given any change of an order's status or amounts, then it is audited and ledger rows are append only (PLAT-04, D28).
-  test.todo("F04/R7-AC5 Given any change of an order's status or amounts, then it is audited and ledger rows are append only ...");
+  // F04/R7-AC5: proven by a real or traced test in another file of this folder
   // Given an order is released or cancelled before payment, when the hold ends, then credit and wallet parts reserved for it are returned by ledger rows (F06) and nothing is charged.
   test.todo("F04/R7-AC6 Given an order is released or cancelled before payment, when the hold ends, then credit and wallet parts ...");
 });

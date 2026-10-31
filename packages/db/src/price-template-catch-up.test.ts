@@ -30,6 +30,7 @@ describe('the catch-up for the F04 template kinds', () => {
     await pdb.withPlatformTx({ staffId: admin, staffLabel: 'Staff', clubId: CLUB }, async (tx) => tx.query(`select app.apply_template($1)`, [tpl]));
     // Put the club back to how it was before the handlers: nothing copied for the F04 kinds.
     await tdb.query(`delete from public.court_price_rule where club_id = $1`, [CLUB]);
+    await tdb.query(`delete from public.package_product where club_id = $1`, [CLUB]);   // F06 0517 products reference the groups
     await tdb.query(`delete from public.price_group where club_id = $1`, [CLUB]);
     await tdb.query(`delete from public.add_on where club_id = $1`, [CLUB]);
     await tdb.query(`delete from public.club_template_copy where club_id = $1 and kind in ('age_band', 'price', 'add_on', 'coach_tier')`, [CLUB]);

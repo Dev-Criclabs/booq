@@ -16,19 +16,19 @@ describe("F08 CLASS-01", () => {
   // Given a player, when the schedule loads or a seat is requested, then they see and may book the classes of their own price group (by the date of birth on file) and the classes that match the group credits they hold, for example a player who is now 18 or older with a Student group credit still sees the Student classes that credit was bought for (D121, D84, D62). A class outside both is not shown and a request for it is refused by the server, not only filtered in the screen (CLASS-01, PRD).
   test.todo("F08/CLASS-01-AC5 Given a player, when the schedule loads or a seat is requested, then they see and may book the classes of ...");
   // Given the schedule (C7), when it loads, then it shows the week, filterable by level, with class cards (coach, court, time, spots left), Full plus Waitlist for a full class, and only the customer's audience.
-  test.todo("F08/CLASS-01-AC6 Given the schedule (C7), when it loads, then it shows the week, filterable by level, with class cards ...");
+  // F08/CLASS-01-AC6: proven by a real or traced test in another file of this folder
   // Given class detail (C8), when it loads, then it shows level, audience, date and time, duration, coach, court, players booked against the maximum, the minimum to run, and the credit or drop in price.
-  test.todo("F08/CLASS-01-AC7 Given class detail (C8), when it loads, then it shows level, audience, date and time, duration, coach, ...");
+  // F08/CLASS-01-AC7: proven by a real or traced test in another file of this folder
   // Given a guest, when they browse C7 and C8, then it loads without sign in and shows the Adult schedule (D121); booking starts sign in (F02).
-  test.todo("F08/CLASS-01-AC8 Given a guest, when they browse C7 and C8, then it loads without sign in and shows the Adult schedule ...");
+  // F08/CLASS-01-AC8: proven by a real or traced test in another file of this folder
   // Given a class template with the coach on leave or over the rest cap for a session hour, when the session is generated, then it is flagged for the owner (F07 R6), not removed.
-  test.todo("F08/CLASS-01-AC9 Given a class template with the coach on leave or over the rest cap for a session hour, when the session ...");
+  // F08/CLASS-01-AC9: proven by a real or traced test in another file of this folder
   // Given the owner edits a template, when it is saved, then the change applies to future sessions that have no players; a session that has players keeps its details unless the owner edits that session, in which case its players are messaged and may cancel free (D121).
   test.todo("F08/CLASS-01-AC10 Given the owner edits a template, when it is saved, then the change applies to future sessions that have ...");
   // Given the owner cancels a template or a session, when it is saved, then it follows CLASS-01-AC13 for booked players.
   test.todo("F08/CLASS-01-AC11 Given the owner cancels a template or a session, when it is saved, then it follows CLASS-01-AC13 for ...");
   // Given a group class hour, when the coach's rest run is counted, then it counts until the session is cancelled (D19, F07).
-  test.todo("F08/CLASS-01-AC12 Given a group class hour, when the coach's rest run is counted, then it counts until the session is ...");
+  // F08/CLASS-01-AC12: proven by a real or traced test in another file of this folder
   // Given a session is cancelled by staff (below minimum or otherwise), when it is saved, then every player gets full credit back (or the money to the wallet), a LINE message (F10), and the court and coach are freed (PRD; F09 CANCEL-03 style). Waitlist entries for it end.
   test.todo("F08/CLASS-01-AC13 Given a session is cancelled by staff (below minimum or otherwise), when it is saved, then every player ...");
   // Given payment for a seat, when the player books, then they may pay with a group credit for the right audience, a drop in price, or the wallet, in the order of F04 R4 (PRD).
@@ -53,27 +53,27 @@ describe("F08 CLASS-02", () => {
   // Given an offer that passes its time, or is declined, when it ends, then it passes to the next person in line and the player gets no further offer for it.
   test.todo("F08/CLASS-02-AC4 Given an offer that passes its time, or is declined, when it ends, then it passes to the next person in ...");
   // Given a spot opens less than the cut off (default 2 hours) before the start, when it opens, then no offers are made (PRD).
-  test.todo("F08/CLASS-02-AC5 Given a spot opens less than the cut off (default 2 hours) before the start, when it opens, then no offers ...");
+  // F08/CLASS-02-AC5: proven by a real or traced test in another file of this folder
   // Given an offer for a court slot, when the player claims it, then it becomes a hold and a booking under BOOK-03 and BOOK-04; a court slot offer is the same as a class offer (D44). The offer's QR (if Beam is needed) follows F05.
   test.todo("F08/CLASS-02-AC6 Given an offer for a court slot, when the player claims it, then it becomes a hold and a booking under ...");
   // Given two players claim the last spot at once, when both run, then exactly one succeeds and the other is told the spot is gone (CONC-22).
-  test.todo("F08/CLASS-02-AC7 Given two players claim the last spot at once, when both run, then exactly one succeeds and the other is ...");
+  // F08/CLASS-02-AC7: proven by a real or traced test in another file of this folder
   // Given a player on a waitlist, when they open My bookings, then the Waitlist tab shows their position (C13, G-C13-Waitlist-tab) and they may leave the list.
   test.todo("F08/CLASS-02-AC8 Given a player on a waitlist, when they open My bookings, then the Waitlist tab shows their position (C13, ...");
   // Given a waitlist offer that cannot be sent because the club is at its message cap on the free plan, when the send fails, then the offer passes to the next person (LINE-07-AC6, F10).
   test.todo("F08/CLASS-02-AC9 Given a waitlist offer that cannot be sent because the club is at its message cap on the free plan, when ...");
   // Given the Waitlist spot open message, when it is sent, then it is sent even at 80 percent of the cap (LINE-07-AC3).
-  test.todo("F08/CLASS-02-AC10 Given the Waitlist spot open message, when it is sent, then it is sent even at 80 percent of the cap ...");
+  // F08/CLASS-02-AC10: proven by a real or traced test in another file of this folder
   // Given the session or slot is cancelled or closed, when it is saved, then waitlist entries end and those players are told (a closure follows D48).
   test.todo("F08/CLASS-02-AC11 Given the session or slot is cancelled or closed, when it is saved, then waitlist entries end and those ...");
   // Given a player already holds a seat in the session, when they try to join its waitlist, then it is refused.
   test.todo("F08/CLASS-02-AC12 Given a player already holds a seat in the session, when they try to join its waitlist, then it is refused.");
   // Given the claim time and the cut off, when the owner changes them, then offers made already keep their end time and new offers use the new values (as D46 for holds).
-  test.todo("F08/CLASS-02-AC13 Given the claim time and the cut off, when the owner changes them, then offers made already keep their end ...");
+  // F08/CLASS-02-AC13: proven by a real or traced test in another file of this folder
   // Given an offer is open, when another player opens the schedule, then the spot is held for the first in line and is not offered to others until the offer ends (D121).
-  test.todo("F08/CLASS-02-AC14 Given an offer is open, when another player opens the schedule, then the spot is held for the first in ...");
+  // F08/CLASS-02-AC14: proven by a real or traced test in another file of this folder
   // Given an offer open when the 2 hour mark passes, then it stands (D121).
-  test.todo("F08/CLASS-02-AC15 Given an offer open when the 2 hour mark passes, then it stands (D121).");
+  // F08/CLASS-02-AC15: proven by a real or traced test in another file of this folder
   // Given a waitlist, when players join, then there is no maximum length (D121).
   test.todo("F08/CLASS-02-AC16 Given a waitlist, when players join, then there is no maximum length (D121).");
 });
@@ -88,5 +88,5 @@ describe("F08 WAIT-01", () => {
   // Given a court waitlist entry for a time that passes, when the time passes, then the entry ends.
   test.todo("F08/WAIT-01-AC4 Given a court waitlist entry for a time that passes, when the time passes, then the entry ends.");
   // Given a court slot that is Held (being paid for), when it is viewed, then whether Join waitlist shows is F03 Q2.
-  test.todo("F08/WAIT-01-AC5 Given a court slot that is Held (being paid for), when it is viewed, then whether Join waitlist shows is ...");
+  // F08/WAIT-01-AC5: proven by a real or traced test in another file of this folder
 });

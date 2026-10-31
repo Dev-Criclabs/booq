@@ -90,8 +90,8 @@ describe('BOOQ staff and the platform roles see nothing', () => {
     }
     const fns = (await tdb.query(
       `select p.oid::regprocedure::text as f from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-        where n.nspname = 'app' and p.proname in ('issue_receipt', 'void_receipt', 'run_daily_close', 'preview_daily_close', 'daily_close_totals', 'report_cash_by_type', 'report_package_sales', 'report_online_vs_staff', 'report_no_show_rate', 'report_new_vs_returning', 'report_revenue_earned', 'report_value_owed', 'report_occupancy', 'report_partner', 'receipt_for_print')`)).rows.map((r) => r.f as string);
-    expect(fns.length).toBe(15);
+        where n.nspname = 'app' and p.proname in ('issue_receipt', 'void_receipt', 'run_daily_close', 'preview_daily_close', 'daily_close_totals', 'report_cash_by_type', 'report_package_sales', 'report_online_vs_staff', 'report_no_show_rate', 'report_new_vs_returning', 'report_revenue_earned', 'report_value_owed', 'report_occupancy', 'report_partner', 'receipt_for_print', 'audit_report_export')`)).rows.map((r) => r.f as string);
+    expect(fns.length).toBe(16);
     for (const f of fns) {
       for (const role of ['booq_platform', 'booq_worker', 'anon', 'authenticated']) {
         expect((await tdb.query(`select has_function_privilege($1, $2, 'execute') as ok`, [role, f])).rows[0].ok, `${role} ${f}`).toBe(false);
@@ -101,10 +101,10 @@ describe('BOOQ staff and the platform roles see nothing', () => {
   it('the app role may run exactly the entry points of the roles (reports, close, void, print), and not issue_receipt or the internal totals', async () => {
     const may = (await tdb.query(
       `select p.oid::regprocedure::text as f from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-        where n.nspname = 'app' and p.proname in ('issue_receipt', 'void_receipt', 'run_daily_close', 'preview_daily_close', 'daily_close_totals', 'report_cash_by_type', 'report_package_sales', 'report_online_vs_staff', 'report_no_show_rate', 'report_new_vs_returning', 'report_revenue_earned', 'report_value_owed', 'report_occupancy', 'report_partner', 'receipt_for_print')
+        where n.nspname = 'app' and p.proname in ('issue_receipt', 'void_receipt', 'run_daily_close', 'preview_daily_close', 'daily_close_totals', 'report_cash_by_type', 'report_package_sales', 'report_online_vs_staff', 'report_no_show_rate', 'report_new_vs_returning', 'report_revenue_earned', 'report_value_owed', 'report_occupancy', 'report_partner', 'receipt_for_print', 'audit_report_export')
           and has_function_privilege('booq_app', p.oid, 'execute') order by 1`)).rows.map((r) => r.f);
     expect(may).toEqual([
-      'app.preview_daily_close(date)', 'app.receipt_for_print(uuid)', 'app.report_cash_by_type(date,date)', 'app.report_new_vs_returning(date,date)', 'app.report_no_show_rate(date,date)',
+      'app.audit_report_export(text,date,date,integer)', 'app.preview_daily_close(date)', 'app.receipt_for_print(uuid)', 'app.report_cash_by_type(date,date)', 'app.report_new_vs_returning(date,date)', 'app.report_no_show_rate(date,date)',
       'app.report_occupancy(date,date)', 'app.report_online_vs_staff(date,date)', 'app.report_package_sales(date,date)', 'app.report_partner(date,date)',
       'app.report_revenue_earned(date,date)', 'app.report_value_owed(date)', 'app.run_daily_close(date)', 'app.void_receipt(uuid,text)',
     ]);
