@@ -35,6 +35,7 @@ const sources: QuoteSources = {
   clubTerms: async () => terms,
   coach: async (_tx, id) => (id === COACH ? { tierId: TIER, priceSatang: null } : id === HEAD_COACH ? { tierId: HEAD, priceSatang: null } : null),
   walletBalance: async () => wallet,
+  eligibleCredits: async () => [],
 };
 
 // The quote never starts a payment.
@@ -199,6 +200,21 @@ describe('POST /checkout/quote with the club reads (0315, 0316)', () => {
     const order = (await tdb.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'online') returning id`, [A, KID])).rows[0].id as string;
     await tdb.query(`insert into public.promo_redemption (club_id, code_id, order_id, customer_id) values ($1,$2,$3,$4)`, [A, id, order, KID]);
     expect(await askReal(body({ code: 'ONCE' }))).toMatchObject({ ok: false, code: 'code_used_up' });
+  });
+
+  it("the wallet balance comes from F06's ledger view and pays before money (R4-AC1, AC3; 0512)", async () => {
+    await tdb.query(`insert into public.wallet_ledger (club_id, customer_id, change_satang, reason, staff_id, note, dedupe_key) values ($1,$2,20000,'adjust',$2,'test seed','seed-w')`, [A, ME]);
+    expect(await askReal(body())).toMatchObject({ ok: true, body: { walletSatang: 20000, moneySatang: 30000 } });
+    // Another player's wallet is not this player's (the view's row rule).
+    expect(await askReal(body(), { ...me, userId: KID })).toMatchObject({ ok: true, body: { walletSatang: 0 } });
+  });
+
+  it("a court bundle credit from F06 covers the court hour; a coach picked at checkout never uses a solo credit (R4-AC1, AC6, COACH-03; 0512)", async () => {
+    const product = (await tdb.query(`insert into public.package_product (club_id, name_th, name_en, credit_type, credits, validity_months, price_satang) values ($1,'บันเดิล','Bundle','court_hour',10,6,null) returning id`, [A])).rows[0].id as string;
+    await tdb.query(`insert into public.customer_package (club_id, customer_id, product_id, product_snapshot, credits_total, purchase_date, expires_at)
+                     values ($1,$2,$3,'{"credit_type":"court_hour"}',10,'2026-11-01','2027-05-01T00:00:00Z')`, [A, ME, product]);
+    const q = await askReal(body({ coachId: COACH }));
+    expect(q).toMatchObject({ ok: true, body: { creditValueSatang: 50000, moneySatang: 80000 } });
   });
 
   it("the club's cancel window and birthday discount come from its settings; unset reads as null (R4-AC5, R5-AC1, AC2)", async () => {

@@ -1,7 +1,7 @@
 import type { Tx } from '../../../db/src/tx';
 import type { CodeInput } from './discounts';
 import { CheckoutError } from './errors';
-import { priceOrder, type EligibleCredit, type PricingInput, type Quote } from './pricing';
+import { groupFor, priceOrder, type EligibleCredit, type PricingInput, type Quote } from './pricing';
 
 // F04-T11: the quote loader (design 4.2, 5.1; R1 to R4, R8, PROMO-01-AC9, CC-2). Inside the caller's club
 // transaction it reads the club's prices, the player's date of birth and entitlements, and asks the ports
@@ -30,13 +30,20 @@ export interface QuoteSources {
   clubTerms(tx: Tx): Promise<{ birthdayDiscount: { kind: 'percent' | 'fixed'; value: number } | null; cancelWindowHours: number | null }>;
   /** F07: the coach's tier and own price in this club, or null when there is no such coach. */
   coach(tx: Tx, coachId: string): Promise<{ tierId: string; priceSatang: number | null } | null>;
-  /** F06: the player's credits that may pay a court hour or a coach line, in the order to use them. */
-  eligibleCredits(tx: Tx, customerId: string): Promise<EligibleCredit[]>;
+  /** F06: the player's credits that may pay a court hour or (through Classes) a coach line, in the order to use
+   *  them, for the player's price group and the coach's tier. */
+  eligibleCredits(tx: Tx, customerId: string, fit: CreditFit): Promise<EligibleCredit[]>;
   /** F06: the wallet balance in satang, from the ledger. */
   walletBalance(tx: Tx, customerId: string): Promise<number>;
   /** F06 port reserve_credit_and_wallet (F06-T09): reserve every credit and wallet part of the order's lines, all
    *  or nothing. False means something is no longer there (used up, expired, wallet short) and nothing was written. */
   reserveCreditAndWallet(tx: Tx, orderId: string): Promise<boolean>;
+}
+
+export interface CreditFit {
+  priceGroupId: string | null;
+  coachTierId: string | null;
+  coachSource: 'checkout' | 'classes' | null;
 }
 
 export interface QuoteView extends Quote {
@@ -156,15 +163,21 @@ export async function quoteFor(tx: Tx, customerId: string, req: QuoteRequest, so
       : 'not_found';
   }
 
+  const groupRows = groups.rows.map((g) => ({ id: g.id, minAge: g.min_age, maxAge: g.max_age }));
+  const fit: CreditFit = {
+    priceGroupId: groupFor(groupRows, person.dob, club.today)?.id ?? null,
+    coachTierId: coach?.tierId ?? null,
+    coachSource: coach?.source ?? null,
+  };
   const result = priceOrder({
     onDate: club.today,
     dob: person.dob,
-    priceGroups: groups.rows.map((g) => ({ id: g.id, minAge: g.min_age, maxAge: g.max_age })),
+    priceGroups: groupRows,
     courtPriceRules: rules.rows.map((r) => ({ priceGroupId: r.price_group_id, dayType: r.day_type, peak: r.peak, priceSatang: r.price_satang })),
     coachTierPrices: tierPrices.rows.map((p) => ({ tierId: p.tier_id, priceGroupId: p.price_group_id, priceSatang: p.price_satang })),
     addOns: addOns.rows.map((a) => ({ id: a.id, priceSatang: a.price_satang, active: a.active })),
     selection: { courtId: req.courtId, hours: req.hours, coach, addOnIds: req.addOnIds },
-    credits: await sources.eligibleCredits(tx, customerId),
+    credits: fit.priceGroupId === null ? [] : await sources.eligibleCredits(tx, customerId, fit),
     walletBalanceSatang: await sources.walletBalance(tx, customerId),
     code,
     birthday: { setting: terms.birthdayDiscount, usedKinds: used.rows.map((u) => u.kind) },
@@ -176,12 +189,10 @@ export async function quoteFor(tx: Tx, customerId: string, req: QuoteRequest, so
   return { ...result.quote, cancelWindowHours: terms.cancelWindowHours };
 }
 
-/** The ports until F06, F07 and F14 exist: no credits, an empty wallet, no coach, no referral codes. */
-export const pendingFeatureSources: Pick<QuoteSources, 'referralCode' | 'coach' | 'eligibleCredits' | 'walletBalance' | 'reserveCreditAndWallet'> = {
+/** The ports until F07 and F14 are read here: no coach, no referral codes; and the reserve through F06's port. */
+export const pendingFeatureSources: Pick<QuoteSources, 'referralCode' | 'coach' | 'reserveCreditAndWallet'> = {
   referralCode: async () => null,
   coach: async () => null,
-  eligibleCredits: async () => [],
-  walletBalance: async () => 0,
   // Nothing to reserve when no line uses credit or wallet; otherwise F06's port (0511), which must exist.
   reserveCreditAndWallet: async (tx, orderId) => {
     const used = (await tx.query<{ n: string }>(
@@ -214,8 +225,26 @@ interface PromoRow {
   customer_has_paid_booking: boolean;
 }
 
-/** The club's own reads: app.quote_promo_code (0315) and public.public_booking_config (0316). */
-export const clubQuoteReads: Pick<QuoteSources, 'promoCode' | 'clubTerms'> = {
+/** The club's own reads: app.quote_promo_code (0315), public.public_booking_config (0316), and F06's
+ *  app.eligible_credits and public.wallet_balance (0512). */
+export const clubQuoteReads: Pick<QuoteSources, 'promoCode' | 'clubTerms' | 'eligibleCredits' | 'walletBalance'> = {
+  async eligibleCredits(tx, customerId, fit) {
+    // A court hour takes a court credit; a coach line takes a solo credit of its tier only through Classes (COACH-03,
+    // F06 also refuses the checkout source). F06 has already matched the type, the tier and the price group.
+    const ask = async (lineKind: 'court_hour' | 'coach', spec: object) =>
+      (await tx.query<{ package_id: string; credits_left: number }>('select package_id, credits_left from app.eligible_credits($1, $2::jsonb)', [
+        customerId, JSON.stringify(spec),
+      ])).rows.map((r) => ({ packageId: r.package_id, lineKind, priceGroupId: null, coachTierId: null, units: r.credits_left }));
+    const court = await ask('court_hour', { credit_type: 'court_hour', price_group_id: fit.priceGroupId });
+    const solo = fit.coachTierId !== null && fit.coachSource === 'classes'
+      ? await ask('coach', { credit_type: 'solo_class', coach_tier_id: fit.coachTierId, price_group_id: fit.priceGroupId, coach_source: 'classes' })
+      : [];
+    return [...court, ...solo];
+  },
+  async walletBalance(tx, customerId) {
+    const r = one(await tx.query<{ b: string | null }>('select balance_satang::text as b from public.wallet_balance where customer_id = $1', [customerId]));
+    return Math.max(0, Number(r?.b ?? 0));
+  },
   async promoCode(tx, code, customerId) {
     const r = one(await tx.query<{ c: PromoRow | null }>('select app.quote_promo_code($1, $2) as c', [code, customerId]));
     const c = r?.c;
