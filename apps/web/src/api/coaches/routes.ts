@@ -2,7 +2,7 @@ import { route, RouteError, type Route, type RouteContext, type RouteParams } fr
 import type { ClubContext, Db, Tx } from '@booq/db';
 import {
   addCoach, CoachError, type CoachErrorCode, type CoachViewer, coachTimes, decideLeave, flaggedSessions, getAvailability, getCoach, getPay, getStaffCoach,
-  leaveCalendar, listAllLeave, listCoaches, listOwnLeave, listStaffCoaches, offerableCoaches, putAvailability, putPay, putStaffCoach, requestLeave, substitute, substitutes,
+  leaveCalendar, listAllLeave, listCoaches, listOwnLeave, listStaffCoaches, offerableCoaches, staffOfferableCoaches, putAvailability, putPay, putStaffCoach, requestLeave, substitute, substitutes,
 } from '@booq/domain';
 
 // F07-T11 public and player coach routes (design 6, prefix /api/c/{slug}). Thin handlers: resolve the club, open the club transaction
@@ -122,6 +122,7 @@ export function staffCoachRoutes(deps: CoachRouteDeps): CoachRoute<unknown>[] {
       headers: NO_STORE,
     });
   return [
+    at('GET', '/staff/bookings/:id/coaches', 'booking.create.staff', 'admin', (tx, _c, i) => staffOfferableCoaches(tx, i['id'])),
     at('GET', '/staff/coaches', 'coach.read', 'admin', (tx) => listStaffCoaches(tx)),
     at('GET', '/staff/coaches/:id', 'coach.manage', 'admin', (tx, _c, i) => getStaffCoach(tx, i['id'])),
     at('PUT', '/staff/coaches/:id', 'coach.manage', 'admin', (tx, _c, i, b) => putStaffCoach(tx, i['id'], b)),

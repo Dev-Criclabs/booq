@@ -179,6 +179,49 @@ describe('availability and leave (coach, owner)', () => {
   });
 });
 
+describe("GET /staff/bookings/:id/coaches (the desk's picker, priced for the customer)", () => {
+  const JUNIOR = '77777777-7777-4777-8777-777777777772';
+  async function courtFor(customer: string | null, h = 10) {
+    const order = (await tdb.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'staff') returning id`, [A, customer])).rows[0].id as string;
+    const b = (await tdb.query(
+      `insert into public.booking (club_id, order_id, type, resource_id, start_at, end_at, customer_id, status, source, created_by, confirmed_at)
+       values ($1,$2,'court',$3,$4,$5,$6,'confirmed','staff',$7, app.now()) returning id`, [A, order, C1, H(h), H(h + 1), customer, DESK])).rows[0].id as string;
+    await tdb.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, booking_id) values ($1,'court_booking',$2,$3,$4,'confirmed',$5)`, [A, C1, H(h), H(h + 1), b]);
+    return b;
+  }
+  beforeEach(async () => {
+    await tdb.query(`insert into public.price_group (club_id, id, name_th, name_en, rule) values ($1,$2,'เยาวชน','Junior','{"max_age":17}')`, [A, JUNIOR]);
+    await tdb.query(`update public.price_group set rule = '{"min_age":18}' where id = $1`, [GROUP]);
+    await tdb.query(`update public.coach set tier_id = $1, published = true, profile_consent_at = app.now(), profile_consent_by = $4 where id in ($2,$3) and club_id = $5`, [TIER, COACH, COACH2, OWNER, A]);
+    await tdb.query(`insert into public.coach_tier_price (club_id, tier_id, price_group_id, price_satang) values ($1,$2,$3,120000), ($1,$2,$4,80000)`, [A, TIER, GROUP, JUNIOR]);
+    await tdb.query(`update public.app_user set date_of_birth = '2015-05-05' where id = $1`, [NEWBIE]);
+  });
+  const prices = (r: { coachId: string; priceSatang: number | null }[]) => Object.fromEntries(r.map((c) => [c.coachId, c.priceSatang]));
+  it("each price is the customer's group price, whoever is at the desk", async () => {
+    const adult = await courtFor(PLAYER);
+    const junior = await courtFor(NEWBIE, 12);
+    for (const s of [desk(), owner()]) {
+      expect(prices(await ok(call('GET', '/staff/bookings/:id/coaches', s, { id: adult })))).toEqual({ [COACH]: 120000, [COACH2]: 120000 });
+      expect(prices(await ok(call('GET', '/staff/bookings/:id/coaches', s, { id: junior })))).toEqual({ [COACH]: 80000, [COACH2]: 80000 });
+    }
+  });
+  it('a booking with no customer gets the standard price; a busy coach is not offered', async () => {
+    const walk = await courtFor(null);
+    await soloBooking(10, COACH2, C2);
+    expect(prices(await ok(call('GET', '/staff/bookings/:id/coaches', desk(), { id: walk })))).toEqual({ [COACH]: 120000 });
+  });
+  it('a booking that already has a coach, another club, a bad id; a player, a coach and a guest are refused', async () => {
+    const solo = await soloBooking(14);
+    expect(await refused(call('GET', '/staff/bookings/:id/coaches', desk(), { id: solo }))).toMatchObject({ status: 404 });
+    expect(await refused(call('GET', '/staff/bookings/:id/coaches', desk(), { id: 'nope' }))).toMatchObject({ status: 404 });
+    const b = await courtFor(PLAYER);
+    expect(await refused(call('GET', '/staff/bookings/:id/coaches', as(PLAYER, ['player']), { id: b }))).toMatchObject({ status: 403 });
+    expect(await refused(call('GET', '/staff/bookings/:id/coaches', coach(), { id: b }))).toMatchObject({ status: 403 });
+    expect(await refused(call('GET', '/staff/bookings/:id/coaches', null, { id: b }))).toMatchObject({ status: 401 });
+    expect(await refused(call('GET', '/staff/bookings/:id/coaches', owner(), { slug: 'club-b', id: b }))).toMatchObject({ status: 404 });
+  });
+});
+
 describe('GET /staff/leave-calendar (front desk, owner; F11-T10)', () => {
   it('shows dates, hours and status and the coach name, never the type or the note', async () => {
     await ok(call('POST', '/coach/leave', coach(), {}, { startDate: '2026-12-03', endDate: '2026-12-04', type: 'sick', note: 'private' }));

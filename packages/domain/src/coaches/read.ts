@@ -144,6 +144,28 @@ export async function offerableCoaches(tx: Tx, starts: unknown, resourceId: unkn
   return r.rows.map(card);
 }
 
+/**
+ * GET /staff/bookings/:id/coaches: the desk's coach picker for a confirmed court booking with no coach yet. The coaches free for the
+ * booking's hour (the check POST /bookings/:id/coach runs), each with the price for the BOOKING'S CUSTOMER's price group, not the
+ * staff member's own (a walk in with no customer gets the standard price). The desk then calls POST /bookings/:id/coach.
+ */
+export async function staffOfferableCoaches(tx: Tx, bookingId: unknown): Promise<CoachCard[]> {
+  const id = coachIdOf(bookingId);
+  const b = await tx.query<{ customer_id: string | null }>(
+    `select customer_id from public.booking
+      where club_id = app.club_id() and id = $1 and type = 'court' and status = 'confirmed' and coach_id is null`, [id]);
+  const row = b.rows[0];
+  if (!row) throw new CoachError('not_found');
+  await refuseIfPaused(tx);
+  const r = await tx.query<CardRow>(
+    `select c.*, p.price_satang
+       from public.public_coach_card c
+       left join app.coach_prices_for($2::uuid) p on p.coach_id = c.id
+      where c.id in (select app.coaches_for_booking($1)) order by c.display_name nulls last, c.id`,
+    [id, row.customer_id]);
+  return r.rows.map(card);
+}
+
 /** POST /bookings/:id/coach: adds a coach to the caller's confirmed court booking, held with its own order (COACH-03-AC3, D111, D120). */
 export async function addCoach(tx: Tx, bookingId: unknown, body: { coachId?: unknown; orderId?: unknown }): Promise<{ ok: true }> {
   const booking = coachIdOf(bookingId);

@@ -36,7 +36,7 @@ const BUILT: Record<string, string[]> = {
   A7: [
     'GET /staff/coaches coach.read', 'GET /staff/coaches/:id coach.manage', 'PUT /staff/coaches/:id coach.manage', 'GET /staff/coaches/:id/pay coach.pay', 'PUT /staff/coaches/:id/pay coach.pay',
     'GET /staff/leave coach.leave.decide', 'POST /staff/leave/:id/decision coach.leave.decide', 'GET /staff/leave-calendar coach.read', 'GET /staff/flagged-sessions coach.substitute',
-    'GET /staff/bookings/:id/substitutes coach.substitute', 'POST /staff/bookings/:id/substitute coach.substitute', 'GET /coach/availability coach.self', 'PUT /coach/availability coach.self',
+    'GET /staff/bookings/:id/coaches booking.create.staff', 'GET /staff/bookings/:id/substitutes coach.substitute', 'POST /staff/bookings/:id/substitute coach.substitute', 'GET /coach/availability coach.self', 'PUT /coach/availability coach.self',
     'GET /coach/leave coach.self', 'POST /coach/leave coach.self',
   ],
   A8: [
