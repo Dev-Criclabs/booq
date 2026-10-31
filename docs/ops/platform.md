@@ -33,6 +33,8 @@ These are not environment variables. They are rows an admin enters in the consol
 |---|---|---|
 | `console_enrolment_ttl_hours` **(branch)** | Issuing a staff enrolment link is refused (`enrolment:not_configured`), so **no new BOOQ teammate can be invited or have a second factor reset**. The number is hours the single-use link stays valid; it must be above 0 | **No value proposed.** A BOOQ admin decides. (Security's `invite_ttl_hours` figures are for club invites, a different setting) |
 | `line_send_max_attempts`, `line_send_retry_seconds` (F10) | The LINE sender has no retry limit or base backoff for a push that fails on a token problem. Messages stay unsent or retry without bound, depending on the code | **No value proposed.** Token-failure retry limit and base backoff, a BOOQ admin or Security decides. Alerts on token failure are in `plan.md` section 5 |
+| `beam_reconcile_age_seconds` (F05, pending main) | **Read by the reconcile task. While it is unset, reconcile is off**, so a payment whose callback never arrives is never looked up | **No value proposed.** Must be set before the 7 Dec test. How old a pending payment must be before the worker asks Beam about it |
+| `beam_reconcile_interval_seconds` | **Not read by the code.** The cron `WORKER_BEAM_RECONCILE_CRON` replaced it. Do not set it | n/a |
 | `pay_tap_limit_count`, `pay_tap_limit_window_seconds` | No limit on new payment holds (F03 design 4.8, D61) | Security proposes 5 holds per 600 s (`threat-model.md` section 6); approval is Security's and the owner's |
 
 The first BOOQ admin account needs a way in before this works (first-admin bootstrap): that is the Architect's and BE-P's design, not set here. Add any other `platform.config` key to this table when a feature adds one.
