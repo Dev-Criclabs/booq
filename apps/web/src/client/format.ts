@@ -52,3 +52,12 @@ export function weekdayKey(day: string): string {
 
 /** The day of the month as a number, for the date strip. */
 export const dayOfMonth = (day: string) => String(Number(day.slice(8, 10)));
+
+/** `{price}`, `{amount}`, `{total}`: integer satang as whole baht with the sign and separators, satang only when there are some (฿1,200, ฿500.50). Money is integer satang everywhere (CLAUDE.md). */
+export function formatMoney(_lang: Lang, satang: number): string {
+  const sign = satang < 0 ? '-' : '';
+  const abs = Math.abs(satang);
+  const whole = Math.trunc(abs / 100);
+  const frac = abs % 100;
+  return `${sign}฿${String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}${frac === 0 ? '' : `.${String(frac).padStart(2, '0')}`}`;
+}
