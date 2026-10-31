@@ -88,3 +88,9 @@ T01 to T03 first, then T04, T06a, T06b, T07, T05, T08, T09, T10, T11, T12 (the o
 - [x] **F06-T25** Migration 0515: `app.wallet_return_line(order_line, reason)`: returns the wallet spend of one order line (a one hour cancel needs one line; `wallet_return(order)` returns every spend row). IDs: PKG-01-AC8, R1-AC6, AC7, D158. Role: BE-C · Deps T04 · Size: S
   Tests first: only the named line's spend rows come back; a repeat returns once (key `return:{spend_id}`); a line with no spend returns nothing; a spend of another order is refused.
 
+
+## Follow-up added by D166 (template products, 31 Oct 2026)
+
+- [x] **F06-T26** Migration 0517: the `product` template handler `app.template_product`, registered with `app.register_template_handler('product', ...)` and `app.catch_up_template_handler('product')`. Court bundles load as `court_hour` products and group 8-session packs as `group_session` products for the price group made from their `age_band`, with the template's credits, validity and price. Solo packs (the template has no coach tier) and single-session items are skipped. Names come from the template data, which holds the writers' P-0186 and P-0227 text with the number filled in. IDs: PKG-02-AC1, D166. Role: BE-W · Deps T01, F04-T06 (age_band handler) · Size: S
+  Tests first: Hunter gets exactly 4 products at the PRD prices (two bundles, the Adult and Student group packs); no singles, no solo packs, nothing pending; the names equal the locale text with the variable filled; another club and Blank get nothing; an unknown product type raises.
+  - Note for F11 (A0 dashboard): show "create solo packs for your coach tiers" as a **non-blocking reminder** while `app.solo_packs_done(club)` is false (some coach tier has no active solo pack). It is not a setup step and gates no status move: the PRD does not ask for that (orchestrator, 31 Oct). Listed in design section 14.

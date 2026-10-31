@@ -1,5 +1,5 @@
-// The LIFF client module only: the package index also exports server code (message dictionaries read files).
-import { createLiffClient, type SessionOutcome } from '@booq/line/src/liff/client';
+// The package index is browser safe (index-boundary.test.ts); server code lives in '@booq/line/server'.
+import { createLiffClient, type SessionOutcome } from '@booq/line';
 import type { LiffPort } from './liff';
 import { profileSetupPath, safeNext, signInPath } from './paths';
 

@@ -112,7 +112,7 @@ describe('progress (P3, PLAT-01-AC2, AC9)', () => {
     expect(p.progress.setup.map((s) => [s.item, s.done, s.owed_by])).toEqual([
       ['basics', false, 'booq'], ['plan', false, 'booq'], ['courts_hours', false, 'booq'], ['line', false, 'booq'], ['payments', false, 'booq'], ['legal_notice', false, 'booq'],
     ]);
-    expect(p.progress.launch).toHaveLength(10);
+    expect(p.progress.launch.length).toBeGreaterThanOrEqual(10);   // the ten of D108, plus any a later feature appends (line_send_retry_set)
     expect(p.progress.launch.every((l) => l.result === (l.item === 'no_open_launch_failure' ? 'pass' : 'pending'))).toBe(true);
   });
 
