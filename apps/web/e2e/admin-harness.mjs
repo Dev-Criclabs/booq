@@ -20,7 +20,7 @@ export async function openAdmin(browser, api, { lang = 'en', width = 1280, heigh
     const url = new URL(req.url());
     const path = url.pathname.replace(/^\/api\/c\/[^/]+/, '');
     const body = req.postData() ? JSON.parse(req.postData()) : undefined;
-    calls.push({ method: req.method(), path, search: url.search, body });
+    calls.push({ method: req.method(), path, search: url.search, body, key: req.headers()['idempotency-key'] });
     if (path === '/staff/shell') return route.fulfill({ status: 200, json: shell({ pages }) });
     const r = api(req.method(), path, url.search, body, calls);
     if (r === 'offline') return route.abort('internetdisconnected');

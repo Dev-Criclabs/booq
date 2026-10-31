@@ -7,6 +7,7 @@ import {
 } from '../../client/admin/profile';
 import { adminPath, dayMonthOf } from '../../client/admin/shell';
 import { dateOf, longDayOf, timeOf } from '../../client/admin/time';
+import { sellPath } from '../../client/admin/sell';
 import { useAdmin } from './AdminFrame';
 import { AdjustPanel, ExtendPanel, NotesPanel } from './ProfileActions';
 
@@ -88,7 +89,7 @@ export function CustomerProfileScreen({ id }: { id: string }) {
       <header className="adm-prof-head">
         <h1 id="prof-title" data-testid="prof-name">{name || t('A-new.cust_no_name')}</h1>
         <p className="adm-muted" data-testid="prof-meta">{meta}</p>
-        {p.claimState === 'unclaimed' ? <p className="adm-muted">{t('A-new.prof_unclaimed_note')}</p> : null}
+        {p.claimState === 'unclaimed' ? <p className="adm-muted">{t('A-new.prof_unclaimed_note')}</p> : <p><a className="adm-btn adm-btn-ghost" href={sellPath(slug, p.customerId)} data-testid="prof-sell">{t('A-0429')}</a></p>}
         <div className="adm-chips" data-testid="prof-tags">
           {p.tags.map((x) => (
             <span key={x} className="adm-chip">{x}<button type="button" className="adm-chip-x" aria-label={t('A-new.prof_tag_remove', { tag: x })} onClick={() => void changeTag(x, false)} data-testid={`tag-remove-${x}`}>×</button></span>

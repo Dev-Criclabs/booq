@@ -168,3 +168,13 @@ td.adm-cal-cell { background: transparent; }
 .adm-cal-free { text-align: center; }
 .adm-cal-add { display: inline-block; width: 100%; min-height: 40px; line-height: 40px; color: var(--mu); text-decoration: none; border-radius: 8px; }
 .adm-cal-add:hover, .adm-cal-add:focus-visible { background: var(--tn); color: var(--hd); }
+
+/* A14 daily close: the totals as a two column list that wraps on a phone. */
+.adm-dl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 16px; margin: 12px 0; }
+.adm-dl dt { color: var(--mu); overflow-wrap: anywhere; }
+.adm-dl dd { margin: 0; font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+
+/* A13 occupancy by day and hour: a cell's shade is its share booked. */
+.adm-heat { min-width: 520px; table-layout: fixed; }
+.adm-heat th, .adm-heat td { padding: 6px; text-align: center; font-size: 12px; }
+.adm-heat tbody th { width: 64px; text-align: left; }

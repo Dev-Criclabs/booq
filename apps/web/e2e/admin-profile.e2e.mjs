@@ -140,6 +140,7 @@ describe('A6 Customer profile', () => {
     await page.getByTestId('adjust-save').click();
     await page.getByText('Saved.').first().waitFor();
     assert.deepEqual(calls.find((c) => c.path.endsWith('/wallet-adjust')).body, { deltaSatang: 20000, note: 'Goodwill after a cancelled class' });
+    assert.match(calls.find((c) => c.path.endsWith('/wallet-adjust')).key ?? '', /^[\x21-\x7e]{8,200}$/, 'the route needs an Idempotency-Key header');
     api.walletAnswer = { status: 409, body: { code: 'below_zero' } };
     const refused = server({ walletAnswer: { status: 409, body: { code: 'below_zero' } } });
     const second = await open(refused);
