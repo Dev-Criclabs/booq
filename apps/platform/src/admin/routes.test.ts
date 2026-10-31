@@ -72,6 +72,15 @@ describe('the launch overview', () => {
 });
 
 describe('config', () => {
+  it('any staff member reads the values that are set, in key order; a guest does not', async () => {
+    await h.call('PUT', '/config/pay_tap_limit_count', { body: { value: 5 }, as: 'admin' });
+    const r = await h.call('GET', '/config', { as: 'spec' });
+    expect(r.status).toBe(200);
+    const keys = (r.body.config as Array<{ key: string }>).map((c) => c.key);
+    expect(keys).toEqual([...keys].sort());
+    expect(r.body.config).toContainEqual({ key: 'pay_tap_limit_count', value: 5 });
+    expect((await h.call('GET', '/config', { as: null })).status).toBe(401);
+  });
   it('an admin sets a value and it is audited; a number key must be above zero', async () => {
     expect((await h.call('PUT', '/config/tester_invite_ttl_hours', { body: { value: 48 }, as: 'admin' })).status).toBe(200);
     expect((await h.tdb.query(`select value from platform.config where key = 'tester_invite_ttl_hours'`)).rows[0].value).toBe(48);
@@ -90,6 +99,18 @@ describe('config', () => {
 });
 
 describe('legal notice', () => {
+  it('lists the releases newest first with the texts of the newest, for any staff member; nothing published is an empty list', async () => {
+    expect((await h.call('GET', '/legal', { as: 'spec' })).body).toEqual({ releases: [], current: null });
+    await h.call('POST', '/legal/releases', { body: { texts: TEXTS }, as: 'admin' });
+    const next = { ...TEXTS, terms: { ...TEXTS.terms, en: { title: 'Terms 2', body: 'Text 2' } } };
+    await h.call('POST', '/legal/releases', { body: { texts: next }, as: 'admin' });
+    const r = await h.call('GET', '/legal', { as: 'spec' });
+    expect(r.status).toBe(200);
+    expect(r.body.releases.map((x: { version: string }) => x.version)).toEqual(['v2', 'v1']);
+    expect(r.body.releases[0].publishedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(r.body.current).toEqual({ version: 'v2', texts: next });
+    expect((await h.call('GET', '/legal', { as: null })).status).toBe(401);
+  });
   it('an admin publishes a release and gets its version; the next one is v2', async () => {
     const a = await h.call('POST', '/legal/releases', { body: { texts: TEXTS }, as: 'admin' });
     expect([a.status, a.body]).toEqual([200, { version: 'v1' }]);

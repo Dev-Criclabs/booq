@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
-import type { LineTransport, MessageBuilder } from '@booq/line';
-import { FakeClock, FakeLine, type ClubLineChannel } from '../../../../tests/fakes';
+import { createMessageBuilder, loadMessageDictionary, type LineTransport, type MessageBuilder } from '@booq/line';
+import { resolve } from 'node:path';
+import { FakeClock, FakeLine, collectTexts, type ClubLineChannel } from '../../../../tests/fakes';
 import { OUTBOX_SENDER, runOutboxSender } from './line-outbox-sender';
 
 // F10-T08 outbox_sender steps 1 to 4 (F10 design 5.2; FA 5.3): claim due rows with SKIP LOCKED per club, the send
@@ -325,5 +326,24 @@ describe('push results (design 5.2 steps 5 to 7)', () => {
     await run();
     expect(await rowOf(id)).toMatchObject({ status: 'sent' });
     expect(line.pushes({ to: 'Up' })[0]).toMatchObject({ status: 200, delivered: false });
+  });
+});
+
+// F10-T10 end to end: the real builder over the facts the sender reads at send time.
+describe('the card that goes out (F10-T10, LINE-04)', () => {
+  it('a queued confirmation reaches the fake LINE as one Flex card in the person’s language, with the court and the club name', async () => {
+    const LOCALES = resolve(__dirname, '../../../../locales');
+    const dict = { th: loadMessageDictionary('th', LOCALES), en: loadMessageDictionary('en', LOCALES) };
+    const real = createMessageBuilder({ dictionary: (l) => dict[l], links: { link: () => 'https://liff.line.me/x' } });
+    const b = await booking('3 days');
+    const o = (await tdb.query(`select order_id from public.booking where id = $1`, [b.id])).rows[0].order_id;
+    await msg('booking_confirmed', `confirmed:${o}`, { params: { order_id: o } });
+    await runOutboxSender(worker, { builder: real, transport, readToken });
+    const pushed = line.pushes({ clubId: A });
+    expect(pushed.length).toBe(1);
+    expect(pushed[0]!.messages[0]!.type).toBe('flex');
+    const texts = collectTexts(pushed[0]!.messages[0]);
+    expect(texts).toContain('ก');                                       // club A's Thai name: the person's language is th
+    expect(texts).toContain(dict.th['L-0011']!.replace('{court}', '1'));
   });
 });

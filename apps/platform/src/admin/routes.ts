@@ -22,12 +22,16 @@ export function adminRoutes(deps: AdminRouteDeps): PlatformRoute[] {
     platformRoute({ method: 'PUT', path: '/clubs/:id/launch/:checkKey', access: 'admin' }, async (ctx) =>
       answer(await admin.recordLaunchCheck(actorOf(ctx), clubIdOf(ctx), ctx.input['checkKey'], ctx.body)),
     ),
+    // P6: the platform values that are set.
+    platformRoute({ method: 'GET', path: '/config', access: 'staff' }, async (ctx) => answer(await admin.listConfig(ctx.staff!.id))),
     // P6: one config value, audited with what was added or removed.
     platformRoute({ method: 'PUT', path: '/config/:key', access: 'admin' }, async (ctx) => {
       const key = ctx.input['key'];
       if (typeof key !== 'string' || !KEY.test(key)) throw new RouteError(404, 'not_found');
       return answer(await admin.setConfig(actorOf(ctx), key, ctx.body));
     }),
+    // The notice: what was published and the newest texts.
+    platformRoute({ method: 'GET', path: '/legal', access: 'staff' }, async (ctx) => answer(await admin.legalOverview(ctx.staff!.id))),
     // The legal notice: a new release of the privacy and terms texts in both languages.
     platformRoute({ method: 'POST', path: '/legal/releases', access: 'admin' }, async (ctx) => answer(await admin.publishLegalRelease(actorOf(ctx), ctx.body))),
   ];

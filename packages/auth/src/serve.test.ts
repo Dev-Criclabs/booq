@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Reply, route, RouteError, type RouteSession } from './route';
+import { FileReply, Reply, route, RouteError, type RouteSession } from './route';
 import { serveRoutes, type ServeDeps } from './serve';
 import { createRateLimiter } from './rate-limit';
 import { findUndeclaredRoutes } from './check';
@@ -241,5 +241,18 @@ describe('rate limit on chosen routes', () => {
     expect((await call(h, 'GET', '/api/c/hunter/public/config', { headers: a })).status).toBe(200);
     at.t += 61_000;
     expect((await call(h, 'POST', '/api/c/hunter/auth/session', { body: {}, headers: a })).status).toBe(200);
+  });
+});
+
+describe('serveRoutes: a file answer', () => {
+  it('sends the bytes with the route\'s type, a plain file name, no caching and no sniffing', async () => {
+    const h = serveRoutes([route({ method: 'GET', path: '/doc', public: true }, async () => new FileReply(new Uint8Array([37, 80, 68, 70]), { contentType: 'application/pdf', filename: 'ใบเสร็จ HTC-2026-000001.pdf' }))], deps());
+    const r = await h(new Request('https://app.example/api/c/hunter/doc'), { params: Promise.resolve({ slug: 'hunter', path: ['doc'] }) });
+    expect(r.status).toBe(200);
+    expect(r.headers.get('content-type')).toBe('application/pdf');
+    expect(r.headers.get('content-disposition')).toBe('attachment; filename="________HTC-2026-000001.pdf"');
+    expect(r.headers.get('cache-control')).toBe('no-store');
+    expect(r.headers.get('x-content-type-options')).toBe('nosniff');
+    expect([...new Uint8Array(await r.arrayBuffer())]).toEqual([37, 80, 68, 70]);
   });
 });

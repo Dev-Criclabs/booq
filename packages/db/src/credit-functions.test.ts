@@ -248,8 +248,9 @@ describe('credit_return (R1-AC2; D85)', () => {
     await expect(one('select app.credit_return(gen_random_uuid(), $1)', ['release'])).rejects.toThrow(/booking_not_found/);
     expect(await left(pkg)).toBe(4);
   });
-  it('no app role can call the credit functions directly (grants are F06-T11)', async () => {
-    for (const f of ['app.eligible_credits(uuid, jsonb, timestamptz)', 'app.credit_reserve(uuid, uuid, uuid)', 'app.credit_return(uuid, text)']) {
+  it('no app role can reserve or return credit directly; eligible_credits is open to booq_app for the quote (0512)', async () => {
+    expect((await tdb.query('select has_function_privilege($1, $2, $3) as ok', ['booq_app', 'app.eligible_credits(uuid, jsonb, timestamptz)', 'execute'])).rows[0].ok).toBe(true);
+    for (const f of ['app.credit_reserve(uuid, uuid, uuid)', 'app.credit_return(uuid, text)']) {
       for (const role of ['booq_app', 'booq_worker', 'booq_platform']) {
         expect((await tdb.query('select has_function_privilege($1, $2, $3) as ok', [role, f, 'execute'])).rows[0].ok, `${role} ${f}`).toBe(false);
       }
