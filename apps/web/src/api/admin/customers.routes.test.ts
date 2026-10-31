@@ -129,6 +129,27 @@ describe('customer profile (ADMIN-07)', () => {
     expect(r.body).toEqual([expect.objectContaining({ bookingId: b, type: 'court', courtName: 'Court 1', status: 'confirmed', cancelKind: null })]);
     expect((await call('GET', '/staff/customers/:id/bookings', desk(), { id: OWNER })).body).toEqual([]);
     expect(await call('GET', '/staff/customers/:id/orders', desk(), { id: ANN })).toMatchObject({ ok: true, body: [] });
+    // A priced order with a receipt lists the receipt number and id side by side, and the receipts panel lists it too.
+    const c = await tdb.pool.connect();
+    let o: string;
+    try {
+      await c.query('begin');
+      await c.query('set local session_replication_role = replica');
+      o = (await c.query(
+        `insert into public.orders (club_id, customer_id, source, status, price_group_snapshot, subtotal_satang, discount_satang, total_satang, credit_value_satang, wallet_satang, money_satang, quote_hash, priced_at)
+         values ($1,$2,'online','paid','{}'::jsonb,50000,0,50000,0,0,50000,repeat('a',64), app.now()) returning id`, [A, ANN])).rows[0].id as string;
+      await c.query('commit');
+    } finally {
+      c.release();
+    }
+    const rc = (await tdb.query(
+      `insert into public.receipt (club_id, order_id, kind, series, seq_no, number, vat_flag, customer_id, customer_name_snapshot, lines, total_satang)
+       values ($1,$2,'sale','2026',1,'HTC-2026-000001',false,$3,'Ann Smith','{}'::jsonb,50000) returning id, number`, [A, o, ANN])).rows[0];
+    const ord = (await call('GET', '/staff/customers/:id/orders', desk(), { id: ANN })).body.find((x: { orderId: string }) => x.orderId === o);
+    expect(ord).toMatchObject({ receipts: [rc.number], receiptIds: [rc.id], totalSatang: 50000 });
+    expect((await call('GET', '/staff/customers/:id/receipts', desk(), { id: ANN })).body).toEqual([expect.objectContaining({ receiptId: rc.id, number: rc.number, totalSatang: 50000, status: 'issued' })]);
+    expect((await call('GET', '/staff/customers/:id/receipts', desk(), { id: OWNER })).body).toEqual([]);
+    expect(await call('GET', '/staff/customers/:id/receipts', as(ACC, ['accountant', 'player']), { id: ANN })).toMatchObject({ ok: false, status: 403 });
   });
   it('notes: add and read newest first with the author; blank and over long are bad input; the accountant is refused', async () => {
     expect(await call('POST', '/staff/customers/:id/notes', desk(), { id: ANN }, { note: ' Prefers evenings ' })).toMatchObject({ ok: true });
@@ -137,5 +158,52 @@ describe('customer profile (ADMIN-07)', () => {
     expect(await call('POST', '/staff/customers/:id/notes', desk(), { id: ANN }, { note: '  ' })).toMatchObject({ ok: false, status: 400 });
     expect(await call('POST', '/staff/customers/:id/notes', desk(), { id: ANN }, { note: 'x'.repeat(2001) })).toMatchObject({ ok: false, status: 400 });
     expect(await call('GET', '/staff/customers/:id/notes', as(ACC, ['accountant', 'player']), { id: ANN })).toMatchObject({ ok: false, status: 403 });
+  });
+});
+
+describe('A5 columns and filters (H-A05, ADMIN-06)', () => {
+  const GA = '77777777-7777-4777-8777-777777777771';
+  const GS = '77777777-7777-4777-8777-777777777772';
+  const PROD = '66666666-6666-4666-8666-666666666666';
+  const BOB = '22222222-2222-4222-8222-222222222222';
+  const list = async (q: Record<string, unknown> = {}) => (await call('GET', '/staff/customers', desk(), q)).body.customers as any[];
+  const names = (rows: any[]) => rows.map((r) => r.name).sort();
+  beforeEach(async () => {
+    await person(A, BOB, ['player'], 'Bob Student');
+    await tdb.query(`update public.app_user set date_of_birth = '2012-05-05' where id = $1`, [BOB]);
+    await tdb.query(`update public.app_user set date_of_birth = null where id = $1`, [OWNER]);
+    await tdb.query(`insert into public.price_group (club_id, id, name_th, name_en, rule, position) values ($1,$2,'ผู้ใหญ่','Adult','{"min_age":18}',0), ($1,$3,'นักเรียน','Student','{"min_age":0,"max_age":17}',1)`, [A, GA, GS]);
+    await tdb.query(`insert into public.package_product (club_id, id, name_th, name_en, credit_type, credits, validity_months, price_group_id, price_satang) values ($1,$2,'ชุด','Ten hours','court_hour',10,6,$3,100000)`, [A, PROD, GA]);
+  });
+  it('shows the price group of the date of birth, and null without one', async () => {
+    const rows = await list();
+    expect(rows.find((r) => r.name === 'Ann Smith').group).toEqual({ id: GA, nameTh: 'ผู้ใหญ่', nameEn: 'Adult' });
+    expect(rows.find((r) => r.name === 'Bob Student').group).toMatchObject({ nameEn: 'Student' });
+    expect(rows.find((r) => r.name === 'Owner').group).toBeNull();
+    expect(names(await list({ group: GS }))).toEqual(['Bob Student']);
+    expect(await call('GET', '/staff/customers', desk(), { group: 'nope' })).toMatchObject({ ok: false, status: 400 });
+  });
+  it('shows the active package that ends soonest, the wallet and the last visit', async () => {
+    await tdb.query(`insert into public.customer_package (club_id, customer_id, product_id, product_snapshot, credits_total, purchased_at, purchase_date, expires_at) values ($1,$2,$3,'{}',10,app.now(),'2026-12-01','2027-06-01T16:59:59.999Z'), ($1,$2,$3,'{}',10,app.now(),'2026-12-01','2027-03-01T16:59:59.999Z')`, [A, ANN, PROD]);
+    await tdb.query(`insert into public.wallet_ledger (club_id, customer_id, change_satang, reason, dedupe_key) values ($1,$2,50000,'refund','k1')`, [A, ANN]).catch(() => undefined);
+    const ann = (await list()).find((r) => r.name === 'Ann Smith');
+    expect(ann.activePackage).toMatchObject({ nameEn: 'Ten hours', creditsLeft: 10, expiresAt: '2027-03-01T16:59:59.999Z' });
+    expect(typeof ann.walletSatang).toBe('number');
+    expect(ann.lastVisitAt).toBeNull();
+  });
+  it('filters: active package, expiring soon (the largest reminder day of the club setting), no visit in 30 days', async () => {
+    await tdb.query(`insert into public.customer_package (club_id, customer_id, product_id, product_snapshot, credits_total, purchased_at, purchase_date, expires_at) values ($1,$2,$3,'{}',10,app.now(),'2026-12-01','2026-12-10T16:59:59.999Z'), ($1,$4,$3,'{}',10,app.now(),'2026-12-01','2027-06-01T16:59:59.999Z')`, [A, ANN, PROD, BOB]);
+    expect(names(await list({ status: 'active_package' }))).toEqual(['Ann Smith', 'Bob Student']);
+    expect(await call('GET', '/staff/customers', desk(), { status: 'expiring_soon' })).toMatchObject({ ok: false, status: 409, code: 'setting_unset' });
+    await tdb.query(`insert into public.club_setting (club_id, key, value) values ($1,'package_expiry_reminder_days','[14, 3]')`, [A]);
+    expect(names(await list({ status: 'expiring_soon' }))).toEqual(['Ann Smith']);
+    await tdb.query(`insert into public.location (club_id, id, name) values ($1,'00000000-0000-4000-8000-0000000000a1','M')`, [A]);
+    await tdb.query(`insert into public.resource (club_id, id, location_id, name, sport) values ($1,'00000000-0000-4000-8000-0000000000c1','00000000-0000-4000-8000-0000000000a1','1','tennis')`, [A]);
+    const order = (await tdb.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'online') returning id`, [A, ANN])).rows[0].id;
+    await tdb.query(`insert into public.booking (club_id, order_id, type, resource_id, start_at, end_at, customer_id, status, source, created_by, confirmed_at) values ($1,$2,'court','00000000-0000-4000-8000-0000000000c1','2026-11-25T10:00:00+07:00','2026-11-25T11:00:00+07:00',$3,'confirmed','online',$3, app.now())`, [A, order, ANN]);
+    expect(names(await list({ status: 'no_visit' }))).not.toContain('Ann Smith');
+    expect(names(await list({ status: 'no_visit' }))).toContain('Bob Student');
+    expect((await list()).find((r) => r.name === 'Ann Smith').lastVisitAt).toBe('2026-11-25T03:00:00.000Z');
+    expect(await call('GET', '/staff/customers', desk(), { status: 'bogus' })).toMatchObject({ ok: false, status: 400 });
   });
 });

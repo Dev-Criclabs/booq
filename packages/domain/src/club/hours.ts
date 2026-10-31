@@ -1,5 +1,6 @@
 import { route, RouteError, type RouteContext } from '@booq/auth';
 import type { Db } from '@booq/db';
+import { withoutTransportKeys } from './input';
 
 // PUT /hours (F01 design 5.1; PLAT-02 "Meets"; BOOK-01-AC16, decision D50). The owner changes opening hours; a
 // change that would leave a live booking or hold outside the new hours is refused with live_bookings_exist (the
@@ -42,7 +43,7 @@ function parse(input: unknown): DayChange[] {
 
 export function hoursRoute(db: Db) {
   return route({ method: 'PUT', path: '/hours', permission: 'hours.write' }, async (ctx: RouteContext) => {
-    const days = parse(ctx.input);
+    const days = parse(withoutTransportKeys(ctx.input));
     try {
       return await db.withClubTx(
         { clubId: ctx.clubId, userId: ctx.userId, roles: ctx.roles, source: 'admin', ...(ctx.requestId ? { requestId: ctx.requestId } : {}) },

@@ -5,6 +5,16 @@ import type { PlatformDb } from '@booq/db';
 // validates the shape, maps the function's refusals to codes, and requires a fresh second factor.
 // There is no "run check" operation: a recorded check is set by an admin, the others come from facts.
 
+/** D178: the Message BOOQ address is an http or https address with a host. */
+function isHttpUrl(text: string): boolean {
+  try {
+    const u = new URL(text);
+    return (u.protocol === 'https:' || u.protocol === 'http:') && u.host !== '';
+  } catch {
+    return false;
+  }
+}
+
 export interface AdminActor {
   staffId: string;
   stepUpFresh: boolean;
@@ -85,6 +95,7 @@ export function createAdminService(deps: { db: PlatformDb }) {
     const admin = await loadAdmin(actor);
     if ('ok' in admin) return admin;
     if (!isObject(body) || !('value' in body) || Object.keys(body).length !== 1 || body['value'] === null || body['value'] === undefined) return { ok: false, code: 'invalid' };
+    if (key === 'booq_support_line_url' && !(typeof body['value'] === 'string' && isHttpUrl(body['value']))) return { ok: false, code: 'invalid' };
     try {
       await db.withPlatformTx({ staffId: admin.id, staffLabel: admin.display_name }, (tx) =>
         tx.query('select platform.set_config_value($1, $2::jsonb)', [key, JSON.stringify(body['value'])]),

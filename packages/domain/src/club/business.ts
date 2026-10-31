@@ -1,5 +1,6 @@
 import { route, RouteError, type RouteContext } from '@booq/auth';
 import type { Db } from '@booq/db';
+import { withoutTransportKeys } from './input';
 import { checkSettingWrite } from './settings-registry';
 
 // PUT /club/business (F01 design 5.1, 5.14; ADMIN-16; D115). The owner changes the club's business and tax details, the ones a receipt
@@ -43,7 +44,7 @@ function parse(input: unknown): Change {
 
 export function businessRoute(db: Db) {
   return route({ method: 'PUT', path: '/club/business', permission: 'club.business.write' }, async (ctx: RouteContext) => {
-    const change = parse(ctx.input);
+    const change = parse(withoutTransportKeys(ctx.input));
     return db.withClubTx(
       { clubId: ctx.clubId, userId: ctx.userId, roles: ctx.roles, source: 'admin', ...(ctx.requestId ? { requestId: ctx.requestId } : {}) },
       async (tx) => {

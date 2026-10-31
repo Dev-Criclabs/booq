@@ -7,7 +7,7 @@ import type { PrintData, ReceiptPdf } from './pdf';
 // access rule and the snapshot are app.receipt_for_print in the database (migration 0711), the void is app.void_receipt (0704), and the
 // words and layout of the PDF are in packages/receipts. A receipt of another club, or one the caller may not print, is 404.
 //   GET  /me/receipts, GET /me/receipts/:id/pdf      the signed-in person's own (the PDF is the original the first time, then a copy)
-//   GET  /staff/receipts?q&from&to&limit&offset      owner, accountant: list and search by number, name and Bangkok date
+//   GET  /staff/receipts?q&from&to&customer&limit&offset  owner, accountant: list and search by number, name and Bangkok date
 //   GET  /staff/receipts/:id/pdf?lang=th|en          owner, accountant, front desk: always a copy, in either language, audited
 //   POST /staff/receipts/:id/void { reason }         owner only
 // Path parameter `input.id`; the void body is read as sent (`ctx.body`).
@@ -79,6 +79,7 @@ export function receiptRoutes(deps: ReceiptRouteDeps): Route<unknown>[] {
       const q = i['q'] === undefined ? '' : typeof i['q'] === 'string' && i['q'].length <= 100 ? i['q'].trim() : (() => { throw bad(); })();
       const from = day(i['from']);
       const to = day(i['to']);
+      const customer = i['customer'] === undefined || i['customer'] === '' ? null : typeof i['customer'] === 'string' && UUID.test(i['customer']) ? i['customer'].toLowerCase() : (() => { throw bad(); })();
       const limit = whole(i['limit'], 50, 1, 200);
       const offset = whole(i['offset'], 0, 0, 100000);
       return inClub(ctx, async (query) =>
@@ -88,8 +89,9 @@ export function receiptRoutes(deps: ReceiptRouteDeps): Route<unknown>[] {
             where ($1 = '' or strpos(lower(number), lower($1)) = 1 or strpos(lower(coalesce(customer_name_snapshot, '')), lower($1)) > 0)
               and ($2::date is null or (issued_at at time zone 'Asia/Bangkok')::date >= $2::date)
               and ($3::date is null or (issued_at at time zone 'Asia/Bangkok')::date <= $3::date)
+              and ($6::uuid is null or customer_id = $6)
             order by issued_at desc, id desc limit $4 offset $5`,
-          [q, from, to, limit, offset],
+          [q, from, to, limit, offset, customer],
         )).rows.map((r) => ({ ...r, total_satang: Number(r.total_satang) })),
       );
     }),

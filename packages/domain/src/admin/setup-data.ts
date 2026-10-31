@@ -27,6 +27,8 @@ interface Field {
   upper?: boolean;
   /** The value used when a create leaves it out. Only for a column with no database default; never a price or a limit. */
   fallback?: unknown;
+  /** Values the table allows but the rules do not define yet: refused with peak_not_defined. */
+  notDefined?: readonly string[];
 }
 export interface SetupResource {
   path: string;
@@ -73,6 +75,7 @@ function clean(f: Field, v: unknown): unknown {
       return JSON.stringify(o);
     }
     default:
+      if (typeof v === 'string' && f.notDefined?.includes(v)) throw new AdminError('peak_not_defined', { field: f.key });
       return typeof v === 'string' && (f.kind as { enum: readonly string[] }).enum.includes(v) ? v : bad(f.key);
   }
 }
@@ -92,8 +95,9 @@ export const SETUP: Record<string, SetupResource> = {
     fields: [
       { key: 'priceGroupId', column: 'price_group_id', kind: 'uuid', required: true },
       { key: 'dayType', column: 'day_type', kind: { enum: ['any', 'weekday', 'weekend'] }, fallback: 'any' },
-      // Peak and off peak have no definition in v1 (F04 assumption A-4): the price lookup rejects them, so a rule for them is not saved.
-      { key: 'peak', column: 'peak', kind: { enum: ['any'] }, fallback: 'any' },
+      // Peak and off peak have no definition in v1 (F04 assumption A-4): the price lookup rejects them, so a rule for them is not saved
+      // (peak_not_defined, see clean).
+      { key: 'peak', column: 'peak', kind: { enum: ['any'] }, fallback: 'any', notDefined: ['peak', 'off_peak'] },
       { key: 'priceSatang', column: 'price_satang', kind: 'int', required: true, min: 0, max: 100_000_000 },
     ],
   },
