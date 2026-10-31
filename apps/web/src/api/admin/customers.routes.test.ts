@@ -123,6 +123,13 @@ describe('customer profile (ADMIN-07)', () => {
     }
     expect(await call('GET', '/staff/customers/:id', as(ACC, ['accountant', 'player']), { id: ANN })).toMatchObject({ ok: false, status: 403 });
   });
+  it('the profile names the price group the date of birth puts the person in (null when no group is set up)', async () => {
+    expect((await call('GET', '/staff/customers/:id', desk(), { id: ANN })).body.priceGroup).toBeNull();
+    await tdb.query(`insert into public.price_group (club_id, name_th, name_en, rule, position) values ($1,'ผู้ใหญ่','Adult','{"min_age":18}'::jsonb,1), ($1,'เยาวชน','Junior','{"max_age":17}'::jsonb,2)`, [A]);
+    expect((await call('GET', '/staff/customers/:id', desk(), { id: ANN })).body.priceGroup).toMatchObject({ nameEn: 'Adult', nameTh: 'ผู้ใหญ่' });
+    await tdb.query(`update public.app_user set date_of_birth = '2015-05-05' where club_id = $1 and id = $2`, [A, ANN]);
+    expect((await call('GET', '/staff/customers/:id', desk(), { id: ANN })).body.priceGroup).toMatchObject({ nameEn: 'Junior' });
+  });
   it('bookings and orders of that person only', async () => {
     const b = await bookingFor(ANN);
     const r = await call('GET', '/staff/customers/:id/bookings', desk(), { id: ANN });

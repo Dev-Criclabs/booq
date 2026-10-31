@@ -93,7 +93,9 @@ describe('getBooking (GET /bookings/{id})', () => {
   it('front desk reads any booking of the club; the accountant does not through this route (D35)', async () => {
     const { ids } = await reserve([at('2026-12-02', 18)]);
     const desk = ctx(DESK, ['front_desk', 'player']);
-    expect(await as(desk, (tx) => getBooking(tx, viewer(desk), ids[0]))).toMatchObject({ id: ids[0] });
+    expect(await as(desk, (tx) => getBooking(tx, viewer(desk), ids[0]))).toMatchObject({ id: ids[0], customer: { id: P1, name: expect.any(String) } });
+    // The player's own read carries no customer block (it is the staff read's).
+    expect(await as(player(), (tx) => getBooking(tx, viewer(player()), ids[0]))).not.toHaveProperty('customer');
     const acc = ctx(ACC, ['accountant', 'player']);
     await expect(as(acc, (tx) => getBooking(tx, viewer(acc), ids[0]))).rejects.toEqual(new BookingError('not_found'));
   });

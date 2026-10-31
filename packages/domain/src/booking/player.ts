@@ -19,6 +19,8 @@ export interface BookingView {
   holdExpiresAt: string | null;
   /** The hold's end time has passed (Time ran out), whether or not the release job has run. */
   holdEnded: boolean;
+  /** Only in the staff read: who the booking is for. Null for a walk in with no customer record. */
+  customer?: { id: string; name: string } | null;
 }
 
 interface Reader {
@@ -78,7 +80,16 @@ export function viewOf(row: Row): BookingView {
 }
 
 export async function getBooking(tx: Tx, reader: Reader, id: unknown): Promise<BookingView> {
-  return viewOf(await readBooking(tx, reader, id, isBookingStaff(reader)));
+  const staff = isBookingStaff(reader);
+  const row = await readBooking(tx, reader, id, staff);
+  const view = viewOf(row);
+  if (!staff) return view;
+  if (row.customer_id === null) return { ...view, customer: null };
+  const c = await tx.query<{ name: string | null }>(
+    `select coalesce(nullif(btrim(full_name), ''), nullif(btrim(display_name), '')) as name from public.app_user where club_id = app.club_id() and id = $1`,
+    [row.customer_id],
+  );
+  return { ...view, customer: { id: row.customer_id, name: c.rows[0]?.name ?? '' } };
 }
 
 /** The player leaves C11: the whole order's hold ends now with reason `player` (A-6). Own holds only. */

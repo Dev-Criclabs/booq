@@ -2,6 +2,7 @@ import type { Tx } from '../../../db/src/tx';
 import { validateFullName, validatePhone } from '../phone';
 import { toCsv, type CsvCell } from '../export/csv';
 import { AdminError } from './errors';
+import { groupFor } from '../checkout/pricing';
 
 // F11-T04: A5 Customers (ADMIN-06) and the walk in quick add of A2 (ADMIN-04; D168). The roles and the club scope are the database's; this layer
 // validates input and maps rows. The date of birth is not read here. Anything typed is data, never text for the screen.
@@ -150,6 +151,8 @@ export interface CustomerProfile {
   active: boolean;
   tags: string[];
   createdAt: string;
+  /** The price group the customer's date of birth puts them in today (D12, D35), the same rule Pay uses; null when no one group fits. Never stored. */
+  priceGroup: { id: string; nameTh: string; nameEn: string } | null;
 }
 
 /** GET /staff/customers/:id */
@@ -158,7 +161,14 @@ export async function customerProfile(tx: Tx, id: unknown): Promise<CustomerProf
                               from public.customer_profile($1)`, [customerId(id)]);
   const x = r.rows[0];
   if (!x) throw new AdminError('not_found');
+  const groups = await tx.query<{ id: string; name_th: string; name_en: string; min_age: number | null; max_age: number | null }>(
+    `select id, name_th, name_en, (rule ->> 'min_age')::int as min_age, (rule ->> 'max_age')::int as max_age
+       from public.price_group where club_id = app.club_id()`);
+  const today = (await tx.query<{ d: string }>(`select (app.now() at time zone 'Asia/Bangkok')::date::text as d`)).rows[0]!.d;
+  const g = groupFor(groups.rows.map((r) => ({ id: r.id, minAge: r.min_age, maxAge: r.max_age })), x.dob, today);
+  const named = g ? groups.rows.find((r) => r.id === g.id)! : null;
   return {
+    priceGroup: named ? { id: named.id, nameTh: named.name_th, nameEn: named.name_en } : null,
     customerId: x.id, displayName: x.display_name, fullName: x.full_name, phone: x.phone, language: x.language, level: x.level, dateOfBirth: x.dob,
     claimState: x.claim_state, signedIn: x.signed_in, active: x.active, tags: x.tags, createdAt: new Date(x.created_at).toISOString(),
   };
