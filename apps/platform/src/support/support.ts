@@ -20,6 +20,8 @@ export interface SupportSetup {
   resources: Array<Record<string, unknown>>;
   settings: Array<{ key: string; value: unknown }>;
   features: Array<{ feature_key: string; enabled: boolean }>;
+  /** Every switch that exists (app.feature_keys), with the payment option it needs: the club only has a row once one is set. */
+  featureKeys: Array<{ feature_key: string; requires_payment_option: 'beam' | 'slip' | null }>;
 }
 
 export type GetSetupResult = { ok: true; setup: SupportSetup } | { ok: false; code: 'not_found' };
@@ -135,7 +137,7 @@ async function applySection(tx: PlatformTx, clubId: string, section: string, bod
     case 'resources-hours': {
       if (!isObject(body)) throw new Invalid();
       const keys = Object.keys(body);
-      if (keys.length === 0 || keys.some((k) => k !== 'hours' && k !== 'resources')) throw new Invalid();
+      if (keys.length === 0 || keys.some((k) => k !== 'hours' && k !== 'resources' && k !== 'locations')) throw new Invalid();
       const changed: string[] = [];
       const detail: Record<string, unknown> = { section };
       if ('hours' in body) {
@@ -154,6 +156,17 @@ async function applySection(tx: PlatformTx, clubId: string, section: string, bod
         }
         changed.push('hours');
         detail['hours'] = hours;
+      }
+      if ('locations' in body) {
+        // A new club has no location, and a court needs one: the name only (the id is made by the database).
+        const locations = body['locations'];
+        if (!Array.isArray(locations) || locations.length === 0) throw new Invalid();
+        for (const l of locations) {
+          if (!isObject(l) || Object.keys(l).length !== 1 || typeof l['name'] !== 'string' || l['name'].trim() === '' || l['name'].length > 100) throw new Invalid();
+          await tx.query('insert into public.location (club_id, name) values ($1, $2)', [clubId, l['name'].trim()]);
+        }
+        changed.push('locations');
+        detail['locations'] = { count: locations.length };
       }
       if ('resources' in body) {
         const resources = body['resources'];
@@ -264,6 +277,7 @@ export function createSupportService(deps: { db: PlatformDb; connections?: Conne
         resources: await q('select id, location_id, name, sport, type, lights, max_players, active from public.resource where club_id = $1 order by name'),
         settings: (await q('select key, value from public.club_setting where club_id = $1 order by key')) as SupportSetup['settings'],
         features: (await q('select feature_key, enabled from public.club_feature where club_id = $1 order by feature_key')) as SupportSetup['features'],
+        featureKeys: (await tx.query('select feature_key, requires_payment_option from app.feature_keys order by feature_key')).rows as SupportSetup['featureKeys'],
       };
     });
     return result ? { ok: true, setup: result } : refused(staff, clubId, 'read');

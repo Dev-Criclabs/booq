@@ -58,7 +58,9 @@ describe('reading the setup projection', () => {
     expect(r.setup.settings).toEqual([{ key: 'hold_minutes', value: 15 }]);
     expect(r.setup.features).toEqual([{ feature_key: 'coach_add_at_checkout', enabled: true }]);
     expect(r.setup.locations).toHaveLength(1);
-    expect(Object.keys(r.setup).sort()).toEqual(['club', 'features', 'hours', 'locations', 'mode', 'resources', 'settings']);
+    expect(Object.keys(r.setup).sort()).toEqual(['club', 'featureKeys', 'features', 'hours', 'locations', 'mode', 'resources', 'settings']);
+    expect(r.setup.featureKeys.map((k) => k.feature_key)).toEqual(['backup_mode', 'coach_add_at_checkout', 'slip_checking']);
+    expect(r.setup.featureKeys.find((k) => k.feature_key === 'slip_checking')?.requires_payment_option).toBe('slip');
   });
 
   it('shows the owner contact (D2) and never the support window columns', async () => {
@@ -191,6 +193,15 @@ describe('editing (PLAT-02-AC2 to AC5, AC7)', () => {
   it('the connection sections wait for the secrets task', async () => {
     expect(await svc.putSetup(spec, TEST, 'line', {})).toEqual({ ok: false, code: 'section_unavailable' });
     expect(await svc.putSetup(spec, TEST, 'payments', {})).toEqual({ ok: false, code: 'section_unavailable' });
+  });
+
+  it('adds a location by name, so a new club can have a court; an empty name or an extra field is invalid; the log has a count', async () => {
+    const before = (await tdb.query('select count(*)::int as n from public.location where club_id = $1', [TEST])).rows[0].n;
+    expect((await svc.putSetup(spec, TEST, 'resources-hours', { locations: [{ name: ' Annex ' }] })).ok).toBe(true);
+    expect((await tdb.query(`select name from public.location where club_id = $1 and name = 'Annex'`, [TEST])).rows).toEqual([{ name: 'Annex' }]);
+    expect((await tdb.query('select count(*)::int as n from public.location where club_id = $1', [TEST])).rows[0].n).toBe(before + 1);
+    for (const bad of [[{ name: '  ' }], [{ name: 'X', id: 'y' }], [], 'x']) expect(await svc.putSetup(spec, TEST, 'resources-hours', { locations: bad })).toEqual({ ok: false, code: 'invalid' });
+    expect(await svc.putSetup(spec, LIVE, 'resources-hours', { locations: [{ name: 'Nope' }] })).toMatchObject({ ok: false });
   });
 
   it('saves opening hours (close may be 24:00), courts, feature switches, plan dates and the template link', async () => {

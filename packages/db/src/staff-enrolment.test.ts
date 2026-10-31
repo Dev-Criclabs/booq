@@ -47,6 +47,13 @@ describe('issuing a link', () => {
     await expect(issue(admin, admin, 'short')).rejects.toThrow(/enrolment:invalid/);
     await expect(issue(admin, admin, H1, 'other')).rejects.toThrow(/enrolment:invalid/);
   });
+  it('an admin cannot reset their own account; another admin can (QA-F01-1, ROLE-02-AC7)', async () => {
+    await ttl(24);
+    await expect(issue(admin, admin, H1, 'reset')).rejects.toThrow(/enrolment:forbidden/);
+    const other = (await tdb.query(`insert into platform.platform_staff (auth_user_id, email, display_name, role) values ('99999999-0000-4000-8000-000000000003','a2@booq.example','a2','platform_admin') returning id`)).rows[0].id as string;
+    await expect(issue(other, admin, H1, 'reset')).resolves.toBeTruthy();
+    expect(await p6()).toHaveLength(1);
+  });
   it('lives for the configured hours, only one link is live per member, and P6 holds the purpose and never the token', async () => {
     await ttl(24);
     const e = (await issue(admin, spec, H1)).rows[0]!.e as Date;

@@ -5,6 +5,7 @@ import { createMessageBuilder, loadMessageDictionary, type LineTransport, type M
 import { resolve } from 'node:path';
 import { FakeClock, FakeLine, collectTexts, type ClubLineChannel } from '../../../../tests/fakes';
 import { OUTBOX_SENDER, runOutboxSender } from './line-outbox-sender';
+import { closeTestDatabase } from '../testing/teardown';
 
 // F10-T08 outbox_sender steps 1 to 4 (F10 design 5.2; FA 5.3): claim due rows with SKIP LOCKED per club, the send
 // time preconditions, the cap gate, the language at send time. LINE-03-AC1 to AC3, LINE-05, D93, D94. Against the
@@ -99,7 +100,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   await worker?.end();
-  await tdb?.close();
+  if (tdb) await closeTestDatabase(tdb);
 });
 
 describe('claim and send (FA 5.3)', () => {

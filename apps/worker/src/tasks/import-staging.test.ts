@@ -3,6 +3,7 @@ import { createDb, type Db } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
 import { clubTask } from '../task-wrapper';
 import { IMPORT_STAGING_SWEEP, sweepImportStaging } from './import-staging';
+import { closeTestDatabase } from '../testing/teardown';
 
 // F01-T31 staging clean-up job (PLAT-06-AC10): expired jobs lose their staging, in the club's context.
 const A = '3f2b8f0e-7c1d-4a55-9d0a-1c2e3f4a5b6c';
@@ -35,7 +36,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   await db.end();
-  await tdb.close();
+  await closeTestDatabase(tdb);
 });
 
 describe('import staging sweep (F01-T31)', () => {
