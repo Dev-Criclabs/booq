@@ -13,28 +13,3 @@ describe("F12 CPORT-02", () => {
   // Given a coach with approved leave, when they open Schedule, then the leave days show and no session appears on them
   test.todo("F12/CPORT-02 Given a coach with approved leave, when they open Schedule, then the leave days show and no session ...");
 });
-
-describe("F12 CPORT-03", () => {
-  // Given a coach sets availability that would make a 7th hour in a row, when they save, then the 7th hour is not offered for booking
-  test.todo("F12/CPORT-03 Given a coach sets availability that would make a 7th hour in a row, when they save, then the 7th hour is ...");
-});
-
-describe("F12 CPORT-04", () => {
-  // Given a coach submits leave, when the owner approves, then the coach gets a LINE message and affected sessions are flagged
-  test.todo("F12/CPORT-04 Given a coach submits leave, when the owner approves, then the coach gets a LINE message and affected ...");
-});
-
-describe("F12 CPORT-05", () => {
-  // Given a session that has ended, when the coach marks a player Absent, then it is saved, audited, and counts for pay as a no show; it is a hint shown to staff and does not by itself mark the player's no show or forfeit, which staff decide in A2 (D118)
-  test.todo("F12/CPORT-05 Given a session that has ended, when the coach marks a player Absent, then it is saved, audited, and ...");
-});
-
-describe("F12 CPORT-06", () => {
-  // Given a coach, when they open Earnings, then they see only their own sessions and amounts and no other coach's or club revenue
-  test.todo("F12/CPORT-06 Given a coach, when they open Earnings, then they see only their own sessions and amounts and no other ...");
-});
-
-describe("F12 CPORT-07", () => {
-  // Given a player books a solo class with a coach, then that coach gets one LINE message in their language, taken from the coach's language field, which defaults to their LINE app language (D95); the message uses the writers' wording on the Booking confirmed card style (D91)
-  test.todo("F12/CPORT-07 Given a player books a solo class with a coach, then that coach gets one LINE message in their language, ...");
-});

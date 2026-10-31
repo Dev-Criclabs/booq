@@ -22,7 +22,7 @@ describe("F10 LINE-02", () => {
   // Given the menu is uploaded, when it fails, then P2 shows the failure (a Test step) and the club stays in Draft until it works; a stale menu keeps working.
   // F10/LINE-02-AC8: proven by a real or traced test in another file of this folder
   // Given the rich menu, when it is built, then it is one image with Thai and English labels together, rendered on the server from the owner's six labels, and one menu serves every player (D92).
-  test.todo("F10/LINE-02-AC9 Given the rich menu, when it is built, then it is one image with Thai and English labels together, ...");
+  // F10/LINE-02-AC9: proven by a real or traced test in another file of this folder
   // Given the owner edits a tile label after Go live, when it is saved in Settings (A16), then the image is rendered again for the club and the change is audited (D114, PLAT-04). Six label keys are needed (D54): new keys in both files, listed for the writers.
   // F10/LINE-02-AC10: proven by a real or traced test in another file of this folder
 });
@@ -58,9 +58,9 @@ describe("F10 LINE-05", () => {
   // Given staff close a slot with bookings (A12), when they confirm, then each affected player gets Club closed this slot with full credit back (F09).
   test.todo("F10/LINE-05-AC4 Given staff close a slot with bookings (A12), when they confirm, then each affected player gets Club ...");
   // Given a substitute coach is assigned, when it is saved, then the customer gets Coach changed naming the new coach (F07, F12).
-  test.todo("F10/LINE-05-AC5 Given a substitute coach is assigned, when it is saved, then the customer gets Coach changed naming the ...");
+  // F10/LINE-05-AC5: proven by a real or traced test in another file of this folder
   // Given a spot opens for the first in line (F08), when the offer is made, then they get Waitlist spot open with the claim time (club setting) as `{minutes}`.
-  test.todo("F10/LINE-05-AC6 Given a spot opens for the first in line (F08), when the offer is made, then they get Waitlist spot open ...");
+  // F10/LINE-05-AC6: proven by a real or traced test in another file of this folder
   // Given a package, when it is 14 days and 3 days before expiry, then the player gets Package expiring (F06 PKG-03).
   // F10/LINE-05-AC7: proven by a real or traced test in another file of this folder
   // Given the first day of a player's birth month, a birthday discount set (F14) and the player's Promotions in LINE switch on, when the day arrives, then they get Birthday discount; no discount value set, or the switch off, means no message (D94).
@@ -68,13 +68,13 @@ describe("F10 LINE-05", () => {
   // Given a referral reward is earned (the friend's first booking played, F14) and the referrer's Promotions in LINE switch is on, when it lands, then the referrer gets Referral reward earned; the reward itself is still paid when the switch is off (D94).
   // F10/LINE-05-AC9: proven by a real or traced test in another file of this folder
   // Given a solo or group class is booked, moved or cancelled, when it is saved, then the coach gets New or changed session (F12 CPORT-07).
-  test.todo("F10/LINE-05-AC10 Given a solo or group class is booked, moved or cancelled, when it is saved, then the coach gets New or ...");
+  // F10/LINE-05-AC10: proven by a real or traced test in another file of this folder
   // Given the owner decides a leave request, when it is saved, then the coach gets Leave approved or declined (F12 CPORT-04).
-  test.todo("F10/LINE-05-AC11 Given the owner decides a leave request, when it is saved, then the coach gets Leave approved or declined ...");
+  // F10/LINE-05-AC11: proven by a real or traced test in another file of this folder
   // Given a class is below its minimum a set time before start, when the time arrives, then front desk gets Class below minimum (F08).
-  test.todo("F10/LINE-05-AC12 Given a class is below its minimum a set time before start, when the time arrives, then front desk gets ...");
+  // F10/LINE-05-AC12: proven by a real or traced test in another file of this folder
   // Given a late payment (PAY-03) or a wrong amount (F05), when it is handled, then the player gets a message saying what happened to the money. The messages that have no board use the writers' wording on the Booking confirmed card style in v1 (D91).
-  test.todo("F10/LINE-05-AC13 Given a late payment (PAY-03) or a wrong amount (F05), when it is handled, then the player gets a message ...");
+  // F10/LINE-05-AC13: proven by a real or traced test in another file of this folder
   // Given the owner's pause or a cap level, when it happens, then the owner gets a message (PLAT-03-AC1, LINE-07-AC4). A failed key check or token failure is a banner and a P1 alert, not a LINE message (D114, D75).
   // F10/LINE-05-AC14: proven by a real or traced test in another file of this folder
   // Given a booking made less than 24 hours or 2 hours before start, when it is confirmed, then the reminders already past are skipped (D96).
