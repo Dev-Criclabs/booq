@@ -22,10 +22,16 @@ export async function call<T>(slug: string, path: string, f: Fetch, init: { meth
     if (res.status === 401) return { kind: 'guest' };
     if (res.status === 403) return { kind: 'forbidden' };
     if (res.status === 404) return { kind: 'not_found' };
-    const json = (await res.json().catch(() => null)) as (T & { code?: string; params?: Record<string, unknown> }) | null;
-    if (res.status >= 500 || json === null) return { kind: 'offline' };
-    if (res.status >= 400) return { kind: 'refused', status: res.status, code: typeof json.code === 'string' ? json.code : 'unknown', ...(json.params ? { params: json.params } : {}) };
-    return { kind: 'ok', body: json };
+    // A body that is not JSON is a fault; a JSON `null` is an answer (an empty list the database gave as null).
+    const json = (await res.json().catch(() => undefined)) as (T & { code?: string; params?: Record<string, unknown> }) | null | undefined;
+    // A 5xx with a typed code is a refusal the page can name (BOOQ has not set a value, 503); one without is a fault.
+    const typed = json !== null && json !== undefined && typeof (json as { code?: unknown }).code === 'string';
+    if (json === undefined || (res.status >= 500 && !typed)) return { kind: 'offline' };
+    if (res.status >= 400) {
+      const e: { code?: string; params?: Record<string, unknown> } = json ?? {};
+      return { kind: 'refused', status: res.status, code: typeof e.code === 'string' ? e.code : 'unknown', ...(e.params ? { params: e.params } : {}) };
+    }
+    return { kind: 'ok', body: json as T };
   } catch {
     return { kind: 'offline' };
   }

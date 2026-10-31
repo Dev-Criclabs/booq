@@ -99,3 +99,19 @@
 .adm-content a { color: var(--hd); }
 .adm-content a.adm-btn { color: #fff; }
 .adm-content a.adm-btn-ghost { color: var(--hd); }
+
+/* A17 Staff and audit log */
+.adm-h2 { margin: 24px 0 12px; font-size: 20px; color: var(--hd); }
+.adm-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.adm-card .adm-field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--mu); margin-bottom: 12px; max-width: 420px; }
+.adm-linkbox { margin-top: 14px; padding: 14px; border-radius: 14px; background: #f5ecc9; display: flex; flex-direction: column; gap: 10px; }
+.adm-linkbox p { margin: 0; overflow-wrap: anywhere; }
+.adm-linkbox input { width: 100%; height: 40px; padding: 0 14px; border: 1px solid var(--ln); border-radius: 999px; font: inherit; font-size: 13px; min-width: 0; }
+.adm-roles { display: flex; flex-direction: column; gap: 8px; }
+.adm-roles p { margin: 0; overflow-wrap: anywhere; }
+.adm-check { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.adm-audit td:nth-child(4) { min-width: 260px; }
+.adm-change { font-size: 13px; color: var(--mu); overflow-wrap: anywhere; }
+.adm-table td .adm-btn, .adm-table td .adm-btn-ghost { height: 34px; font-size: 13px; padding: 0 14px; }
+/* A visually hidden label is positioned against its box, so it cannot sit outside a table that scrolls sideways. */
+.adm-table-wrap, .adm-field, .adm-card { position: relative; }

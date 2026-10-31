@@ -58,7 +58,7 @@ export const NAV: readonly NavItem[] = [
 ];
 export const GROUP_KEY: Record<Exclude<NavGroup, 'top'>, string> = { front: 'A-0156', setup: 'A-0157', finance: 'A-0164' };
 /** Pages whose screen exists. A page the person may open but whose screen is not built yet is shown, not linked. Each page task adds its segment. */
-export const BUILT: ReadonlySet<string> = new Set<string>(['customers']);
+export const BUILT: ReadonlySet<string> = new Set<string>(['customers', 'staff']);
 
 export interface NavSection {
   group: NavGroup;
