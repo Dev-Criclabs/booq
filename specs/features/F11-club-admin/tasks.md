@@ -35,13 +35,15 @@ Depends on: F01 (route wrapper, permissions, settings, audit, import, staff), F0
 - [x] **F11-T09** `1105_owner_setup.sql`, `GET /staff/setup`, `POST /staff/setup/done`. IDs: ADMIN-02. Role: BE-A · Deps F01 launch checks · Size: M
   Tests first: steps 6 to 8 with done state; the tell-done click notifies P3 once; the page stays until Live; there is no address toggle (D54).
   Built (Architect): `1105_owner_setup.sql` (`owner_setup_done` table, class S with a platform read policy; `app.owner_setup_view()`, `app.owner_tell_done()`), `packages/domain/src/admin/setup.ts`, `setupRoutes`: `GET /staff/setup`, `POST /staff/setup/done`. The three steps (brand, products_rules, people) are not registered in `app.setup_steps`, so they do not block Draft to Testing; the done tests are the design's assumption (Open item 2). Telling is refused after Go live.
-- [ ] **F11-T10** `GET /staff/leave-calendar` (dates and status only) over `coach_leave_calendar`. IDs: ADMIN-08. Role: BE-B · Deps F07-T12 · Size: S
+- [x] **F11-T10** `GET /staff/leave-calendar` (dates and status only) over `coach_leave_calendar`. IDs: ADMIN-08. Role: BE-B · Deps F07-T12 · Size: S
   Tests first: front desk sees no type or note; a coach is refused; another club empty.
+  Built (Architect): `GET /staff/leave-calendar?from=&to=` (permission `coach.read`) in `apps/web/src/api/coaches/routes.ts`, `leaveCalendar` in `packages/domain/src/coaches/staff.ts`; a range is at most 92 days.
 
 ## B. Mounts for routes owned by other features
 
-- [ ] **F11-T11** Check that every route in design §5 exists and is mounted, and list the gaps (closure expired packages, setup/* CRUD, package products). IDs: ADMIN-09 to ADMIN-15. Role: QA · Deps F04, F06, F09, F13 routes · Size: S
+- [x] **F11-T11** Check that every route in design §5 exists and is mounted, and list the gaps (closure expired packages, setup/* CRUD, package products). IDs: ADMIN-09 to ADMIN-15. Role: QA · Deps F04, F06, F09, F13 routes · Size: S
   Tests first: a table of route to feature to test; the role matrix covers each.
+  Built (Architect): `apps/web/src/server/admin-inventory.test.ts` lists every route of design §5 per page with its permission and the known gaps with their owners. Finding: the F01 club settings routes (`GET /settings`, `PUT /settings/:key`, `PUT /hours`, `POST/PUT /resources`, `PUT /support-window`) were built in `packages/domain/src/club` but never mounted; they are now mounted (and exported from the domain index) for A16. Still gaps owned elsewhere: F04 setup/* CRUD and `POST /staff/bookings`, F06 package-products and package-sale, F09 cancel, mark and closure routes, F13 payouts, F10 rich menu, F01 `PUT /club/business`.
 
 ## C. Pages
 

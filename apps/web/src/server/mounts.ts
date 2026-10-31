@@ -1,4 +1,4 @@
-import { createClaimService, createDataRequestService, createImportService, createProfileEditService, quoteSources, normalizePhone } from '@booq/domain';
+import { createClaimService, createDataRequestService, createImportService, createProfileEditService, hoursRoute, quoteSources, normalizePhone, resourceRoutes, settingsRoutes, supportWindowRoute } from '@booq/domain';
 import { createRedactingLogger, type Route } from '@booq/auth';
 import { beamGateway } from '@booq/beam';
 import { loadDecryptKey } from '@booq/secrets';
@@ -64,6 +64,8 @@ export const mounts: readonly Mount[] = [
   (m) => [publicClassRoutes, playerClassRoutes, staffClassRoutes].flatMap((f) => f({ db: m.db, now: m.now, clubBySlug: m.clubBySlug })),
   (m) => [publicCoachRoutes, playerCoachRoutes, staffCoachRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
   (m) => [shellRoutes, calendarRoutes, customerRoutes, customerValueRoutes, auditRoutes, setupRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
+  // F11 A16 Settings (F01 routes built in packages/domain/src/club, not mounted until now): settings, opening hours, courts, the support window.
+  (m) => [settingsRoutes(m.db).list, settingsRoutes(m.db).put, hoursRoute(m.db), resourceRoutes(m.db).create, resourceRoutes(m.db).update, supportWindowRoute(m.db)],
   (m) => profileRoutes({ db: m.db, service: () => createProfileEditService({ today: () => bangkokDate(m.now()) }) }),
   (m) => checkoutRoutes({ db: m.db, clubBySlug: m.clubBySlug, sources: quoteSources, payments: { privateKey: () => loadDecryptKey(), gateway: beamGateway, alerts: paymentAlerts, now: m.now } }),
 ];
