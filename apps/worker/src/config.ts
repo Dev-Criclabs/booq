@@ -43,6 +43,8 @@ export interface WorkerConfig {
   outboxSenderTickSeconds: number;
   /** The Messaging API base URL (https://api.line.me in production). */
   lineApiBaseUrl: string;
+  /** The Messaging API data host for rich menu images (https://api-data.line.me in production). */
+  lineApiDataBaseUrl: string;
   /** How long one LINE push may take before it is a timeout and is retried with the same retry key. */
   linePushTimeoutMs: number;
   /** The folder holding en.json, th.json and pending/ for LINE messages (the web app's LOCALES_DIR). */
@@ -56,7 +58,7 @@ export interface WorkerConfig {
 const CRON = /^\S+ \S+ \S+ \S+ \S+$/;
 
 export function readWorkerConfig(env: Record<string, string | undefined>): WorkerConfig {
-  const names = ['DATABASE_URL', 'WORKER_QUEUE_URL', 'WORKER_HOUSEKEEPING_CRON', 'WORKER_IMPORT_SWEEP_CRON', 'WORKER_RATE_LIMIT_SWEEP_CRON', 'WORKER_PAY_TAP_PRUNE_CRON', 'WORKER_RATE_LIMIT_KEEP_SECONDS', 'WORKER_CONSOLE_SWEEP_CRON', 'WORKER_CONSOLE_SESSION_ABSOLUTE_SECONDS', 'WORKER_HOLD_RELEASE_TICK_SECONDS', 'WORKER_PACKAGE_EXPIRE_CRON', 'WORKER_WALLET_EXPIRE_CRON', 'WORKER_SESSION_START_CRON', 'WORKER_CLASS_GENERATE_CRON', 'WORKER_OFFER_EXPIRY_TICK_SECONDS', 'WORKER_CLASS_BELOW_MIN_TICK_SECONDS', 'WORKER_OUTBOX_SENDER_TICK_SECONDS', 'LINE_API_BASE_URL', 'LINE_PUSH_TIMEOUT_MS', 'LOCALES_DIR', 'WORKER_BEAM_RECONCILE_CRON', 'WORKER_PACKAGE_ORDER_EXPIRY_CRON'] as const;
+  const names = ['DATABASE_URL', 'WORKER_QUEUE_URL', 'WORKER_HOUSEKEEPING_CRON', 'WORKER_IMPORT_SWEEP_CRON', 'WORKER_RATE_LIMIT_SWEEP_CRON', 'WORKER_PAY_TAP_PRUNE_CRON', 'WORKER_RATE_LIMIT_KEEP_SECONDS', 'WORKER_CONSOLE_SWEEP_CRON', 'WORKER_CONSOLE_SESSION_ABSOLUTE_SECONDS', 'WORKER_HOLD_RELEASE_TICK_SECONDS', 'WORKER_PACKAGE_EXPIRE_CRON', 'WORKER_WALLET_EXPIRE_CRON', 'WORKER_SESSION_START_CRON', 'WORKER_CLASS_GENERATE_CRON', 'WORKER_OFFER_EXPIRY_TICK_SECONDS', 'WORKER_CLASS_BELOW_MIN_TICK_SECONDS', 'WORKER_OUTBOX_SENDER_TICK_SECONDS', 'LINE_API_BASE_URL', 'LINE_API_DATA_BASE_URL', 'LINE_PUSH_TIMEOUT_MS', 'LOCALES_DIR', 'WORKER_BEAM_RECONCILE_CRON', 'WORKER_PACKAGE_ORDER_EXPIRY_CRON'] as const;
   const missing = names.filter((n) => !env[n]);
   if (missing.length) throw new Error(`worker settings missing: ${missing.join(', ')}`);
   for (const n of ['WORKER_HOUSEKEEPING_CRON', 'WORKER_IMPORT_SWEEP_CRON', 'WORKER_RATE_LIMIT_SWEEP_CRON', 'WORKER_PAY_TAP_PRUNE_CRON', 'WORKER_CONSOLE_SWEEP_CRON', 'WORKER_PACKAGE_EXPIRE_CRON', 'WORKER_WALLET_EXPIRE_CRON', 'WORKER_SESSION_START_CRON', 'WORKER_CLASS_GENERATE_CRON', 'WORKER_BEAM_RECONCILE_CRON', 'WORKER_PACKAGE_ORDER_EXPIRY_CRON'] as const) {
@@ -66,7 +68,9 @@ export function readWorkerConfig(env: Record<string, string | undefined>): Worke
     if (!/^[1-9][0-9]*$/.test(env[n]!)) throw new Error(`${n} must be a whole number of seconds above zero`);
   }
   if (!/^[1-9][0-9]*$/.test(env['LINE_PUSH_TIMEOUT_MS']!)) throw new Error('LINE_PUSH_TIMEOUT_MS must be a whole number of milliseconds above zero');
-  if (!/^https?:\/\/\S+$/.test(env['LINE_API_BASE_URL']!)) throw new Error('LINE_API_BASE_URL must be an http(s) URL');
+  for (const n of ['LINE_API_BASE_URL', 'LINE_API_DATA_BASE_URL'] as const) {
+    if (!/^https?:\/\/\S+$/.test(env[n]!)) throw new Error(`${n} must be an http(s) URL`);
+  }
   if (!/^[1-9][0-9]*$/.test(env['WORKER_RATE_LIMIT_KEEP_SECONDS']!)) throw new Error('WORKER_RATE_LIMIT_KEEP_SECONDS must be a whole number of seconds above zero');
   if (!/^[1-9][0-9]*$/.test(env['WORKER_CONSOLE_SESSION_ABSOLUTE_SECONDS']!)) throw new Error('WORKER_CONSOLE_SESSION_ABSOLUTE_SECONDS must be a whole number of seconds above zero');
   return {
@@ -88,6 +92,7 @@ export function readWorkerConfig(env: Record<string, string | undefined>): Worke
     classBelowMinTickSeconds: Number(env['WORKER_CLASS_BELOW_MIN_TICK_SECONDS']),
     outboxSenderTickSeconds: Number(env['WORKER_OUTBOX_SENDER_TICK_SECONDS']),
     lineApiBaseUrl: env['LINE_API_BASE_URL']!,
+    lineApiDataBaseUrl: env['LINE_API_DATA_BASE_URL']!,
     linePushTimeoutMs: Number(env['LINE_PUSH_TIMEOUT_MS']),
     localesDir: env['LOCALES_DIR']!,
     beamReconcileCron: env['WORKER_BEAM_RECONCILE_CRON']!,
