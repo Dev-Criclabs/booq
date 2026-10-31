@@ -88,11 +88,10 @@ describe('app.start_payment', () => {
     expect(b).not.toBe(a);
   });
 
-  it('an unpriced order, a zero money order, an order without a running hold and a closed order get none', async () => {
+  it('an unpriced order, a zero money order, an order whose hold is not running and a closed order get none', async () => {
     await expect(start(await order({ priced: false }))).rejects.toThrow(/not priced/);
     await expect(start(await order({ money: 0 }))).rejects.toThrow(/nothing to pay|payment_amount|positive/);
     await expect(start(await order({ hold: 'expired' }))).rejects.toThrow(/hold is not running/);
-    await expect(start(await order({ hold: 'none' }))).rejects.toThrow(/hold is not running/);
     const paid = await order();
     const c = await tdb.pool.connect();
     try {
@@ -104,6 +103,11 @@ describe('app.start_payment', () => {
       c.release();
     }
     await expect(start(paid)).rejects.toThrow(/no open order/);
+  });
+
+  it('an order with no booking (a package bought alone) needs no hold (D74, 0416)', async () => {
+    const id = await start(await order({ hold: 'none' }));
+    expect((await tdb.query(`select status from public.payment where id = $1`, [id])).rows[0].status).toBe('pending');
   });
 
   it('only the order’s player, staff or the worker may start it; another player and a guest may not', async () => {
