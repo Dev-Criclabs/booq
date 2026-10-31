@@ -1,6 +1,9 @@
 import { route, RouteError, type Route, type RouteContext } from '@booq/auth';
 import type { ClubContext, Db, Tx } from '@booq/db';
-import { ClassError, type ClassErrorCode, claimOffer, getClass, listClasses, myWaitlist, myWaitlistEntry } from '@booq/domain';
+import {
+  ClassError, type ClassErrorCode, cancelSession, claimOffer, createTemplate, editSession, endTemplate, getClass, listClasses, listSessions, listTemplates, myWaitlist, myWaitlistEntry,
+  resolveSession, roster, staffWaitlist, updateTemplate,
+} from '@booq/domain';
 
 // F08 public and player class routes (design 5.1, prefix /api/c/{slug}). Thin handlers: resolve the club, open the club transaction
 // with the caller's context, call the service in packages/domain/src/classes or the waitlist function in the database, answer a
@@ -16,6 +19,10 @@ export interface ClassRouteDeps {
 
 export type ClassRoute<T> = Route<T> & { headers?: Readonly<Record<string, string>> };
 
+// Refusals the staff functions add (BK001, message = the code): the checks of check_template and edit_session, and below_taken.
+const STAFF_DB_STATUS: Record<string, number> = {
+  court_clash: 409, coach_clash: 409, coach_leave: 409, coach_rest: 409, below_taken: 409, booking_window_unset: 409,
+};
 const STATUS: Record<ClassErrorCode, number> = { bad_input: 400, not_found: 404, spot_gone: 409, forbidden: 403, template_clash: 409 };
 // A refusal raised by a database function (BK001, message = the code; F08 design 4.4, 4.8).
 const DB_STATUS: Record<string, number> = {
@@ -36,7 +43,8 @@ async function inTx<T>(db: Db, c: ClubContext, fn: (tx: Tx) => Promise<T>): Prom
   } catch (e) {
     if (e instanceof ClassError) throw new RouteError(STATUS[e.code], e.code, Object.keys(e.detail).length ? (e.detail as never) : undefined);
     const err = e as { code?: string; message?: string };
-    if (err.code === 'BK001' && err.message) throw new RouteError(DB_STATUS[err.message] ?? 409, err.message);
+    if (err.code === 'BK001' && err.message) throw new RouteError(DB_STATUS[err.message] ?? STAFF_DB_STATUS[err.message] ?? 409, err.message);
+    if (err.code === '42501') throw new RouteError(403, 'forbidden');
     throw e;
   }
 }
@@ -53,13 +61,13 @@ async function publicContext(deps: ClassRouteDeps, ctx: RouteContext): Promise<C
   return { clubId: ctx.clubId, userId: ctx.userId, roles: ctx.roles, ...(ctx.requestId ? { requestId: ctx.requestId } : {}) };
 }
 
-async function sessionContext(deps: ClassRouteDeps, ctx: RouteContext): Promise<ClubContext> {
+async function sessionContext(deps: ClassRouteDeps, ctx: RouteContext, source: 'player_app' | 'admin' = 'player_app'): Promise<ClubContext> {
   const slug = inputOf(ctx)['slug'];
   if (slug !== undefined) {
     const club = typeof slug === 'string' && SLUG.test(slug) ? await deps.clubBySlug(slug) : null;
     if (!club || club.clubId !== ctx.clubId) throw new RouteError(404, 'not_found');
   }
-  return { clubId: ctx.clubId, userId: ctx.userId, roles: ctx.roles, source: 'player_app', ...(ctx.requestId ? { requestId: ctx.requestId } : {}) };
+  return { clubId: ctx.clubId, userId: ctx.userId, roles: ctx.roles, source, ...(ctx.requestId ? { requestId: ctx.requestId } : {}) };
 }
 
 const idOf = (ctx: RouteContext): string => {
@@ -143,6 +151,91 @@ export function playerClassRoutes(deps: ClassRouteDeps): ClassRoute<unknown>[] {
         const id = idOf(ctx);
         await inTx(deps.db, c, (tx) => tx.query('select app.decline_offer($1)', [id]));
         return { declined: true };
+      }),
+    ),
+  ];
+}
+
+/** The staff routes of design 5.2: templates (owner), sessions (front desk and owner read and cancel, the owner edits and resolves), the roster and the waitlist. */
+export function staffClassRoutes(deps: ClassRouteDeps): ClassRoute<unknown>[] {
+  const admin = (ctx: RouteContext) => sessionContext(deps, ctx, 'admin');
+  return [
+    noStore(
+      route({ method: 'GET', path: '/staff/class-templates', permission: 'class.session.read' }, async (ctx) => {
+        const c = await admin(ctx);
+        return inTx(deps.db, c, (tx) => listTemplates(tx));
+      }),
+    ),
+    noStore(
+      route({ method: 'POST', path: '/staff/class-templates', permission: 'class.template' }, async (ctx) => {
+        const c = await admin(ctx);
+        return inTx(deps.db, c, (tx) => createTemplate(tx, ctx.userId, ctx.body));
+      }),
+    ),
+    noStore(
+      route({ method: 'PUT', path: '/staff/class-templates/:id', permission: 'class.template' }, async (ctx) => {
+        const c = await admin(ctx);
+        const body = bodyOf(ctx);
+        if (body['end'] === true && Object.keys(body).length === 1) {
+          // End the template: today is its last day; its future sessions are cancelled one by one, each in its own transaction (design 4.7).
+          const ids = await inTx(deps.db, c, (tx) => endTemplate(tx, inputOf(ctx)['id'], deps.now()));
+          let cancelled = 0;
+          let failed = 0;
+          for (const sid of ids) {
+            try {
+              await inTx(deps.db, c, (tx) => cancelSession(tx, sid, {}, { template: true }));
+              cancelled += 1;
+            } catch {
+              failed += 1;
+            }
+          }
+          return { ended: true, cancelled, failed };
+        }
+        return inTx(deps.db, c, (tx) => updateTemplate(tx, inputOf(ctx)['id'], ctx.body));
+      }),
+    ),
+    noStore(
+      route({ method: 'GET', path: '/staff/class-sessions', permission: 'class.session.read' }, async (ctx) => {
+        const c = await admin(ctx);
+        const q = inputOf(ctx);
+        return inTx(deps.db, c, (tx) => listSessions(tx, { from: q['from'], to: q['to'], status: q['status'] }, deps.now()));
+      }),
+    ),
+    noStore(
+      route({ method: 'PUT', path: '/staff/class-sessions/:id', permission: 'class.session.edit' }, async (ctx) => {
+        const c = await admin(ctx);
+        await inTx(deps.db, c, (tx) => editSession(tx, inputOf(ctx)['id'], ctx.body));
+        return { edited: true };
+      }),
+    ),
+    noStore(
+      route({ method: 'POST', path: '/staff/class-sessions/:id/cancel', permission: 'class.session.cancel' }, async (ctx) => {
+        const c = await admin(ctx);
+        return inTx(deps.db, c, (tx) => cancelSession(tx, inputOf(ctx)['id'], ctx.body));
+      }),
+    ),
+    noStore(
+      route({ method: 'POST', path: '/staff/class-sessions/:id/resolve', permission: 'class.session.edit' }, async (ctx) => {
+        const c = await admin(ctx);
+        return inTx(deps.db, c, (tx) => resolveSession(tx, inputOf(ctx)['id']));
+      }),
+    ),
+    noStore(
+      route({ method: 'GET', path: '/staff/class-sessions/:id/roster', permission: 'class.roster.read' }, async (ctx) => {
+        const c = await admin(ctx);
+        return inTx(deps.db, c, (tx) => roster(tx, inputOf(ctx)['id']));
+      }),
+    ),
+    noStore(
+      route({ method: 'GET', path: '/staff/waitlist', permission: 'class.session.read' }, async (ctx) => {
+        const c = await admin(ctx);
+        return inTx(deps.db, c, (tx) => staffWaitlist(tx, { sessionId: inputOf(ctx)['sessionId'] }));
+      }),
+    ),
+    noStore(
+      route({ method: 'GET', path: '/coach/sessions/:id/roster', permission: 'class.roster.read' }, async (ctx) => {
+        const c = await sessionContext(deps, ctx, 'player_app');
+        return inTx(deps.db, c, (tx) => roster(tx, inputOf(ctx)['id']));
       }),
     ),
   ];

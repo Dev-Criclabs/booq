@@ -1,3 +1,5 @@
+import { createSettingsService } from '../settings/settings';
+import { settingsRoutes } from '../settings/routes';
 import { createPlatformAuth, DEFAULT_POLICY, type IdentityProvider } from '../auth/sign-in';
 import { createDbAuditSink, createDbAuthStore, createDbStaffDirectory, IdentityUnavailable } from '../auth/adapters';
 import { authRoutes } from '../auth/routes';
@@ -157,6 +159,7 @@ export function createPlatformTable(parts: PlatformParts): PlatformSource {
         pause: createPauseService({ db, notifier: parts.notifier ?? outboxNotConnected }),
         usage: createUsageService({ db, today: () => bangkokDate(clock.now()) }),
       }),
+      ...settingsRoutes({ settings: createSettingsService({ db }) }),
       ...ownerRoutes({ owner: createOwnerService({ db, mailer: parts.mailer ?? mailerNotConnected, baseUrl: config.appBaseUrl }) }),
       ...testerRoutes({ testers: createTesterService({ db, baseUrl: config.appBaseUrl }) }),
       ...staffRoutes({

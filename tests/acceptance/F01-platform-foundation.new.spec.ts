@@ -61,9 +61,9 @@ describe('F01/ROLE-02-AC7', () => {
 });
 
 describe('F01/ROLE-01-AC8', () => {
-  // FINDING QA-F01-2: policy club_setting_read (migration 0002) lets owner, front desk AND accountant read every club setting.
+  // Was FINDING QA-F01-2 (fixed in migration 0054): policy club_setting_read (0002) let owner, front desk AND accountant read every club setting.
   // D115 / ROLE-01-AC8: the Accountant reads business and tax settings only.
-  it.fails('F01/ROLE-01-AC8 the accountant reads no operational setting', async () => {
+  it('F01/ROLE-01-AC8 the accountant reads no operational setting', async () => {
     await tdb.query(
       `insert into public.club_setting (club_id, key, value) values ($1, 'hold_minutes', '15'), ($1, 'cancel_window_hours', '12'), ($1, 'rest_cap_hours', '6'), ($1, 'vat_enabled', 'false')
        on conflict (club_id, key) do nothing`,
