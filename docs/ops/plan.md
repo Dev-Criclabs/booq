@@ -127,6 +127,8 @@ Status page: not for 7 Dec. Revisit after Hunter's soft launch.
 - Logs: 30 days, no personal data. Audit entries (PLAT-04) live in the database, not in logs.
 - A personal data breach: runbook entry exists. Under Thailand's PDPA, the controller (the club) must notify the regulator within 72 hours of becoming aware, where there is a risk. BOOQ as processor tells the club without delay. The exact wording and timeline come from the club's adviser. Please check this with legal advice, I am not a lawyer.
 
+- **Outbound rules:** the worker (and, for probes of just-typed values, the console) must reach LINE's two hosts and **both** Beam hosts over HTTPS, including `playground.api.beamcheckout.com` on production while Hunter is Testing. The table is in `docs/ops/worker.md`, "Outbound access".
+
 ### 6a. Testing mode and the purge at Go live (D4)
 
 - The purge deletes only rows flagged as test data, for that club. It runs once, when the club moves to Live (P4), as a product feature (F01, F13, F15). DevOps's part:

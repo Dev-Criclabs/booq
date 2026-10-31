@@ -20,7 +20,6 @@ Still open:
 | PAY-03-AC6 | The late payment message (what happened to the money): no producer yet. |
 | PAY-04-AC6 | C11P screen (`{minutes}`, Time ran out): Playwright, when the screen lands. |
 | PAY-06-AC6 | Cash in the daily close: F13 (T04). |
-| PAY-06-AC7 | Cancelling a cash booking returns value to the wallet: F09. |
 
 Open question still on the sandbox: Q-31 (can a tester mark a sandbox QR paid). The 7 Dec plan depends on the answer.
 
@@ -29,3 +28,5 @@ Open question still on the sandbox: Q-31 (can a tester mark a sandbox QR paid). 
 F05-T09 reached main: the `beam_reconcile` job, the `package_order_expiry` job and migration 0415. The lane covers them (`domain/payments/jobs.test.ts`, `db/payment-jobs.test.ts`, `worker/tasks/payment-jobs.test.ts`): a paid charge with no callback is confirmed by the lookup, a wrong amount is flagged and never confirmed, a failed charge keeps the hold, Beam unreachable skips and alerts, an expired package order cancels with no ledger row or receipt, and a payment after the expiry goes to the wallet. Every criterion that a lane test names is now traced by ID. PAY-02-AC15 and PAY-04-AC2 are covered; PAY-04-AC1 is traced to the lane test that names it.
 
 New QA test, CONC-31 (`F05-reconcile-race.new.spec.ts`): three reconcile runs at once over four paid charges give one confirmation, one receipt call and one `applied` event per charge. It passes. It was not run against a mutated job.
+
+PAY-06-AC7 is covered by QA's `F09-cash-and-solo-closure.new.spec.ts` (31 Oct).

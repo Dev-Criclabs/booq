@@ -4,23 +4,6 @@
 // and keep the ID at the start of the title (tests/acceptance/coverage.spec.ts checks every criterion appears).
 import { describe, test } from 'vitest';
 
-describe("F04 R1", () => {
-  // Given a player with a date of birth that makes them under 18 today, when checkout prices an item, then the Student price applies. On the 18th birthday (Asia/Bangkok date) it becomes the Adult price.
-  // F04/R1-AC1: proven by a real or traced test in another file of this folder
-  // Given a player with no date of birth on file, when a price depends on the price group, then Adult applies (D12).
-  // F04/R1-AC2: proven by a real or traced test in another file of this folder
-  // Given a player corrects their date of birth in Profile, when the next checkout runs, then it uses the new value; an order already paid keeps its price (F02 AUTH-02-AC20).
-  // F04/R1-AC3: proven by a real or traced test in another file of this folder
-  // Given the club's court price rules, when a court hour is priced, then the server looks up the rule by weekday or weekend and off peak or peak and the player's price group; Hunter's single rule gives ฿500 (50000 satang) for every hour for both groups.
-  // F04/R1-AC4: proven by a real or traced test in another file of this folder
-  // Given a court price rule that is missing for an hour, when a player tries to book it, then the server refuses and the hour is not offered (no invented price).
-  // F04/R1-AC5: proven by a real or traced test in another file of this folder
-  // Given a Student item (a package, class or price sold only to under 18) and a player who is 18 or older, when they try to buy it, then the server refuses (PRD "Student packages can only be bought by customers under 18").
-  test.todo("F04/R1-AC6 Given a Student item (a package, class or price sold only to under 18) and a player who is 18 or older, ...");
-  // Given a player under 18, when they buy an Adult item, then it is allowed (D62, HO PROMO-01). Only Student items are closed to players 18 or older (R1-AC6).
-  test.todo("F04/R1-AC7 Given a player under 18, when they buy an Adult item, then it is allowed (D62, HO PROMO-01). Only Student ...");
-});
-
 describe("F04 R2", () => {
   // Given an Adult with a Coach tier coach picked at court checkout, when the order is priced, then it is a solo class: court 50000 satang plus coach 80000 satang, total 130000 (COACH-02).
   // F04/R2-AC1: proven by a real or traced test in another file of this folder
@@ -56,7 +39,7 @@ describe("F04 R3", () => {
   // Given a booking is cancelled 12 hours or more ahead, when F09 returns value, then its add-ons return with the booking (D21); F04 records add-on lines against the booking they belong to so this works.
   // F04/R3-AC6: proven by a real or traced test in another file of this folder
   // Given the add-on name for balls, when it is shown anywhere, then the English is "Balls (Set of 3 balls)" and the Thai is "ลูกเทนนิส (ชุด 3 ลูก)" on every screen and receipt.
-  test.todo("F04/R3-AC7 Given the add-on name for balls, when it is shown anywhere, then the English is \"Balls (Set of 3 balls)\" ...");
+  // F04/R3-AC7: proven by a real or traced test in another file of this folder
   // Given the owner edits add-ons in A9b, when they save, then it is audited (PLAT-04) and the change applies to new orders only.
   test.todo("F04/R3-AC8 Given the owner edits add-ons in A9b, when they save, then it is audited (PLAT-04) and the change applies ...");
 });

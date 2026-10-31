@@ -40,6 +40,23 @@ Each deployment has its own environment, so the worker's `DATABASE_URL` is the w
 
 Set in the worker's hosting environment (staging, production), all without defaults in code: `DATABASE_URL`, `WORKER_QUEUE_URL`, `WORKER_HOUSEKEEPING_CRON`, `WORKER_IMPORT_SWEEP_CRON`, `WORKER_HOLD_RELEASE_TICK_SECONDS`, `WORKER_RATE_LIMIT_SWEEP_CRON`, `WORKER_RATE_LIMIT_KEEP_SECONDS`, `WORKER_PAY_TAP_PRUNE_CRON`, `WORKER_PACKAGE_EXPIRE_CRON`, `WORKER_WALLET_EXPIRE_CRON`, `WORKER_SESSION_START_CRON`, `WORKER_BEAM_RECONCILE_CRON`, `WORKER_PACKAGE_ORDER_EXPIRY_CRON`, `WORKER_OUTBOX_SENDER_TICK_SECONDS`, `LOCALES_DIR`, `LINE_API_BASE_URL`, `LINE_API_DATA_BASE_URL`, `LINE_PUSH_TIMEOUT_MS`, `SECRETS_PRIVATE_KEY`, `WORKER_CONSOLE_SWEEP_CRON`, `WORKER_CONSOLE_SESSION_ABSOLUTE_SECONDS`, `WORKER_OFFER_EXPIRY_TICK_SECONDS`, `WORKER_CLASS_BELOW_MIN_TICK_SECONDS`, `WORKER_CLASS_GENERATE_CRON`, `WORKER_CLOSURE_ROLL_CRON`. A missing one means the worker will not start, which is the intent. (F10 wires the sender and reads `WORKER_OUTBOX_SENDER_TICK_SECONDS`, `LOCALES_DIR`, `LINE_API_BASE_URL`, `LINE_PUSH_TIMEOUT_MS` and `SECRETS_PRIVATE_KEY` at start, per the orchestrator; it is on `be-l/f10` and reaches `main` soon. I will check the names against the code when it is on `main`.) All twenty-five must be set on production by 4 Dec.
 
+## Outbound access (network rules)
+
+The worker is the only deployment that calls out to the club's providers with the club's own credentials, so its host must allow these destinations **outbound over HTTPS (port 443)**. The environment's network policy (or the host's egress rules) must not block them. Checked in code on `main` (31 Oct) and `be-p/platform-transport`.
+
+| Destination | Why | Where the address comes from |
+|---|---|---|
+| The LINE Messaging API host | Pushes, usage and quota calls, "Test all again" connection checks | `LINE_API_BASE_URL` (real value `https://api.line.me`) |
+| LINE's data host | Rich menu image upload (F10) | `LINE_API_DATA_BASE_URL` (real value `https://api-data.line.me`) |
+| Beam, **test set**: `https://playground.api.beamcheckout.com` | Reconcile (F05) and the `connection_check` task, for a Testing club | `BEAM_HOSTS.test` in `@booq/beam`, a constant in code, **not an environment setting** |
+| Beam, **live set**: `https://api.beamcheckout.com` | Same, for a Live club, and the key swap smoke test | `BEAM_HOSTS.live` in `@booq/beam` |
+| The database and the queue (Supabase, Singapore) | Club data and Graphile Worker | `DATABASE_URL`, `WORKER_QUEUE_URL` |
+
+- **`connection_check`** (platform lane 2, "Test all again", D167) runs in the worker and needs `SECRETS_PRIVATE_KEY` plus outbound access to **both** Beam hosts as well as LINE. No new environment names.
+- If the host restricts egress by allow-list, add the four provider hosts above. If a provider changes a host, `BEAM_HOSTS` changes in code, so a new Beam host in `packages/beam` is a reason to update this table (and the allow-list) the same day.
+- Beam's callbacks come **in** to the web app (`/api/webhooks/beam/{token}`), not the worker, so the worker needs no inbound rule. Beam does not publish source IP addresses I could rely on (F05 design 3.2), so inbound is protected by the signature and the token path, not an allow-list.
+- Staging and production use different Beam keys but the same two hosts' names in code; a Testing club on production uses the playground host. A production egress rule that allowed only `api.beamcheckout.com` would break the 7 Dec test, so allow both.
+
 ## Schedules
 
 **Cron times are UTC.** The library's cron code works with UTC date methods and has no time zone setting. Servers and CI stay in UTC (`plan.md` section 2), so write a Bangkok time as UTC minus 7 hours. None of the three schedules below is tied to a Bangkok clock time.

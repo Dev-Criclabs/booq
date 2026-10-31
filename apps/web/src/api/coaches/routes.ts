@@ -2,7 +2,7 @@ import { route, RouteError, type Route, type RouteContext, type RouteParams } fr
 import type { ClubContext, Db, Tx } from '@booq/db';
 import {
   addCoach, CoachError, type CoachErrorCode, type CoachViewer, coachTimes, decideLeave, flaggedSessions, getAvailability, getCoach, getPay, getStaffCoach,
-  listAllLeave, listCoaches, listOwnLeave, listStaffCoaches, offerableCoaches, putAvailability, putPay, putStaffCoach, requestLeave, substitute, substitutes,
+  leaveCalendar, listAllLeave, listCoaches, listOwnLeave, listStaffCoaches, offerableCoaches, putAvailability, putPay, putStaffCoach, requestLeave, substitute, substitutes,
 } from '@booq/domain';
 
 // F07-T11 public and player coach routes (design 6, prefix /api/c/{slug}). Thin handlers: resolve the club, open the club transaction
@@ -133,6 +133,7 @@ export function staffCoachRoutes(deps: CoachRouteDeps): CoachRoute<unknown>[] {
     at('POST', '/coach/leave', 'coach.self', 'coach_portal', (tx, c, i, b) => requestLeave(tx, viewer(c), i['coachId'], b)),
     at('GET', '/staff/leave', 'coach.leave.decide', 'admin', (tx, _c, i) => listAllLeave(tx, i['status'])),
     at('POST', '/staff/leave/:id/decision', 'coach.leave.decide', 'admin', (tx, _c, i, b) => decideLeave(tx, i['id'], b)),
+    at('GET', '/staff/leave-calendar', 'coach.read', 'admin', (tx, _c, i) => leaveCalendar(tx, i['from'], i['to'])),
     at('GET', '/staff/flagged-sessions', 'coach.substitute', 'admin', (tx) => flaggedSessions(tx)),
     at('GET', '/staff/bookings/:id/substitutes', 'coach.substitute', 'admin', (tx, _c, i) => substitutes(tx, i['id'])),
     at('POST', '/staff/bookings/:id/substitute', 'coach.substitute', 'admin', (tx, _c, i, b) => substitute(tx, i['id'], b)),
