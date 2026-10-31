@@ -60,7 +60,7 @@ const BUILT: Record<string, string[]> = {
     'GET /staff/reports/:name report.read', 'GET /staff/reports/:name/csv report.read', 'GET /staff/daily-close daily-close.run', 'GET /staff/daily-close/csv daily-close.run', 'POST /staff/daily-close daily-close.run'],
   A14: ['GET /staff/receipts receipt.list', 'GET /staff/receipts/:id/pdf receipt.print', 'POST /staff/receipts/:id/void receipt.void'],
   A16: [
-    'PUT /club/business club.business.write',
+    'PUT /club/business club.business.write', 'GET /club/setup settings.business.read',
     'GET /settings settings.business.read', 'PUT /settings/:key settings.write', 'PUT /hours hours.write', 'POST /resources resource.write', 'PUT /resources/:id resource.write',
     'PUT /support-window support-window.write',
     'POST /exports export.run', 'GET /exports/:id export.run',
