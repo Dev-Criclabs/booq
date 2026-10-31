@@ -3,6 +3,7 @@ import { createDb, type Db } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
 import { recordTaskRun } from './heartbeat';
 import { TaskRefusedError } from './task-wrapper';
+import { closeTestDatabase } from './testing/teardown';
 
 // F01-T34 heartbeat (FA 5): counts per task type, no club, no data.
 let tdb: TestDatabase;
@@ -13,7 +14,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   await db.end();
-  await tdb.close();
+  await closeTestDatabase(tdb);
 });
 const row = async (name: string) =>
   (await tdb.query('select * from platform.worker_heartbeat where task_name = $1', [name])).rows[0];

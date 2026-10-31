@@ -19,6 +19,12 @@ export interface PortfolioRow {
   nameEn: string;
   status: string;
   bookingsConfirmed30d: number;
+  /** Setup steps done of all steps (P1 Setup column). */
+  setup: { done: number; total: number };
+  /** LINE messages sent this month and the limit (null: not known), P1 LINE messages column. */
+  line: { used: number; limit: number | null };
+  /** Checks failed right now (P1 Alerts column). */
+  alerts: number;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -54,13 +60,24 @@ export function createUsageService(deps: { db: PlatformDb; /** Today's Asia/Bang
     async portfolio(staffId: string): Promise<PortfolioRow[]> {
       if (!(await activeStaff(staffId))) return [];
       return db.withPlatformTx({ staffId, staffLabel: 'usage' }, async (tx) => {
-        const { rows } = await tx.query<{ id: string; name_th: string; name_en: string; status: string; total: string }>(
-          `select c.id, c.name_th, c.name_en, c.status, coalesce(sum(u.value) filter (where u.metric = 'bookings_confirmed' and u.day >= $1::date - $2::int and u.day <= $1::date), 0)::text as total
+        const { rows } = await tx.query<{ id: string; name_th: string; name_en: string; status: string; total: string; setup_done: string; setup_total: string; line_used: string | null; line_limit: number | null; alerts: string }>(
+          `select c.id, c.name_th, c.name_en, c.status,
+                  coalesce(sum(u.value) filter (where u.metric = 'bookings_confirmed' and u.day >= $1::date - $2::int and u.day <= $1::date), 0)::text as total,
+                  (select count(*) from jsonb_array_elements(coalesce(platform.club_progress(c.id) -> 'setup', '[]'::jsonb)) e where (e ->> 'done')::boolean)::text as setup_done,
+                  (select count(*) from jsonb_array_elements(coalesce(platform.club_progress(c.id) -> 'setup', '[]'::jsonb)) e)::text as setup_total,
+                  (select l.used::text from platform.club_line_usage l where l.club_id = c.id and l.month = date_trunc('month', $1::date)::date) as line_used,
+                  (select l.message_limit from platform.club_line_usage l where l.club_id = c.id and l.month = date_trunc('month', $1::date)::date) as line_limit,
+                  (select count(*) from platform.club_health h where h.club_id = c.id and h.status = 'failed')::text as alerts
              from public.club c left join platform.club_usage_daily u on u.club_id = c.id
             group by c.id, c.name_th, c.name_en, c.status order by c.name_en, c.id`,
           [deps.today(), WINDOW_DAYS_BEFORE_TODAY],
         );
-        return rows.map((r) => ({ clubId: r.id, nameTh: r.name_th, nameEn: r.name_en, status: r.status, bookingsConfirmed30d: Number(r.total) }));
+        return rows.map((r) => ({
+          clubId: r.id, nameTh: r.name_th, nameEn: r.name_en, status: r.status, bookingsConfirmed30d: Number(r.total),
+          setup: { done: Number(r.setup_done), total: Number(r.setup_total) },
+          line: { used: Number(r.line_used ?? 0), limit: r.line_limit },
+          alerts: Number(r.alerts),
+        }));
       });
     },
   };

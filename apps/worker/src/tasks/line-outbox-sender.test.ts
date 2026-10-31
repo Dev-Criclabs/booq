@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
-import { createMessageBuilder, loadMessageDictionary, type LineTransport, type MessageBuilder } from '@booq/line';
+import { createMessageBuilder, loadMessageDictionary, type LineTransport, type MessageBuilder } from '@booq/line/server';
 import { resolve } from 'node:path';
 import { FakeClock, FakeLine, collectTexts, type ClubLineChannel } from '../../../../tests/fakes';
 import { OUTBOX_SENDER, runOutboxSender } from './line-outbox-sender';
+import { closeTestDatabase } from '../testing/teardown';
 
 // F10-T08 outbox_sender steps 1 to 4 (F10 design 5.2; FA 5.3): claim due rows with SKIP LOCKED per club, the send
 // time preconditions, the cap gate, the language at send time. LINE-03-AC1 to AC3, LINE-05, D93, D94. Against the
@@ -99,7 +100,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   await worker?.end();
-  await tdb?.close();
+  if (tdb) await closeTestDatabase(tdb);
 });
 
 describe('claim and send (FA 5.3)', () => {
@@ -345,5 +346,54 @@ describe('the card that goes out (F10-T10, LINE-04)', () => {
     const texts = collectTexts(pushed[0]!.messages[0]);
     expect(texts).toContain('ก');                                       // club A's Thai name: the person's language is th
     expect(texts).toContain(dict.th['L-0011']!.replace('{court}', '1'));
+  });
+});
+
+describe('a Paused club (PLAT-03)', () => {
+  it('LINE-03-AC11 a reminder and a cancellation result of an existing booking are still sent while the club is paused', async () => {
+    const b = await booking('3 hours');
+    const rem = await msg('reminder_2h', reminderKey(b, 2), { params: { booking_id: b.id } });
+    const gone = await booking('3 hours', 'cancelled');
+    const cancel = await msg('cancellation_result', `cancellation_result:${gone.id}`, { params: { booking_id: gone.id } });
+    await tdb.query(`update public.club set status = 'paused' where id = $1`, [A]);
+    await run();
+    expect(await rowOf(rem)).toMatchObject({ status: 'sent' });
+    expect(await rowOf(cancel)).toMatchObject({ status: 'sent' });
+    expect(line.pushes({ clubId: A }).length).toBe(2);
+  });
+});
+
+describe('prepareClub (the deep links port, line-sender-setup.ts)', () => {
+  it('runs once per club with due rows, in that club’s context, before its rows are built', async () => {
+    await msg('booking_confirmed', 'confirmed:p1');
+    await msg('booking_confirmed', 'confirmed:p2');
+    await msg('booking_confirmed', 'confirmed:pb', { club: B, user: PB });
+    const calls: Array<{ club: string; seen: string | null; builtBefore: number }> = [];
+    await runOutboxSender(worker, {
+      builder, transport, readToken,
+      prepareClub: async (tx, club) => {
+        const seen = (await tx.query<{ c: string | null }>(`select current_setting('app.club_id', true) as c`)).rows[0]!.c;
+        calls.push({ club, seen, builtBefore: built.length });
+      },
+    });
+    expect(calls.map((c) => c.club).sort()).toEqual([A, B].sort());
+    for (const c of calls) expect(c.seen).toBe(c.club);
+    expect(calls.find((c) => c.club === calls[0]!.club)!.builtBefore).toBe(0);
+  });
+});
+
+describe('a message that cannot be built', () => {
+  it('fails that row with build_error and does not hold back the club’s other messages', async () => {
+    const bad = await msg('booking_confirmed', 'confirmed:bad');
+    const good = await msg('booking_confirmed', 'confirmed:good');
+    const picky: MessageBuilder = {
+      build(m) {
+        if (m.messageId === bad) throw new Error('message_text_missing:L-9999');
+        return builder.build(m);
+      },
+    };
+    await runOutboxSender(worker, { builder: picky, transport, readToken });
+    expect(await rowOf(bad)).toMatchObject({ status: 'failed', last_error: 'build_error' });
+    expect(await rowOf(good)).toMatchObject({ status: 'sent' });
   });
 });

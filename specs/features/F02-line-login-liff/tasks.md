@@ -81,7 +81,7 @@ Depends on F01 tasks: T03 to T07 (database, context, tenant suite), T10 and T11 
   Tests first: missing consent shows what is missing; the consent line wraps inside its card in Thai; the screen is marked "text pending legal check" in code review notes only (D10), not on screen.
 - [x] **F02-T21** Date of birth step for Student items and the Profile Personal details editor (never locked). IDs: AUTH-02-AC10 to AC12, AC15, AC18 to AC20. Role: FE-P · Deps T13, T14 · Size: M
   Tests first: an Adult item shows no field; a Student item shows it; the date shows with the international year; there is no "ask the front desk" text.
-- [ ] **F02-T22** Guest Home (S-C03-Guest), the in-app add-the-account ask on the confirmation, and sign-in starts on person pages. IDs: AUTH-01-AC8, AC9, LINE-01-AC8, AC9. Role: FE-P · Deps T11, T17 · Size: M
+- [x] **F02-T22** Guest Home (S-C03-Guest), the in-app add-the-account ask on the confirmation, and sign-in starts on person pages. IDs: AUTH-01-AC8, AC9, LINE-01-AC8, AC9. Role: FE-P · Deps T11, T17 · Size: M
   Tests first: guest Home shows Find a court time and Sign in; a non-friend sees the ask once per session; opening My bookings as a guest starts sign-in and returns to it.
 - [ ] **F02-T23** Rich menu and share-link behaviour: club path in every link, `liff.state` path handling, C4 opens as a guest page. IDs: AUTH-01-AC10, AC14, BOOK-02-AC1 to AC3, AC5. Role: FE-P · Deps T05 · Size: S
   Tests first: a deep link carries the club and the path; the Book a court link opens C4 without sign-in; a browser opens the same page.

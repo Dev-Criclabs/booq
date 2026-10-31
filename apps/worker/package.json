@@ -11,7 +11,8 @@
     "@booq/secrets": "workspace:*",
     "graphile-worker": "^0.18.0",
     "@booq/domain": "workspace:*",
-    "@booq/line": "workspace:*"
+    "@booq/line": "workspace:*",
+    "@booq/secrets": "workspace:*"
   },
   "scripts": {
     "start": "vite-node src/main.ts"

@@ -146,7 +146,7 @@ describe('app.end_package_order and the expiry (0416)', () => {
     const live = await packageOrder('2999-01-01T00:00:00Z');
     await tookWalletAndCode(live.order);
     const asPlayer = { clubId: A, userId: PLAYER, roles: ['player'] as never, source: 'player_app' as const };
-    expect(await web.withClubTx(asPlayer, async (tx) => (await tx.query(`select app.end_package_order($1, 'payment_unavailable') as r`, [live.order])).rows[0].r)).toBe(true);
+    expect(await web.withClubTx(asPlayer, async (tx) => (await tx.query(`select app.end_package_order($1, 'payment_unavailable') as r`, [live.order])).rows[0]!.r)).toBe(true);
     expect((await tdb.query(`select status from public.orders where id = $1`, [live.order])).rows[0].status).toBe('cancelled');
     expect((await tdb.query(`select status, failure_code, qr_image from public.payment where id = $1`, [live.payment])).rows[0])
       .toEqual({ status: 'failed', failure_code: 'payment_unavailable', qr_image: null });
@@ -172,7 +172,7 @@ describe('app.end_package_order and the expiry (0416)', () => {
     await expect(web.withClubTx(as(PLAYER), (tx) => tx.query(`select app.end_package_order($1, 'expired')`, [live.order]))).rejects.toThrow(/not allowed/);
     await expect(web.withClubTx(as(PLAYER), (tx) => tx.query(`select app.end_package_order($1, 'player')`, [live.order]))).rejects.toThrow(/unknown end reason/);
     const booked = await order('held');
-    expect(await web.withClubTx(as(PLAYER), async (tx) => (await tx.query(`select app.end_package_order($1, 'payment_unavailable') as r`, [booked])).rows[0].r)).toBe(false);
+    expect(await web.withClubTx(as(PLAYER), async (tx) => (await tx.query(`select app.end_package_order($1, 'payment_unavailable') as r`, [booked])).rows[0]!.r)).toBe(false);
     expect((await tdb.query(`select status from public.orders where id = $1`, [live.order])).rows[0].status).toBe('open');
   });
 });

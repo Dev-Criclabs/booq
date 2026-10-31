@@ -21,6 +21,10 @@ const ENV = {
   WORKER_CLASS_BELOW_MIN_TICK_SECONDS: '60',
   WORKER_BEAM_RECONCILE_CRON: '*/5 * * * *',
   WORKER_PACKAGE_ORDER_EXPIRY_CRON: '* * * * *',
+  WORKER_OUTBOX_SENDER_TICK_SECONDS: '30',
+  LINE_API_BASE_URL: 'https://api.line.me',
+  LINE_PUSH_TIMEOUT_MS: '10000',
+  LOCALES_DIR: '/srv/booq/locales',
 };
 
 describe('readWorkerConfig', () => {
@@ -44,6 +48,10 @@ describe('readWorkerConfig', () => {
       classBelowMinTickSeconds: 60,
       beamReconcileCron: '*/5 * * * *',
       packageOrderExpiryCron: '* * * * *',
+      outboxSenderTickSeconds: 30,
+      lineApiBaseUrl: 'https://api.line.me',
+      linePushTimeoutMs: 10000,
+      localesDir: '/srv/booq/locales',
     });
   });
   it('names every missing setting and never prints a value', () => {
@@ -68,6 +76,10 @@ describe('readWorkerConfig', () => {
     expect(message).toContain('WORKER_CLASS_GENERATE_CRON');
     expect(message).toContain('WORKER_OFFER_EXPIRY_TICK_SECONDS');
     expect(message).toContain('WORKER_CLASS_BELOW_MIN_TICK_SECONDS');
+    expect(message).toContain('WORKER_OUTBOX_SENDER_TICK_SECONDS');
+    expect(message).toContain('LINE_API_BASE_URL');
+    expect(message).toContain('LINE_PUSH_TIMEOUT_MS');
+    expect(message).toContain('LOCALES_DIR');
     expect(message).not.toContain('secret');
   });
   it('refuses a schedule that is not five cron fields', () => {
@@ -84,6 +96,18 @@ describe('readWorkerConfig', () => {
 describe('hold release tick', () => {
   it.each(['0', '-5', 'abc', '2.5', ''])('refuses %j', (v) => {
     expect(() => readWorkerConfig({ ...ENV, WORKER_HOLD_RELEASE_TICK_SECONDS: v })).toThrow(/WORKER_HOLD_RELEASE_TICK_SECONDS/);
+  });
+});
+
+describe('the LINE sender settings (F10)', () => {
+  it.each(['0', '-5', 'abc', '2.5', ''])('refuses an outbox sender tick of %j', (v) => {
+    expect(() => readWorkerConfig({ ...ENV, WORKER_OUTBOX_SENDER_TICK_SECONDS: v })).toThrow(/WORKER_OUTBOX_SENDER_TICK_SECONDS/);
+  });
+  it.each(['0', '-1', '1.5', 'soon'])('refuses a push timeout of %j', (v) => {
+    expect(() => readWorkerConfig({ ...ENV, LINE_PUSH_TIMEOUT_MS: v })).toThrow(/LINE_PUSH_TIMEOUT_MS/);
+  });
+  it('refuses a base URL that is not http(s)', () => {
+    expect(() => readWorkerConfig({ ...ENV, LINE_API_BASE_URL: 'api.line.me' })).toThrow(/LINE_API_BASE_URL/);
   });
 });
 

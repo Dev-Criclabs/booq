@@ -19,6 +19,12 @@ BOOQ staff sign in with email and a second factor (D3). The password check happe
 | `STAFF_INVITE_SIGNING_SECRET` **(branch)** | same group | **Secret.** 32+ characters. The same value is set in `apps/staff-invite`. The console signs its requests to the function with it |
 | `PLATFORM_BASE_URL` **(branch)** | required whenever `STAFF_INVITE_URL` is set | `https` address of **the console itself** (not the club app; that is `APP_BASE_URL`). It is the base of the staff enrolment link an admin sends to a new teammate. If it is wrong, every enrolment link points to the wrong place. Set it to the console's real public address once the console is hosted |
 
+### Deploy environment checklist, `apps/platform`
+
+Set in the console's hosting environment (staging, production). Required for the 7 Dec test: `DATABASE_URL` (role `booq_platform`), `PLATFORM_SIGNING_KEY`, `PLATFORM_MAX_BODY_BYTES`, `APP_BASE_URL`, `HEALTH_TOKEN`, `PLATFORM_SIGNIN_RATE_LIMIT` with `PLATFORM_SIGNIN_RATE_WINDOW_SECONDS`, `STAFF_INVITE_URL` with `STAFF_INVITE_SIGNING_SECRET` and `PLATFORM_BASE_URL`, and **`SECRETS_PUBLIC_KEY`** (the console writes a club's LINE and Beam values with it, and only with it). **`SECRETS_PRIVATE_KEY` must not be set here.** Also set the `platform.config` rows below before the test.
+
+**Probes (decided as D167).** The console probes **only the value just typed**, before it is encrypted. It holds only the public key, so it cannot read back a stored secret (that would need the private key and break SR-03). "Test all again" runs in **the worker**, which holds the private key, and writes `club_health`. So the worker needs the outbound settings of the probes too (`LINE_API_BASE_URL`, `LINE_PUSH_TIMEOUT_MS` already; Beam's address and timeout to come). The console's own outbound URL and timeout settings will be added here when platform lane 2 sends the names (the orchestrator forwards them).
+
 ### Platform config values (database table `platform.config`, set by a BOOQ admin, no defaults)
 
 These are not environment variables. They are rows an admin enters in the console, and the code ships none (no invented settings). Known so far, all to be set **before the 7 Dec test**:

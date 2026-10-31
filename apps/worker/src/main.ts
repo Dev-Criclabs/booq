@@ -13,6 +13,7 @@ import { PACKAGE_EXPIRE, SESSION_START, WALLET_EXPIRE, runPackageExpire, runSess
 import { CLASS_GENERATE, CLASS_GENERATE_DISPATCH, classGenerateDispatch, generateClassSessions } from './tasks/class-generate';
 import { runClassBelowMinimum, runOfferExpiry } from './tasks/class-jobs';
 import { BEAM_RECONCILE, PACKAGE_ORDER_EXPIRY, runBeamReconcile, runPackageOrderExpiry } from './tasks/payment-jobs';
+import { createLineSender } from './tasks/line-sender-setup';
 import { startTicker } from './ticker';
 import { startWorker } from './worker';
 
@@ -73,12 +74,21 @@ const holdRelease = startTicker({
 // offer_expiry and class_below_minimum also run on their own timers (F08-T10).
 const offerExpiry = startTicker({ everyMs: config.offerExpiryTickSeconds * 1000, run: () => runOfferExpiry(db), onError: () => undefined });
 const classBelowMin = startTicker({ everyMs: config.classBelowMinTickSeconds * 1000, run: () => runClassBelowMinimum(db), onError: () => undefined });
+// outbox_sender (F10): LINE messages from the outbox, every config.outboxSenderTickSeconds (design 8: 30 seconds). The
+// private key that opens club tokens is read once here, so a worker without it stops at start (D149).
+const lineSender = createLineSender(db, {
+  lineApiBaseUrl: config.lineApiBaseUrl,
+  linePushTimeoutMs: config.linePushTimeoutMs,
+  localesDir: config.localesDir,
+  privateKey: loadDecryptKey(),
+});
+const outboxSender = startTicker({ everyMs: config.outboxSenderTickSeconds * 1000, run: () => lineSender.run(), onError: () => undefined });
 
 let stopping = false;
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, () => {
     if (stopping) return;
     stopping = true;
-    void Promise.all([holdRelease.stop(), offerExpiry.stop(), classBelowMin.stop()]).then(() => worker.stop()).then(() => db.end()).then(() => process.exit(0));
+    void Promise.all([holdRelease.stop(), offerExpiry.stop(), classBelowMin.stop(), outboxSender.stop()]).then(() => worker.stop()).then(() => db.end()).then(() => process.exit(0));
   });
 }

@@ -34,7 +34,11 @@
     "P-new.dob_step_lead": "Student prices are for players under 18. Add your date of birth to continue.",
     "P-new.student_too_old": "Student prices are for players under 18. This item is not available at your age.",
     "P-new.dob_required": "Please enter your date of birth.",
-    "P-new.saved": "Saved."
+    "P-new.saved": "Saved.",
+    "P-new.greeting_morning": "Good morning",
+    "P-new.greeting_afternoon": "Good afternoon",
+    "P-new.add_friend_button": "Add on LINE",
+    "P-new.not_now": "Not now"
   },
   "th": {
     "P-new.signin_failed": "เข้าสู่ระบบด้วย LINE ไม่สำเร็จ กรุณาลองอีกครั้ง",
@@ -70,6 +74,10 @@
     "P-new.dob_step_lead": "ราคานักเรียนสำหรับผู้เล่นอายุต่ำกว่า 18 ปี กรุณาเพิ่มวันเกิดเพื่อดำเนินการต่อ",
     "P-new.student_too_old": "ราคานักเรียนสำหรับผู้เล่นอายุต่ำกว่า 18 ปี รายการนี้ไม่สามารถซื้อได้ตามอายุของคุณ",
     "P-new.dob_required": "กรุณากรอกวันเกิด",
-    "P-new.saved": "บันทึกแล้ว"
+    "P-new.saved": "บันทึกแล้ว",
+    "P-new.greeting_morning": "สวัสดีตอนเช้า",
+    "P-new.greeting_afternoon": "สวัสดีตอนบ่าย",
+    "P-new.add_friend_button": "เพิ่มเพื่อนใน LINE",
+    "P-new.not_now": "ไว้ทีหลัง"
   }
 }

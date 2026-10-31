@@ -14,11 +14,15 @@ export interface PauseActor {
 /** What the owner is told. The text is a locale key (L-new.club_paused, L-new.club_resumed) with these values. */
 export interface OwnerNotice {
   clubId: string;
-  kind: 'club_paused' | 'club_resumed';
-  templateKey: 'L-new.club_paused' | 'L-new.club_resumed';
-  params: { clubName: string; reason?: string };
+  kind: 'club_paused';
+  templateKey: 'L-new.club_paused';
+  params: { clubName: string; reason: string };
   /** The owner's LINE contact from setup step 1; F10 resolves it to a LINE user. */
   ownerLine: string | null;
+  /** One key per pause, so a retry never sends twice (F10 dedupe). */
+  dedupeKey?: string;
+  /** The admin who paused or resumed; the outbox call runs as them. */
+  actor?: { staffId: string; staffLabel: string };
 }
 
 /** The outbox interface (a stub until F10 builds the LINE outbox). */
@@ -104,7 +108,7 @@ export function createPauseService(deps: { db: PlatformDb; notifier: OwnerNotifi
 
   async function tellOwner(staff: Staff, clubId: string, notice: OwnerNotice): Promise<boolean> {
     try {
-      await notifier.notifyOwner(notice);
+      await notifier.notifyOwner({ ...notice, actor: { staffId: staff.id, staffLabel: staff.display_name } });
       return true;
     } catch {
       // The status change stands; the failed message is a fact for P6 (and F10's retry).
@@ -120,12 +124,13 @@ export function createPauseService(deps: { db: PlatformDb; notifier: OwnerNotifi
     if ('done' in g) return g.done;
     const { staff, reason } = g;
     let club: ClubRow;
+    let pauseId: string | null = null;
     try {
       const found = await db.withPlatformTx({ staffId: staff.id, staffLabel: staff.display_name, clubId, reason }, async (tx) => {
         const seen = await tx.query<ClubRow>('select name_th, name_en, default_language, owner_line from public.club where id = $1', [clubId]);
         const c = seen.rows[0];
         if (!c) return null;
-        await tx.query('select app.pause_club($1)', [reason]);
+        pauseId = (await tx.query<{ id: string }>('select app.pause_club($1) as id', [reason])).rows[0]?.id ?? null;
         await writeLog(tx, 'club.paused', clubId, { reason }, reason);
         return c;
       });
@@ -138,6 +143,7 @@ export function createPauseService(deps: { db: PlatformDb; notifier: OwnerNotifi
     }
     const notified = await tellOwner(staff, clubId, {
       clubId, kind: 'club_paused', templateKey: 'L-new.club_paused', params: { clubName: clubName(club), reason }, ownerLine: club.owner_line,
+      ...(pauseId ? { dedupeKey: `paused:${clubId}:${pauseId}` } : {}),
     });
     return { ok: true, ownerNotified: notified };
   }
@@ -166,15 +172,13 @@ export function createPauseService(deps: { db: PlatformDb; notifier: OwnerNotifi
       if (!code) throw e;
       return refuse(staff, 'club.resume_refused', code === 'not_found' ? null : clubId, clubId, code);
     }
-    const notified = await tellOwner(staff, clubId, {
-      clubId, kind: 'club_resumed', templateKey: 'L-new.club_resumed', params: { clubName: clubName(club) }, ownerLine: club.owner_line,
-    });
+    // The PRD tells the owner only when the club is paused; a resume sends no message.
     return {
       ok: true,
       pausedAt: new Date(result.paused_at).toISOString(),
       resumedAt: new Date(result.resumed_at).toISOString(),
       handlersRun: result.handlers_run,
-      ownerNotified: notified,
+      ownerNotified: false,
     };
   }
 
