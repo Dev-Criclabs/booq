@@ -176,6 +176,9 @@ Table `customer_tag (club_id, user_id, tag, created_by, created_at)` (class D, c
 ### 6.4 `1104_audit_read.sql`
 `public.staff_audit(staff, record_type, record_id, from, to, cursor)` function over `audit_entry` for the owner: actor name, action, table, record id, changed fields with old and new values (personal data columns shown as `[changed]`, not the value, as FA 8.2 holds them apart). Also used for booking history in A2 (`record_id = booking id`). Read only.
 
+### 6.6 `1106_shell_banners.sql` (built with T02)
+`app.shell_state()`: the open pause reason, the LINE cap state and the failed LINE token reason of the caller's club; the cap and token columns are null for anyone but the owner.
+
 ### 6.5 `1105_owner_setup.sql`
 `app.owner_setup_view()` returns steps 6 to 8 as {key, done} computed from rows (Brand: rich menu labels, name; Products and rules: price groups, court prices, at least the settings that have no default are set; People: staff invited, import run). It invents no new required step: the list is F01 §9.3's. `app.owner_tell_done()` records the click once (`owner_notice` for P3) and audits it.
 
