@@ -44,7 +44,9 @@ const BUILT: Record<string, string[]> = {
     'PUT /staff/class-sessions/:id class.session.edit', 'POST /staff/class-sessions/:id/cancel class.session.cancel', 'POST /staff/class-sessions/:id/resolve class.session.edit',
     'GET /staff/class-sessions/:id/roster class.roster.read', 'GET /staff/waitlist class.session.read',
   ],
-  A13: ['GET /staff/reports/:name report.read', 'GET /staff/reports/:name/csv report.read', 'GET /staff/daily-close daily-close.run', 'GET /staff/daily-close/csv daily-close.run', 'POST /staff/daily-close daily-close.run'],
+  A13: [
+    'GET /staff/coach-pay payout.read', 'GET /staff/coach-pay/csv payout.read', 'POST /staff/coach-pay/:id/adjustments payout.adjust', 'POST /staff/coach-pay/:id/paid payout.pay',
+    'GET /staff/reports/:name report.read', 'GET /staff/reports/:name/csv report.read', 'GET /staff/daily-close daily-close.run', 'GET /staff/daily-close/csv daily-close.run', 'POST /staff/daily-close daily-close.run'],
   A14: ['GET /staff/receipts receipt.list', 'GET /staff/receipts/:id/pdf receipt.print', 'POST /staff/receipts/:id/void receipt.void'],
   A16: [
     'GET /settings settings.business.read', 'PUT /settings/:key settings.write', 'PUT /hours hours.write', 'POST /resources resource.write', 'PUT /resources/:id resource.write',
@@ -59,7 +61,7 @@ const GAPS: Record<string, string[]> = {
   A9: ['GET /staff/setup/price-groups (F04)', 'GET /staff/setup/court-prices (F04)', 'GET /staff/setup/coach-tier-prices (F04)', 'GET /staff/setup/add-ons (F04)', 'GET /staff/setup/package-products (F06)'],
   A10: ['GET /staff/setup/promo-codes (F04)', 'GET /staff/setup/partners (F04)'],
   A12: ['POST /staff/closures/preview (F09)', 'POST /staff/closures (F09)', 'GET /staff/closures (F09)', 'POST /staff/closures/:id/end (F09)', 'GET /staff/closures/:id/expired-packages (F09)'],
-  A13: ['GET /staff/payouts (F13)', 'POST /staff/payouts/:coach/paid (F13)', 'GET /staff/reports/owed (F06)'],
+  A13: ['GET /staff/reports/owed (F06)'],
   A16: ['PUT /club/business (F01)', 'GET /staff/rich-menu (F10)', 'PUT /staff/rich-menu/labels (F10)'],
 };
 
@@ -87,7 +89,7 @@ describe('F11 route inventory (design 5)', () => {
   });
   it('every /staff route is a known built route, a known gap, or belongs to another page of the design', () => {
     const known = new Set(Object.values(BUILT).flat().map((r) => r.split(' ').slice(0, 2).join(' ')));
-    const other = /^(GET|POST|PUT|DELETE) \/staff\/(class-|orders|bookings|invites|reports|receipts|daily|leave|coaches|customers|packages|waitlist|audit|setup|calendar|shell|flagged|:)/;
+    const other = /^(GET|POST|PUT|DELETE) \/staff\/(class-|coach-pay|orders|bookings|invites|reports|receipts|daily|leave|coaches|customers|packages|waitlist|audit|setup|calendar|shell|flagged|:)/;
     const loose = [...mounted.keys()].filter((r) => r.includes('/staff') && !known.has(r) && !other.test(r));
     expect(loose).toEqual([]);
   });

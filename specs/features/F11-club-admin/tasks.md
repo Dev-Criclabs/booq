@@ -43,7 +43,7 @@ Depends on: F01 (route wrapper, permissions, settings, audit, import, staff), F0
 
 - [x] **F11-T11** Check that every route in design §5 exists and is mounted, and list the gaps (closure expired packages, setup/* CRUD, package products). IDs: ADMIN-09 to ADMIN-15. Role: QA · Deps F04, F06, F09, F13 routes · Size: S
   Tests first: a table of route to feature to test; the role matrix covers each.
-  Built (Architect): `apps/web/src/server/admin-inventory.test.ts` lists every route of design §5 per page with its permission and the known gaps with their owners. Finding: the F01 club settings routes (`GET /settings`, `PUT /settings/:key`, `PUT /hours`, `POST/PUT /resources`, `PUT /support-window`) were built in `packages/domain/src/club` but never mounted; they are now mounted (and exported from the domain index) for A16. Still gaps owned elsewhere: F04 setup/* CRUD and `POST /staff/bookings`, F06 package-products and package-sale, F09 cancel, mark and closure routes, F13 payouts, F10 rich menu, F01 `PUT /club/business`.
+  Built (Architect): `apps/web/src/server/admin-inventory.test.ts` lists every route of design §5 per page with its permission and the known gaps with their owners. Finding: the F01 club settings routes (`GET /settings`, `PUT /settings/:key`, `PUT /hours`, `POST/PUT /resources`, `PUT /support-window`) were built in `packages/domain/src/club` but never mounted; they are now mounted (and exported from the domain index) for A16. Still gaps owned elsewhere: F04 setup/* CRUD and `POST /staff/bookings`, F06 package-products and package-sale, F09 cancel, mark and closure routes, F10 rich menu, F01 `PUT /club/business`.
 
 ## C. Pages
 
