@@ -43,7 +43,7 @@ Depends on: F01 T09 (setup tables), T12 (people), T13 (route wrapper), T18 (gran
 
 ## C. Jobs and reminders
 
-- [ ] **F06-T13** Worker tasks `package_expire` and `wallet_expire` (per club, `withClubTx`, idempotent, test clock). IDs: PKG-03-AC3, AC10. Role: BE-C · Deps T10, F01-T34 · Size: S
+- [x] **F06-T13** Worker tasks `package_expire` and `wallet_expire` (per club, `withClubTx`, idempotent, test clock). IDs: PKG-03-AC3, AC10. Role: BE-C · Deps T10, F01-T34 · Size: S
   Tests first: at 23:59:59 and 00:00:00 Bangkok on the expiry date the package is active then expired; the task run twice writes once.
 - [ ] **F06-T14** Migration 0514: replaces the no-op hook `app.package_reminder_hook` (created in 0508) with the real one: reminder enqueue at grant, extension and pause through `app.enqueue_message` with keys holding `expires_at` and N. F06 builds before F10, so grant, extension and pause call the hook, which does nothing until this task. IDs: PKG-03-AC1, AC2, AC6, D116. Role: BE-C · Deps T07, F10-T06 (`app.enqueue_message`, migration 0605) · Size: S
   Tests first: reminders at 14 and 3 days once each; an extension voids the old rows and creates new ones; a package with no credits left sends none.

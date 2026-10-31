@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
-import { PACKAGE_EXPIRE, WALLET_EXPIRE, runPackageExpire, runWalletExpire } from './f06-expiry';
+import { PACKAGE_EXPIRE, SESSION_START, WALLET_EXPIRE, runPackageExpire, runSessionStart, runWalletExpire } from './f06-expiry';
 
-// F06-T13 package_expire and wallet_expire (PKG-03-AC3, AC10; D85, D89, D90). Per club, idempotent, on the test clock.
+// F06-T13 package_expire, wallet_expire and session_start (PKG-03-AC3, AC10, R1-AC3; D85, D89, D90). Per club, idempotent,
+// on the test clock.
 const A = '3f2b8f0e-7c1d-4a55-9d0a-1c2e3f4a5b6c';
 const B = '9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d';
 const PA = '00000000-0000-4000-8000-000000000001';
@@ -90,5 +91,38 @@ describe('wallet_expire (PKG-03-AC10, D89)', () => {
     expect(await balance(PB)).toBe(10000);
     expect(await runWalletExpire(worker)).toEqual({ due: 0, expired: 0, failed: 0 });
     expect(await heartbeat(WALLET_EXPIRE)).toEqual({ runs: 2, ok: true });
+  });
+});
+
+describe('session_start (R1-AC3)', () => {
+  it('the reserved credit of a booking that started becomes used, once', async () => {
+    const loc = (await tdb.query(`insert into public.location (club_id, name) values ($1,'M') returning id`, [A])).rows[0].id;
+    const court = (await tdb.query(`insert into public.resource (club_id, location_id, name, sport) values ($1,$2,'1','tennis') returning id`, [A, loc])).rows[0].id;
+    const c = await tdb.pool.connect();
+    let booking = '';
+    try {
+      await c.query('begin');
+      await c.query('set local session_replication_role = replica');   // fixture: a paid order and its booking
+      const o = (await c.query(`insert into public.orders (club_id, customer_id, source, status) values ($1,$2,'online','paid') returning id`, [A, PA])).rows[0].id;
+      booking = (await c.query(`insert into public.booking (club_id, order_id, type, resource_id, start_at, end_at, customer_id, status, source, created_by, confirmed_at)
+                                values ($1,$2,'court',$3,'2027-02-10T03:00:00Z','2027-02-10T04:00:00Z',$4,'confirmed','online',$4,now()) returning id`, [A, o, court, PA])).rows[0].id;
+      const line = (await c.query(`insert into public.order_line (club_id, order_id, position, kind, booking_id, description_key, name_th, name_en, unit_price_satang, net_satang, credit_package_id, credit_units, credit_value_satang)
+                                   values ($1,$2,1,'court_hour',$3,'k','ก','x',50000,50000,$4,1,50000) returning id`, [A, o, booking, pkg[A]])).rows[0].id;
+      await c.query('commit');
+      await c.query('begin');
+      await c.query('set local role booq_owner');
+      await c.query(`select set_config('app.club_id', $1, true)`, [A]);
+      await c.query('select app.credit_reserve($1, $2, $3)', [pkg[A], booking, line]);
+      await c.query('commit');
+    } finally {
+      c.release();
+    }
+    await tdb.setNow('2027-02-10T02:59:00Z');
+    expect(await runSessionStart(worker)).toEqual({ due: 0, expired: 0, failed: 0 });
+    await tdb.setNow('2027-02-10T03:00:00Z');
+    expect(await runSessionStart(worker)).toEqual({ due: 1, expired: 1, failed: 0 });
+    expect(await runSessionStart(worker)).toEqual({ due: 0, expired: 0, failed: 0 });
+    expect((await tdb.query(`select count(*)::int as n from public.credit_ledger where booking_id = $1 and reason = 'use'`, [booking])).rows[0].n).toBe(1);
+    expect(await heartbeat(SESSION_START)).toEqual({ runs: 3, ok: true });
   });
 });
