@@ -340,6 +340,7 @@
     "X-new.health_waiting": "Checking the stored values. This page updates when the check is done.",
     "X-new.health_slow": "The check is taking longer than expected. Ask again in a few minutes.",
     "X-new.health_recheck": "Test all again",
-    "X-new.health_title": "Connection checks"
+    "X-new.health_title": "Connection checks",
+    "X-new.config_beam_reconcile_age_seconds": "Beam reconcile: how old an unresolved payment must be before Beam is asked, in seconds"
   }
 }

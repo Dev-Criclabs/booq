@@ -252,6 +252,10 @@ describe('settings page', () => {
     for (const { key } of KNOWN) expect(hasKey(labelKey(key)), key).toBe(true);
     expect(isKnown('pay_tap_limit_count')).toBe(true);
     expect(isKnown('invented')).toBe(false);
+    expect(isKnown('beam_reconcile_age_seconds')).toBe(true);
+    expect(KNOWN.find((k) => k.key === 'beam_reconcile_age_seconds')?.kind).toBe('number');
+    expect(parse('number', '300')).toEqual({ ok: true, value: 300 });
+    expect(isKnown('beam_reconcile_interval_seconds'), 'seeded but nothing reads it: not offered').toBe(false);
     expect(KNOWN.filter((k) => k.fixed).map((k) => k.key)).toEqual(['line_cap_alert_percent', 'line_cap_reminders_stop_percent', 'line_cap_over_limit_percent']);
     expect(hasKey('X-new.config_fixed')).toBe(true);
   });
