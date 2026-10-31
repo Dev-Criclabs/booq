@@ -182,6 +182,14 @@ describe('A17 Audit log', () => {
     await context.close();
   });
 
+  it('arriving from Add coach preselects the Coach role', async () => {
+    const { page, context } = await open(server());
+    await page.goto(`${app.base}${url}?role=coach`);
+    await page.getByTestId('invites').waitFor();
+    await page.waitForFunction(() => document.querySelector('[data-testid="invite-role"]')?.value === 'coach');
+    await context.close();
+  });
+
   it('the record type filter is a list of the audited tables when the server gives it', async () => {
     const { page, context, calls } = await open(server({ recordTypes: ['booking', 'club_setting', 'promo_code'] }));
     await page.goto(`${app.base}${url}`);

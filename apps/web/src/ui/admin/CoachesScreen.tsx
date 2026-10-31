@@ -6,6 +6,7 @@ import {
   saveCoach, savePay, type Away, type CoachFull, type CoachRow, type Flagged, type Group, type Leave, type PayDraft, type ProfileDraft, type Tier,
 } from '../../client/admin/coaches';
 import { addDays } from '../../client/admin/calendar';
+import { adminPath } from '../../client/admin/shell';
 import { dateOf, longDayOf, timeOf } from '../../client/admin/time';
 import { useAdmin } from './AdminFrame';
 
@@ -75,7 +76,7 @@ export function CoachesScreen() {
 
   return (
     <section data-testid="coaches" aria-labelledby="coach-title">
-      <header className="adm-head"><h1 id="coach-title">{t('A-0158')}</h1></header>
+      <header className="adm-head"><h1 id="coach-title">{t('A-0158')}</h1>{owner ? <a className="adm-btn" href={`${adminPath(slug, 'staff')}?role=coach`} data-testid="coach-add">{t('A-0169')}</a> : null}</header>
       <p className="adm-muted" data-testid="coach-summary">{t('A-0168', { coachCount: coaches.length, leaveCount: leave.length })}</p>
       {msg ? <p role={msg.error ? 'alert' : 'status'} className={msg.error ? 'adm-error' : 'adm-ok'} data-testid="coach-msg">{t(msg.key, msg.vars)}</p> : null}
 

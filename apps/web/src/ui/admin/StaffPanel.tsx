@@ -34,6 +34,10 @@ export function StaffPanel({ onForbidden }: { onForbidden?(): void }) {
   useEffect(() => {
     void reload();
   }, [reload]);
+  // "Add coach" on Coaches comes here with the Coach role chosen (a person becomes a coach through an invite).
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('role') === 'coach') setChoice('coach');
+  }, []);
 
   async function cancel(id: string) {
     if (!window.confirm(t('A-new.staff_invite_cancel_confirm'))) return;

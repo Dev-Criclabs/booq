@@ -221,6 +221,38 @@ export function TiersCard({ data, onChanged }: Props) {
   );
 }
 
+/**
+ * A solo class is the coach tier's price plus the normal court price (two order lines), so the court part is the court rate of the price group, edited on
+ * the Courts tab. This card only reads: per price group, the court part and, for each tier, what a player sees (coaching + court).
+ */
+export function CourtPartCard({ data, onGoCourts }: { data: Pricing; onGoCourts(): void }) {
+  const { lang, t } = useAdmin();
+  if (data.groups.length === 0) return null;
+  return (
+    <section className="adm-card" aria-labelledby="price-court-part" data-testid="price-court-part">
+      <h2 id="price-court-part">{t('A-0232')}</h2>
+      <p className="adm-muted">{t('A-0233')}</p>
+      {data.groups.map((g) => {
+        const court = courtRuleOf(data.courtRules, g.id)?.priceSatang ?? null;
+        return (
+          <div key={g.id} className="adm-rule" data-testid={`part-${g.id}`}>
+            <p className="adm-rule-label">{groupName(g, lang)} · {court === null ? t('A-new.price_not_set') : formatBaht(court)}</p>
+            {data.tiers.map((x) => {
+              const coach = tierPriceOf(data.tierPrices, x.id, g.id);
+              return (
+                <p key={x.id} className="adm-muted" data-testid={`preview-${x.id}-${g.id}`}>
+                  {lang === 'th' ? x.nameTh : x.nameEn}: {coach === null || court === null ? t('A-new.price_preview_unset') : t('A-0250', { price: formatBaht(coach), courtPrice: formatBaht(court) })}
+                </p>
+              );
+            })}
+          </div>
+        );
+      })}
+      <button type="button" className="adm-btn adm-btn-ghost" onClick={onGoCourts} data-testid="part-go">{t('A-new.price_edit_court_prices')}</button>
+    </section>
+  );
+}
+
 /** The coaching price of each tier for each price group; an empty box is "not set" and the coach cannot be picked for that group. */
 export function TierPricesCard({ data, onChanged }: Props) {
   const { slug, lang, t } = useAdmin();

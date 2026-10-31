@@ -68,6 +68,7 @@ describe('A7 Coaches, owner', () => {
     assert.match(await page.getByTestId('coach-c2').innerText(), /No tier/);
     assert.match(await page.getByTestId('coach-away').innerText(), /Coach Dan/);
     assert.equal(await page.getByTestId('nav-coaches').getAttribute('aria-current'), 'page');
+    assert.equal(await page.getByTestId('coach-add').getAttribute('href'), '/c/hunter/admin/staff?role=coach');
     await page.screenshot({ path: join(SHOTS, 'admin-coaches.png'), fullPage: true });
     await context.close();
   });
@@ -151,6 +152,7 @@ describe('A7 Coaches, front desk and states', () => {
     assert.equal(await page.getByTestId('coach-leave').count(), 0);
     assert.equal(await page.getByTestId('coach-flagged').count(), 0);
     assert.equal(await page.getByTestId('edit-c1').count(), 0);
+    assert.equal(await page.getByTestId('coach-add').count(), 0);
     assert.match(await page.getByTestId('coach-away').innerText(), /Coach Dan/);
     assert.equal(calls.filter((c) => c.path === '/staff/leave' || c.path === '/staff/flagged-sessions').length, 0);
     await context.close();

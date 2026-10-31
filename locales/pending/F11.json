@@ -632,7 +632,9 @@
     "A-new.cls_err_rest": "The coach would go over the daily limit in a row.",
     "A-new.cls_err_taken": "More players are booked than the new most players allow.",
     "A-new.cls_err_window": "The days players can book are not set yet (Settings).",
-    "A-new.cls_err_general": "That did not go through. Check your connection and try again."
+    "A-new.cls_err_general": "That did not go through. Check your connection and try again.",
+    "A-new.price_preview_unset": "Not set yet",
+    "A-new.price_edit_court_prices": "Edit court prices"
   },
   "th": {
     "A-new.shell_nav_label": "หน้าแอดมินคลับ",
@@ -1266,6 +1268,8 @@
     "A-new.cls_err_rest": "โค้ชจะสอนติดกันเกินเวลาสูงสุดต่อวัน",
     "A-new.cls_err_taken": "มีผู้เล่นจองมากกว่าจำนวนสูงสุดใหม่",
     "A-new.cls_err_window": "ยังไม่ได้ตั้งจำนวนวันที่ผู้เล่นจองได้ (ตั้งค่า)",
-    "A-new.cls_err_general": "ดำเนินการไม่สำเร็จ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง"
+    "A-new.cls_err_general": "ดำเนินการไม่สำเร็จ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง",
+    "A-new.price_preview_unset": "ยังไม่ได้ตั้ง",
+    "A-new.price_edit_court_prices": "แก้ราคาคอร์ต"
   }
 }

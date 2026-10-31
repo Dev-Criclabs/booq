@@ -115,6 +115,21 @@ describe('A9 Products and pricing', () => {
     await context.close();
   });
 
+  it('the court part of a solo class is the group\'s court rate, shown read only with the coaching + court preview and a link to the court prices', async () => {
+    const api = server({ rules: [{ id: 'r1', priceGroupId: 'g1', dayType: 'any', peak: 'any', priceSatang: 30000 }], tierPrices: [{ tierId: 't1', priceGroupId: 'g1', priceSatang: 90000 }] });
+    const { page, context } = await open(api);
+    await page.goto(`${app.base}${url}`);
+    await page.getByTestId('tab-solo').click();
+    const t = await page.getByTestId('price-court-part').innerText();
+    assert.match(t, /Adult · ฿300/);
+    assert.match(await page.getByTestId('preview-t1-g1').innerText(), /฿900 \+ ฿300/);
+    assert.match(await page.getByTestId('part-g2').innerText(), /Student · Not set/);
+    assert.match(await page.getByTestId('preview-t1-g2').innerText(), /Not set yet/);
+    await page.getByTestId('part-go').click();
+    await page.getByTestId('price-court-rate').waitFor();
+    await context.close();
+  });
+
   it('coach tiers can be added and deleted; a delete the server refuses as in use says so', async () => {
     const api = (m, p, s, b) => (m === 'DELETE' && p === '/staff/setup/coach-tiers/t1' ? { status: 409, body: { code: 'in_use' } } : server()(m, p, s, b));
     const { page, context, calls } = await open(api);
