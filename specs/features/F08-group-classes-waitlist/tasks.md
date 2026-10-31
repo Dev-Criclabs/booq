@@ -43,8 +43,9 @@ Depends on: F01 (settings `group_min_players`, `group_max_players`, `below_min_a
 - [x] **F08-T08** Migration 0910: views `public_class_state` (counts only) and `waitlist_position`. IDs: CLASS-01-AC5 to AC8, CLASS-02-AC8, AC14. Role: BE-B · Deps T06 · Size: S
   Tests first: the public view holds counts and no names; a player sees only their own position.
   - Built (Architect): `0910_public_views.sql`, `class-views.test.ts`. `public_class_state` (no ids of players, coaches or courts; spots_left, full, waitlist) readable by every app role; `waitlist_position` is the caller's own live entries with their position (booq_app).
-- [ ] **F08-T09** Migration 0911: policies and grants, table class, audit and test table registry entries. IDs: CC-1, CC-3. Role: BE-B · Deps T01 to T08 · Size: S
+- [x] **F08-T09** Migration 0911: policies and grants, table class, audit and test table registry entries. IDs: CC-1, CC-3. Role: BE-B · Deps T01 to T08 · Size: S
   Tests first: the blind suite shows BOOQ staff read nothing; a coach reads the roster of their own sessions only; the Accountant reads no waitlist.
+  - Built (Architect): `0911_grants_policies.sql`, `class-policies.test.ts`. Templates: owner and front desk read, the template's coach reads, the owner inserts and updates (no delete). Sessions: owner, front desk and the session's coach read. Entries: owner and front desk read, a player reads their own. `waitlist_seq`: no grant. New view `public.class_roster` (live seats with display name, no date of birth or phone) for owner and front desk, and a coach for their own sessions. BOOQ platform: no privilege on any F08 table, view or function.
 
 ## C. Jobs and messages
 

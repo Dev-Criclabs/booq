@@ -141,7 +141,8 @@ export type PricingRefusal =
 
 export type PricingResult = { ok: true; quote: Quote } | PricingRefusal;
 
-function groupFor(groups: PriceGroupRule[], dob: string | null, onDate: string): PriceGroupRule | null {
+/** The player's price group by age on the Bangkok date; with no date of birth the group with no upper age (D12). */
+export function groupFor(groups: PriceGroupRule[], dob: string | null, onDate: string): PriceGroupRule | null {
   const matches =
     dob === null
       ? groups.filter((g) => g.maxAge === null)

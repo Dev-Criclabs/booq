@@ -154,10 +154,10 @@ describe('waitlist_entry (CLASS-02-AC1, AC16; WAIT-01-AC1)', () => {
     expect((await tdb.query(`select waitlist_entry_id from public.booking where id = $1`, [b])).rows[0].waitlist_entry_id).toBeNull();
   });
 
-  it('is club data: forced row security, no grant to the application roles yet', async () => {
+  it('is club data: forced row security, nothing for BOOQ staff', async () => {
     for (const t of ['waitlist_entry', 'waitlist_seq']) {
       expect((await tdb.query(`select relforcerowsecurity from pg_class where oid = $1::regclass`, [`public.${t}`])).rows[0].relforcerowsecurity, t).toBe(true);
-      for (const role of ['booq_app', 'booq_worker', 'booq_platform']) expect((await tdb.query(`select has_table_privilege($1, $2, 'select') as ok`, [role, `public.${t}`])).rows[0].ok, `${role} ${t}`).toBe(false);
+      expect((await tdb.query(`select has_table_privilege('booq_platform', $1, 'select') as ok`, [`public.${t}`])).rows[0].ok, t).toBe(false);   // grants to the app roles come with 0911
     }
   });
 });
