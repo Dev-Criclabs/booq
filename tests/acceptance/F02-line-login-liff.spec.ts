@@ -6,133 +6,133 @@ import { describe, test } from 'vitest';
 
 describe("F02 AUTH-01", () => {
   // Given a guest (not signed in), when they open the court schedule (C4), solo classes (C5), coach profile (C6), group classes (C7), class detail (C8) or packages (C9), then the pages load and show the club's own data, with no sign in.
-  test.todo("F02/AUTH-01-AC1 Given a guest (not signed in), when they open the court schedule (C4), solo classes (C5), coach profile ...");
+  // F02/AUTH-01-AC1: proven by a real or traced test in another file of this folder
   // Given a guest on C4, when they pick an open slot and tap Continue, then LINE Login starts and, after it, they return to C10 with the same slot chosen (hand-off check).
-  test.todo("F02/AUTH-01-AC2 Given a guest on C4, when they pick an open slot and tap Continue, then LINE Login starts and, after it, ...");
+  // F02/AUTH-01-AC2: proven by a real or traced test in another file of this folder
   // Given a guest, when they tap Continue, then no hold exists yet. The slot is held only when the signed in player taps Pay (BOOK-03, F03). A guest request to hold a slot is refused by the server.
-  test.todo("F02/AUTH-01-AC3 Given a guest, when they tap Continue, then no hold exists yet. The slot is held only when the signed in ...");
+  // F02/AUTH-01-AC3: proven by a real or traced test in another file of this folder
   // Given a guest returns to C10 after sign in, when the chosen slot has been taken or held by someone else meanwhile, then the booking is not created and the player is told and sent back to pick again (the same refusal as BOOK-04; the screen is in F03).
   test.todo("F02/AUTH-01-AC4 Given a guest returns to C10 after sign in, when the chosen slot has been taken or held by someone else ...");
   // Given a guest who taps to buy a package (C9), when they continue, then LINE Login starts and they return to the package checkout (C10P) with the package kept.
   test.todo("F02/AUTH-01-AC5 Given a guest who taps to buy a package (C9), when they continue, then LINE Login starts and they return ...");
   // Given a guest on any page, when they use Keep browsing on C1, then they go back to browsing and nothing is created (H-C01-Welcome).
-  test.todo("F02/AUTH-01-AC6 Given a guest on any page, when they use Keep browsing on C1, then they go back to browsing and nothing is ...");
+  // F02/AUTH-01-AC6: proven by a real or traced test in another file of this folder
   // Given a guest, when the court grid and the class schedule are shown, then they show held, taken and closed states without showing who holds or booked a slot. No player data reaches a guest.
-  test.todo("F02/AUTH-01-AC7 Given a guest, when the court grid and the class schedule are shown, then they show held, taken and closed ...");
+  // F02/AUTH-01-AC7: proven by a real or traced test in another file of this folder
   // Given a guest who opens the Home screen, when the page loads, then it shows the guest Home (Find a court time, no booking card, no credits) with a Sign in action (S-C03-Guest).
   test.todo("F02/AUTH-01-AC8 Given a guest who opens the Home screen, when the page loads, then it shows the guest Home (Find a court ...");
   // Given a guest who opens a page that needs a person (My bookings, Credits and wallet, Refer a friend, Profile), when it loads, then LINE Login starts first and the player lands back on that page. The spec lists only booking and buying as the sign in moment; this is the minimum for these pages to work. See Q4.
-  test.todo("F02/AUTH-01-AC9 Given a guest who opens a page that needs a person (My bookings, Credits and wallet, Refer a friend, ...");
+  // F02/AUTH-01-AC9: proven by a real or traced test in another file of this folder
   // Given the rich menu tile Book a court, when a guest taps it, then C4 opens directly as a guest page with no sign in (BOOK-02; Home is skipped). A tile that opens a page needing a person (My bookings, Refer a friend) starts sign in first (AC9).
-  test.todo("F02/AUTH-01-AC10 Given the rich menu tile Book a court, when a guest taps it, then C4 opens directly as a guest page with ...");
+  // F02/AUTH-01-AC10: proven by a real or traced test in another file of this folder
   // Given a club that is Paused, when a guest or player opens the app, then browsing and sign in still work and the paused pages are shown as paused (PLAT-03 in F01).
-  test.todo("F02/AUTH-01-AC11 Given a club that is Paused, when a guest or player opens the app, then browsing and sign in still work ...");
+  // F02/AUTH-01-AC11: proven by a real or traced test in another file of this folder
   // Given the app address, when it is opened, then the club comes from the URL on the one shared BOOQ domain (for example the club's name or ID in the path), in LINE and in a browser (D6). The domain itself is a configuration value and is not hard coded, because the user will supply it later (D6). An unknown or not live club in the URL answers 404 (not found), never another club's data (D27 uses the same 404 rule for records outside a caller's reach).
-  test.todo("F02/AUTH-01-AC13 Given the app address, when it is opened, then the club comes from the URL on the one shared BOOQ domain ...");
+  // F02/AUTH-01-AC13: proven by a real or traced test in another file of this folder
   // Given a deep link (rich menu tile, shared link, LINE message button), when it is opened, then it contains the club in the same way (D6), so the right club is chosen before any data is read or sign in starts. A link for club A never signs a player in to club B (CC-1).
-  test.todo("F02/AUTH-01-AC14 Given a deep link (rich menu tile, shared link, LINE message button), when it is opened, then it contains ...");
+  // F02/AUTH-01-AC14: proven by a real or traced test in another file of this folder
   // Given a club in Draft or Testing, when someone opens its URL, then a caller who is not signed in gets only a minimal sign in config (name, language, status, LIFF id); the club admits the owner role and testers, the owner invite stays valid for return visits and testers get long lived invites (D102, F01 PLAT-01-AC11). A BOOQ tester signs in with LINE as a test player. Everyone else sees not found.
-  test.todo("F02/AUTH-01-AC15 Given a club in Draft or Testing, when someone opens its URL, then a caller who is not signed in gets only ...");
+  // F02/AUTH-01-AC15: proven by a real or traced test in another file of this folder
   // Given a guest, when any route answers, then it reads only named public columns or routes; owner contact details and merchant ids are never readable by a guest (D103, F01 PLAT-02-AC14).
-  test.todo("F02/AUTH-01-AC16 Given a guest, when any route answers, then it reads only named public columns or routes; owner contact ...");
+  // F02/AUTH-01-AC16: proven by a real or traced test in another file of this folder
   // Given a guest who cancels or fails LINE Login (they close the LINE consent screen, the network drops), when it ends, then they return to where they were with nothing created, and an offline error uses the existing key (P-0327 "Check your internet and try again. Nothing was booked or charged.", P-0328 "Try again"). Other failure text is a new key.
-  test.todo("F02/AUTH-01-AC12 Given a guest who cancels or fails LINE Login (they close the LINE consent screen, the network drops), ...");
+  // F02/AUTH-01-AC12: proven by a real or traced test in another file of this folder
 });
 
 describe("F02 LINE-01", () => {
   // Given a player who opens the app inside LINE (LIFF), when sign in starts, then it finishes with no screen to tap and no extra login page. They land where they were going.
-  test.todo("F02/LINE-01-AC1 Given a player who opens the app inside LINE (LIFF), when sign in starts, then it finishes with no screen ...");
+  // F02/LINE-01-AC1: proven by a real or traced test in another file of this folder
   // Given a player in a browser (not inside LINE), when sign in starts, then C1 shows Log in with LINE; one tap opens LINE's own login and, after it, the player returns to where they were going (AUTH-01-AC2).
-  test.todo("F02/LINE-01-AC2 Given a player in a browser (not inside LINE), when sign in starts, then C1 shows Log in with LINE; one ...");
+  // F02/LINE-01-AC2: proven by a real or traced test in another file of this folder
   // Given a signed in player, when they come back later in the same LINE or browser session, then they are not asked to log in again while the LINE session stays valid. The session length is Q8.
-  test.todo("F02/LINE-01-AC3 Given a signed in player, when they come back later in the same LINE or browser session, then they are not ...");
+  // F02/LINE-01-AC3: proven by a real or traced test in another file of this folder
   // Given each club has its own LINE provider, with its own LIFF app, LINE Login channel and Official Account under it (D7, HO LINE integration), when a player signs in, then the server verifies the LINE token with LINE and accepts it only if it was issued for that club's Login channel. A token for club A is refused at club B (CC-2).
-  test.todo("F02/LINE-01-AC4 Given each club has its own LINE provider, with its own LIFF app, LINE Login channel and Official Account ...");
+  // F02/LINE-01-AC4: proven by a real or traced test in another file of this folder
   // Given the LINE user ID the server receives, when the player record is read or created, then the key is club ID plus LINE user ID and the ID is the same one the club's Official Account uses for push messages (same provider), so messages reach the person.
-  test.todo("F02/LINE-01-AC5 Given the LINE user ID the server receives, when the player record is read or created, then the key is ...");
+  // F02/LINE-01-AC5: proven by a real or traced test in another file of this folder
   // Given C1, when the player taps Log in with LINE, then the LIFF add friend option is set to On (normal): LINE's own consent screen offers the choice to add the Official Account, and C1 shows only a plain note about booking updates, with no checkbox (D38, HO LINE-01). H-C01-Welcome and F1-03-C01-Welcome still show a checkbox; that is now a canvas bug.
-  test.todo("F02/LINE-01-AC6 Given C1, when the player taps Log in with LINE, then the LIFF add friend option is set to On (normal): ...");
+  // F02/LINE-01-AC6: proven by a real or traced test in another file of this folder
   // Given the player declines or ignores the friend choice on LINE's screen, when sign in finishes, then they can still book and pay. Missing the friend status must not block a booking.
-  test.todo("F02/LINE-01-AC7 Given the player declines or ignores the friend choice on LINE's screen, when sign in finishes, then they ...");
+  // F02/LINE-01-AC7: proven by a real or traced test in another file of this folder
   // Given a player who is not a friend of the club's Official Account (or has blocked it), when they pay or a booking is confirmed, then checkout is not blocked. The confirmation shows in the app, and the app asks them to add the Official Account (D9). The LINE push message may not reach them; that is expected.
   test.todo("F02/LINE-01-AC8 Given a player who is not a friend of the club's Official Account (or has blocked it), when they pay or a ...");
   // Given a signed in player who is not a friend, when the app shows the confirmation (AC8), then it shows the add as friend ask there. Whether it asks again at later sign ins, and how often, is Q5.
   test.todo("F02/LINE-01-AC9 Given a signed in player who is not a friend, when the app shows the confirmation (AC8), then it shows the ...");
   // Given a staff, coach or owner, when they sign in with LINE, then the same LIFF login is used and the role (F01) decides the surface. A person with no role at the club lands in the player app (PRD "Everyone signs in with LINE, and the role decides which surfaces and data they see"). Invite links are Q13.
-  test.todo("F02/LINE-01-AC10 Given a staff, coach or owner, when they sign in with LINE, then the same LIFF login is used and the role ...");
+  // F02/LINE-01-AC10: proven by a real or traced test in another file of this folder
   // Given the LINE Login or LIFF is unreachable, when sign in starts, then the player gets the offline error (P-0327) and nothing is created. Platform health alerts are LINE-06 (F10, F15).
-  test.todo("F02/LINE-01-AC11 Given the LINE Login or LIFF is unreachable, when sign in starts, then the player gets the offline error ...");
+  // F02/LINE-01-AC11: proven by a real or traced test in another file of this folder
   // Given a club's LINE provider, when two clubs have the same person, then the person has a different LINE user ID at each club (one provider per club, D7), so the key club ID plus LINE user ID never matches across clubs and a player at two clubs has two accounts (PRD What changes in the club app).
-  test.todo("F02/LINE-01-AC14 Given a club's LINE provider, when two clubs have the same person, then the person has a different LINE ...");
+  // F02/LINE-01-AC14: proven by a real or traced test in another file of this folder
   // Given a LINE display name, when the player record is created, then the display name is stored as given by LINE and is not used as the full name unless the player confirms it (AUTH-02-AC2).
-  test.todo("F02/LINE-01-AC12 Given a LINE display name, when the player record is created, then the display name is stored as given by ...");
+  // F02/LINE-01-AC12: proven by a real or traced test in another file of this folder
   // Given an access token or ID token, when the server receives it, then it is not stored longer than needed for the sign in and is never written to the audit log or to any log.
-  test.todo("F02/LINE-01-AC13 Given an access token or ID token, when the server receives it, then it is not stored longer than needed ...");
+  // F02/LINE-01-AC13: proven by a real or traced test in another file of this folder
 });
 
 describe("F02 AUTH-02", () => {
   // Given a LINE user with no player record at this club, when sign in finishes, then C2 shows once, asking only for full name, phone number and consent to the terms and privacy notice (PDPA). No other field is asked (no date of birth, no level, no email).
-  test.todo("F02/AUTH-02-AC1 Given a LINE user with no player record at this club, when sign in finishes, then C2 shows once, asking ...");
+  // F02/AUTH-02-AC1: proven by a real or traced test in another file of this folder
   // Given C2, when the player continues, then full name and phone must be filled and consent must be ticked, or the server refuses and the screen shows what is missing. The phone is typed and is not verified by a code in v1 (D11). Format rules for the name and phone are Q2.
-  test.todo("F02/AUTH-02-AC2 Given C2, when the player continues, then full name and phone must be filled and consent must be ticked, ...");
+  // F02/AUTH-02-AC2: proven by a real or traced test in another file of this folder
   // Given a phone number that already belongs to another player at the same club, when the player saves it, then it is allowed and the duplicate is flagged on both records, visible to the owner and front desk, as a referral abuse check (D11, F14). Nothing is blocked at sign in.
-  test.todo("F02/AUTH-02-AC28 Given a phone number that already belongs to another player at the same club, when the player saves it, ...");
+  // F02/AUTH-02-AC28: proven by a real or traced test in another file of this folder
   // Given consent is not ticked, when the player tries to continue, then no player record is created and no personal data beyond the LINE ID and name received from LINE is kept. The player can go back to browsing.
-  test.todo("F02/AUTH-02-AC3 Given consent is not ticked, when the player tries to continue, then no player record is created and no ...");
+  // F02/AUTH-02-AC3: proven by a real or traced test in another file of this folder
   // Given consent is given, when the player continues, then the player record is saved with full name, phone, language, role Player and the time of consent, and the player lands where they were going (checkout). What the consent record holds is F01 Q20.
-  test.todo("F02/AUTH-02-AC4 Given consent is given, when the player continues, then the player record is saved with full name, phone, ...");
+  // F02/AUTH-02-AC4: proven by a real or traced test in another file of this folder
   // Given a returning player (a record exists), when they sign in, then C2 does not show again.
-  test.todo("F02/AUTH-02-AC5 Given a returning player (a record exists), when they sign in, then C2 does not show again.");
+  // F02/AUTH-02-AC5: proven by a real or traced test in another file of this folder
   // Given C2 shows after a guest chose a slot or package, when the player completes it, then they continue to the payment step with that choice kept (canvas "Continue to payment", AUTH-01-AC2).
-  test.todo("F02/AUTH-02-AC6 Given C2 shows after a guest chose a slot or package, when the player completes it, then they continue to ...");
+  // F02/AUTH-02-AC6: proven by a real or traced test in another file of this folder
   // Given C2 shows a "Hi, {name}" greeting with the LINE name, when it loads, then the name comes from LINE. Whether the full name field is pre filled from LINE is Q3.
-  test.todo("F02/AUTH-02-AC7 Given C2 shows a \"Hi, {name}\" greeting with the LINE name, when it loads, then the name comes from LINE. ...");
+  // F02/AUTH-02-AC7: proven by a real or traced test in another file of this folder
   // Given the consent text, when it is shown, then it links to the terms and the privacy notice, which name the club as the controller and BOOQ as the processor (PDPA-01-AC12). The consent text is final before 7 Dec 2026.
-  test.todo("F02/AUTH-02-AC8 Given the consent text, when it is shown, then it links to the terms and the privacy notice, which name ...");
+  // F02/AUTH-02-AC8: proven by a real or traced test in another file of this folder
   // Given a player who may be under 18, when they give consent at C2, then the consent screen and text are **pending a legal check** (D10, left open by the user). F02 builds the screen as written in the canvas but the consent text cannot be final until the check, and no rule for guardian consent exists yet (Q1).
   test.todo("F02/AUTH-02-AC9 Given a player who may be under 18, when they give consent at C2, then the consent screen and text are ...");
   // Given the consent pending legal (D10), when the screen ships for the 7 Dec test, then it is tracked with an owner as an open item and no test treats it as final (Reviewer F02-3).
   test.todo("F02/AUTH-02-AC32 Given the consent pending legal (D10), when the screen ships for the 7 Dec test, then it is tracked with ...");
   // Given a new player picks an Adult item (any item for the Adult audience, or the court at a price that does not depend on age), when they continue, then no date of birth field shows (hand-off check).
-  test.todo("F02/AUTH-02-AC10 Given a new player picks an Adult item (any item for the Adult audience, or the court at a price that does ...");
+  // F02/AUTH-02-AC10: proven by a real or traced test in another file of this folder
   // Given a player picks a Student item (a package, class, coach price or other item sold only at a Student price), when they continue and no date of birth is on file, then the date of birth field shows and is required for that item.
-  test.todo("F02/AUTH-02-AC11 Given a player picks a Student item (a package, class, coach price or other item sold only at a Student ...");
+  // F02/AUTH-02-AC11: proven by a real or traced test in another file of this folder
   // Given a date of birth that makes the player under 18 today, when it is saved, then the Student price is allowed. Given a date of birth that makes them 18 or older, then the Student item is refused and the player is told it is for under 18 (PRD "Student packages can only be bought by customers under 18").
-  test.todo("F02/AUTH-02-AC12 Given a date of birth that makes the player under 18 today, when it is saved, then the Student price is ...");
+  // F02/AUTH-02-AC12: proven by a real or traced test in another file of this folder
   // Given a player who is a Student, when they turn 18, then their price group is Adult from the 18th birthday (PRD Club facts "switches to adult pricing on the 18th birthday"), worked out from the date of birth on file. The age check uses the Asia/Bangkok date.
-  test.todo("F02/AUTH-02-AC13 Given a player who is a Student, when they turn 18, then their price group is Adult from the 18th birthday ...");
+  // F02/AUTH-02-AC13: proven by a real or traced test in another file of this folder
   // Given a player with no date of birth on file, when a price depends on age (coach price on C10, a package or class), then they get Adult prices (D12). Adults may add a date of birth voluntarily (AC17, AC29).
-  test.todo("F02/AUTH-02-AC14 Given a player with no date of birth on file, when a price depends on age (coach price on C10, a package ...");
+  // F02/AUTH-02-AC14: proven by a real or traced test in another file of this folder
   // Given a date of birth entered, when it is shown anywhere, then it is shown with the international year (14 March 1994, never a Thai year).
-  test.todo("F02/AUTH-02-AC15 Given a date of birth entered, when it is shown anywhere, then it is shown with the international year (14 ...");
+  // F02/AUTH-02-AC15: proven by a real or traced test in another file of this folder
   // Given a date of birth entry, when it is a future date or makes the player older than a limit the spec does not define, then the server refuses it. The limits are Q7.
-  test.todo("F02/AUTH-02-AC16 Given a date of birth entry, when it is a future date or makes the player older than a limit the spec does ...");
+  // F02/AUTH-02-AC16: proven by a real or traced test in another file of this folder
   // Given a player who never picks a Student item, when they use the app, then they are never required to give a date of birth. Adults may add it voluntarily in Profile (D12), which also lets the birthday discount work (F14).
-  test.todo("F02/AUTH-02-AC17 Given a player who never picks a Student item, when they use the app, then they are never required to give ...");
+  // F02/AUTH-02-AC17: proven by a real or traced test in another file of this folder
   // Given an adult in Profile, when they add a date of birth voluntarily, then it is saved like any other (editable, never locked) and used for the birthday discount and the age check, with no effect on their Adult price (D12).
-  test.todo("F02/AUTH-02-AC29 Given an adult in Profile, when they add a date of birth voluntarily, then it is saved like any other ...");
+  // F02/AUTH-02-AC29: proven by a real or traced test in another file of this folder
   // Given a person signs in whose typed phone matches an imported record, when they finish first sign in, then no link is made automatically: the front desk confirms the claim in A6; a sign in matching no record becomes a new player (D105, F01 PLAT-06-AC7).
-  test.todo("F02/AUTH-02-AC30 Given a person signs in whose typed phone matches an imported record, when they finish first sign in, then ...");
+  // F02/AUTH-02-AC30: proven by a real or traced test in another file of this folder
   // Given every club person (owner, staff, coach), when they have a record, then they also hold the Player role, so editing their own profile and booking as a player are allowed for them (D115, ROLE-01-AC7).
-  test.todo("F02/AUTH-02-AC31 Given every club person (owner, staff, coach), when they have a record, then they also hold the Player ...");
+  // F02/AUTH-02-AC31: proven by a real or traced test in another file of this folder
   // Given a signed in player in Profile, Personal details, when they open it, then the date of birth is shown as an editable field. It is never shown as locked and never says "ask the front desk" (Gaps A9: that canvas text is a canvas bug).
-  test.todo("F02/AUTH-02-AC18 Given a signed in player in Profile, Personal details, when they open it, then the date of birth is shown ...");
+  // F02/AUTH-02-AC18: proven by a real or traced test in another file of this folder
   // Given a player edits the date of birth in Profile, when they save it, then the server accepts it at any time, with no limit on the number of changes, and the new value applies to every price decision from that moment ("Student pricing follows the date of birth on file", Gaps section C).
-  test.todo("F02/AUTH-02-AC19 Given a player edits the date of birth in Profile, when they save it, then the server accepts it at any ...");
+  // F02/AUTH-02-AC19: proven by a real or traced test in another file of this folder
   // Given a corrected date of birth that changes the player's price group (Student to Adult or the reverse), when it is saved, then bookings already confirmed and credits already bought keep what they were bought as. A Student package or credit already bought stays valid and usable after the player becomes an Adult or corrects their date of birth, and keeps its expiry date (PRD Credits and wallet, HO PKG-02, 30 Oct 2026). Only new purchases use the new price group.
-  test.todo("F02/AUTH-02-AC20 Given a corrected date of birth that changes the player's price group (Student to Adult or the reverse), ...");
+  // F02/AUTH-02-AC20: proven by a real or traced test in another file of this folder
   // Given a date of birth change (including adding or removing one), when it is saved, then an audit entry is written with the old and new value and who made it, and the owner can see it (D12, PLAT-04). The player does not see the audit log.
-  test.todo("F02/AUTH-02-AC21 Given a date of birth change (including adding or removing one), when it is saved, then an audit entry is ...");
+  // F02/AUTH-02-AC21: proven by a real or traced test in another file of this folder
   // Given a player in Profile, when they edit personal details, then the fields the player may change are name, phone, date of birth, playing level and language. Whether name and phone are editable is Q3 (G-C17-Personal-details shows them as plain text).
-  test.todo("F02/AUTH-02-AC22 Given a player in Profile, when they edit personal details, then the fields the player may change are ...");
+  // F02/AUTH-02-AC22: proven by a real or traced test in another file of this folder
   // Given a player in Profile, when they set their playing level (New to tennis, Beginner, Intermediate, Advanced on the canvas), then it saves; it is optional and never asked at sign in (PRD: "Playing level is optional and set later in Profile").
-  test.todo("F02/AUTH-02-AC23 Given a player in Profile, when they set their playing level (New to tennis, Beginner, Intermediate, ...");
+  // F02/AUTH-02-AC23: proven by a real or traced test in another file of this folder
   // Given staff in A6 (customer profile), when they view a player's date of birth and its change history, then front desk and owner see the date and the owner sees the audit entries (D12; role table). Whether staff may also edit it is Q6.
-  test.todo("F02/AUTH-02-AC24 Given staff in A6 (customer profile), when they view a player's date of birth and its change history, then ...");
+  // F02/AUTH-02-AC24: proven by a real or traced test in another file of this folder
   // Given a first sign in inside LINE, when the player record is created, then the starting language is the LINE app language (Thai or English); in a browser it follows the browser. Any other language falls back to Q10.
-  test.todo("F02/AUTH-02-AC25 Given a first sign in inside LINE, when the player record is created, then the starting language is the ...");
+  // F02/AUTH-02-AC25: proven by a real or traced test in another file of this folder
   // Given a player in Profile, when they use the language toggle (TH, EN), then every screen, message and receipt uses it from then on and it is saved on the player record (PRD "toggle on Profile").
   test.todo("F02/AUTH-02-AC26 Given a player in Profile, when they use the language toggle (TH, EN), then every screen, message and ...");
   // Given a guest, when they use the toggle on C1, then the choice applies for browsing and is saved to the player record at first sign in.
-  test.todo("F02/AUTH-02-AC27 Given a guest, when they use the toggle on C1, then the choice applies for browsing and is saved to the ...");
+  // F02/AUTH-02-AC27: proven by a real or traced test in another file of this folder
 });
