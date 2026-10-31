@@ -65,7 +65,8 @@ function cardFor(m: OutgoingMessage, dict: Dictionary, links: MessageLinks): Car
   };
   const base = { clubName: f.clubName[lang], rows: [] as CardRow[], buttons: [] as CardButton[] };
   const first = f.hours[0];
-  const viewBooking = first ? button('L-0018', { page: 'booking', bookingId: first.bookingId }) : [];
+  const viewBooking = first?.bookingId ? button('L-0018', { page: 'booking', bookingId: first.bookingId }) : [];
+  const classRow: CardRow[] = f.className ? [{ label: t('L-0033'), values: [f.className[lang]] }] : [];
 
   switch (m.kind) {
     case 'booking_confirmed':
@@ -73,7 +74,7 @@ function cardFor(m: OutgoingMessage, dict: Dictionary, links: MessageLinks): Car
         ...base,
         title: f.firstName ? t('L-0009', { firstName: f.firstName }) : t('L-new.msg_booked_title'),
         rows: [...hourRows(f.hours, lang, t), ...paidRows(f, t), ...(f.receiptNumber ? [{ label: t('L-0017'), values: [f.receiptNumber] }] : [])],
-        buttons: first ? [...viewBooking, ...button('L-0019', { page: 'calendar', bookingId: first.bookingId })] : [],
+        buttons: first?.bookingId ? [...viewBooking, ...button('L-0019', { page: 'calendar', bookingId: first.bookingId })] : [],
       };
     case 'reminder_24h':
     case 'reminder_2h':
@@ -86,7 +87,7 @@ function cardFor(m: OutgoingMessage, dict: Dictionary, links: MessageLinks): Car
     case 'booking_released':
       return { ...base, title: t('L-new.msg_released_title'), body: t('L-new.msg_released_body'), rows: hourRows(f.hours, lang, t), buttons: button('L-0001', { page: 'book' }) };
     case 'cancellation_result':
-      return { ...base, title: t('L-new.msg_cancelled_title'), body: t('L-new.msg_cancelled_body'), rows: hourRows(f.hours, lang, t) };
+      return { ...base, title: t('L-new.msg_cancelled_title'), body: t('L-new.msg_cancelled_body'), rows: [...classRow, ...hourRows(f.hours, lang, t)] };
     case 'club_closed_slot':
       return { ...base, title: t('L-new.msg_closed_title'), body: t('L-new.msg_closed_body'), rows: hourRows(f.hours, lang, t) };
     case 'coach_changed':
@@ -97,9 +98,13 @@ function cardFor(m: OutgoingMessage, dict: Dictionary, links: MessageLinks): Car
         buttons: viewBooking,
       };
     case 'session_change':
-      return { ...base, title: t('L-new.msg_session_change_title'), rows: hourRows(f.hours, lang, t) };
+      return { ...base, title: t('L-new.msg_session_change_title'), rows: [...classRow, ...hourRows(f.hours, lang, t)] };
     case 'class_below_minimum':
-      return { ...base, title: t('L-new.msg_below_min_title'), rows: hourRows(f.hours, lang, t) };
+      return { ...base, title: t('L-new.msg_below_min_title'), rows: [...classRow, ...hourRows(f.hours, lang, t)] };
+    case 'class_session_changed':
+      return { ...base, title: t('L-new.msg_class_changed_title'), rows: [...classRow, ...hourRows(f.hours, lang, t)], buttons: viewBooking };
+    case 'waitlist_ended':
+      return { ...base, title: t('L-new.msg_waitlist_ended_title'), body: t('L-new.msg_waitlist_ended_body'), rows: [...classRow, ...hourRows(f.hours, lang, t)] };
     case 'waitlist_offer':
       return {
         ...base,
@@ -107,6 +112,7 @@ function cardFor(m: OutgoingMessage, dict: Dictionary, links: MessageLinks): Car
         ...(f.claimMinutes ? { subtitle: t('L-0032', { claimMinutes: f.claimMinutes }) } : {}),
         rows: first
           ? [
+              ...classRow,
               { label: t('L-0035'), values: [t('L-0036', { date: date(first.startAt, lang), startTime: time(first.startAt), endTime: time(first.endAt) })] },
               ...(first.court ? [{ label: t('L-0010'), values: [t('L-0037', { court: first.court })] }] : []),
             ]
