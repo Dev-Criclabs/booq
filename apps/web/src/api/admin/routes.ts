@@ -1,6 +1,6 @@
 import { FileReply, pagesFor, route, RouteError, type Route, type RouteContext } from '@booq/auth';
 import type { ClubContext, Db, Tx } from '@booq/db';
-import { addCustomer, addCustomerNote, AdminError, type AdminErrorCode, customerBookings, customerNotes, customerOrders, customerProfile, customersCsv, listCustomers, setTag, shellState, staffCalendar } from '@booq/domain';
+import { addCustomer, creditAdjust, customerValue, extendPackage, mapValueError, requestHash, walletAdjust, withIdempotency, addCustomerNote, AdminError, type AdminErrorCode, customerBookings, customerNotes, customerOrders, customerProfile, customersCsv, listCustomers, setTag, shellState, staffCalendar } from '@booq/domain';
 
 // F11 club admin routes (design 4 to 6, prefix /api/c/{slug}). Thin handlers: resolve the club from the session and the path slug, open
 // the club transaction, call the service in packages/domain/src/admin, answer a body or a typed code. No club id is read from the input.
@@ -18,7 +18,7 @@ const NO_STORE = { 'Cache-Control': 'no-store' } as const;
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const inputOf = (ctx: RouteContext) => (ctx.input ?? {}) as Record<string, unknown>;
 
-const STATUS: Record<AdminErrorCode, number> = { bad_input: 400, not_found: 404, forbidden: 403, reason_required: 400 };
+const STATUS: Record<AdminErrorCode, number> = { bad_input: 400, not_found: 404, forbidden: 403, reason_required: 400, below_zero: 409, customer_not_claimed: 409 };
 // A refusal raised by an admin function in the database (BK001, message = the code).
 const DB_STATUS: Record<string, number> = { phone_in_use: 409, reason_required: 400 };
 
@@ -26,6 +26,8 @@ async function inTx<T>(db: Db, c: ClubContext, fn: (tx: Tx) => Promise<T>): Prom
   try {
     return await db.withClubTx(c, fn);
   } catch (e) {
+    const mapped = mapValueError(e);
+    if (mapped) throw new RouteError(STATUS[mapped.code], mapped.code);
     if (e instanceof AdminError) throw new RouteError(STATUS[e.code], e.code, Object.keys(e.detail).length ? (e.detail as never) : undefined);
     const err = e as { code?: string; message?: string };
     if (err.code === 'BK001' && err.message) throw new RouteError(DB_STATUS[err.message] ?? 409, err.message);
@@ -144,5 +146,41 @@ export function customerRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[] {
       const i = inputOf(ctx);
       return inTx(deps.db, c, (tx) => setTag(tx, i['id'], i['tag'], false));
     }),
+  ];
+}
+
+const KEY = /^[\x21-\x7e]{1,200}$/;
+
+/** The Idempotency-Key the transport passes from the header. Every change of value needs one (F11 design 7). */
+function requiredKey(ctx: RouteContext): string {
+  const key = inputOf(ctx)['idempotencyKey'];
+  if (typeof key !== 'string' || !KEY.test(key)) throw new RouteError(400, 'bad_input', { field: 'idempotency_key' });
+  return key;
+}
+
+/**
+ * F11-T07: the credit and wallet panels of A6 (ADMIN-07) over F06. Front desk and owner read and adjust with a written reason; only the owner
+ * extends a package (D88, D118). An adjust is repeated safely by its Idempotency-Key.
+ */
+export function customerValueRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[] {
+  const change = <T>(path: string, permission: string, fn: (tx: Tx, i: Record<string, unknown>, b: Record<string, unknown>) => Promise<T>) =>
+    route({ method: 'POST', path, permission }, async (ctx) => {
+      const c = await sessionContext(deps, ctx);
+      const key = requiredKey(ctx);
+      const { idempotencyKey: _k, ...rest } = inputOf(ctx);
+      const hash = requestHash(`POST ${path}`, { ...rest, body: bodyOf(ctx) });
+      return inTx(deps.db, c, (tx) => withIdempotency(tx, key, hash, () => fn(tx, inputOf(ctx), bodyOf(ctx))));
+    });
+  return [
+    {
+      ...route({ method: 'GET', path: '/staff/customers/:id/credits', permission: 'customer.contact.read' }, async (ctx) => {
+        const c = await sessionContext(deps, ctx);
+        return inTx(deps.db, c, (tx) => customerValue(tx, inputOf(ctx)['id']));
+      }),
+      headers: NO_STORE,
+    },
+    change('/staff/customers/:id/credit-adjust', 'customer.adjust', (tx, i, b) => creditAdjust(tx, i['id'], { packageId: b['packageId'], delta: b['delta'], note: b['note'] })),
+    change('/staff/customers/:id/wallet-adjust', 'customer.adjust', (tx, i, b) => walletAdjust(tx, i['id'], { deltaSatang: b['deltaSatang'], note: b['note'] })),
+    change('/staff/packages/:id/extend', 'package.extend', (tx, i, b) => extendPackage(tx, i['id'], { newExpiresOn: b['newExpiresOn'], reason: b['reason'] })),
   ];
 }
