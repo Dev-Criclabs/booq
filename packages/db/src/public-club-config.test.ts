@@ -25,16 +25,16 @@ afterEach(async () => {
 
 describe('public_club_config', () => {
   it('shows the context club’s name, language, status and LIFF id, even while the club is in Testing', async () => {
-    expect(await config(A)).toEqual([{ name_th: 'ฮันเตอร์', name_en: 'Hunter', default_language: 'th', status: 'testing', liff_id: '1650000001-AbCdEfGh', notice_version: null }]);
+    expect(await config(A)).toEqual([{ name_th: 'ฮันเตอร์', name_en: 'Hunter', default_language: 'th', status: 'testing', liff_id: '1650000001-AbCdEfGh', notice_version: null, oa_basic_id: '@hunter' }]);
   });
 
   it('is one row for the context club only, and liff_id is empty when no LINE connection exists', async () => {
-    expect(await config(B)).toEqual([{ name_th: 'ข', name_en: 'B', default_language: 'en', status: 'live', liff_id: null, notice_version: null }]);
+    expect(await config(B)).toEqual([{ name_th: 'ข', name_en: 'B', default_language: 'en', status: 'live', liff_id: null, notice_version: null, oa_basic_id: null }]);
   });
 
-  it('has no column for owner, tax, billing, channel ids, secrets or the club id (D103); the notice version is public (D152)', async () => {
+  it('has no column for owner, tax, billing, channel ids, secrets or the club id (D103); the notice version (D152) and the OA basic id (0060) are public', async () => {
     const cols = (await tdb.query(`select column_name from information_schema.columns where table_name = 'public_club_config' order by ordinal_position`)).rows.map((x) => x.column_name);
-    expect(cols).toEqual(['name_th', 'name_en', 'default_language', 'status', 'liff_id', 'notice_version']);
+    expect(cols).toEqual(['name_th', 'name_en', 'default_language', 'status', 'liff_id', 'notice_version', 'oa_basic_id']);
   });
 
   it('a request with no club in the context sees nothing, and the view is granted to the app roles only', async () => {
