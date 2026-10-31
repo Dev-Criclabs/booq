@@ -19,12 +19,13 @@ const ENV = {
   WORKER_SESSION_START_CRON: '* * * * *',
   WORKER_OFFER_EXPIRY_TICK_SECONDS: '30',
   WORKER_CLASS_BELOW_MIN_TICK_SECONDS: '60',
-  WORKER_BEAM_RECONCILE_CRON: '*/5 * * * *',
-  WORKER_PACKAGE_ORDER_EXPIRY_CRON: '* * * * *',
   WORKER_OUTBOX_SENDER_TICK_SECONDS: '30',
   LINE_API_BASE_URL: 'https://api.line.me',
+  LINE_API_DATA_BASE_URL: 'https://api-data.line.me',
   LINE_PUSH_TIMEOUT_MS: '10000',
   LOCALES_DIR: '/srv/booq/locales',
+  WORKER_BEAM_RECONCILE_CRON: '*/5 * * * *',
+  WORKER_PACKAGE_ORDER_EXPIRY_CRON: '* * * * *',
 };
 
 describe('readWorkerConfig', () => {
@@ -46,12 +47,13 @@ describe('readWorkerConfig', () => {
       sessionStartCron: '* * * * *',
       offerExpiryTickSeconds: 30,
       classBelowMinTickSeconds: 60,
-      beamReconcileCron: '*/5 * * * *',
-      packageOrderExpiryCron: '* * * * *',
       outboxSenderTickSeconds: 30,
       lineApiBaseUrl: 'https://api.line.me',
+      lineApiDataBaseUrl: 'https://api-data.line.me',
       linePushTimeoutMs: 10000,
       localesDir: '/srv/booq/locales',
+      beamReconcileCron: '*/5 * * * *',
+      packageOrderExpiryCron: '* * * * *',
     });
   });
   it('names every missing setting and never prints a value', () => {
@@ -78,6 +80,7 @@ describe('readWorkerConfig', () => {
     expect(message).toContain('WORKER_CLASS_BELOW_MIN_TICK_SECONDS');
     expect(message).toContain('WORKER_OUTBOX_SENDER_TICK_SECONDS');
     expect(message).toContain('LINE_API_BASE_URL');
+    expect(message).toContain('LINE_API_DATA_BASE_URL');
     expect(message).toContain('LINE_PUSH_TIMEOUT_MS');
     expect(message).toContain('LOCALES_DIR');
     expect(message).not.toContain('secret');
@@ -108,6 +111,7 @@ describe('the LINE sender settings (F10)', () => {
   });
   it('refuses a base URL that is not http(s)', () => {
     expect(() => readWorkerConfig({ ...ENV, LINE_API_BASE_URL: 'api.line.me' })).toThrow(/LINE_API_BASE_URL/);
+    expect(() => readWorkerConfig({ ...ENV, LINE_API_DATA_BASE_URL: 'api-data.line.me' })).toThrow(/LINE_API_DATA_BASE_URL/);
   });
 });
 

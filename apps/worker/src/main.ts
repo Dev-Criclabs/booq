@@ -12,8 +12,9 @@ import { runHoldRelease } from './tasks/hold-release';
 import { PACKAGE_EXPIRE, SESSION_START, WALLET_EXPIRE, runPackageExpire, runSessionStart, runWalletExpire } from './tasks/f06-expiry';
 import { CLASS_GENERATE, CLASS_GENERATE_DISPATCH, classGenerateDispatch, generateClassSessions } from './tasks/class-generate';
 import { runClassBelowMinimum, runOfferExpiry } from './tasks/class-jobs';
+import { createLineSender, createRichMenuBuildDeps } from './tasks/line-sender-setup';
+import { RICH_MENU_BUILD, richMenuBuildTask } from './tasks/line-rich-menu';
 import { BEAM_RECONCILE, PACKAGE_ORDER_EXPIRY, runBeamReconcile, runPackageOrderExpiry } from './tasks/payment-jobs';
-import { createLineSender } from './tasks/line-sender-setup';
 import { startTicker } from './ticker';
 import { startWorker } from './worker';
 
@@ -30,10 +31,26 @@ const paymentAlerts = { p1: (kind: string, clubId: string) => alertLog.error('p1
 const sweepConsoleSessions = consoleSessionSweep({ db, absoluteSeconds: config.consoleSessionAbsoluteSeconds });
 const sweepRateLimit = rateLimitSweep({ db, keepSeconds: config.rateLimitKeepSeconds });
 
+// LINE (F10): the private key that opens club tokens is read once here, so a worker without it stops at start (D149).
+const lineSettings = {
+  lineApiBaseUrl: config.lineApiBaseUrl,
+  lineApiDataBaseUrl: config.lineApiDataBaseUrl,
+  linePushTimeoutMs: config.linePushTimeoutMs,
+  localesDir: config.localesDir,
+  privateKey: loadDecryptKey(),
+};
+const lineSender = createLineSender(db, lineSettings);
+
 const worker = await startWorker({
   connectionString: config.queueUrl,
   db,
-  tasks: { [IMPORT_STAGING_SWEEP]: sweepImportStaging, [PAY_TAP_PRUNE]: prunePayTaps, [CLASS_GENERATE]: generateClassSessions },
+  tasks: {
+    [IMPORT_STAGING_SWEEP]: sweepImportStaging,
+    [PAY_TAP_PRUNE]: prunePayTaps,
+    [CLASS_GENERATE]: generateClassSessions,
+    // F10-T12: one club's rich menu, added by P2 step 4 Upload and Redo and by an owner's label save.
+    [RICH_MENU_BUILD]: richMenuBuildTask(db, createRichMenuBuildDeps(lineSettings)),
+  },
   globalTasks: {
     [IMPORT_STAGING_DISPATCH]: importStagingDispatch({ listClubIds: () => listClubIds(db) }),
     [PAY_TAP_PRUNE_DISPATCH]: payTapPruneDispatch({ listClubIds: () => listClubIds(db) }),
@@ -74,14 +91,7 @@ const holdRelease = startTicker({
 // offer_expiry and class_below_minimum also run on their own timers (F08-T10).
 const offerExpiry = startTicker({ everyMs: config.offerExpiryTickSeconds * 1000, run: () => runOfferExpiry(db), onError: () => undefined });
 const classBelowMin = startTicker({ everyMs: config.classBelowMinTickSeconds * 1000, run: () => runClassBelowMinimum(db), onError: () => undefined });
-// outbox_sender (F10): LINE messages from the outbox, every config.outboxSenderTickSeconds (design 8: 30 seconds). The
-// private key that opens club tokens is read once here, so a worker without it stops at start (D149).
-const lineSender = createLineSender(db, {
-  lineApiBaseUrl: config.lineApiBaseUrl,
-  linePushTimeoutMs: config.linePushTimeoutMs,
-  localesDir: config.localesDir,
-  privateKey: loadDecryptKey(),
-});
+// outbox_sender (F10): LINE messages from the outbox, every config.outboxSenderTickSeconds (design 8: 30 seconds).
 const outboxSender = startTicker({ everyMs: config.outboxSenderTickSeconds * 1000, run: () => lineSender.run(), onError: () => undefined });
 
 let stopping = false;

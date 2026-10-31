@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
+import { liffStateTarget } from '@booq/line';
 import { addFriendUrl, checkFriendship, markAsked, shouldAsk } from '../../client/friend';
 import { formatDateLong, greetingKey } from '../../client/home';
 import type { Lang } from '../../client/i18n';
@@ -12,6 +13,9 @@ import { Loading, StateScreen } from '../StateScreen';
 // /c/{slug} (C3 Home). A public page: a guest browses with no sign in (AUTH-01-AC1, AC8). A signed in
 // player who is not a friend of the Official Account sees the add-the-account ask once per session
 // (LINE-01-AC9, A-7). Sign in starts only from the Sign in link or a booking or purchase.
+// This address is the club's LIFF endpoint (design 4.1): a rich menu tile, a message button or a
+// shared link arrives here with its page in `liff.state` (design 3.1). liff.init() moves on to that
+// page; if it has not, the page goes there itself, only inside this club (AUTH-01-AC10, AC14).
 
 const session = () => {
   try {
@@ -27,15 +31,26 @@ export function HomeScreen({ slug, initialLang }: { slug: string; initialLang: L
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [ask, setAsk] = useState(false);
   const [now] = useState(() => new Date());
+  const [target] = useState(() => (typeof window === 'undefined' ? null : liffStateTarget(slug, window.location.search)));
 
   useEffect(() => {
-    if (load.state !== 'ready') return;
+    if (!target || load.state !== 'ready' || liff === undefined) return;
+    const start = window.location.href;
+    const go = () => {
+      if (window.location.href === start) window.location.replace(target);
+    };
+    if (liff && load.config.liffId) void liff.init({ liffId: load.config.liffId }).then(go, go);
+    else go();
+  }, [target, load, liff]);
+
+  useEffect(() => {
+    if (load.state !== 'ready' || target) return;
     let live = true;
     void whoAmI(slug, window.fetch.bind(window)).then((w) => live && setSignedIn(w.kind === 'person'));
     return () => {
       live = false;
     };
-  }, [load, slug]);
+  }, [load, slug, target]);
 
   // The friend state needs LINE: only for a signed in player, inside a LIFF session.
   useEffect(() => {
@@ -63,7 +78,7 @@ export function HomeScreen({ slug, initialLang }: { slug: string; initialLang: L
 
   if (load.state === 'not_found') return <StateScreen t={t} testId="not-found" textKey="P-new.page_not_found" />;
   if (load.state === 'offline') return <StateScreen t={t} offline testId="offline" titleKey="P-0326" textKey="P-0327" actionKey="P-0328" onAction={retry} />;
-  if (load.state === 'loading' || signedIn === null) return <Loading />;
+  if (load.state === 'loading' || target || signedIn === null) return <Loading />;
   const config = load.config as typeof load.config & { oaBasicId?: string | null };
   return (
     <Home

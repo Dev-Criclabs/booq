@@ -1,8 +1,9 @@
 import type { Db } from '@booq/db';
 import { createDeepLinks, type LinkClub } from '@booq/line';
-import { createLineHttpTransport, createMessageBuilder, loadMessageDictionary } from '@booq/line/server';
+import { createLineHttpTransport, createMessageBuilder, createRichMenuHttpApi, loadMessageDictionary } from '@booq/line/server';
 import { readSecret } from '@booq/secrets';
 import { runOutboxSender, type OutboxSenderDeps, type OutboxSenderResult } from './line-outbox-sender';
+import type { RichMenuBuildDeps } from './line-rich-menu';
 
 // The real outbox sender for main.ts (F10-T08 to T10): the message dictionary (locales/* and pending, D81), the builder
 // with F02's deep links (the club's LIFF id, loaded once per club per tick through app.club_liff_id), the Messaging API
@@ -32,4 +33,14 @@ export function createLineSender(db: Db, settings: LineSenderSettings): { deps: 
     },
   };
   return { deps, run: () => runOutboxSender(db, deps) };
+}
+
+/** The real dependencies of rich_menu_build (F10-T12): LINE's rich menu calls over HTTP (the data host takes the image),
+ *  the same dictionary and the club token. */
+export function createRichMenuBuildDeps(settings: LineSenderSettings & { lineApiDataBaseUrl: string }): RichMenuBuildDeps {
+  return {
+    api: createRichMenuHttpApi({ baseUrl: settings.lineApiBaseUrl, dataBaseUrl: settings.lineApiDataBaseUrl, timeoutMs: settings.linePushTimeoutMs }),
+    dictionary: { th: loadMessageDictionary('th', settings.localesDir), en: loadMessageDictionary('en', settings.localesDir) },
+    readToken: (tx, clubId) => readSecret(tx, settings.privateKey, clubId, 'line_channel_token', 'worker'),
+  };
 }

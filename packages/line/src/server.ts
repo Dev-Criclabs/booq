@@ -7,3 +7,5 @@ export { createMessageBuilder, fill, MessageTextError } from './messages/builder
 export { loadMessageDictionary } from './messages/dictionary';
 export { RICH_MENU_IMAGE, RichMenuLayoutError, labelsHash, layoutRichMenu, renderRichMenu } from './rich-menu/render';
 export { probeLine } from './probe/probe';
+export { RICH_MENU_DEFAULT_KEYS, RICH_MENU_PAGES, resolveLabels, richMenuObject, type RichMenuArea, type RichMenuObject, type StoredLabel } from './rich-menu/menu';
+export { createRichMenuHttpApi, type RichMenuApi, type RichMenuCallResult, type RichMenuHttpApiOptions } from './rich-menu/api';

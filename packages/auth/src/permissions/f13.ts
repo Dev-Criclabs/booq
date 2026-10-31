@@ -8,4 +8,8 @@ export const permissions: PermissionFragment = {
   'receipt.void': ['owner'],
   'report.read': ['owner', 'accountant'],
   'daily-close.run': ['owner', 'accountant'],
+  // Coach payouts (R3, D115): the accountant reads and exports; only the owner adjusts and marks paid. A coach reads their own through app.my_payouts (F12).
+  'payout.read': ['owner', 'accountant'],
+  'payout.adjust': ['owner'],
+  'payout.pay': ['owner'],
 };

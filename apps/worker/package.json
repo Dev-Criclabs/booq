@@ -8,11 +8,10 @@
     "@booq/auth": "workspace:*",
     "@booq/beam": "workspace:*",
     "@booq/db": "workspace:*",
-    "@booq/secrets": "workspace:*",
-    "graphile-worker": "^0.18.0",
     "@booq/domain": "workspace:*",
     "@booq/line": "workspace:*",
-    "@booq/secrets": "workspace:*"
+    "@booq/secrets": "workspace:*",
+    "graphile-worker": "^0.18.0"
   },
   "scripts": {
     "start": "vite-node src/main.ts"

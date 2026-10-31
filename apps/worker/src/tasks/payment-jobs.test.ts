@@ -3,6 +3,7 @@ import { createDb, type Db } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
 import { closeTestDatabase } from '../testing/teardown';
 import { runPackageOrderExpiry } from './payment-jobs';
+import { closeTestDatabase } from '../testing/teardown';
 
 // F05-T09 package_order_expiry through the worker (PAY-04-AC2, D74): walks the clubs, each in its own context; a package
 // order past its QR time is cancelled and its payment expired with no QR, the other club is untouched.

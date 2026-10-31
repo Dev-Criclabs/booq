@@ -694,6 +694,38 @@ export interface PublicCoachPay {
   is_test: boolean;
 }
 
+export interface PublicCoachPayout {
+  club_id: string;
+  id: string;
+  coach_id: string;
+  month: string;
+  status: string;
+  solo_sessions: number;
+  group_sessions: number;
+  sessions_delivered: number | null;
+  base_satang: number | null;
+  solo_pay_satang: number | null;
+  group_pay_satang: number | null;
+  flags: string[];
+  amount_satang: number | null;
+  computed_at: string;
+  paid_by: string | null;
+  paid_at: string | null;
+  is_test: boolean;
+}
+
+export interface PublicCoachPayoutAdjustment {
+  club_id: string;
+  id: string;
+  payout_id: string;
+  coach_id: string;
+  delta_satang: number;
+  reason: string;
+  staff_id: string;
+  created_at: string;
+  is_test: boolean;
+}
+
 export interface PublicCoachPriceOverride {
   club_id: string;
   coach_id: string;
@@ -1339,6 +1371,8 @@ export interface Tables {
   'public.coach_availability_rule': PublicCoachAvailabilityRule;
   'public.coach_leave': PublicCoachLeave;
   'public.coach_pay': PublicCoachPay;
+  'public.coach_payout': PublicCoachPayout;
+  'public.coach_payout_adjustment': PublicCoachPayoutAdjustment;
   'public.coach_price_override': PublicCoachPriceOverride;
   'public.coach_substitution': PublicCoachSubstitution;
   'public.coach_tier': PublicCoachTier;
