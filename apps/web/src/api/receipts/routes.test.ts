@@ -127,6 +127,9 @@ describe('staff routes (D35, R1)', () => {
     expect(await list({ from: '2026-12-15', to: '2026-12-31' })).toEqual(['HTC-2026-000002']);
     expect(await list({ from: '2026-12-10', to: '2026-12-10' })).toEqual(['HTC-2026-000001']);
     expect(await list({ limit: '1', offset: '1' })).toEqual(['HTC-2026-000001']);
+    expect(await list({ customer: PLAYER })).toEqual(['HTC-2026-000001']);
+    expect(await list({ customer: OTHER })).toEqual(['HTC-2026-000002']);
+    expect(await run('GET', '/staff/receipts', sess(OWNER, ['owner', 'player']), { customer: 'nope' })).toMatchObject({ ok: false, status: 400 });
     expect(await list({}, sess(ACC, ['accountant', 'player']))).toHaveLength(2);
     for (const s of [sess(DESK, ['front_desk', 'player']), sess(COACH, ['coach', 'player']), sess(PLAYER, ['player'])]) {
       expect(await run('GET', '/staff/receipts', s)).toMatchObject({ ok: false, status: 403 });

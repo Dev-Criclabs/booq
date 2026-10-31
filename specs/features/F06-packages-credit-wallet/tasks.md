@@ -52,7 +52,7 @@ Depends on: F01 T09 (setup tables), T12 (people), T13 (route wrapper), T18 (gran
 
 - [x] **F06-T15** Player routes: `GET /packages` (public columns only, D103), `GET /me/credits`, `GET /me/ledger`. IDs: PKG-01-AC10, PKG-02-AC7, AC8, AC9. Role: BE-C · Deps T11, F01-T13 · Size: M
   Tests first: a guest reads only the named product columns; a product with no price is absent; the ledger lists every movement newest first with the reason key.
-- [ ] **F06-T16** Staff routes: wallet and credit adjust, package extend, cash package sale, customer credits, value owed. IDs: PKG-01-AC4, PKG-03-AC5, R2-AC7, R3-AC5, R3-AC6, R3-AC8, D57, D88. Role: BE-C · Deps T11, F05 cash route · Size: M
+- [x] **F06-T16** Staff routes: wallet and credit adjust, package extend, cash package sale, customer credits, value owed. IDs: PKG-01-AC4, PKG-03-AC5, R2-AC7, R3-AC5, R3-AC6, R3-AC8, D57, D88. Role: BE-C · Deps T11, F05 cash route · Size: M
   Tests first: adjust without a note is refused; front desk cannot extend; the Accountant reads value owed and cannot adjust; the value owed shows credit and wallet as separate lines; a cash package sale in a Paused club is refused (R3-AC6); the owner can sell a Student product (R3-AC8).
 
 ## E. Front end

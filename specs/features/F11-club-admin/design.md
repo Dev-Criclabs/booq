@@ -105,7 +105,7 @@ Not built for Hunter. Placeholder: the shell omits it and `/staff/slips*` is not
 
 | Route | Function | Notes |
 |---|---|---|
-| `GET /staff/customers?q=&tag=&status=&cursor=` | New `public.customer_list` view (§6.2) | name, phone (front desk and owner only), tags, last booking, counts; paged |
+| `GET /staff/customers?q=&tag=&status=&group=&cursor=` | New `public.customer_list` function (§6.2; columns and filters in 1108) | name, phone (front desk and owner only), tags, price group, active package, wallet, last visit; `status` is `active_package`, `expiring_soon` (the largest `package_expiry_reminder_days`) or `no_visit` (30 days); paged |
 | `POST /staff/customers/export` | Exists (`POST /exports` kind `customers`, F01-T25) | CSV of this club only; writes an audit entry; permission `export.run` is owner only in F01, front desk is added in §8 for kind `customers` only |
 | `POST /staff/customers/:id/tags`, `DELETE /staff/customers/:id/tags/:tag` | New `app.customer_tag_set` (§6.2) | free text tags typed by the club; no default tag list |
 
@@ -121,7 +121,7 @@ Not built for Hunter. Placeholder: the shell omits it and `/staff/slips*` is not
 | Adjust credits | `POST /staff/customers/:id/credit-adjust` | F06: `app.credit_adjust`; a written reason is required (`reason_required`), a ledger row is added |
 | Adjust wallet | `POST /staff/customers/:id/wallet-adjust` | F06: `app.wallet_adjust`, same rule |
 | Extend a package | `POST /staff/packages/:id/extend` | F06 (owner with a written reason, D118) |
-| Receipts | `GET /staff/receipts?customer=` | F13 |
+| Receipts | `GET /staff/customers/:id/receipts` (front desk and owner; the list `GET /staff/receipts?customer=` is the same filter for owner and accountant), PDF `GET /staff/receipts/:id/pdf` | F13; the orders read carries `receipts` (numbers) and `receiptIds` |
 | Referrals | `GET /staff/customers/:id/referrals` | Waits for F14 (the referral table does not exist yet); returns an empty list until then |
 | Imported player claim | `GET /claims`, `POST /claims/:id/confirm`, `POST /claims/:id/reject` | exists (F02, D105) |
 | Data requests | `GET /data-requests`, `POST /data-requests/:id/handle` | exists (F01) |
