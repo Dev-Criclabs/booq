@@ -1,6 +1,6 @@
 import { pagesFor, route, RouteError, type Route, type RouteContext } from '@booq/auth';
 import type { ClubContext, Db, Tx } from '@booq/db';
-import { shellState } from '@booq/domain';
+import { AdminError, type AdminErrorCode, shellState, staffCalendar } from '@booq/domain';
 
 // F11 club admin routes (design 4 to 6, prefix /api/c/{slug}). Thin handlers: resolve the club from the session and the path slug, open
 // the club transaction, call the service in packages/domain/src/admin, answer a body or a typed code. No club id is read from the input.
@@ -18,13 +18,17 @@ const NO_STORE = { 'Cache-Control': 'no-store' } as const;
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const inputOf = (ctx: RouteContext) => (ctx.input ?? {}) as Record<string, unknown>;
 
+const STATUS: Record<AdminErrorCode, number> = { bad_input: 400, not_found: 404, forbidden: 403, reason_required: 400 };
+
 async function inTx<T>(db: Db, c: ClubContext, fn: (tx: Tx) => Promise<T>): Promise<T> {
   try {
     return await db.withClubTx(c, fn);
   } catch (e) {
+    if (e instanceof AdminError) throw new RouteError(STATUS[e.code], e.code);
     const err = e as { code?: string; message?: string };
     if (err.code === 'BK001' && err.message) throw new RouteError(409, err.message);
     if (err.code === '42501') throw new RouteError(403, 'forbidden');
+    if (err.code === 'P0001' && err.message?.includes('invalid range')) throw new RouteError(400, 'bad_input');
     throw e;
   }
 }
@@ -46,6 +50,20 @@ export function shellRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[] {
         const c = await sessionContext(deps, ctx);
         const state = await inTx(deps.db, c, (tx) => shellState(tx));
         return { pages: pagesFor(ctx.roles), ...state };
+      }),
+      headers: NO_STORE,
+    },
+  ];
+}
+
+/** F11-T03: GET /staff/calendar?from=&to= for A1 (ADMIN-03): one read of the days, at most 7. Front desk and owner. */
+export function calendarRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[] {
+  return [
+    {
+      ...route({ method: 'GET', path: '/staff/calendar', permission: 'calendar.read' }, async (ctx) => {
+        const c = await sessionContext(deps, ctx);
+        const i = inputOf(ctx);
+        return inTx(deps.db, c, (tx) => staffCalendar(tx, i['from'], i['to']));
       }),
       headers: NO_STORE,
     },
