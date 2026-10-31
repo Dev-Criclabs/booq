@@ -47,7 +47,7 @@ export async function startApp(port = 3107) {
   throw new Error(`next dev did not start:\n${log}`);
 }
 
-export const CLUB = { nameTh: 'ฮันเตอร์ เทนนิส คลับ', nameEn: 'Hunter Tennis Club', defaultLanguage: 'th', status: 'live', liffId: 'liff-test', languages: ['th', 'en'], noticeVersion: 'v1' };
+export const CLUB = { nameTh: 'ฮันเตอร์ เทนนิส คลับ', nameEn: 'Hunter Tennis Club', defaultLanguage: 'th', status: 'live', liffId: 'liff-test', languages: ['th', 'en'], noticeVersion: 'v1', oaBasicId: '@hunter' };
 
 /**
  * A page with the club API faked. `session` answers POST /auth/session, `profile` POST /auth/profile (a reply, or a

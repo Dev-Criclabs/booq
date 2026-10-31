@@ -79,7 +79,7 @@ export function HomeScreen({ slug, initialLang }: { slug: string; initialLang: L
   if (load.state === 'not_found') return <StateScreen t={t} testId="not-found" textKey="P-new.page_not_found" />;
   if (load.state === 'offline') return <StateScreen t={t} offline testId="offline" titleKey="P-0326" textKey="P-0327" actionKey="P-0328" onAction={retry} />;
   if (load.state === 'loading' || target || signedIn === null) return <Loading />;
-  const config = load.config as typeof load.config & { oaBasicId?: string | null };
+  const config = load.config;
   return (
     <Home
       t={t}

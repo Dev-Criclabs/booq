@@ -70,6 +70,8 @@ describe('Home (C3)', () => {
     await page.getByTestId('friend-ask').waitFor();
     assert.equal(await page.getByTestId('guest-card').count(), 0);
     assert.equal(await page.getByTestId('sign-in').count(), 0);
+    // Add on LINE opens LINE's add-friend page for the club's Official Account (oaBasicId in the config).
+    assert.equal(await page.getByRole('link', { name: 'Add on LINE' }).getAttribute('href'), 'https://line.me/R/ti/p/%40hunter');
     const reported = calls.filter((c) => c.path === '/api/c/hunter/me/line-friend').map((c) => JSON.parse(c.body));
     assert.deepEqual(reported[0], { friendFlag: false });
     await page.screenshot({ path: join(SHOTS, 'C3-home-friend-ask-en.png') });
@@ -77,6 +79,15 @@ describe('Home (C3)', () => {
     await page.locator('.home-greeting').waitFor();
     await page.waitForTimeout(500);
     assert.equal(await page.getByTestId('friend-ask').count(), 0, 'asked once per session');
+    await context.close();
+  });
+
+  it('without an Official Account id the ask is the note alone', async () => {
+    const { CLUB } = await import('./harness.mjs');
+    const { page, context } = await openPage(browser, { liff: { inClient: true, loggedIn: true, idToken: 't', language: 'en', friend: false }, lang: 'en', me: { profile }, club: { ...CLUB, oaBasicId: null } });
+    await page.goto(`${app.base}/c/hunter`);
+    await page.getByTestId('friend-ask').waitFor();
+    assert.equal(await page.getByRole('link', { name: 'Add on LINE' }).count(), 0);
     await context.close();
   });
 
