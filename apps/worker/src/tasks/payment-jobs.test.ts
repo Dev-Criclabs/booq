@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
+import { closeTestDatabase } from '../testing/teardown';
 import { runPackageOrderExpiry } from './payment-jobs';
 
 // F05-T09 package_order_expiry through the worker (PAY-04-AC2, D74): walks the clubs, each in its own context; a package
@@ -51,7 +52,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   await worker.end();
-  await tdb.close();
+  await closeTestDatabase(tdb);
 });
 
 describe('runPackageOrderExpiry', () => {
