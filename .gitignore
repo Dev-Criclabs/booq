@@ -9,3 +9,4 @@ coverage
 !.env.example
 next-env.d.ts
 .samples/
+tests/e2e/screenshots/
