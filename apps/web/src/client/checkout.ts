@@ -3,6 +3,8 @@
 // into the few states the screen shows. It never computes a price, a discount or a total: every amount is the server's, in satang, and
 // the player pays what Pay says (R5-AC6). The choice is only a choice until Pay places the hold (BOOK-03, CC-4).
 
+import { formatMoney } from './format';
+
 export type Fetched<T> = { ok: true; value: T } | { ok: false; status: number; code: string; params?: Record<string, string | number | boolean> };
 
 export interface Choice {
@@ -65,7 +67,9 @@ export interface QuoteView {
   codeNotApplied: boolean;
   quoteHash: string;
   /** The court bundle the player may buy with this booking (F04 R6; present once the server offers it). */
-  bundleOffer?: { productId: string; price: number; hoursUsedNow: number } | null;
+  bundleOffer?: { productId: string; priceSatang: number; hours: number; hoursUsedNow: number } | null;
+  /** The club's cancel window in hours, for `{cancelHours}` (null while the server does not send it). */
+  cancelWindowHours?: number | null;
 }
 
 export interface Wanted {
@@ -178,15 +182,8 @@ export function refusalFor(code: string, params?: Record<string, string | number
   return { ...r, vars };
 }
 
-/** satang to a baht amount for the text variables ({price}, {amount}, {total}): whole baht have no decimals, others two. */
-export function baht(satang: number): string {
-  const sign = satang < 0 ? '-' : '';
-  const abs = Math.abs(satang);
-  const whole = Math.trunc(abs / 100);
-  const frac = abs % 100;
-  const grouped = String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  return `${sign}฿${grouped}${frac === 0 ? '' : `.${String(frac).padStart(2, '0')}`}`;
-}
+/** satang to a baht amount for the text variables ({price}, {amount}, {total}); the same in both languages. */
+export const baht = (satang: number): string => formatMoney('en', satang);
 
 /** The lines the bill shows, grouped as the board does: the court hours, then coaching, then the add-ons as one row that expands (R3-AC3). */
 export function billRows(lines: QuoteLineView[]): { courtHours: QuoteLineView[]; coaching: QuoteLineView[]; addOns: QuoteLineView[] } {

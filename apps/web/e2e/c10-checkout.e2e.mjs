@@ -155,6 +155,20 @@ describe('C10 Checkout (F04-T17)', () => {
   });
 });
 
+describe('C10c bundle offer (F04 R6-AC1, AC2)', () => {
+  it('shows the offer the server sends, and nothing when there is none; declining changes nothing', async () => {
+    const withOffer = await open({ quoteFor: () => ({ status: 200, json: quote({ bundleOffer: { productId: ADDON, priceSatang: 450000, hours: 10, hoursUsedNow: 1 } }) }) });
+    await withOffer.page.getByTestId('bundle-offer').waitFor();
+    assert.match(await withOffer.page.getByTestId('bundle-offer').innerText(), /10 hour bundle · ฿4,500/);
+    assert.match(await withOffer.page.getByTestId('due').innerText(), /฿500/);
+    await withOffer.context.close();
+    const none = await open();
+    await none.page.getByTestId('due').waitFor();
+    assert.equal(await none.page.getByTestId('bundle-offer').count(), 0);
+    await none.context.close();
+  });
+});
+
 describe('C11 hand-off and the checkout states (F04-T18; R8-AC1 to AC4)', () => {
   it('a payment that started hands the order to C11; one with nothing to pay confirms and goes to the bookings', async () => {
     const started = await open();

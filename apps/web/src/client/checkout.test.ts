@@ -92,6 +92,14 @@ describe('bangkokTime', () => {
   });
 });
 
+describe('bundle offer', () => {
+  it('is carried as the server sends it: product, price in satang, hours and the one hour used now', async () => {
+    const offer = { productId: 'p', priceSatang: 450000, hours: 10, hoursUsedNow: 1 };
+    const r = await loadQuote('hunter', parseChoice(q({}))!, { coachId: null, addOnIds: [], code: null }, reply(200, quote({ bundleOffer: offer, cancelWindowHours: 12 })));
+    expect(r).toMatchObject({ ok: true, value: { bundleOffer: offer, cancelWindowHours: 12 } });
+  });
+});
+
 describe('baht and the bill', () => {
   it('whole baht have no decimals and thousands are grouped', () => {
     expect(baht(50000)).toBe('฿500');

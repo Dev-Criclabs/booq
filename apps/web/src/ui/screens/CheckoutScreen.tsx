@@ -243,6 +243,12 @@ function CheckoutBody({ slug, lang, t, paused }: { slug: string; lang: Lang; t: 
           {quote?.codeNotApplied ? <p className="co-ok">{t('P-new.checkout_code_hint_not_applied')}</p> : null}
         </section>
 
+        {quote?.bundleOffer ? (
+          <section className="co-card" data-testid="bundle-offer">
+            <h2 className="co-h">{t('P-0283', { hours: quote.bundleOffer.hours, amount: baht(quote.bundleOffer.priceSatang) })}</h2>
+          </section>
+        ) : null}
+
         <section className="co-card co-bill" data-testid="bill" aria-busy={quote === null}>
           {rows && quote ? (
             <>
