@@ -224,3 +224,4 @@ button.slot { cursor: pointer; }
 .notice-card { padding: 16px; border-radius: 16px; background: var(--cd); color: var(--ink); font-size: 15px; line-height: 1.5; }
 .notice-card b { display: block; margin-bottom: 6px; color: var(--hd); font-size: 17px; }
 .notice-card p { margin: 0; color: var(--mu); }
+.refusal { flex: none; margin: 0; padding: 12px 14px; border-radius: 14px; background: #f6e3dd; color: #6f2c1f; font-size: 14px; font-weight: 500; line-height: 1.5; overflow-wrap: anywhere; }

@@ -159,7 +159,7 @@ describe('partners and promo codes (A10)', () => {
   });
   it('a code: upper cased, defaults only where the table has them, the stacking choice is audited (PROMO-01-AC12)', async () => {
     const c = (await call('POST', '/staff/setup/promo-codes', owner(), {}, { code: ' spring10 ', kind: 'percent', value: 1000, appliesTo: ['court_hour'] })).body;
-    expect(c).toMatchObject({ code: 'SPRING10', kind: 'percent', value: 1000, appliesTo: ['court_hour'], includesAddOns: false, audience: 'any', stackableWithBirthday: false, active: true, totalCap: null, startsOn: null });
+    expect(c).toMatchObject({ usedCount: 0, code: 'SPRING10', kind: 'percent', value: 1000, appliesTo: ['court_hour'], includesAddOns: false, audience: 'any', stackableWithBirthday: false, active: true, totalCap: null, startsOn: null });
     const u = (await call('PUT', '/staff/setup/promo-codes/:id', owner(), { id: c.id }, { stackableWithBirthday: true, startsOn: '2026-12-01', endsOn: '2026-12-31', totalCap: 50 })).body;
     expect(u).toMatchObject({ stackableWithBirthday: true, startsOn: '2026-12-01', endsOn: '2026-12-31', totalCap: 50 });
     expect((await tdb.query(`select new_value from public.audit_entry where record_type = 'promo_code' order by seq desc limit 1`)).rows[0].new_value).toMatchObject({ stackable_with_birthday: true });
@@ -177,6 +177,9 @@ describe('partners and promo codes (A10)', () => {
     const c = (await call('POST', '/staff/setup/promo-codes', owner(), {}, { code: 'USED', kind: 'fixed', value: 5000, appliesTo: ['court_hour'] })).body.id;
     const order = (await tdb.query(`insert into public.orders (club_id, customer_id, source) values ($1,$2,'online') returning id`, [A, PLAYER])).rows[0].id;
     await tdb.query(`insert into public.promo_redemption (club_id, code_id, order_id, customer_id) values ($1,$2,$3,$4)`, [A, c, order, PLAYER]);
+    expect((await call('GET', '/staff/setup/promo-codes', desk())).body.find((x: { id: string }) => x.id === c).usedCount).toBe(1);
+    await tdb.query(`update public.promo_redemption set status = 'restored', restored_at = app.now(), restore_reason = 'x' where code_id = $1`, [c]);
+    expect((await call('GET', '/staff/setup/promo-codes', owner())).body.find((x: { id: string }) => x.id === c).usedCount).toBe(0);
     expect(await call('DELETE', '/staff/setup/promo-codes/:id', owner(), { id: c })).toMatchObject({ ok: false, status: 409, code: 'in_use' });
     expect((await call('PUT', '/staff/setup/promo-codes/:id', owner(), { id: c }, { active: false })).body.active).toBe(false);
   });
