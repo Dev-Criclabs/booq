@@ -1,6 +1,6 @@
 import type { RateLimiter } from './rate-limit';
 import { BODY_METHODS, callerOf, fail, json, matchPath, readJsonBody, withRouteHeaders } from './http';
-import { checkRouteTable, Reply, type Route, type RouteDeps, type RouteResult, type RouteSession } from './route';
+import { checkRouteTable, FileReply, Reply, type Route, type RouteDeps, type RouteResult, type RouteSession } from './route';
 
 // serveRoutes (apps/web transport; FA 4.3): turns a table of declared routes into one standard
 // `(Request, ctx) => Response` handler, with no framework import. The session comes from the cookie
@@ -118,12 +118,28 @@ function serveNow(table: readonly Route<unknown>[], deps: ServeDeps): (request: 
 
     const result: RouteResult<unknown> = await found.route.handle({ session, input, cookie, body: BODY_METHODS.has(method) ? body : undefined }, deps.routeDeps);
     if (!result.ok) return fail(result.status, result.code, result.params);
+    if (result.body instanceof FileReply) return fileResponse(result.body);
     if (result.body instanceof Reply) {
       const { status = 200, setCookie } = result.body.options;
       return json(status, result.body.body, setCookie ? { 'set-cookie': setCookie } : {});
     }
     return json(200, result.body);
   }
+}
+
+/** A file answer: the bytes, the type the route named, a plain ASCII file name, and the safe headers. */
+function fileResponse(f: FileReply): Response {
+  const name = f.options.filename.replace(/[^A-Za-z0-9._-]/g, '_');
+  return new Response(f.bytes as unknown as ConstructorParameters<typeof Response>[0], {
+    status: 200,
+    headers: {
+      'content-type': f.options.contentType,
+      'content-disposition': `attachment; filename="${name}"`,
+      'content-length': String(f.bytes.byteLength),
+      'cache-control': 'no-store',
+      'x-content-type-options': 'nosniff',
+    },
+  });
 }
 
 export interface WebhookContext {
