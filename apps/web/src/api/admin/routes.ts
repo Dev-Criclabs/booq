@@ -190,6 +190,13 @@ export function auditRoutes(deps: AdminRouteDeps): AdminRoute<unknown>[] {
       headers: NO_STORE,
     },
     {
+      ...route({ method: 'GET', path: '/staff/audit/record-types', permission: 'audit.read' }, async (ctx) => {
+        const c = await sessionContext(deps, ctx);
+        return inTx(deps.db, c, async (tx) => (await tx.query<{ t: string }>(`select app.audit_record_types() as t`)).rows.map((r) => r.t));
+      }),
+      headers: NO_STORE,
+    },
+    {
       ...route({ method: 'GET', path: '/staff/bookings/:id/history', permission: 'booking.create.staff' }, async (ctx) => {
         const c = await sessionContext(deps, ctx);
         return inTx(deps.db, c, (tx) => bookingHistory(tx, inputOf(ctx)['id']));

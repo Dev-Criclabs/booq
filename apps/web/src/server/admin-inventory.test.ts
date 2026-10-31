@@ -66,7 +66,7 @@ const BUILT: Record<string, string[]> = {
     'PUT /support-window support-window.write',
     'POST /exports export.run', 'GET /exports/:id export.run',
   ],
-  A17: ['GET /staff staff.manage', 'POST /staff/invites staff.manage', 'GET /staff/invites staff.manage', 'PUT /staff/:userId/roles roles.assign', 'POST /staff/:userId/deactivate staff.manage', 'GET /staff/audit audit.read'],
+  A17: ['GET /staff staff.manage', 'POST /staff/invites staff.manage', 'GET /staff/invites staff.manage', 'PUT /staff/:userId/roles roles.assign', 'POST /staff/:userId/deactivate staff.manage', 'GET /staff/audit audit.read', 'GET /staff/audit/record-types audit.read', 'POST /staff/invites/:id/cancel staff.manage'],
 };
 
 // Routes the design needs that another feature owns and that are not mounted yet (F11 design 5; the owner of each is named).
