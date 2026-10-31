@@ -6,6 +6,7 @@ import type { Db } from '@booq/db';
 import { bangkokDate } from '@booq/time';
 import { playerBookingRoutes, publicScheduleRoutes, staffBookingRoutes } from '../api/booking/routes';
 import { checkoutRoutes } from '../api/checkout/routes';
+import { pricingRoutes } from '../api/pricing/routes';
 import { playerClassRoutes, publicClassRoutes, staffClassRoutes } from '../api/classes/routes';
 import { calendarRoutes, shellRoutes } from '../api/admin/routes';
 import { playerCoachRoutes, publicCoachRoutes, staffCoachRoutes } from '../api/coaches/routes';
@@ -56,6 +57,7 @@ export const mounts: readonly Mount[] = [
   (m) => dataRequestRoutes({ db: m.db, service: () => createDataRequestService() }),
   (m) => staffRoutes({ db: m.db }),
   (m) => dobHistoryRoutes({ db: m.db }),
+  (m) => pricingRoutes({ db: m.db }),
   (m) => lineFriendRoutes({ db: m.db }),
   (m) => receiptRoutes({ db: m.db, pdf: createReceiptPdf(m.config.localesDir ?? null) }),
   (m) => reportRoutes({ db: m.db }),
