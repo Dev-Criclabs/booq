@@ -113,6 +113,8 @@ describe('the new club wizard', () => {
     assert.match(await page.getByTestId('not-available').innerText(), /cannot be entered here yet/);
     await page.getByTestId('next').click();
     await page.waitForURL('**/setup?step=5');
+    assert.doesNotMatch(await page.getByTestId('step-payments-form').innerText(), /Refunds go back/);
+    assert.match(await page.getByTestId('step-payments-form').innerText(), /never as cash/);
     await page.getByTestId('option-slip').check();
     await page.getByTestId('finish').click();
     await page.waitForURL(`**/clubs/${ID}`);

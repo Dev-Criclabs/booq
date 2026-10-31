@@ -259,6 +259,7 @@
     "X-new.wizard_date_bad": "Use a date like 2026-12-29.",
     "X-new.wizard_date_order": "Billing cannot start before the trial ends.",
     "X-new.wizard_not_available": "LINE details cannot be entered here yet. The club can still be saved and opened.",
-    "X-new.wizard_keys_not_available": "Payment keys cannot be entered here yet. Only how players pay is saved."
+    "X-new.wizard_keys_not_available": "Payment keys cannot be entered here yet. Only how players pay is saved.",
+    "X-new.wizard_option_beam_text": "Player pays a QR made for each booking. Confirms by itself, no slips. Refunds return as wallet or package credit, never as cash. Needs the club's own Beam merchant account."
   }
 }
