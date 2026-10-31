@@ -158,8 +158,6 @@ export function SupportEditor({ id, support, busy, onSaved, onError, only }: { i
         {switches.length > 0 ? <button type="submit" className="btn" disabled={off} data-testid="save-features">{t('X-new.support_save_features')}</button> : null}
       </form>
 
-      <h3>{t('X-new.support_settings')}</h3>
-      <p className="sub">{t('X-new.support_settings_note')}</p>
       </>
       )}
     </div>
