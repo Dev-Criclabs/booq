@@ -70,7 +70,7 @@ describe('public.public_class_state (CLASS-01-AC5 to AC8)', () => {
 
   it('shows counts only: no player, order, entry, coach or court id, and none of the template’s money', async () => {
     const cols = Object.keys((await state())[0]!).sort();
-    expect(cols).toEqual(['audience', 'coach_name', 'court_name', 'end_at', 'full', 'level', 'max_players', 'min_players', 'name_en', 'name_th', 'session_id', 'spots_left', 'start_at', 'waitlist']);
+    expect(cols).toEqual(['audience', 'coach_name', 'court_name', 'drop_in_price_satang', 'end_at', 'full', 'level', 'max_players', 'min_players', 'name_en', 'name_th', 'session_id', 'spots_left', 'start_at', 'waitlist']);
   });
 
   it('spots_left counts confirmed seats and unexpired holds; full and waitlist follow', async () => {

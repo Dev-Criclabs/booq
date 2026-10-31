@@ -1,12 +1,11 @@
 {
-  "_note": "Proposed by BE-L for F10-T10 and the coach_message_hook kinds (D81, D91): text for the LINE messages that have no board (they use the Booking confirmed card style) and the few lines the boarded cards need beyond the existing L keys. Numbers to be assigned by Content (F10-T20); wording drafted, writers own it. Existing keys reused: L-0001, L-0004, L-0009 to L-0019, L-0021, L-0024, L-0031 to L-0041, L-0058; from locales/pending/f13.json: L-new.receipt_credit_used. Variables follow locales/README.md.",
+  "_note": "Proposed by BE-L for F10-T10 and the coach_message_hook kinds (D81, D91): text for the LINE messages that have no board (they use the Booking confirmed card style) and the few lines the boarded cards need beyond the existing L keys. Numbers to be assigned by Content (F10-T20); wording drafted, writers own it. Existing keys reused: L-0001, L-0004, L-0009 to L-0019, L-0021 (now with {hours}, QA-F10-1), L-0024, L-0031 to L-0041, L-0058; from locales/pending/f13.json: L-new.receipt_credit_used. Variables follow locales/README.md.",
   "en": {
     "L-new.msg_booked_title": "You're booked",
     "L-new.msg_time_range": "{startTime} to {endTime}",
     "L-new.msg_paid_cash": "{amount} · Cash",
     "L-new.msg_paid_wallet": "{amount} · Wallet",
     "L-new.msg_paid_credit": "Package credit",
-    "L-new.msg_reminder_title_hours": "See you in {hours} hours",
     "L-new.msg_released_title": "Your hold was released",
     "L-new.msg_released_body": "The slot was not paid in time, so it is free again.",
     "L-new.msg_cancelled_title": "Booking cancelled",
@@ -42,7 +41,6 @@
     "L-new.msg_paid_cash": "{amount} · เงินสด",
     "L-new.msg_paid_wallet": "{amount} · วอลเล็ต",
     "L-new.msg_paid_credit": "เครดิตแพ็กเกจ",
-    "L-new.msg_reminder_title_hours": "เจอกันในอีก {hours} ชั่วโมง",
     "L-new.msg_released_title": "การจองที่รอชำระถูกปล่อยแล้ว",
     "L-new.msg_released_body": "ไม่ได้ชำระเงินภายในเวลา ช่วงเวลานี้จึงว่างอีกครั้ง",
     "L-new.msg_cancelled_title": "ยกเลิกการจองแล้ว",

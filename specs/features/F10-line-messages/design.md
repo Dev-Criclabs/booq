@@ -96,7 +96,7 @@ The language is read at send time from the recipient row, not stored on the outb
 | `referral_reward` | Referrer | F14 on reward | now | `reward:{referral_id}` | none | promotions | A |
 | `session_change` | Coach | F07, F09 booking, move, cancel of their solo or class | now | `session:{booking_id}:{version}:{coach_id}` | none | none | A |
 | `leave_decision` | Coach | F12 A7 decision | now | `leave:{request_id}:{status}` | none | none | A |
-| `class_below_minimum` | Front desk | F08 job at alert time | alert time | `below_min:{session_id}` | still below minimum | none | A |
+| `class_below_minimum` | Front desk | F08 job at alert time | alert time | `below_min:{session_id}:{user_id}`, one per recipient (F08-T10, 0914); voided by the prefix `below_min:{session_id}:` when the class is back at its minimum; the session comes from `params.session_id`, never from the key | still below minimum (F08 voids) | none | A |
 | `late_payment`, `wrong_amount` | Player | F05 `apply_payment` | now | `late:{payment_id}` | none | none | A |
 | `owner_paused`, `owner_cap_paid_over` | Owner | F01 pause; cap job | now | `paused:{club}:{pause_id}`, `cap_paid_over:{month}` | none | none | A |
 

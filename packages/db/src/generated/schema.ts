@@ -83,6 +83,7 @@ export interface AppSettingKeys {
   setting_key: string;
   required: boolean;
   slip_only: boolean;
+  scope: string;
 }
 
 export interface AppSetupSteps {

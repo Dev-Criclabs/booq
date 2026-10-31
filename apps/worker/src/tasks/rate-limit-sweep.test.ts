@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
 import { rateLimitSweep } from './rate-limit-sweep';
+import { closeTestDatabase } from '../testing/teardown';
 
 // The sweep removes sign-in rate-limit windows older than the keep time, in every club, and nothing else.
 const A = '3f2b8f0e-7c1d-4a55-9d0a-1c2e3f4a5b6c';
@@ -18,7 +19,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   await worker.end();
-  await tdb.close();
+  await closeTestDatabase(tdb);
 });
 
 const rows = async () => (await tdb.query('select club_id, window_start from public.rate_limit_hit order by club_id, window_start')).rows;

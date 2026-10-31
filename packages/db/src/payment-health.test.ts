@@ -59,6 +59,14 @@ describe('app.report_payment_health', () => {
     expect(new Date(ok.changed_at).toISOString()).toBe('2026-12-02T10:10:00.000Z');
   });
 
+  it('the webhook check (0799) takes bad_signature and unknown_charge only', async () => {
+    await report('beam_webhook', 'bad_signature');
+    expect(await row('beam_webhook')).toMatchObject({ status: 'failed', reason: 'bad_signature' });
+    await report('beam_webhook', 'unknown_charge');
+    expect(await row('beam_webhook')).toMatchObject({ status: 'failed', reason: 'unknown_charge' });
+    await expect(report('beam_webhook', 'unreachable')).rejects.toThrow(/unknown reason/);
+  });
+
   it('refuses an unknown check, an unknown reason and a LINE check (those are F10s)', async () => {
     await expect(report('beam_other', 'unreachable')).rejects.toThrow();
     await expect(report('beam_charge', 'something else')).rejects.toThrow();

@@ -17,20 +17,23 @@ after(async () => {
 });
 
 const CLUBS = [
-  { clubId: 'c-live', nameTh: 'ฮันเตอร์ เทนนิส คลับ', nameEn: 'Hunter Tennis Club', status: 'live', bookingsConfirmed30d: 412 },
-  { clubId: 'c-test', nameTh: 'คลับทดสอบ', nameEn: 'Testing Club', status: 'testing', bookingsConfirmed30d: 3 },
-  { clubId: 'c-draft', nameTh: 'ร่าง', nameEn: 'Draft Club', status: 'draft', bookingsConfirmed30d: 0 },
-  { clubId: 'c-pause', nameTh: 'พัก', nameEn: 'Paused Club', status: 'paused', bookingsConfirmed30d: 12 },
-  { clubId: 'c-live2', nameTh: 'สอง', nameEn: 'Second Live Club', status: 'live', bookingsConfirmed30d: 40 },
+  { clubId: 'c-live', nameTh: 'ฮันเตอร์ เทนนิส คลับ', nameEn: 'Hunter Tennis Club', status: 'live', bookingsConfirmed30d: 412, setup: { done: 9, total: 9 }, line: { used: 120, limit: 300 }, alerts: 2 },
+  { clubId: 'c-test', nameTh: 'คลับทดสอบ', nameEn: 'Testing Club', status: 'testing', bookingsConfirmed30d: 3, setup: { done: 4, total: 9 }, line: { used: 7, limit: null }, alerts: 0 },
+  { clubId: 'c-draft', nameTh: 'ร่าง', nameEn: 'Draft Club', status: 'draft', bookingsConfirmed30d: 0, setup: { done: 4, total: 9 }, line: { used: 7, limit: null }, alerts: 0 },
+  { clubId: 'c-pause', nameTh: 'พัก', nameEn: 'Paused Club', status: 'paused', bookingsConfirmed30d: 12, setup: { done: 4, total: 9 }, line: { used: 7, limit: null }, alerts: 0 },
+  { clubId: 'c-live2', nameTh: 'สอง', nameEn: 'Second Live Club', status: 'live', bookingsConfirmed30d: 40, setup: { done: 4, total: 9 }, line: { used: 7, limit: null }, alerts: 0 },
 ];
-const api = (over = {}) => (method, path) => (over[`${method} ${path}`] ? over[`${method} ${path}`] : method === 'GET' && path === '/clubs' ? { status: 200, body: { clubs: CLUBS } } : { status: 404, body: { code: 'not_found' } });
+const api = (over = {}) => (method, path) => (over[`${method} ${path}`] ? over[`${method} ${path}`] : path === '/auth/me' ? { status: 200, body: { id: 'a1', role: 'platform_admin', displayName: 'Ada Admin', stepUpFresh: true } } : method === 'GET' && path === '/clubs' ? { status: 200, body: { clubs: CLUBS } } : { status: 404, body: { code: 'not_found' } });
 
 describe('the clubs list', () => {
   it('lists every club with its status and bookings, with counts on the filters', async () => {
     const { page, context } = await openPage(browser, api(), { width: 1024, height: 800 });
     await page.goto(`${app.base}/clubs`);
     await page.getByTestId('club-list').waitFor();
-    assert.equal(await page.locator('h1').innerText(), 'Every club on BOOQ');
+    assert.equal(await page.locator('h1').innerText(), 'Clubs');
+    assert.equal(await page.locator('.lede').first().innerText(), 'Every club on BOOQ');
+    await page.getByTestId('me').waitFor();
+    assert.equal(await page.getByTestId('me').innerText(), 'Ada Admin\nPlatform admin');
     assert.equal(await page.locator('[data-testid^=club-c-]').count(), 5);
     assert.equal(await page.getByTestId('filter-all').innerText(), 'All · 5');
     assert.equal(await page.getByTestId('filter-live').innerText(), 'Live · 2');
@@ -90,7 +93,7 @@ describe('the clubs list', () => {
   });
 
   it('fits 320 px with a very long club name: nothing sideways on the page, the filters wrap, targets are 44 px', async () => {
-    const long = { clubId: 'c-long', nameTh: 'ชื่อสโมสรที่ยาวมากมายเหลือเกินและยังไม่จบง่าย ๆ'.repeat(2), nameEn: 'An Extraordinarily Long Club Name That Goes On And On '.repeat(3), status: 'testing', bookingsConfirmed30d: 1234567 };
+    const long = { clubId: 'c-long', nameTh: 'ชื่อสโมสรที่ยาวมากมายเหลือเกินและยังไม่จบง่าย ๆ'.repeat(2), nameEn: 'An Extraordinarily Long Club Name That Goes On And On '.repeat(3), status: 'testing', bookingsConfirmed30d: 1234567, setup: { done: 4, total: 9 }, line: { used: 7, limit: null }, alerts: 0 };
     const { page, context } = await openPage(browser, api({ 'GET /clubs': { status: 200, body: { clubs: [long, ...CLUBS] } } }), { width: 320, height: 640 });
     await page.goto(`${app.base}/clubs`);
     await page.getByTestId('club-list').waitFor();
@@ -98,6 +101,20 @@ describe('the clubs list', () => {
     assert.ok(overflow <= 0, `page scrolls sideways by ${overflow}px`);
     for (const l of await page.locator('nav a').all()) assert.ok((await l.boundingBox()).height >= 44, 'menu links are at least 44 px tall');
     await page.screenshot({ path: join(SHOTS, 'clubs-320.png') });
+    await context.close();
+  });
+
+  it('shows Setup, LINE messages and Alerts per club', async () => {
+    const { page, context } = await openPage(browser, api(), { width: 1280, height: 900 });
+    await page.goto(`${app.base}/clubs`);
+    const live = page.getByTestId('club-c-live');
+    await live.waitFor();
+    assert.equal(await live.getByTestId('col-setup').innerText(), '9 of 9');
+    assert.equal(await live.getByTestId('col-line').innerText(), '120 of 300');
+    assert.equal(await live.getByTestId('col-alerts').innerText(), '2');
+    const test = page.getByTestId('club-c-test');
+    assert.equal(await test.getByTestId('col-line').innerText(), '7');
+    assert.equal(await test.getByTestId('col-alerts').innerText(), 'None');
     await context.close();
   });
 });

@@ -242,3 +242,5 @@ Recommended defaults, each marked so the orchestrator can confirm or amend them 
 ## 14. Open items
 
 None block the build. The wallet and credit reason labels, and the wording of the new keys, belong to the writers.
+
+- Solo packs (D166): the Tennis template defines no coach tier, so its solo packs are not loaded (F06-T26). The owner creates them per tier in A9. F11's A0 dashboard should show "create solo packs for your coach tiers" as a non-blocking reminder while `app.solo_packs_done(club)` is false. Not a setup step; it gates no status move.

@@ -5,6 +5,7 @@ import { startWorker, type RunningWorker } from '../worker';
 import { DEFAULT_JOB_SPEC } from '../policy';
 import { IMPORT_STAGING_DISPATCH, IMPORT_STAGING_SWEEP, importStagingDispatch, sweepImportStaging } from './import-staging';
 import { quickAddJob } from 'graphile-worker';
+import { closeTestDatabase } from '../testing/teardown';
 
 // F01-T34 / T31: one sweep job per club, from one cron line (the club list is injected).
 const A = '3f2b8f0e-7c1d-4a55-9d0a-1c2e3f4a5b6c';
@@ -42,7 +43,7 @@ afterEach(async () => {
     await new Promise((r) => setTimeout(r, 25));
   }
   await db.end();
-  await tdb.close();
+  await closeTestDatabase(tdb);
 });
 
 describe('import staging dispatch', () => {

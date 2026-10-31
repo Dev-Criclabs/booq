@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type ClubContext, type Db, type Tx } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
 import { clubTask, TaskRefusedError } from './task-wrapper';
+import { closeTestDatabase } from './testing/teardown';
 
 // F01-T34 club-context task wrapper (FA 5; CC-1). A task runs inside withClubTx for its
 // club; a task without a club id is refused and never touches the database.
@@ -72,7 +73,7 @@ describe('clubTask against the database (F01-T34)', () => {
   });
   afterEach(async () => {
     await db.end();
-    await tdb.close();
+    await closeTestDatabase(tdb);
   });
 
   it('sets the club context for the job and drops it afterwards', async () => {

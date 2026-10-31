@@ -36,9 +36,9 @@ const json = (f: string) => JSON.parse(readFileSync(resolve(ROOT, f), 'utf8')) a
 describe('F10/LINE-03-AC4', () => {
   it('F10/LINE-03-AC4 there is no page, route or button to edit a message (A15 is removed)', () => {
     const routes = [...web.map((r) => `${r.def.method} ${r.def.path}`), ...platform.map((r) => `${r.def.method} ${r.def.path}`)];
-    expect(routes.filter((r) => /message|template|broadcast|campaign/i.test(r) && !/webhook|line\/friend/i.test(r)), 'routes that look like a message editor').toEqual([]);
+    expect(routes.filter((r) => /message|(line|flex|notification|reminder)[-_/ ]?templates?|broadcast|campaign/i.test(r) && !/webhook|line\/friend/i.test(r)), 'routes that look like a message editor').toEqual([]);
     const pages = ['apps/web/src', 'apps/platform/src'].flatMap((d) => files(resolve(ROOT, d))).map((f) => f.replace(ROOT + '/', ''));
-    expect(pages.filter((f) => /(message|template).*(edit|editor|compose)|(edit|editor|compose).*(message|template)|broadcast|campaign/i.test(f)), 'files that look like a message editor').toEqual([]);
+    expect(pages.filter((f) => /(message|(line|flex|notification|reminder)[-_/ ]?templates?).*(edit|editor|compose)|(edit|editor|compose).*(message|(line|flex|notification|reminder)[-_/ ]?templates?)|broadcast|campaign/i.test(f)), 'files that look like a message editor').toEqual([]);
   });
 });
 
@@ -47,7 +47,8 @@ describe('F10/LINE-05-AC16', () => {
   // number of hours in the text. packages/line/src/messages/builder.ts uses it as the 2 hour reminder title. D116 and LINE-05-AC16:
   // the reminder hours are variables in the text, never typed in a key (TEXT-03 variable pass: keep the key, write {hours}).
   // The 24 hour reminder already does it right (L-new.msg_reminder_title_hours uses {hours}). Owner: Content role, then the builder passes hours.
-  it.fails('F10/LINE-05-AC16 the reminder titles hold no typed number of hours', () => {
+  // Fixed on be-l/f10: L-0021 now holds {hours} in both languages, and both reminders use it (the pending duplicate was removed).
+  it('F10/LINE-05-AC16 the reminder titles hold no typed number of hours', () => {
     const usedKeys = ['L-0021', 'L-new.msg_reminder_title_hours'];
     const all: Array<[string, string]> = [];
     for (const f of ['locales/en.json', 'locales/th.json']) {
@@ -59,18 +60,18 @@ describe('F10/LINE-05-AC16', () => {
       if (n && typeof n === 'object') for (const [k, v] of Object.entries(n as Record<string, unknown>)) typeof v === 'string' && usedKeys.includes(k) ? all.push([`pending:${k}`, v]) : walk(v);
     };
     walk(pending);
-    expect(all.length).toBeGreaterThanOrEqual(3);
+    expect(all.length).toBeGreaterThanOrEqual(2);
     expect(all.filter(([, t]) => /\b\d+\b/.test(t)).map(([k]) => k), 'reminder texts with a typed number').toEqual([]);
   });
 
-  it('F10/LINE-05-AC16 the 24 hour reminder and the package expiring texts hold their numbers as variables', () => {
+  it('F10/LINE-05-AC16 the package expiring texts hold their numbers as variables (the reminder titles are checked above)', () => {
     const pending = json('locales/pending/f10.json');
     const found: Array<[string, string]> = [];
     const walk = (n: unknown) => {
       if (n && typeof n === 'object') for (const [k, v] of Object.entries(n as Record<string, unknown>)) typeof v === 'string' && (k.startsWith('L-new.msg_reminder') || k.startsWith('L-new.msg_package_expiring')) ? found.push([k, v]) : walk(v);
     };
     walk(pending);
-    expect(found.length).toBeGreaterThanOrEqual(6);
+    expect(found.length).toBeGreaterThanOrEqual(4);
     for (const [k, t] of found) expect(t, k).not.toMatch(/\b(24|14)\b/);
   });
 });

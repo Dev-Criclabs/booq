@@ -4,6 +4,7 @@ import { createDb, type Db } from '@booq/db';
 import { createTestDatabase, type TestDatabase } from '@booq/db/testing';
 import { startWorker, type RunningWorker } from './worker';
 import { TASK_MAX_ATTEMPTS } from './policy';
+import { closeTestDatabase } from './testing/teardown';
 
 // F01-T34 bootstrap (FA 5): Graphile Worker on a direct connection, tasks in the club context,
 // a crashed task retried once, a heartbeat per task type.
@@ -16,29 +17,11 @@ beforeEach(async () => {
   tdb = await createTestDatabase();
   db = createDb({ connectionString: tdb.url, max: 2, role: 'booq_worker' });
 });
-// Dropping the database terminates any connection still open, and a pool that sees that emits an
-// unhandled 57P01. So teardown is ordered: stop the runner and wait for its promise (done inside
-// stop()), end our own pool, then wait until no connection but the test's own is left on the
-// database (whatever it last ran), and only then drop it. A leftover connection fails the test
-// instead of being killed mid close.
-async function noOtherConnections(): Promise<void> {
-  const end = Date.now() + 15000;
-  let left = -1;
-  while (Date.now() < end) {
-    const { rows } = await tdb.query('select count(*)::int as n from pg_stat_activity where datname = current_database() and pid <> pg_backend_pid()');
-    left = rows[0].n;
-    if (left === 0) return;
-    await new Promise((r) => setTimeout(r, 25));
-  }
-  throw new Error(`${left} connection(s) still open on the test database at teardown`);
-}
-
 afterEach(async () => {
   await worker?.stop();
   worker = undefined;
   await db.end();
-  await noOtherConnections();
-  await tdb.close();
+  await closeTestDatabase(tdb);
 });
 
 const waitFor = async (check: () => boolean | Promise<boolean>, ms = 15000) => {

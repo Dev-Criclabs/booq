@@ -6,7 +6,8 @@ import { errorKey, type Failure } from './club';
 type Fetch = typeof fetch;
 export type Kind = 'number' | 'list';
 /** The settings the system reads, in the order they are shown, with the kind of value each takes and its text key. */
-export const KNOWN: ReadonlyArray<{ key: string; kind: Kind }> = [
+/** `fixed`: a product constant (LINE-07, the PRD); the database refuses any change, so the page shows it and offers no control. */
+export const KNOWN: ReadonlyArray<{ key: string; kind: Kind; fixed?: true }> = [
   { key: 'console_enrolment_ttl_hours', kind: 'number' },
   { key: 'invite_ttl_hours', kind: 'number' },
   { key: 'tester_invite_ttl_hours', kind: 'number' },
@@ -16,9 +17,9 @@ export const KNOWN: ReadonlyArray<{ key: string; kind: Kind }> = [
   { key: 'qr_expiry_margin_seconds', kind: 'number' },
   { key: 'line_send_max_attempts', kind: 'number' },
   { key: 'line_send_retry_seconds', kind: 'number' },
-  { key: 'line_cap_alert_percent', kind: 'number' },
-  { key: 'line_cap_reminders_stop_percent', kind: 'number' },
-  { key: 'line_cap_over_limit_percent', kind: 'number' },
+  { key: 'line_cap_alert_percent', kind: 'number', fixed: true },
+  { key: 'line_cap_reminders_stop_percent', kind: 'number', fixed: true },
+  { key: 'line_cap_over_limit_percent', kind: 'number', fixed: true },
   { key: 'required_launch_checks', kind: 'list' },
 ];
 export const labelKey = (key: string): string => `X-new.config_${key}`;
