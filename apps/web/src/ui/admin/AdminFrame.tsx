@@ -89,7 +89,7 @@ export function AdminFrame({ slug, initialLang, current, children }: { slug: str
         <div className="adm-foot"><LanguageToggle t={t} lang={lang} onChange={choose} /></div>
       </aside>
       <div className="adm-main">
-        <header className="adm-top"><span className="adm-club" data-testid="adm-club">{club}</span></header>
+        <header className="adm-top"><span className="adm-club" data-testid="adm-club" title={club}>{club}</span></header>
         {banners.length > 0 ? (
           <div className="adm-banners" data-testid="adm-banners">
             {banners.map((b) => (

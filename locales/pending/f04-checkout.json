@@ -1,0 +1,23 @@
+{
+  "_note": "F04-T17/T18 checkout screens (C10, C11 hand-off, states). New keys for the writers (D81); existing P keys are used first. Drafted by the Architect; the writers own the wording.",
+  "en": {
+    "P-new.checkout_price_changed": "The price changed while you were looking. Check the new total and tap pay again.",
+    "P-new.checkout_discount": "Discount",
+    "P-new.checkout_no_coach": "No coach",
+    "P-new.checkout_no_coaches_free": "No coach is free for this hour.",
+    "P-new.checkout_working": "Please wait…",
+    "P-new.checkout_back_to_courts": "Back to courts",
+    "P-new.checkout_code_hint_not_applied": "Your birthday discount is larger, so the code was not used.",
+    "P-new.checkout_hold_note": "Your hour is held when you tap pay."
+  },
+  "th": {
+    "P-new.checkout_price_changed": "ราคาเปลี่ยนระหว่างที่คุณดูอยู่ ตรวจยอดใหม่แล้วกดชำระอีกครั้ง",
+    "P-new.checkout_discount": "ส่วนลด",
+    "P-new.checkout_no_coach": "ไม่เอาโค้ช",
+    "P-new.checkout_no_coaches_free": "ไม่มีโค้ชว่างในชั่วโมงนี้",
+    "P-new.checkout_working": "กรุณารอสักครู่…",
+    "P-new.checkout_back_to_courts": "กลับไปเลือกคอร์ต",
+    "P-new.checkout_code_hint_not_applied": "ส่วนลดวันเกิดของคุณมากกว่า จึงไม่ได้ใช้โค้ด",
+    "P-new.checkout_hold_note": "ระบบจะล็อกชั่วโมงให้เมื่อคุณกดชำระ"
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "_note": "Proposed by BE-C for F04 (D51). Numbers to be assigned by Content; wording drafted, writers own it. Reused existing keys: P-0442 (paused); from locales/pending/f03.json: P-new.club_not_available, P-new.resource_inactive, P-new.not_on_the_hour. P-new.spot_gone (F04-T22c) is shown when a waitlist offer has ended before Pay.",
+  "_note": "Proposed by BE-C for F04 (D51). Numbers to be assigned by Content; wording drafted, writers own it. Reused existing keys: P-0442 (paused); from locales/pending/f03.json: P-new.club_not_available, P-new.resource_inactive, P-new.not_on_the_hour. P-new.spot_gone (F04-T22c) is shown when a waitlist offer has ended before Pay. P-new.session_not_available (F04-T22b) is shown when a group class can no longer be booked.",
   "en": {
     "P-new.checkout_bad_input": "Something in your choice is not right. Please go back and pick again.",
     "P-new.price_not_set": "This hour has no price yet, so it cannot be booked. Please contact the club.",
@@ -19,7 +19,8 @@
     "P-new.credit_unavailable": "Your credits or wallet balance changed. Please check the price again.",
     "P-new.payment_unavailable": "Payment is not available right now. Nothing was booked or charged. Please try again later.",
     "A-new.customer_not_found": "We could not find this player. Check the name or phone number and try again.",
-    "P-new.spot_gone": "This spot is no longer yours. The time to claim it ran out or it went to someone else."
+    "P-new.spot_gone": "This spot is no longer yours. The time to claim it ran out or it went to someone else.",
+    "P-new.session_not_available": "This class can no longer be booked. It may have started, been cancelled or is not open to you."
   },
   "th": {
     "P-new.checkout_bad_input": "ข้อมูลที่เลือกไม่ถูกต้อง กรุณาย้อนกลับและเลือกใหม่",
@@ -40,6 +41,7 @@
     "P-new.credit_unavailable": "เครดิตหรือยอดเงินในวอลเล็ตของคุณเปลี่ยนไป กรุณาตรวจสอบราคาอีกครั้ง",
     "P-new.payment_unavailable": "ขณะนี้ยังชำระเงินไม่ได้ ยังไม่มีการจองหรือเรียกเก็บเงิน กรุณาลองใหม่ภายหลัง",
     "A-new.customer_not_found": "ไม่พบผู้เล่นคนนี้ กรุณาตรวจสอบชื่อหรือเบอร์โทรแล้วลองอีกครั้ง",
-    "P-new.spot_gone": "สิทธิ์จองที่ว่างนี้หมดแล้ว เนื่องจากหมดเวลายืนยันหรือส่งต่อให้ผู้เล่นคนถัดไปแล้ว"
+    "P-new.spot_gone": "สิทธิ์จองที่ว่างนี้หมดแล้ว เนื่องจากหมดเวลายืนยันหรือส่งต่อให้ผู้เล่นคนถัดไปแล้ว",
+    "P-new.session_not_available": "ไม่สามารถจองคลาสนี้ได้แล้ว อาจเริ่มไปแล้ว ถูกยกเลิก หรือไม่ได้เปิดให้คุณจอง"
   }
 }

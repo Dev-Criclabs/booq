@@ -18,7 +18,7 @@ after(async () => {
 });
 
 const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
-const customer = (n, over = {}) => ({ customerId: id(n), name: `Customer ${n}`, phone: `+6681000${String(n).padStart(4, '0')}`, tags: [], claimState: null, signedIn: true, lastBookingAt: '2027-01-12T17:30:00Z', bookingCount: n, createdAt: '2026-12-01T03:00:00Z', ...over });
+const customer = (n, over = {}) => ({ customerId: id(n), name: `Customer ${n}`, phone: `+6681000${String(n).padStart(4, '0')}`, tags: [], claimState: null, signedIn: true, lastBookingAt: '2027-01-12T17:30:00Z', bookingCount: n, createdAt: '2026-12-01T03:00:00Z', group: null, activePackage: null, walletSatang: 0, lastVisitAt: '2027-01-12T17:30:00Z', ...over });
 const LONG = 'นางสาวสมหญิงจริงใจสุดยอดนามสกุลยาวมากเป็นพิเศษที่สุดในโลกสุดๆ';
 const PAGE1 = Array.from({ length: 3 }, (_, i) => customer(i + 1));
 const list = (rows, next = null) => ({ status: 200, body: { customers: rows, next } });
@@ -42,6 +42,37 @@ describe('A5 Customers', () => {
     assert.equal(await page.getByTestId('cust-export').getAttribute('href'), '/api/c/hunter/staff/customers/csv');
     assert.equal(await page.getByTestId('nav-customers').getAttribute('aria-current'), 'page');
     await page.screenshot({ path: join(SHOTS, 'admin-customers.png'), fullPage: true });
+    await context.close();
+  });
+
+  it('shows type, package, wallet and last visit; the chips send status and group; Expiring soon with no reminder days set says so', async () => {
+    const ADULT = { id: 'g1', nameTh: 'ผู้ใหญ่', nameEn: 'Adult' };
+    const STUDENT = { id: 'g2', nameTh: 'นักเรียน', nameEn: 'Student' };
+    const rows = [customer(1, { group: ADULT, activePackage: { nameTh: 'แพ็ก 10', nameEn: '10 hour bundle', creditsLeft: 4, expiresAt: '2027-03-01T16:59:59Z' }, walletSatang: 25050 }), customer(2, { group: STUDENT, lastVisitAt: null })];
+    const { page, context, calls } = await openAdmin(browser, (m, p, s) => {
+      if (p === '/staff/setup/price-groups') return { status: 200, body: [ADULT, STUDENT] };
+      if (p !== '/staff/customers') return undefined;
+      if (s.includes('status=expiring_soon')) return { status: 409, body: { code: 'setting_unset' } };
+      if (s.includes('group=g2')) return list([rows[1]]);
+      return list(rows);
+    });
+    await page.goto(`${app.base}/c/hunter/admin/customers`);
+    await page.getByTestId('cust-table').waitFor();
+    const first = await page.getByTestId(`cust-${id(1)}`).innerText();
+    assert.match(first, /Adult/);
+    assert.match(first, /10 hour bundle · 4 left/);
+    assert.match(first, /฿250\.50/);
+    assert.equal(await page.getByTestId('chip-all').getAttribute('aria-pressed'), 'true');
+    await page.getByTestId('chip-group-g2').click();
+    await page.waitForFunction(() => document.querySelector('[data-testid="chip-group-g2"]')?.getAttribute('aria-pressed') === 'true');
+    await page.waitForTimeout(500);
+    assert.ok(calls.some((c) => c.path === '/staff/customers' && c.search.includes('group=g2')));
+    await page.getByTestId('chip-expiring_soon').click();
+    await page.getByTestId('cust-unset').waitFor();
+    assert.match(await page.getByTestId('cust-unset').innerText(), /has not set it yet/);
+    assert.ok(calls.some((c) => c.search.includes('status=expiring_soon') && c.search.includes('group=g2')));
+    await page.getByTestId('chip-all').click();
+    await page.getByTestId('cust-table').waitFor();
     await context.close();
   });
 

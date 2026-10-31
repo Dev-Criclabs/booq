@@ -59,7 +59,7 @@ export type CodeRefusal =
   | { ok: false; code: 'code_not_for_solo_class' };
 
 export interface DiscountLine {
-  kind: 'court_hour' | 'coach' | 'add_on' | 'package';
+  kind: 'court_hour' | 'coach' | 'add_on' | 'package' | 'class_seat';
   hourIndex: number;
   unitPriceSatang: number;
 }
@@ -106,6 +106,7 @@ function discountOn(base: number[], inScope: boolean[], kind: 'percent' | 'fixed
 
 function inCodeScope(code: CodeInput, line: DiscountLine, soloClass: boolean): boolean {
   if (line.kind === 'add_on') return code.includesAddOns;
+  if (line.kind === 'class_seat') return code.appliesTo.includes('group_class');   // a group class seat (F04-T22b)
   if (soloClass && code.appliesTo.includes('solo_class')) return true;
   return code.appliesTo.includes(line.kind);
 }

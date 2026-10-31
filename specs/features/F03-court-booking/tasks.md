@@ -72,7 +72,7 @@ Depends on: F01 T03 to T07 (database, context, tenant suite), T08 (settings), T1
 
 - [x] **F03-T24** C4 schedule screen: date strip to the window, two court grid, seven states each with a label and icon, consecutive hour selection, Day full, loading, offline, Paused. IDs: BOOK-01-AC6, AC7, AC13, AC14, BOOK-02-AC4. Role: FE-P · Deps T20, F02-T18 · Size: M
   Tests first (Playwright): every state is distinguishable without colour; the Thai longest string does not wrap a button; selecting non-consecutive hours is not possible.
-- [ ] **F03-T25** Refusal handling on C4 and checkout entry: slot no longer available (grid refresh), limit reached with `{hours}`, window, hour started, too many attempts. IDs: BOOK-01-AC15, BOOK-04-AC4, BOOK-05-AC8, decision D61. Role: FE-P · Deps T24 · Size: S
+- [x] **F03-T25** Refusal handling on C4 and checkout entry: slot no longer available (grid refresh), limit reached with `{hours}`, window, hour started, too many attempts. IDs: BOOK-01-AC15, BOOK-04-AC4, BOOK-05-AC8, decision D61. Role: FE-P · Deps T24 · Size: S
   Tests first: each typed code shows its locale key in both languages; nothing is charged on a refusal.
 - [ ] **F03-T26** Locale keys: add the proposed keys in both files with named variables and list them for the writers. IDs: CC-5, decision D51. Role: Content · Size: S
   Tests first: the hard-coded text lint passes; both files have the same keys and variables.

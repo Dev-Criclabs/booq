@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import {
-  ASSIGNABLE, createInvite, deactivate, inviteBody, inviteLink, loadInvites, loadStaff, roleSet, ROLE_KEY, setRoles, shownRoles, staffErrorKey, type StaffInvite, type StaffMember,
+  ASSIGNABLE, cancelInvite, createInvite, deactivate, inviteBody, inviteLink, loadInvites, loadStaff, roleSet, ROLE_KEY, setRoles, shownRoles, staffErrorKey, type StaffInvite, type StaffMember,
 } from '../../client/admin/staff';
 import { longDayOf } from '../../client/admin/time';
 import { useAdmin } from './AdminFrame';
@@ -35,6 +35,15 @@ export function StaffPanel({ onForbidden }: { onForbidden?(): void }) {
     void reload();
   }, [reload]);
 
+  async function cancel(id: string) {
+    if (!window.confirm(t('A-new.staff_invite_cancel_confirm'))) return;
+    setBusy(true);
+    const r = await cancelInvite(slug, id, f());
+    setBusy(false);
+    if (r.kind !== 'ok') return setMsg({ key: staffErrorKey(r), error: true });
+    setMsg({ key: 'A-new.staff_invite_cancelled', error: false });
+    await reload();
+  }
   async function invite() {
     const body = inviteBody(choice === 'coach' ? 'coach' : choice === 'both' ? ['front_desk', 'accountant'] : [choice]);
     if (!body) return setMsg({ key: 'A-new.staff_invite_pick', error: true });
@@ -162,7 +171,7 @@ export function StaffPanel({ onForbidden }: { onForbidden?(): void }) {
         <h3>{t('A-new.staff_invites_title')}</h3>
         {load.invites.length === 0 ? <p className="adm-muted">{t('A-new.staff_invites_none')}</p> : (
           <ul className="adm-list">{load.invites.map((i) => (
-            <li key={i.id}><span>{shownRoles(i.roles).map((r) => roleName(r)).join(' + ')} · {t('A-0379')}</span><span className="adm-muted">{t('A-new.staff_invite_expires', { dayMonthYear: longDayOf(lang, i.expires_at) })}</span></li>
+            <li key={i.id}><span>{shownRoles(i.roles).map((r) => roleName(r)).join(' + ')} · {t('A-0379')}</span><span className="adm-muted">{t('A-new.staff_invite_expires', { dayMonthYear: longDayOf(lang, i.expires_at) })}</span><button type="button" className="adm-btn adm-btn-ghost" disabled={busy} onClick={() => void cancel(i.id)} data-testid={`invite-cancel-${i.id}`}>{t('A-new.staff_invite_cancel')}</button></li>
           ))}</ul>
         )}
       </div>
