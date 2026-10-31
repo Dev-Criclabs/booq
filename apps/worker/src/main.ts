@@ -1,4 +1,7 @@
 import { createDb } from '@booq/db';
+import { beamGateway } from '@booq/beam';
+import { createRedactingLogger } from '@booq/auth';
+import { loadDecryptKey } from '@booq/secrets';
 import { listClubIds } from './club-list';
 import { buildCrontab, readWorkerConfig } from './config';
 import { IMPORT_STAGING_DISPATCH, IMPORT_STAGING_SWEEP, importStagingDispatch, sweepImportStaging } from './tasks/import-staging';
@@ -9,6 +12,7 @@ import { runHoldRelease } from './tasks/hold-release';
 import { PACKAGE_EXPIRE, SESSION_START, WALLET_EXPIRE, runPackageExpire, runSessionStart, runWalletExpire } from './tasks/f06-expiry';
 import { CLASS_GENERATE, CLASS_GENERATE_DISPATCH, classGenerateDispatch, generateClassSessions } from './tasks/class-generate';
 import { runClassBelowMinimum, runOfferExpiry } from './tasks/class-jobs';
+import { BEAM_RECONCILE, PACKAGE_ORDER_EXPIRY, runBeamReconcile, runPackageOrderExpiry } from './tasks/payment-jobs';
 import { startTicker } from './ticker';
 import { startWorker } from './worker';
 
@@ -17,6 +21,10 @@ import { startWorker } from './worker';
 // provider and its ExportStorage exists; until then no export job is picked up.
 const config = readWorkerConfig(process.env);
 const db = createDb({ connectionString: config.databaseUrl, role: 'booq_worker' });
+
+// F05 P1 alerts (a kind and the club only) go to the redacted log; the failed check is also on the health tile (0699).
+const alertLog = createRedactingLogger((line) => process.stderr.write(`${line}\n`));
+const paymentAlerts = { p1: (kind: string, clubId: string) => alertLog.error('p1_alert', { source: 'beam_reconcile', kind, clubId }) };
 
 const sweepConsoleSessions = consoleSessionSweep({ db, absoluteSeconds: config.consoleSessionAbsoluteSeconds });
 const sweepRateLimit = rateLimitSweep({ db, keepSeconds: config.rateLimitKeepSeconds });
@@ -43,6 +51,12 @@ const worker = await startWorker({
     },
     [SESSION_START]: async () => {
       await runSessionStart(db);
+    },
+    [BEAM_RECONCILE]: async () => {
+      await runBeamReconcile(db, { privateKey: () => loadDecryptKey(), gateway: beamGateway, alerts: paymentAlerts });
+    },
+    [PACKAGE_ORDER_EXPIRY]: async () => {
+      await runPackageOrderExpiry(db);
     },
   },
   crontab: buildCrontab(config),

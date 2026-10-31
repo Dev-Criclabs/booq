@@ -19,6 +19,8 @@ const ENV = {
   WORKER_SESSION_START_CRON: '* * * * *',
   WORKER_OFFER_EXPIRY_TICK_SECONDS: '30',
   WORKER_CLASS_BELOW_MIN_TICK_SECONDS: '60',
+  WORKER_BEAM_RECONCILE_CRON: '*/5 * * * *',
+  WORKER_PACKAGE_ORDER_EXPIRY_CRON: '* * * * *',
 };
 
 describe('readWorkerConfig', () => {
@@ -40,6 +42,8 @@ describe('readWorkerConfig', () => {
       sessionStartCron: '* * * * *',
       offerExpiryTickSeconds: 30,
       classBelowMinTickSeconds: 60,
+      beamReconcileCron: '*/5 * * * *',
+      packageOrderExpiryCron: '* * * * *',
     });
   });
   it('names every missing setting and never prints a value', () => {
@@ -89,6 +93,14 @@ describe('rate limit keep time', () => {
   });
 });
 
+describe('F05 job schedules', () => {
+  it.each(['WORKER_BEAM_RECONCILE_CRON', 'WORKER_PACKAGE_ORDER_EXPIRY_CRON'])('%s is required and must be five cron fields', (n) => {
+    const { [n]: _gone, ...rest } = ENV as Record<string, string>;
+    expect(() => readWorkerConfig(rest)).toThrow(new RegExp(n));
+    expect(() => readWorkerConfig({ ...ENV, [n]: 'every five minutes' })).toThrow(new RegExp(n));
+  });
+});
+
 describe('console session limit', () => {
   it.each(['0', '-5', 'abc', '2.5', ''])('refuses %j', (v) => {
     expect(() => readWorkerConfig({ ...ENV, WORKER_CONSOLE_SESSION_ABSOLUTE_SECONDS: v })).toThrow(/WORKER_CONSOLE_SESSION_ABSOLUTE_SECONDS/);
@@ -96,13 +108,15 @@ describe('console session limit', () => {
 });
 
 describe('buildCrontab', () => {
-  it('schedules housekeeping, the club dispatches, the two sweeps and the three F06 sweeps, one line each', () => {
+  it('schedules housekeeping, the club dispatches, the two sweeps, the three F06 sweeps and the two F05 jobs, one line each', () => {
     expect(buildCrontab({
       housekeepingCron: '*/5 * * * *', importSweepCron: '17 * * * *', rateLimitSweepCron: '41 * * * *', payTapPruneCron: '23 * * * *', classGenerateCron: '5 17 * * *', consoleSweepCron: '53 * * * *',
       packageExpireCron: '*/5 * * * *', walletExpireCron: '7 17 * * *', sessionStartCron: '* * * * *',
+      beamReconcileCron: '*/5 * * * *', packageOrderExpiryCron: '* * * * *',
     })).toBe(
       '*/5 * * * * housekeeping\n17 * * * * import_staging_dispatch\n41 * * * * rate_limit_sweep\n23 * * * * pay_tap_prune_dispatch\n5 17 * * * class_generate_dispatch\n53 * * * * console_session_sweep\n'
-        + '*/5 * * * * package_expire\n7 17 * * * wallet_expire\n* * * * * session_start\n',
+        + '*/5 * * * * package_expire\n7 17 * * * wallet_expire\n* * * * * session_start\n'
+        + '*/5 * * * * beam_reconcile\n* * * * * package_order_expiry\n',
     );
   });
 });
