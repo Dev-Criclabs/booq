@@ -15,6 +15,7 @@ import { runClassBelowMinimum, runOfferExpiry } from './tasks/class-jobs';
 import { createLineSender, createRichMenuBuildDeps } from './tasks/line-sender-setup';
 import { RICH_MENU_BUILD, richMenuBuildTask } from './tasks/line-rich-menu';
 import { BEAM_RECONCILE, PACKAGE_ORDER_EXPIRY, runBeamReconcile, runPackageOrderExpiry } from './tasks/payment-jobs';
+import { CLOSURE_ROLL, runClosureRoll } from './tasks/closure-roll';
 import { startTicker } from './ticker';
 import { startWorker } from './worker';
 
@@ -75,6 +76,9 @@ const worker = await startWorker({
     },
     [PACKAGE_ORDER_EXPIRY]: async () => {
       await runPackageOrderExpiry(db);
+    },
+    [CLOSURE_ROLL]: async () => {
+      await runClosureRoll(db, { listClubIds: () => listClubIds(db) });
     },
   },
   crontab: buildCrontab(config),

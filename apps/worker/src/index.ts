@@ -10,3 +10,4 @@ export { PACKAGE_EXPIRE, WALLET_EXPIRE, SESSION_START, runPackageExpire, runWall
 export { CLASS_GENERATE, CLASS_GENERATE_DISPATCH, classGenerateDispatch, generateClassSessions } from './tasks/class-generate';
 export { OFFER_EXPIRY, CLASS_BELOW_MINIMUM, runOfferExpiry, runClassBelowMinimum, type OfferExpiryResult, type ClassBelowMinimumResult } from './tasks/class-jobs';
 export { BEAM_RECONCILE, PACKAGE_ORDER_EXPIRY, runBeamReconcile, runPackageOrderExpiry, type PaymentJobsResult } from './tasks/payment-jobs';
+export { CLOSURE_ROLL, runClosureRoll, type ClosureRollResult } from './tasks/closure-roll';

@@ -38,7 +38,7 @@ Depends on: F01 (`cancel_window_hours`, `booking_window_days`, route wrapper T13
 
 ## C. Jobs and messages
 
-- [ ] **F09-T10** Worker task `closure_roll` (per club, `withClubTx`, idempotent, test clock): adds occurrences as the booking window reaches them and runs the cancel routine over any booking found there. IDs: CANCEL-03-AC9. Role: BE-B · Deps T08b, F01-T34 · Size: S
+- [x] **F09-T10** Worker task `closure_roll` (per club, `withClubTx`, idempotent, test clock): adds occurrences as the booking window reaches them and runs the cancel routine over any booking found there. IDs: CANCEL-03-AC9. Role: BE-B · Deps T08b, F01-T34 · Size: S
   Tests first: a repeat closure gains its next occurrence once; a staff booking beyond the window is cancelled with the same routine.
 - [ ] **F09-T11** Enqueue `cancellation_result`, `club_closed_slot`, `session_change` through `app.enqueue_message`; the owner sees the list of players who could not be messaged. IDs: CANCEL-01-AC14, CANCEL-03-AC2, LINE-05. Role: BE-B · Deps T06b, T08a, F10-T06, F10-T23 · Size: S
   Tests first: one message per player by dedupe key; a message that fails never undoes the cancel.
