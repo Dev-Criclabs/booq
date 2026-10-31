@@ -9,3 +9,4 @@ export { HOLD_RELEASE, runHoldRelease, type HoldReleaseResult } from './tasks/ho
 export { PACKAGE_EXPIRE, WALLET_EXPIRE, SESSION_START, runPackageExpire, runWalletExpire, runSessionStart, type ExpiryResult } from './tasks/f06-expiry';
 export { CLASS_GENERATE, CLASS_GENERATE_DISPATCH, classGenerateDispatch, generateClassSessions } from './tasks/class-generate';
 export { OFFER_EXPIRY, CLASS_BELOW_MINIMUM, runOfferExpiry, runClassBelowMinimum, type OfferExpiryResult, type ClassBelowMinimumResult } from './tasks/class-jobs';
+export { BEAM_RECONCILE, PACKAGE_ORDER_EXPIRY, runBeamReconcile, runPackageOrderExpiry, type PaymentJobsResult } from './tasks/payment-jobs';

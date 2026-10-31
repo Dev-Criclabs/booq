@@ -5,6 +5,7 @@ import { RATE_LIMIT_SWEEP } from './tasks/rate-limit-sweep';
 import { PAY_TAP_PRUNE_DISPATCH } from './tasks/pay-tap-prune';
 import { PACKAGE_EXPIRE, SESSION_START, WALLET_EXPIRE } from './tasks/f06-expiry';
 import { CLASS_GENERATE_DISPATCH } from './tasks/class-generate';
+import { BEAM_RECONCILE, PACKAGE_ORDER_EXPIRY } from './tasks/payment-jobs';
 
 // Worker settings (F01-T34). Connection strings and schedules are deployment config: nothing
 // here has a default, so a missing value stops the worker at start instead of guessing.
@@ -46,15 +47,19 @@ export interface WorkerConfig {
   linePushTimeoutMs: number;
   /** The folder holding en.json, th.json and pending/ for LINE messages (the web app's LOCALES_DIR). */
   localesDir: string;
+  /** F05-T09: beam_reconcile, the lookup for a callback that never came (design 5.10: about every five minutes). */
+  beamReconcileCron: string;
+  /** F05-T09: package_order_expiry, package orders past their QR time, and the QR image clean-up. */
+  packageOrderExpiryCron: string;
 }
 
 const CRON = /^\S+ \S+ \S+ \S+ \S+$/;
 
 export function readWorkerConfig(env: Record<string, string | undefined>): WorkerConfig {
-  const names = ['DATABASE_URL', 'WORKER_QUEUE_URL', 'WORKER_HOUSEKEEPING_CRON', 'WORKER_IMPORT_SWEEP_CRON', 'WORKER_RATE_LIMIT_SWEEP_CRON', 'WORKER_PAY_TAP_PRUNE_CRON', 'WORKER_RATE_LIMIT_KEEP_SECONDS', 'WORKER_CONSOLE_SWEEP_CRON', 'WORKER_CONSOLE_SESSION_ABSOLUTE_SECONDS', 'WORKER_HOLD_RELEASE_TICK_SECONDS', 'WORKER_PACKAGE_EXPIRE_CRON', 'WORKER_WALLET_EXPIRE_CRON', 'WORKER_SESSION_START_CRON', 'WORKER_CLASS_GENERATE_CRON', 'WORKER_OFFER_EXPIRY_TICK_SECONDS', 'WORKER_CLASS_BELOW_MIN_TICK_SECONDS', 'WORKER_OUTBOX_SENDER_TICK_SECONDS', 'LINE_API_BASE_URL', 'LINE_PUSH_TIMEOUT_MS', 'LOCALES_DIR'] as const;
+  const names = ['DATABASE_URL', 'WORKER_QUEUE_URL', 'WORKER_HOUSEKEEPING_CRON', 'WORKER_IMPORT_SWEEP_CRON', 'WORKER_RATE_LIMIT_SWEEP_CRON', 'WORKER_PAY_TAP_PRUNE_CRON', 'WORKER_RATE_LIMIT_KEEP_SECONDS', 'WORKER_CONSOLE_SWEEP_CRON', 'WORKER_CONSOLE_SESSION_ABSOLUTE_SECONDS', 'WORKER_HOLD_RELEASE_TICK_SECONDS', 'WORKER_PACKAGE_EXPIRE_CRON', 'WORKER_WALLET_EXPIRE_CRON', 'WORKER_SESSION_START_CRON', 'WORKER_CLASS_GENERATE_CRON', 'WORKER_OFFER_EXPIRY_TICK_SECONDS', 'WORKER_CLASS_BELOW_MIN_TICK_SECONDS', 'WORKER_OUTBOX_SENDER_TICK_SECONDS', 'LINE_API_BASE_URL', 'LINE_PUSH_TIMEOUT_MS', 'LOCALES_DIR', 'WORKER_BEAM_RECONCILE_CRON', 'WORKER_PACKAGE_ORDER_EXPIRY_CRON'] as const;
   const missing = names.filter((n) => !env[n]);
   if (missing.length) throw new Error(`worker settings missing: ${missing.join(', ')}`);
-  for (const n of ['WORKER_HOUSEKEEPING_CRON', 'WORKER_IMPORT_SWEEP_CRON', 'WORKER_RATE_LIMIT_SWEEP_CRON', 'WORKER_PAY_TAP_PRUNE_CRON', 'WORKER_CONSOLE_SWEEP_CRON', 'WORKER_PACKAGE_EXPIRE_CRON', 'WORKER_WALLET_EXPIRE_CRON', 'WORKER_SESSION_START_CRON', 'WORKER_CLASS_GENERATE_CRON'] as const) {
+  for (const n of ['WORKER_HOUSEKEEPING_CRON', 'WORKER_IMPORT_SWEEP_CRON', 'WORKER_RATE_LIMIT_SWEEP_CRON', 'WORKER_PAY_TAP_PRUNE_CRON', 'WORKER_CONSOLE_SWEEP_CRON', 'WORKER_PACKAGE_EXPIRE_CRON', 'WORKER_WALLET_EXPIRE_CRON', 'WORKER_SESSION_START_CRON', 'WORKER_CLASS_GENERATE_CRON', 'WORKER_BEAM_RECONCILE_CRON', 'WORKER_PACKAGE_ORDER_EXPIRY_CRON'] as const) {
     if (!CRON.test(env[n]!)) throw new Error(`${n} must be five cron fields`);
   }
   for (const n of ['WORKER_HOLD_RELEASE_TICK_SECONDS', 'WORKER_OFFER_EXPIRY_TICK_SECONDS', 'WORKER_CLASS_BELOW_MIN_TICK_SECONDS', 'WORKER_OUTBOX_SENDER_TICK_SECONDS'] as const) {
@@ -85,13 +90,16 @@ export function readWorkerConfig(env: Record<string, string | undefined>): Worke
     lineApiBaseUrl: env['LINE_API_BASE_URL']!,
     linePushTimeoutMs: Number(env['LINE_PUSH_TIMEOUT_MS']),
     localesDir: env['LOCALES_DIR']!,
+    beamReconcileCron: env['WORKER_BEAM_RECONCILE_CRON']!,
+    packageOrderExpiryCron: env['WORKER_PACKAGE_ORDER_EXPIRY_CRON']!,
   };
 }
 
 /** Graphile Worker crontab text: housekeeping, the dispatchers that add one import sweep, one Pay tap prune and one class generation per club, the rate-limit sweep, the console session sweep and the three F06 sweeps. */
 export function buildCrontab(
-  c: Pick<WorkerConfig, 'housekeepingCron' | 'importSweepCron' | 'rateLimitSweepCron' | 'payTapPruneCron' | 'classGenerateCron' | 'consoleSweepCron' | 'packageExpireCron' | 'walletExpireCron' | 'sessionStartCron'>,
+  c: Pick<WorkerConfig, 'housekeepingCron' | 'importSweepCron' | 'rateLimitSweepCron' | 'payTapPruneCron' | 'classGenerateCron' | 'consoleSweepCron' | 'packageExpireCron' | 'walletExpireCron' | 'sessionStartCron' | 'beamReconcileCron' | 'packageOrderExpiryCron'>,
 ): string {
   return `${c.housekeepingCron} ${HOUSEKEEPING}\n${c.importSweepCron} ${IMPORT_STAGING_DISPATCH}\n${c.rateLimitSweepCron} ${RATE_LIMIT_SWEEP}\n${c.payTapPruneCron} ${PAY_TAP_PRUNE_DISPATCH}\n${c.classGenerateCron} ${CLASS_GENERATE_DISPATCH}\n${c.consoleSweepCron} ${CONSOLE_SESSION_SWEEP}\n`
-    + `${c.packageExpireCron} ${PACKAGE_EXPIRE}\n${c.walletExpireCron} ${WALLET_EXPIRE}\n${c.sessionStartCron} ${SESSION_START}\n`;
+    + `${c.packageExpireCron} ${PACKAGE_EXPIRE}\n${c.walletExpireCron} ${WALLET_EXPIRE}\n${c.sessionStartCron} ${SESSION_START}\n`
+    + `${c.beamReconcileCron} ${BEAM_RECONCILE}\n${c.packageOrderExpiryCron} ${PACKAGE_ORDER_EXPIRY}\n`;
 }
