@@ -19,6 +19,12 @@ BOOQ staff sign in with email and a second factor (D3). The password check happe
 | `STAFF_INVITE_SIGNING_SECRET` **(branch)** | same group | **Secret.** 32+ characters. The same value is set in `apps/staff-invite`. The console signs its requests to the function with it |
 | `PLATFORM_BASE_URL` **(branch)** | required whenever `STAFF_INVITE_URL` is set | `https` address of **the console itself** (not the club app; that is `APP_BASE_URL`). It is the base of the staff enrolment link an admin sends to a new teammate. If it is wrong, every enrolment link points to the wrong place. Set it to the console's real public address once the console is hosted |
 
+### Deploy environment checklist, `apps/platform`
+
+Set in the console's hosting environment (staging, production). Required for the 7 Dec test: `DATABASE_URL` (role `booq_platform`), `PLATFORM_SIGNING_KEY`, `PLATFORM_MAX_BODY_BYTES`, `APP_BASE_URL`, `HEALTH_TOKEN`, `PLATFORM_SIGNIN_RATE_LIMIT` with `PLATFORM_SIGNIN_RATE_WINDOW_SECONDS`, `STAFF_INVITE_URL` with `STAFF_INVITE_SIGNING_SECRET` and `PLATFORM_BASE_URL`, and **`SECRETS_PUBLIC_KEY`** (the console writes a club's LINE and Beam values with it, and only with it). **`SECRETS_PRIVATE_KEY` must not be set here.** Also set the `platform.config` rows below before the test.
+
+**Open point for the console's LINE and Beam probes (platform lane 2).** The F05 design has a "Test connection" that makes a read-only call to Beam with the club's key. The console has only the public key, so it can **encrypt but not read back** a stored secret. A probe can therefore use only the value the admin has just typed (before it is encrypted), or it must run in the worker, which holds the private key. Reading a stored secret in the console would need the private key there, which breaks the platform-blind rule (SR-03). Also, a probe makes outbound calls, so the console may need settings for the LINE and Beam addresses (like `LINE_API_BASE_URL` for the worker); I will list them here when lane 2 lands.
+
 ### Platform config values (database table `platform.config`, set by a BOOQ admin, no defaults)
 
 These are not environment variables. They are rows an admin enters in the console, and the code ships none (no invented settings). Known so far, all to be set **before the 7 Dec test**:
