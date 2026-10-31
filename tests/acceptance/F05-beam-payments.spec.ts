@@ -8,19 +8,19 @@ describe("F05 PAY-01", () => {
   // Given a club record with payment option Beam, when a player reaches payment, then C11 shows the Beam screen: Waiting for your payment, the QR for the exact amount, a countdown to the end of the hold, save QR, and no slip upload.
   test.todo("F05/PAY-01-AC1 Given a club record with payment option Beam, when a player reaches payment, then C11 shows the Beam ...");
   // Given a Beam club, when any slip route, slip popup or A4 is requested, then the server answers 404; a Beam club has none of them (ADMIN-05).
-  test.todo("F05/PAY-01-AC2 Given a Beam club, when any slip route, slip popup or A4 is requested, then the server answers 404; a Beam ...");
+  // F05/PAY-01-AC2: proven by a real or traced test in another file of this folder
   // Given the platform console, when BOOQ staff set the option in P2 step 5, then it is saved on the club, audited in P6, and switching it changes no screen code (HO Architecture). A club on slip checking is F16.
   test.todo("F05/PAY-01-AC3 Given the platform console, when BOOQ staff set the option in P2 step 5, then it is saved on the club, ...");
   // Given a club, when its Beam keys are stored, then there are two sets, test and live; a club in Testing uses the test set and a Live club uses the live set (D32). A key of one set is never used for the other environment.
   test.todo("F05/PAY-01-AC4 Given a club, when its Beam keys are stored, then there are two sets, test and live; a club in Testing ...");
   // Given the P4 launch checklist, when a club goes Live, then swapping to the live key set is a required item with a smoke test, and Go live is refused until it passes (D32, F01 PLAT-07-AC10).
-  test.todo("F05/PAY-01-AC5 Given the P4 launch checklist, when a club goes Live, then swapping to the live key set is a required item ...");
+  // F05/PAY-01-AC5: proven by a real or traced test in another file of this folder
   // Given the P2 step 5 Test connection, when BOOQ staff press it, then the test charges a sandbox call with the test set and shows pass or fail only; no player data is involved.
   test.todo("F05/PAY-01-AC6 Given the P2 step 5 Test connection, when BOOQ staff press it, then the test charges a sandbox call with ...");
   // Given the club's Beam merchant account is missing or its keys fail, when a player taps Pay, then the order is refused with a try again message and nothing is held that cannot be paid. A failed key check or an unreachable Beam shows an alert in P1, and a failed key check also reaches the owner (D75). Hunter's Beam merchant account and confirmed fees are open for setup, not for code (HO).
   test.todo("F05/PAY-01-AC7 Given the club's Beam merchant account is missing or its keys fail, when a player taps Pay, then the order ...");
   // Given a stored key, when anyone views it, then only the last 4 characters show and it can only be replaced (D27, D34).
-  test.todo("F05/PAY-01-AC8 Given a stored key, when anyone views it, then only the last 4 characters show and it can only be replaced ...");
+  // F05/PAY-01-AC8: proven by a real or traced test in another file of this folder
   // Given test mode, when a test payment is made, then it uses Beam's sandbox only. There is no in app "simulate payment" action in any status (D26); no route can confirm a booking without a valid signed callback.
   test.todo("F05/PAY-01-AC9 Given test mode, when a test payment is made, then it uses Beam's sandbox only. There is no in app ...");
   // Given a Beam club, when a player is paid back for a cancel or a closure, then nothing is sent to Beam: refunds are wallet or credit (PAY-05). The Option A wording "Refunds go back by PromptPay" in P2 step 5 and the PRD cost section is wrong and is not built (Gaps A3).
@@ -41,46 +41,46 @@ describe("F05 PAY-02", () => {
   // Given a validly signed callback whose amount is not equal to the order's amount due, when it arrives, then the booking is not confirmed, the event is recorded, the owner sees a banner in the club admin, and the callback gets a success status so Beam stops retrying (D36, D75). The player sees that the payment was received and the club is checking (D77). Staff credit the full amount received, including any overpayment, to the player's wallet with the reason `wrong_amount` (D77, D78), and that credit gets its own receipt (D79).
   test.todo("F05/PAY-02-AC6 Given a validly signed callback whose amount is not equal to the order's amount due, when it arrives, then ...");
   // Given a duplicate callback for a charge already processed, when it arrives, then it is ignored with a success status and changes nothing (D24); parallel duplicates give exactly one confirmation and one receipt.
-  test.todo("F05/PAY-02-AC7 Given a duplicate callback for a charge already processed, when it arrives, then it is ignored with a ...");
+  // F05/PAY-02-AC7: proven by a real or traced test in another file of this folder
   // Given a callback for a charge that fails, when it arrives, then the order stays awaiting payment until the hold ends, the player sees that the payment did not go through, and nothing is confirmed. A second tap on Pay then creates a new charge in the same hold (D72); the new QR expires by the same rule (AC2).
-  test.todo("F05/PAY-02-AC8 Given a callback for a charge that fails, when it arrives, then the order stays awaiting payment until the ...");
+  // F05/PAY-02-AC8: proven by a real or traced test in another file of this folder
   // Given a validly signed callback for a charge that matches no order, when it arrives, then it is answered with success and flagged; a callback with a bad signature is rejected (D71, D24). A callback that is validly signed but for an order of another club cannot arise, because it is verified with that club's key (AC10).
   test.todo("F05/PAY-02-AC9 Given a validly signed callback for a charge that matches no order, when it arrives, then it is answered ...");
   // Given the callback endpoint, when it is called, then the club is identified from the request and the signature is checked with that club's key before any content is trusted; the raw body is verified before parsing (the docs sign the exact raw body).
   test.todo("F05/PAY-02-AC10 Given the callback endpoint, when it is called, then the club is identified from the request and the ...");
   // Given a callback and a hold expiry at the same instant, when both run, then exactly one outcome stands: confirmed, or released with the late payment rule (BOOK-04-AC8).
-  test.todo("F05/PAY-02-AC11 Given a callback and a hold expiry at the same instant, when both run, then exactly one outcome stands: ...");
+  // F05/PAY-02-AC11: proven by a real or traced test in another file of this folder
   // Given a callback arrives for an order created before a pause, when the club is Paused, then it is still processed (a started payment is not refused by the pause; confirms with F01 Q12).
   test.todo("F05/PAY-02-AC12 Given a callback arrives for an order created before a pause, when the club is Paused, then it is still ...");
   // Given the callback is delivered, when it is stored, then the event is recorded (event name, charge reference, order, amount, result, time) without card or personal data, append only (D28).
-  test.todo("F05/PAY-02-AC13 Given the callback is delivered, when it is stored, then the event is recorded (event name, charge ...");
+  // F05/PAY-02-AC13: proven by a real or traced test in another file of this folder
   // Given a payment of a test order, when the callback arrives, then it comes from Beam's sandbox and the order is flagged test and excluded from reports (D26, D33).
-  test.todo("F05/PAY-02-AC14 Given a payment of a test order, when the callback arrives, then it comes from Beam's sandbox and the ...");
+  // F05/PAY-02-AC14: proven by a real or traced test in another file of this folder
   // Given a callback never arrives (all of Beam's retries fail, or the player paid and nothing was reported), when the order is still awaiting payment, then the server may check Beam's charge status and confirms the booking only when the amount and the reference match; the check and its result are recorded in the audit log (D73). A confirmation by this check is subject to the same hold and late payment rules as a callback.
   test.todo("F05/PAY-02-AC15 Given a callback never arrives (all of Beam's retries fail, or the player paid and nothing was reported), ...");
   // Given an order is created and its charge, when the request goes to Beam, then only the order reference is sent: no player name, phone, date of birth or LINE ID (D76).
-  test.todo("F05/PAY-02-AC16 Given an order is created and its charge, when the request goes to Beam, then only the order reference is ...");
+  // F05/PAY-02-AC16: proven by a real or traced test in another file of this folder
   // Given a second successful payment for an order already Confirmed (a different charge paying it again), when it is reported, then the amount is credited to the wallet with the reason `duplicate_payment` (D78); whether that gets a receipt is Q1.
-  test.todo("F05/PAY-02-AC17 Given a second successful payment for an order already Confirmed (a different charge paying it again), ...");
+  // F05/PAY-02-AC17: proven by a real or traced test in another file of this folder
 });
 
 describe("F05 PAY-03", () => {
   // Given a payment that Beam reports after the hold ended, when the slot is still open (no other hold, no booking and no closure on it), then the booking is approved and confirmed, with a receipt and the Booking confirmed card (D25).
   test.todo("F05/PAY-03-AC1 Given a payment that Beam reports after the hold ended, when the slot is still open (no other hold, no ...");
   // Given such a payment and the slot is held, booked or closed (a closure, including one that cancelled this hold, D48), when it is reported, then the value is credited to the player's wallet, nothing is booked, and the player gets a LINE message (D25).
-  test.todo("F05/PAY-03-AC2 Given such a payment and the slot is held, booked or closed (a closure, including one that cancelled this ...");
+  // F05/PAY-03-AC2: proven by a real or traced test in another file of this folder
   // Given a solo class, when its late payment arrives, then court and coach must both be free for it to be approved; if either is not, all of it goes to the wallet and nothing is partly booked (D25).
-  test.todo("F05/PAY-03-AC3 Given a solo class, when its late payment arrives, then court and coach must both be free for it to be ...");
+  // F05/PAY-03-AC3: proven by a real or traced test in another file of this folder
   // Given a late payment credited to the wallet, when it is saved, then the wallet credit equals the money paid, is a ledger row with the reason `late_payment` (D78), and gets its own receipt for the money received (D37, F13).
-  test.todo("F05/PAY-03-AC4 Given a late payment credited to the wallet, when it is saved, then the wallet credit equals the money ...");
+  // F05/PAY-03-AC4: proven by a real or traced test in another file of this folder
   // Given the slot check, when it runs, then it runs inside the booking transaction with the uniqueness rule, so two late payments for one slot cannot both be approved and a late payment cannot take a slot from a player who now holds it.
-  test.todo("F05/PAY-03-AC5 Given the slot check, when it runs, then it runs inside the booking transaction with the uniqueness rule, ...");
+  // F05/PAY-03-AC5: proven by a real or traced test in another file of this folder
   // Given a hold that was released, when the player is told, then they already got Booking released when the hold ended (D45); the late payment message says what happened to the money (approved or wallet).
   test.todo("F05/PAY-03-AC6 Given a hold that was released, when the player is told, then they already got Booking released when the ...");
   // Given the order that was released, when a late payment is approved, then the same order and amounts are used; it is not repriced.
   test.todo("F05/PAY-03-AC7 Given the order that was released, when a late payment is approved, then the same order and amounts are ...");
   // Given a late payment arrives for a package order that was cancelled, when it is reported, then the value goes to the wallet with its own receipt (D74).
-  test.todo("F05/PAY-03-AC8 Given a late payment arrives for a package order that was cancelled, when it is reported, then the value ...");
+  // F05/PAY-03-AC8: proven by a real or traced test in another file of this folder
 });
 
 describe("F05 PAY-04", () => {
@@ -89,11 +89,11 @@ describe("F05 PAY-04", () => {
   // Given the QR validity ends without payment, when it ends, then the order is cancelled and nothing is charged or credited; no ledger rows and no receipt exist.
   test.todo("F05/PAY-04-AC2 Given the QR validity ends without payment, when it ends, then the order is cancelled and nothing is ...");
   // Given a payment arrives while the QR is valid, when the callback is verified (PAY-02), then the package is added with its credits, expiry and receipt (F06, F13).
-  test.todo("F05/PAY-04-AC3 Given a payment arrives while the QR is valid, when the callback is verified (PAY-02), then the package is ...");
+  // F05/PAY-04-AC3: proven by a real or traced test in another file of this folder
   // Given a package bought with a booking, when the player pays, then the booking's hold governs and the QR expires with it (BOOK-03, D18).
-  test.todo("F05/PAY-04-AC4 Given a package bought with a booking, when the player pays, then the booking's hold governs and the QR ...");
+  // F05/PAY-04-AC4: proven by a real or traced test in another file of this folder
   // Given a payment arrives after a package order was cancelled, when it is reported, then the value goes to the wallet and gets its own receipt (D74, PAY-03).
-  test.todo("F05/PAY-04-AC5 Given a payment arrives after a package order was cancelled, when it is reported, then the value goes to ...");
+  // F05/PAY-04-AC5: proven by a real or traced test in another file of this folder
   // Given C11P, when it shows, then it states the QR time as a variable `{minutes}` and shows Time ran out when the QR has expired.
   test.todo("F05/PAY-04-AC6 Given C11P, when it shows, then it states the QR time as a variable `{minutes}` and shows Time ran out ...");
   // Given the package QR time, then it is its own club setting and is not the hold time (D74).
@@ -102,7 +102,7 @@ describe("F05 PAY-04", () => {
 
 describe("F05 PAY-05", () => {
   // Given any cancel, closure, failed payment or wrong amount, when value is returned, then it is returned as wallet balance or package credit and never as money to the player's bank or Beam.
-  test.todo("F05/PAY-05-AC1 Given any cancel, closure, failed payment or wrong amount, when value is returned, then it is returned as ...");
+  // F05/PAY-05-AC1: proven by a real or traced test in another file of this folder
   // Given the whole system, when its routes, buttons and admin actions are listed, then none refunds money or withdraws the wallet (route inventory test; QA CANCEL-02).
   test.todo("F05/PAY-05-AC2 Given the whole system, when its routes, buttons and admin actions are listed, then none refunds money or ...");
   // Given the Beam client in the app, when it is built, then it has no refund call at all; a test double fails if a refund is attempted.
@@ -117,13 +117,13 @@ describe("F05 PAY-06", () => {
   // Given staff in A2, when they take cash without a reason code, then the server refuses.
   test.todo("F05/PAY-06-AC1 Given staff in A2, when they take cash without a reason code, then the server refuses.");
   // Given the reason codes are No banking app, QR failed at the counter, and Other with a note, when staff pick Other without a note, then the server refuses (D56).
-  test.todo("F05/PAY-06-AC2 Given the reason codes are No banking app, QR failed at the counter, and Other with a note, when staff ...");
+  // F05/PAY-06-AC2: proven by a real or traced test in another file of this folder
   // Given cash, when it is taken, then the order method is cash, a receipt is issued, and the entry is audited (PLAT-04) with the reason code.
-  test.todo("F05/PAY-06-AC3 Given cash, when it is taken, then the order method is cash, a receipt is issued, and the entry is audited ...");
+  // F05/PAY-06-AC3: proven by a real or traced test in another file of this folder
   // Given a package sale at the desk, when staff take cash, then it is allowed (D56).
-  test.todo("F05/PAY-06-AC4 Given a package sale at the desk, when staff take cash, then it is allowed (D56).");
+  // F05/PAY-06-AC4: proven by a real or traced test in another file of this folder
   // Given a player, a coach or an accountant, when they try to take cash, then the server refuses; only Front desk and Owner can (D56).
-  test.todo("F05/PAY-06-AC5 Given a player, a coach or an accountant, when they try to take cash, then the server refuses; only Front ...");
+  // F05/PAY-06-AC5: proven by a real or traced test in another file of this folder
   // Given a cash payment, when the daily close runs, then it is totalled as cash (F13).
   test.todo("F05/PAY-06-AC6 Given a cash payment, when the daily close runs, then it is totalled as cash (F13).");
   // Given a cash order, when it is cancelled 12 hours or more ahead, then the value goes to the wallet, not as cash (D21, PAY-05).

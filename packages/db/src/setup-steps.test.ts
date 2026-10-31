@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createPlatformDb, type PlatformDb } from './platform-tx';
 import { createTestDatabase, type TestDatabase } from './testing/harness';
-import { recordLaunchChecks } from './setup-fixture';
+import { recordLaunchChecks, requiredLaunchKeys } from './setup-fixture';
 
 // F01-T23 part a / migration 0034: setup steps for Draft to Testing, required launch checks for
 // Testing to Live (review T20 R2), and the P3 progress list (PLAT-01-AC2, AC3, AC9, AC12).
@@ -123,7 +123,9 @@ describe('Testing to Live needs the required launch checks from config (review T
 
   it('the list is data in platform.config and holds the Go live checks of D108 with who owes each', async () => {
     const keys = (await required()).map((r) => r.key);
-    expect(keys).toEqual(['line_test', 'pay_tap_limit_set', 'beam_key_swap', 'receipt_prefix_set', 'owner_signed_in', 'owner_verified', 'product_priced', 'template_required_settings', 'test_booking_completed', 'no_open_launch_failure']);
+    // The ten of D108 come first, in order; later features append their own (line_send_retry_set, F10).
+    expect(keys.slice(0, 10)).toEqual(['line_test', 'pay_tap_limit_set', 'beam_key_swap', 'receipt_prefix_set', 'owner_signed_in', 'owner_verified', 'product_priced', 'template_required_settings', 'test_booking_completed', 'no_open_launch_failure']);
+    expect(keys).toContain('line_send_retry_set');
     expect((await required()).every((r) => r.owed_by === 'booq' || r.owed_by === 'owner')).toBe(true);
   });
 
@@ -173,7 +175,7 @@ describe('platform.club_progress (P3: what is missing and who owes it)', () => {
       { item: 'payments', done: false, owed_by: 'booq' },
       { item: 'legal_notice', done: false, owed_by: 'booq' },
     ]);
-    expect(p.launch).toHaveLength(10);
+    expect(p.launch.map((x: { item: string }) => x.item)).toEqual(await requiredLaunchKeys(tdb));
     expect(p.launch[0]).toEqual({ item: 'line_test', result: 'pending', owed_by: 'booq' });
   });
 

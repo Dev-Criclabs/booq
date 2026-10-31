@@ -9,10 +9,16 @@ const ENV = {
   WORKER_IMPORT_SWEEP_CRON: '17 * * * *',
   WORKER_RATE_LIMIT_SWEEP_CRON: '41 * * * *',
   WORKER_PAY_TAP_PRUNE_CRON: '23 * * * *',
+  WORKER_CLASS_GENERATE_CRON: '5 17 * * *',
   WORKER_RATE_LIMIT_KEEP_SECONDS: '86400',
   WORKER_CONSOLE_SWEEP_CRON: '53 * * * *',
   WORKER_CONSOLE_SESSION_ABSOLUTE_SECONDS: '43200',
   WORKER_HOLD_RELEASE_TICK_SECONDS: '20',
+  WORKER_PACKAGE_EXPIRE_CRON: '*/5 * * * *',
+  WORKER_WALLET_EXPIRE_CRON: '7 17 * * *',
+  WORKER_SESSION_START_CRON: '* * * * *',
+  WORKER_OFFER_EXPIRY_TICK_SECONDS: '30',
+  WORKER_CLASS_BELOW_MIN_TICK_SECONDS: '60',
 };
 
 describe('readWorkerConfig', () => {
@@ -24,10 +30,16 @@ describe('readWorkerConfig', () => {
       importSweepCron: '17 * * * *',
       rateLimitSweepCron: '41 * * * *',
       payTapPruneCron: '23 * * * *',
+      classGenerateCron: '5 17 * * *',
       rateLimitKeepSeconds: 86400,
       consoleSweepCron: '53 * * * *',
       consoleSessionAbsoluteSeconds: 43200,
       holdReleaseTickSeconds: 20,
+      packageExpireCron: '*/5 * * * *',
+      walletExpireCron: '7 17 * * *',
+      sessionStartCron: '* * * * *',
+      offerExpiryTickSeconds: 30,
+      classBelowMinTickSeconds: 60,
     });
   });
   it('names every missing setting and never prints a value', () => {
@@ -46,6 +58,12 @@ describe('readWorkerConfig', () => {
     expect(message).toContain('WORKER_CONSOLE_SWEEP_CRON');
     expect(message).toContain('WORKER_CONSOLE_SESSION_ABSOLUTE_SECONDS');
     expect(message).toContain('WORKER_HOLD_RELEASE_TICK_SECONDS');
+    expect(message).toContain('WORKER_PACKAGE_EXPIRE_CRON');
+    expect(message).toContain('WORKER_WALLET_EXPIRE_CRON');
+    expect(message).toContain('WORKER_SESSION_START_CRON');
+    expect(message).toContain('WORKER_CLASS_GENERATE_CRON');
+    expect(message).toContain('WORKER_OFFER_EXPIRY_TICK_SECONDS');
+    expect(message).toContain('WORKER_CLASS_BELOW_MIN_TICK_SECONDS');
     expect(message).not.toContain('secret');
   });
   it('refuses a schedule that is not five cron fields', () => {
@@ -53,6 +71,9 @@ describe('readWorkerConfig', () => {
     expect(() => readWorkerConfig({ ...ENV, WORKER_IMPORT_SWEEP_CRON: '* * * *' })).toThrow(/WORKER_IMPORT_SWEEP_CRON/);
     expect(() => readWorkerConfig({ ...ENV, WORKER_PAY_TAP_PRUNE_CRON: 'hourly' })).toThrow(/WORKER_PAY_TAP_PRUNE_CRON/);
     expect(() => readWorkerConfig({ ...ENV, WORKER_IMPORT_SWEEP_CRON: '* * * * * x\n0 0 * * * evil' })).toThrow(/WORKER_IMPORT_SWEEP_CRON/);
+    expect(() => readWorkerConfig({ ...ENV, WORKER_PACKAGE_EXPIRE_CRON: 'every 5 minutes' })).toThrow(/WORKER_PACKAGE_EXPIRE_CRON/);
+    expect(() => readWorkerConfig({ ...ENV, WORKER_WALLET_EXPIRE_CRON: 'daily' })).toThrow(/WORKER_WALLET_EXPIRE_CRON/);
+    expect(() => readWorkerConfig({ ...ENV, WORKER_SESSION_START_CRON: '* * * *' })).toThrow(/WORKER_SESSION_START_CRON/);
   });
 });
 
@@ -75,9 +96,13 @@ describe('console session limit', () => {
 });
 
 describe('buildCrontab', () => {
-  it('schedules housekeeping, the club dispatches and the two sweeps, one line each', () => {
-    expect(buildCrontab({ housekeepingCron: '*/5 * * * *', importSweepCron: '17 * * * *', rateLimitSweepCron: '41 * * * *', payTapPruneCron: '23 * * * *', consoleSweepCron: '53 * * * *' })).toBe(
-      '*/5 * * * * housekeeping\n17 * * * * import_staging_dispatch\n41 * * * * rate_limit_sweep\n23 * * * * pay_tap_prune_dispatch\n53 * * * * console_session_sweep\n',
+  it('schedules housekeeping, the club dispatches, the two sweeps and the three F06 sweeps, one line each', () => {
+    expect(buildCrontab({
+      housekeepingCron: '*/5 * * * *', importSweepCron: '17 * * * *', rateLimitSweepCron: '41 * * * *', payTapPruneCron: '23 * * * *', classGenerateCron: '5 17 * * *', consoleSweepCron: '53 * * * *',
+      packageExpireCron: '*/5 * * * *', walletExpireCron: '7 17 * * *', sessionStartCron: '* * * * *',
+    })).toBe(
+      '*/5 * * * * housekeeping\n17 * * * * import_staging_dispatch\n41 * * * * rate_limit_sweep\n23 * * * * pay_tap_prune_dispatch\n5 17 * * * class_generate_dispatch\n53 * * * * console_session_sweep\n'
+        + '*/5 * * * * package_expire\n7 17 * * * wallet_expire\n* * * * * session_start\n',
     );
   });
 });

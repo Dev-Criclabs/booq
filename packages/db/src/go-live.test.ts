@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createPlatformDb, type PlatformDb } from './platform-tx';
 import { createTestDatabase, type TestDatabase } from './testing/harness';
-import { completeSetup } from './setup-fixture';
+import { completeSetup, recordLaunchChecks } from './setup-fixture';
 
 // F01-T27b / migration 0046: every Go live check has a producer, the result of a derived check is computed
 // (never typed in), recorded checks are written by one audited function, and the list is changed by one
@@ -43,15 +43,9 @@ async function liveBeamKeys(club = CLUB) {
   }
 }
 const record = (who: string, key: string, res: string, club = CLUB) => call(who, `select platform.record_launch_check($1, $2, $3)`, [club, key, res], club);
-/** Everything a club needs for Go live, by the real producers. */
+/** Everything a club needs for Go live: every required check passes, whatever the list holds (setup-fixture). */
 async function ready(club = CLUB) {
-  await tdb.query(`update public.club set receipt_prefix = 'HTC' where id = $1`, [club]);
-  await allRequiredSettings(club);
-  await payTap();
-  await liveBeamKeys(club);
-  for (const [key, res] of [['beam_key_swap', 'pass'], ['owner_signed_in', 'pass'], ['owner_verified', 'pass'], ['product_priced', 'pass'], ['test_booking_completed', 'pass']] as const) {
-    await tdb.query(`insert into platform.launch_check (club_id, check_key, result) values ($1,$2,$3) on conflict (club_id, check_key) do update set result = excluded.result`, [club, key, res]);
-  }
+  await recordLaunchChecks(tdb, club);
 }
 
 beforeEach(async () => {
