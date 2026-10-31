@@ -31,7 +31,7 @@ let booking: string;
 let firstOrder: string;
 
 /** A paid court booking of `customer` with its confirmed occupancy row and its court line (as Pay and payment leave it). */
-async function paidCourt(customer: string, court = COURT, start = SLOT): Promise<{ booking: string; order: string }> {
+async function paidCourt(customer: string, court: string = COURT, start: string = SLOT): Promise<{ booking: string; order: string }> {
   const c = await tdb.pool.connect();
   try {
     await c.query('begin');
