@@ -14,12 +14,12 @@ Features with no approved requirements on this branch yet (F14, F15, F16) have n
 | F06-packages-credit-wallet | 60 | PKG-01 (12), PKG-02 (10), PKG-03 (10), R1 (10), R2 (8), R3 (10) |
 | F07-solo-classes-coach | 68 | COACH-01 (12), COACH-02 (9), COACH-03 (5), COACH-04 (4), R1 (8), R2 (7), R3 (7), R4 (7), R5 (6), R6 (3) |
 | F08-group-classes-waitlist | 39 | CLASS-01 (18), CLASS-02 (16), WAIT-01 (5) |
-| F09-cancellation-closures | 58 | CANCEL-01 (23), CANCEL-02 (6), CANCEL-03 (17), CANCEL-04 (12) |
+| F09-cancellation-closures | 57 | CANCEL-01 (23), CANCEL-02 (6), CANCEL-03 (17), CANCEL-04 (11) |
 | F10-line-messages | 63 | LINE-02 (10), LINE-03 (11), LINE-04 (9), LINE-05 (16), LINE-06 (7), LINE-07 (10) |
 | F11-club-admin | 17 | ADMIN-01 (1), ADMIN-02 (1), ADMIN-03 (1), ADMIN-04 (1), ADMIN-05 (1), ADMIN-06 (1), ADMIN-07 (1), ADMIN-08 (1), ADMIN-09 (1), ADMIN-10 (1), ADMIN-11 (1), ADMIN-12 (1), ADMIN-13 (1), ADMIN-14 (1), ADMIN-15 (1), ADMIN-16 (1), ADMIN-17 (1) |
 | F12-coach-portal | 7 | CPORT-01 (1), CPORT-02 (1), CPORT-03 (1), CPORT-04 (1), CPORT-05 (1), CPORT-06 (1), CPORT-07 (1) |
 | F13-receipts-reports | 68 | RCPT-01 (17), RCPT-02 (14), RCPT-03 (10), R1 (5), R2 (12), R3 (10) |
-| **Total** | **772** | |
+| **Total** | **771** | |
 
 ## Hand-off ID inventory
 
@@ -52,7 +52,7 @@ Features with no approved requirements on this branch yet (F14, F15, F16) have n
 | CANCEL-01 | yes | 23 (F09) | Criteria approved |
 | CANCEL-02 | yes | 6 (F09) | Criteria approved |
 | CANCEL-03 | no | 17 (F09) | Criteria approved |
-| CANCEL-04 | no | 12 (F09) | Criteria approved |
+| CANCEL-04 | no | 11 (F09) | Criteria approved |
 | CLASS-01 | no | 18 (F08) | Criteria approved |
 | CLASS-02 | no | 16 (F08) | Criteria approved |
 | PROMO-01 | no | 14 (F04) | Criteria approved |

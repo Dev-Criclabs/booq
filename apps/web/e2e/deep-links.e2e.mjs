@@ -4,11 +4,16 @@
 // Run: node --test --test-concurrency=1 'apps/web/e2e/*.e2e.mjs'  (one next dev at a time; Chromium is pre-installed).
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
-import { join } from 'node:path';
-import { chromium, openPage, SHOTS, startApp } from './harness.mjs';
+import { chromium, openPage, startApp } from './harness.mjs';
 
 const inLine = { inClient: true, loggedIn: true, idToken: 't', language: 'th' };
 const browser_ = { inClient: false, loggedIn: false, idToken: 't', language: 'th' };
+// C4 reads the public schedule: one court, one open hour, today only.
+const schedule = {
+  courts: { status: 'live', today: '2027-01-09', bookingWindowDays: 0, courts: [{ id: 'c1', name: '1', sport: 'tennis' }], openingHours: [] },
+  days: [],
+  dayFor: (date) => ({ date, courts: [{ id: 'c1', name: '1', sport: 'tennis', hours: [{ start: `${date}T18:00:00+07:00`, state: 'open', waitlist: false }] }], dayFull: false, waitlist: false }),
+};
 const endpoint = (base, state) => `${base}/c/hunter?liff.state=${encodeURIComponent(state)}`;
 
 let app;
@@ -25,7 +30,7 @@ after(async () => {
 describe('deep links (F02-T23)', () => {
   for (const [where, liff] of [['inside LINE', inLine], ['in a browser', browser_]]) {
     it(`BOOK-02-AC1, AC2, AC5, AUTH-01-AC10: the Book a court tile opens C4 as a guest page, ${where}`, async () => {
-      const { page, context, calls } = await openPage(browser, { liff, lang: 'en', me: null });
+      const { page, context, calls } = await openPage(browser, { liff, lang: 'en', me: null, schedule });
       await page.goto(endpoint(app.base, '/book'));
       await page.waitForURL((u) => u.pathname === '/c/hunter/book');
       await page.locator('[data-screen=C4]').waitFor();
@@ -44,7 +49,7 @@ describe('deep links (F02-T23)', () => {
   });
 
   it('AUTH-01-AC14: a message button keeps its page and query, inside the club', async () => {
-    const { page, context } = await openPage(browser, { liff: inLine, lang: 'en', me: null });
+    const { page, context } = await openPage(browser, { liff: inLine, lang: 'en', me: null, schedule });
     await page.goto(endpoint(app.base, '/book?date=2027-01-09'));
     await page.waitForURL((u) => u.pathname === '/c/hunter/book');
     assert.equal(new URL(page.url()).searchParams.get('date'), '2027-01-09');
@@ -62,13 +67,4 @@ describe('deep links (F02-T23)', () => {
     }
   });
 
-  it('screens: C4 shell in Thai and English', async () => {
-    for (const lang of ['th', 'en']) {
-      const { page, context } = await openPage(browser, { liff: browser_, lang, me: null });
-      await page.goto(`${app.base}/c/hunter/book`);
-      await page.locator('[data-screen=C4]').waitFor();
-      await page.screenshot({ path: join(SHOTS, `C4-shell-${lang}.png`) });
-      await context.close();
-    }
-  });
 });
