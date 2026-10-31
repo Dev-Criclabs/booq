@@ -7,24 +7,24 @@ import { errorKey, type Failure } from './club';
 type Fetch = typeof fetch;
 
 export type ConnectionKind = 'line' | 'payments';
-export interface FieldDef { name: string; label: string; secret?: boolean; optional?: boolean; testNeeds?: boolean }
+export interface FieldDef { name: string; labelKey: string; secret?: boolean; optional?: boolean; testNeeds?: boolean }
 
 /** LINE: ids in the clear, three secrets. The token is needed for the test. Labels are keys: board keys where the board has the field. */
 export const LINE_FIELDS: readonly FieldDef[] = [
-  { name: 'oa_basic_id', label: 'X-0103' },
-  { name: 'messaging_channel_id', label: 'X-new.conn_messaging_channel' },
-  { name: 'login_channel_id', label: 'X-0105' },
-  { name: 'liff_id', label: 'X-0107' },
-  { name: 'line_channel_token', label: 'X-0110', secret: true, testNeeds: true },
-  { name: 'line_channel_secret', label: 'X-new.conn_channel_secret', secret: true },
-  { name: 'line_login_secret', label: 'X-new.conn_login_secret', secret: true },
+  { name: 'oa_basic_id', labelKey: 'X-0103' },
+  { name: 'messaging_channel_id', labelKey: 'X-new.conn_messaging_channel' },
+  { name: 'login_channel_id', labelKey: 'X-0105' },
+  { name: 'liff_id', labelKey: 'X-0107' },
+  { name: 'line_channel_token', labelKey: 'X-0110', secret: true, testNeeds: true },
+  { name: 'line_channel_secret', labelKey: 'X-new.conn_channel_secret', secret: true },
+  { name: 'line_login_secret', labelKey: 'X-new.conn_login_secret', secret: true },
 ];
 export type Mode = 'test' | 'live';
 export const MODES: readonly Mode[] = ['test', 'live'];
 export const beamFields = (mode: Mode): readonly FieldDef[] => [
-  { name: `merchant_id_${mode}`, label: 'X-0123', testNeeds: true },
-  { name: `beam_api_key_${mode}`, label: 'X-0127', secret: true, testNeeds: true },
-  { name: `beam_hmac_key_${mode}`, label: 'X-new.conn_hmac_key', secret: true },
+  { name: `merchant_id_${mode}`, labelKey: 'X-0123', testNeeds: true },
+  { name: `beam_api_key_${mode}`, labelKey: 'X-0127', secret: true, testNeeds: true },
+  { name: `beam_hmac_key_${mode}`, labelKey: 'X-new.conn_hmac_key', secret: true },
 ];
 
 export type Values = Record<string, string>;

@@ -73,7 +73,7 @@ export function ConnectionEditor({ id, kind, canEdit, option, askStepUp, onNotic
       ) : null}
       {defs.map((d) => (
         <div className="field" key={d.name}>
-          <label htmlFor={`conn-${d.name}`}>{t(d.label)}{d.testNeeds ? '' : ` · ${t('X-new.conn_optional')}`}</label>
+          <label htmlFor={`conn-${d.name}`}>{t(d.labelKey)}{d.testNeeds ? '' : ` · ${t('X-new.conn_optional')}`}</label>
           <input id={`conn-${d.name}`} data-testid={`conn-${d.name}`} type={d.secret ? 'password' : 'text'} autoComplete="off" value={values[d.name] ?? ''} disabled={off}
             onChange={(e) => setValues({ ...values, [d.name]: e.target.value })} />
         </div>

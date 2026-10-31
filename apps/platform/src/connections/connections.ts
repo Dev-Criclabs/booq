@@ -155,7 +155,7 @@ export function createConnections(deps: ConnectionsDeps) {
     );
     if (plan.paymentOption !== undefined) {
       const r = await tx.query('update public.club set payment_option = $2 where id = $1', [clubId, plan.paymentOption]);
-      if (r.rowCount !== 1) throw new Error('connections: the club row was not updated');
+      if (r.rowCount !== 1) throw new Error('connections: the club row was not updated');  // i18n-ignore internal assertion or start up error, logged, never shown to a user
     }
     for (const s of plan.secrets) await writeSecretAsStaff(tx, deps.encryptKey, clubId, s.kind, s.value);
     // A tested connection leaves its result in club_health: a pass clears an old failure, a failure that was saved anyway shows in P1 (D167).
