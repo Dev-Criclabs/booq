@@ -1,0 +1,29 @@
+{
+  "_note": "Proposed by BE-P (FE-A) for F11-T12 and the pages that follow (D81, CLAUDE.md): text the club admin console needs that the A keys do not have. Numbers to be assigned by Content; wording drafted in Thai and English, writers own it. Variables follow locales/README.md. Existing keys reused by T12: A-0002 to A-0004, A-0102, A-0156 to A-0165, A-0488, A-0519 to A-0521, P-0326 to P-0328.",
+  "en": {
+    "A-new.shell_nav_label": "Club admin pages",
+    "A-new.shell_welcome": "Choose a page from the menu.",
+    "A-new.shell_forbidden_title": "This area is for the club's staff",
+    "A-new.shell_forbidden_text": "Your account does not have a staff role at this club. Ask the club owner to invite you.",
+    "A-new.shell_club_missing": "This club could not be found.",
+    "A-new.shell_cap_alert": "You are close to this month's LINE message limit",
+    "A-new.shell_cap_stopped": "LINE reminders have stopped for this month",
+    "A-new.shell_cap_over": "This month's LINE message limit has been reached",
+    "A-new.shell_cap_text": "Bookings and payments are never blocked. Check your LINE plan with LINE.",
+    "A-new.shell_token_title": "LINE cannot send messages for your club right now",
+    "A-new.shell_token_text": "LINE did not accept the club's connection. Message BOOQ and we will reconnect it."
+  },
+  "th": {
+    "A-new.shell_nav_label": "หน้าแอดมินคลับ",
+    "A-new.shell_welcome": "เลือกหน้าจากเมนู",
+    "A-new.shell_forbidden_title": "พื้นที่นี้สำหรับพนักงานของคลับ",
+    "A-new.shell_forbidden_text": "บัญชีของคุณยังไม่มีบทบาทพนักงานที่คลับนี้ กรุณาขอให้เจ้าของคลับส่งคำเชิญ",
+    "A-new.shell_club_missing": "ไม่พบคลับนี้",
+    "A-new.shell_cap_alert": "ข้อความ LINE ของเดือนนี้ใกล้ถึงขีดจำกัดแล้ว",
+    "A-new.shell_cap_stopped": "การแจ้งเตือนล่วงหน้าทาง LINE หยุดส่งในเดือนนี้",
+    "A-new.shell_cap_over": "ข้อความ LINE ของเดือนนี้ถึงขีดจำกัดแล้ว",
+    "A-new.shell_cap_text": "การจองและการชำระเงินไม่ถูกบล็อก โปรดตรวจแพ็กเกจ LINE ของคลับกับ LINE",
+    "A-new.shell_token_title": "ตอนนี้ LINE ส่งข้อความของคลับไม่ได้",
+    "A-new.shell_token_text": "LINE ไม่รับการเชื่อมต่อของคลับ ส่งข้อความหา BOOQ แล้วเราจะเชื่อมต่อใหม่ให้"
+  }
+}
