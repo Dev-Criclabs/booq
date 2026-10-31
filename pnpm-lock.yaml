@@ -124,6 +124,9 @@ importers:
       '@booq/line':
         specifier: workspace:*
         version: link:../../packages/line
+      '@booq/secrets':
+        specifier: workspace:*
+        version: link:../../packages/secrets
       graphile-worker:
         specifier: ^0.18.0
         version: 0.18.0(typescript@5.9.3)

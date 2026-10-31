@@ -1,5 +1,5 @@
 import type { Db, Tx } from '@booq/db';
-import type { LineTransport, MessageBuilder, MessageFacts, MessageLanguage, PushResult } from '@booq/line';
+import type { LineMessageObject, LineTransport, MessageBuilder, MessageFacts, MessageLanguage, PushResult } from '@booq/line';
 import { recordTaskRun } from '../heartbeat';
 
 // outbox_sender (F10-T08 and T09, steps 1 to 7 of F10 design 5.2; FA 5.3). Runs every 30 seconds. One tick:
@@ -25,6 +25,9 @@ export interface OutboxSenderDeps {
   transport: LineTransport;
   /** The club's decrypted channel access token, read in the club's transaction; null when none is configured. */
   readToken(tx: Tx, clubId: string): Promise<string | null>;
+  /** Called once per club per tick, in the club's transaction, before any row is built: loads what the builder's
+   *  links need (the club's LIFF id for F02's deep links, line-sender-setup.ts). */
+  prepareClub?(tx: Tx, clubId: string): Promise<void>;
   /** Clubs per tick. */
   clubs?: number;
   /** Rows per club per tick. */
@@ -57,6 +60,7 @@ export async function runOutboxSender(db: Db, deps: OutboxSenderDeps): Promise<O
         const due = await tx.query<{ id: string }>(
           `select id from public.message_outbox where status = 'pending' and send_at <= app.now()
             order by send_at, id limit $1 for update skip locked`, [deps.batch ?? DEFAULT_BATCH]);
+        if (due.rows.length > 0) await deps.prepareClub?.(tx, clubId);
         let token: string | null | undefined;
         for (const { id } of due.rows) {
           const prepared = (await tx.query<{ p: Prepared }>('select app.prepare_message_send($1) as p', [id])).rows[0]?.p;
@@ -64,18 +68,22 @@ export async function runOutboxSender(db: Db, deps: OutboxSenderDeps): Promise<O
           if (prepared.action === 'void') { result.voided += 1; continue; }
           if (prepared.action === 'undeliverable') { result.undeliverable += 1; continue; }
           if (token === undefined) token = await deps.readToken(tx, clubId);
+          let messages: LineMessageObject[] | null = null;
+          if (token !== null) {
+            // A message that cannot be built (a missing key, a link refused) fails alone; it never holds back the
+            // club's other messages by rolling back the tick. The error itself is a bug to fix, not a retry.
+            const facts = (await tx.query<{ f: MessageFacts }>('select app.message_facts($1) as f', [id])).rows[0]!.f;
+            try {
+              messages = await deps.builder.build({ clubId, messageId: id, kind: prepared.kind, params: prepared.params, language: prepared.language, facts });
+            } catch {
+              messages = null;
+            }
+          }
           const pushed: PushResult = token === null
             ? { ok: false, outcome: 'token', status: 0, code: 'no_token' }
-            : await deps.transport.push({
-                clubId,
-                channelAccessToken: token,
-                to: prepared.to,
-                messages: await deps.builder.build({
-                  clubId, messageId: id, kind: prepared.kind, params: prepared.params, language: prepared.language,
-                  facts: (await tx.query<{ f: MessageFacts }>('select app.message_facts($1) as f', [id])).rows[0]!.f,
-                }),
-                retryKey: prepared.retry_key,
-              });
+            : messages === null
+              ? { ok: false, outcome: 'failed', status: 0, code: 'build_error' }
+              : await deps.transport.push({ clubId, channelAccessToken: token, to: prepared.to, messages, retryKey: prepared.retry_key });
           const status = (await tx.query<{ s: string }>('select app.record_send_result($1, $2, $3) as s',
             [id, pushed.ok ? 'sent' : pushed.outcome, pushed.ok ? null : pushed.code])).rows[0]?.s;
           if (status === 'sent') result.sent += 1;

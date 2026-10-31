@@ -361,3 +361,38 @@ describe('a Paused club (PLAT-03)', () => {
     expect(line.pushes({ clubId: A }).length).toBe(2);
   });
 });
+
+describe('prepareClub (the deep links port, line-sender-setup.ts)', () => {
+  it('runs once per club with due rows, in that club’s context, before its rows are built', async () => {
+    await msg('booking_confirmed', 'confirmed:p1');
+    await msg('booking_confirmed', 'confirmed:p2');
+    await msg('booking_confirmed', 'confirmed:pb', { club: B, user: PB });
+    const calls: Array<{ club: string; seen: string | null; builtBefore: number }> = [];
+    await runOutboxSender(worker, {
+      builder, transport, readToken,
+      prepareClub: async (tx, club) => {
+        const seen = (await tx.query<{ c: string | null }>(`select current_setting('app.club_id', true) as c`)).rows[0]!.c;
+        calls.push({ club, seen, builtBefore: built.length });
+      },
+    });
+    expect(calls.map((c) => c.club).sort()).toEqual([A, B].sort());
+    for (const c of calls) expect(c.seen).toBe(c.club);
+    expect(calls.find((c) => c.club === calls[0]!.club)!.builtBefore).toBe(0);
+  });
+});
+
+describe('a message that cannot be built', () => {
+  it('fails that row with build_error and does not hold back the club’s other messages', async () => {
+    const bad = await msg('booking_confirmed', 'confirmed:bad');
+    const good = await msg('booking_confirmed', 'confirmed:good');
+    const picky: MessageBuilder = {
+      build(m) {
+        if (m.messageId === bad) throw new Error('message_text_missing:L-9999');
+        return builder.build(m);
+      },
+    };
+    await runOutboxSender(worker, { builder: picky, transport, readToken });
+    expect(await rowOf(bad)).toMatchObject({ status: 'failed', last_error: 'build_error' });
+    expect(await rowOf(good)).toMatchObject({ status: 'sent' });
+  });
+});
