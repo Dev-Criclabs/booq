@@ -95,6 +95,8 @@ In a Paused club the calendar opens and owner and front desk may still move, add
 
 Staff may book an hour that has already started for walk ins (D39); the player routes still refuse it.
 
+**Selling to a walk in (D168).** `POST /staff/customers` makes a record with no consent and no LINE id. F04's pricing stays strict (migration 0320 needs a claimed customer, because age pricing needs the claimed profile), so staff sell to a person who has not signed in through the walk in order (`customer_id` null) until the person signs in and claims.
+
 ### 5.4 A4 Backup slip check (ADMIN-05)
 
 Not built for Hunter. Placeholder: the shell omits it and `/staff/slips*` is not mounted; a request answers 404. Built with F16.

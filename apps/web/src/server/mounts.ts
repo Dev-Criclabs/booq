@@ -1,5 +1,5 @@
-import { businessRoute, createClaimService, createDataRequestService, createImportService, createProfileEditService, hoursRoute, quoteSources, normalizePhone, resourceRoutes, settingsRoutes, supportWindowRoute } from '@booq/domain';
-import { createRedactingLogger, type Route } from '@booq/auth';
+import { businessRoute, createClaimService, createDataRequestService, createExportService, createImportService, createProfileEditService, hoursRoute, quoteSources, normalizePhone, resourceRoutes, settingsRoutes, supportWindowRoute } from '@booq/domain';
+import { createRedactingLogger, RouteError, type Route } from '@booq/auth';
 import { beamGateway } from '@booq/beam';
 import { loadDecryptKey } from '@booq/secrets';
 import type { Db } from '@booq/db';
@@ -7,9 +7,10 @@ import { bangkokDate } from '@booq/time';
 import { playerBookingRoutes, publicScheduleRoutes, staffBookingRoutes } from '../api/booking/routes';
 import { checkoutRoutes } from '../api/checkout/routes';
 import { playerClassRoutes, publicClassRoutes, staffClassRoutes } from '../api/classes/routes';
-import { setupRoutes, auditRoutes, calendarRoutes, customerRoutes, customerValueRoutes, shellRoutes } from '../api/admin/routes';
+import { setupDataRoutes, setupRoutes, auditRoutes, calendarRoutes, customerRoutes, customerValueRoutes, shellRoutes } from '../api/admin/routes';
 import { playerCoachRoutes, publicCoachRoutes, staffCoachRoutes } from '../api/coaches/routes';
 import { claimRoutes } from '../api/claim/routes';
+import { exportRoutes } from '../api/export/routes';
 import { dataRequestRoutes } from '../api/data-request/routes';
 import { profileRoutes } from '../api/profile/routes';
 import { staffRoutes } from '../api/staff/routes';
@@ -20,6 +21,7 @@ import { receiptRoutes } from '../api/receipts/routes';
 import { reportRoutes } from '../api/reports/routes';
 import { importRoutes } from '../api/import/routes';
 import { noticeRoutes } from '../api/notice/routes';
+import { playerPackageRoutes } from '../api/packages/routes';
 import type { WebConfig } from './context';
 
 // The route registry. Each feature adds ONE line to `mounts` and keeps its routes in plain form
@@ -53,11 +55,26 @@ export const mounts: readonly Mount[] = [
       service: (limits) => createImportService({ limits, today: () => bangkokDate(m.now()), normalizePhone }),
     }),
   (m) => claimRoutes({ db: m.db, service: () => createClaimService() }),
+  // F01-T25 (PLAT-06-AC11, AC12): the owner's data export. Until the storage provider and the queue are given in the config, both routes
+  // answer 503 export_not_configured before anything is written, so no request is left that nothing will build.
+  (m) =>
+    exportRoutes({
+      db: m.db,
+      service: () => {
+        if (!m.config.exports) throw new RouteError(503, 'export_not_configured');
+        return createExportService({ storage: m.config.exports.storage, linkSeconds: m.config.exports.linkSeconds });
+      },
+      enqueue: (task, payload) => {
+        if (!m.config.exports) throw new RouteError(503, 'export_not_configured');
+        return m.config.exports.enqueue(task, payload);
+      },
+    }),
   (m) => dataRequestRoutes({ db: m.db, service: () => createDataRequestService() }),
   (m) => staffRoutes({ db: m.db }),
   (m) => dobHistoryRoutes({ db: m.db }),
   (m) => lineFriendRoutes({ db: m.db }),
   (m) => receiptRoutes({ db: m.db, pdf: createReceiptPdf(m.config.localesDir ?? null) }),
+  (m) => playerPackageRoutes({ db: m.db, clubBySlug: m.clubBySlug }),
   (m) => reportRoutes({ db: m.db }),
   (m) => Object.values(settingsRoutes(m.db)),
   (m) => [businessRoute(m.db)],
@@ -65,7 +82,7 @@ export const mounts: readonly Mount[] = [
   (m) => noticeRoutes({ db: m.db, clubBySlug: m.clubBySlug }),
   (m) => [publicClassRoutes, playerClassRoutes, staffClassRoutes].flatMap((f) => f({ db: m.db, now: m.now, clubBySlug: m.clubBySlug })),
   (m) => [publicCoachRoutes, playerCoachRoutes, staffCoachRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
-  (m) => [shellRoutes, calendarRoutes, customerRoutes, customerValueRoutes, auditRoutes, setupRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
+  (m) => [shellRoutes, calendarRoutes, customerRoutes, customerValueRoutes, auditRoutes, setupRoutes, setupDataRoutes].flatMap((f) => f({ db: m.db, clubBySlug: m.clubBySlug })),
   // F11 A16 Settings: opening hours, courts and the support window (F01 routes in packages/domain/src/club; the settings routes are mounted above).
   (m) => [hoursRoute(m.db), resourceRoutes(m.db).create, resourceRoutes(m.db).update, supportWindowRoute(m.db)],
   (m) => profileRoutes({ db: m.db, service: () => createProfileEditService({ today: () => bangkokDate(m.now()) }) }),

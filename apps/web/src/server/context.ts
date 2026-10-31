@@ -1,4 +1,4 @@
-import { createClaimService } from '@booq/domain';
+import { createClaimService, type ExportStorage } from '@booq/domain';
 import { createDbRateLimiter } from '@booq/auth';
 import { createDbDirectory, createProfileService, createPublicConfigService, createSignInService, type LineVerifier, type RouteSession, type ServeDeps } from '@booq/auth';
 import type { Db } from '@booq/db';
@@ -9,10 +9,21 @@ import { mounts, type Mount } from './mounts';
 // The web app's composition root (F02, F01): the one place that wires the database, the LINE
 // verifier and the clock into the services and the route table. Settings are read from the
 // environment when the first request arrives (not at build), with no defaults.
-// Not wired yet: the export routes, until DevOps picks the storage provider and the queue
-// credential for adding the export job (see docs/ops/worker.md).
+// The export routes are mounted (mounts.ts) and answer 503 export_not_configured until `exports` below is given: the storage provider
+// and the queue credential for adding the export job are DevOps's to choose (see docs/ops/worker.md).
+
+/** What the owner's data export needs at run time (F01-T25, PLAT-06-AC11): the private bucket, the life of a link, and the way to add the worker job. */
+export interface ExportRuntime {
+  storage: ExportStorage;
+  /** Longest life of a link in seconds (assumption A-14: 24 hours). Platform config, no default. */
+  linkSeconds: number;
+  /** Adds the worker task; the payload carries ids only. */
+  enqueue(task: string, payload: { clubId: string; exportId: string }): Promise<void>;
+}
 
 export interface WebConfig {
+  /** Absent: POST /exports and GET /exports/:id answer 503 export_not_configured. Not read from the environment yet (no provider chosen). */
+  exports?: ExportRuntime | null;
   /** The folder with the language files (en.json, th.json, pending/), for the receipt PDF. Absent: the PDF routes answer 503 not_configured. */
   localesDir?: string | null;
   sessionSeconds: number;

@@ -5,3 +5,4 @@ export * from './customers';
 export * from './customer-value';
 export * from './audit';
 export * from './setup';
+export * from './setup-data';

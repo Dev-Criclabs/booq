@@ -3,6 +3,11 @@ import type { ClubContext, Db, Tx } from '@booq/db';
 import {
   CheckoutError,
   findLiveHold,
+  offerChoice,
+  offerHold,
+  parseOfferRef,
+  offerReused,
+  placeOfferOrder,
   findLivePackageOrder,
   packageQuoteFor,
   parsePackagePayRequest,
@@ -62,6 +67,7 @@ const STATUS: Record<CheckoutErrorCode, number> = {
   credit_unavailable: 409,
   payment_unavailable: 503,
   order_not_found: 404,
+  spot_gone: 409,
   customer_not_found: 404,
 };
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -122,9 +128,31 @@ function quoteHandler(deps: CheckoutRouteDeps, staff: boolean) {
   return async (ctx: RouteContext) => {
     const c = await sessionContext(deps, ctx, staff);
     const customer = customerOf(ctx, staff);
+    // A waitlist offer (F04-T22c) is priced on its held booking's court and hour; a staff quote names no offer.
+    const offer = staff ? null : typed(() => parseOfferRef(ctx.body));
+    if (offer) return inTx(deps.db, c, async (tx) => quoteFor(tx, customer, offerChoice(ctx.body, await offerHold(tx, customer, offer)), deps.sources));
     const request = typed(() => parseQuoteRequest(ctx.body));
     return inTx(deps.db, c, (tx) => quoteFor(tx, customer, request, deps.sources, { forCustomer: staff }));
   };
+}
+
+/** F04-T22c: Pay for the caller's waitlist offer, the claim's held booking and order (body {orderId, bookingId, quoteHash}). */
+function offerPay(deps: CheckoutRouteDeps, ctx: RouteContext, c: ClubContext, customer: string, offer: { orderId: string; bookingId: string }): Promise<PayStep> {
+  const hash = ((ctx.body ?? {}) as Record<string, unknown>)['quoteHash'];
+  if (typeof hash !== 'string' || !/^[0-9a-f]{64}$/i.test(hash)) throw new RouteError(400, 'bad_input');
+  const key = inputOf(ctx)['idempotencyKey'];
+  if (key !== undefined && (typeof key !== 'string' || !KEY.test(key))) throw new RouteError(400, 'bad_input');
+  return inTx<PayStep>(deps.db, c, (tx) =>
+    withIdempotency(tx, key as string | undefined, requestHash('POST /checkout/pay', ctx.body ?? null), async (): Promise<PayStep> => {
+      const hold = await offerHold(tx, customer, offer);
+      // A second tap (D47): the offer is priced already; its stored payment is returned after commit, not repriced.
+      if (hold.priced) return { kind: 'placed', placed: offerReused(offer, hold) };
+      const choice = offerChoice(ctx.body, hold);
+      const prepared = await preparePay(tx, customer, { choice, quoteHash: hash.toLowerCase() }, deps.sources);
+      if (prepared.kind === 'price_changed') return { kind: 'price_changed', quote: prepared.quote };
+      return { kind: 'placed', placed: await placeOfferOrder(tx, customer, offer, hold, choice, prepared.quote, deps.sources) };
+    }),
+  );
 }
 
 function payHandler(deps: CheckoutRouteDeps, staff: boolean) {
@@ -132,21 +160,8 @@ function payHandler(deps: CheckoutRouteDeps, staff: boolean) {
   return async (ctx: RouteContext) => {
     const c = await sessionContext(deps, ctx, staff);
     const customer = customerOf(ctx, staff);
-    const request = typed(() => parsePayRequest(ctx.body));
-    const key = inputOf(ctx)['idempotencyKey'];
-    if (key !== undefined && (typeof key !== 'string' || !KEY.test(key))) throw new RouteError(400, 'bad_input');
-    // F04-T12a to T12d (design 4.5): the second tap first (not repriced, step 6), then the reprice, then the order,
-    // the claim, the lines and the ledger in one transaction; a zero money order is confirmed in it (PAY-07).
-    type Step = { kind: 'price_changed'; quote: unknown } | { kind: 'placed'; placed: PlacedOrder };
-    const step = await inTx<Step>(deps.db, c, (tx) =>
-      withIdempotency(tx, key as string | undefined, requestHash(path, ctx.body ?? null), async (): Promise<Step> => {
-        const live = await findLiveHold(tx, request.choice, customer);
-        if (live) return { kind: 'placed', placed: live };
-        const prepared = await preparePay(tx, customer, request, deps.sources, { forCustomer: staff });
-        if (prepared.kind === 'price_changed') return { kind: 'price_changed', quote: prepared.quote };
-        return { kind: 'placed', placed: await placeOrder(tx, customer, request.choice, prepared.quote, deps.sources) };
-      }),
-    );
+    const offer = staff ? null : typed(() => parseOfferRef(ctx.body));
+    const step = offer ? await offerPay(deps, ctx, c, customer, offer) : await orderPay(deps, ctx, c, customer, staff, path);
     if (step.kind === 'price_changed') return { priceChanged: true, quote: step.quote };
     const p = step.placed;
     if (p.confirmed) return { orderId: p.orderId, holdExpiresAt: null, payment: null, confirmed: true };
@@ -160,6 +175,25 @@ function payHandler(deps: CheckoutRouteDeps, staff: boolean) {
       confirmed: false,
     };
   };
+}
+
+type PayStep = { kind: 'price_changed'; quote: unknown } | { kind: 'placed'; placed: PlacedOrder };
+
+function orderPay(deps: CheckoutRouteDeps, ctx: RouteContext, c: ClubContext, customer: string, staff: boolean, path: string): Promise<PayStep> {
+  const request = typed(() => parsePayRequest(ctx.body));
+  const key = inputOf(ctx)['idempotencyKey'];
+  if (key !== undefined && (typeof key !== 'string' || !KEY.test(key))) throw new RouteError(400, 'bad_input');
+  // F04-T12a to T12d (design 4.5): the second tap first (not repriced, step 6), then the reprice, then the order,
+  // the claim, the lines and the ledger in one transaction; a zero money order is confirmed in it (PAY-07).
+  return inTx<PayStep>(deps.db, c, (tx) =>
+    withIdempotency(tx, key as string | undefined, requestHash(path, ctx.body ?? null), async (): Promise<PayStep> => {
+      const live = await findLiveHold(tx, request.choice, customer);
+      if (live) return { kind: 'placed', placed: live };
+      const prepared = await preparePay(tx, customer, request, deps.sources, { forCustomer: staff });
+      if (prepared.kind === 'price_changed') return { kind: 'price_changed', quote: prepared.quote };
+      return { kind: 'placed', placed: await placeOrder(tx, customer, request.choice, prepared.quote, deps.sources) };
+    }),
+  );
 }
 
 function packageQuoteHandler(deps: CheckoutRouteDeps, staff: boolean) {
