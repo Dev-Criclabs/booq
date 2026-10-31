@@ -1,6 +1,6 @@
 import { can, route, RouteError, type RouteContext } from '@booq/auth';
 import type { Db } from '@booq/db';
-import { SETTINGS, settingByKey } from './settings-registry';
+import { SETTINGS, checkSettingWrite, otherGroupLimitKey, settingByKey } from './settings-registry';
 
 // GET /settings and PUT /settings/{key} (F01-T08; design 5.1, 6.2, 10; PLAT-05 settings, BOOK-03-AC3).
 // The registry validates; the database refuses a key it does not know and a hold time that is not 10, 15 or 20
@@ -50,33 +50,24 @@ export function settingsRoutes(db: Db) {
     if (keys.length !== 2 || !('key' in body) || !('value' in body) || typeof body['key'] !== 'string') throw new RouteError(400, 'invalid_input');
     const key = body['key'];
     const value = body['value'];
-    const def = settingByKey(key);
-    if (!def) throw new RouteError(404, 'unknown_setting');
+    if (!settingByKey(key)) throw new RouteError(404, 'unknown_setting');
 
     return db.withClubTx(tx(ctx), async (t) => {
-      if (def.slipOnly) {
-        const pay = (await t.query<{ payment_option: string | null }>('select payment_option from public.club where id = $1', [ctx.clubId])).rows[0]?.payment_option;
-        if (pay !== 'slip') throw new RouteError(409, 'not_available');
-      }
-      if (value === null) {
-        if (!def.unsetAllowed) throw new RouteError(400, 'cannot_unset');
+      const pay = (await t.query<{ payment_option: string | null }>('select payment_option from public.club where id = $1', [ctx.clubId])).rows[0]?.payment_option ?? null;
+      const otherKey = otherGroupLimitKey(key);
+      const other = otherKey ? (await t.query<{ value: unknown }>('select value from public.club_setting where club_id = $1 and key = $2', [ctx.clubId, otherKey])).rows[0]?.value : undefined;
+      const w = checkSettingWrite({ key, value, paymentOption: pay, otherGroupLimit: other });
+      if (!w.ok) throw new RouteError(w.status, w.code);
+      if (w.action === 'unset') {
         await t.query('delete from public.club_setting where club_id = $1 and key = $2', [ctx.clubId, key]);
         return { key, value: null };
-      }
-      const checked = def.validate(value);
-      if (!checked.ok) throw new RouteError(400, checked.code);
-      // The smallest group may not exceed the largest, whichever is written second.
-      if (key === 'group_min_players' || key === 'group_max_players') {
-        const other = key === 'group_min_players' ? 'group_max_players' : 'group_min_players';
-        const o = (await t.query<{ value: number }>('select value from public.club_setting where club_id = $1 and key = $2', [ctx.clubId, other])).rows[0]?.value;
-        if (typeof o === 'number' && (key === 'group_min_players' ? (checked.value as number) > o : o > (checked.value as number))) throw new RouteError(400, 'invalid_value');
       }
       await t.query(
         `insert into public.club_setting (club_id, key, value) values ($1, $2, $3::jsonb)
          on conflict (club_id, key) do update set value = excluded.value, updated_at = app.now()`,
-        [ctx.clubId, key, JSON.stringify(checked.value)],
+        [ctx.clubId, key, JSON.stringify(w.value)],
       );
-      return { key, value: checked.value };
+      return { key, value: w.value };
     });
   });
 

@@ -14,6 +14,7 @@ const STATUS: Record<string, number> = {
   step_up_required: 403,
   same_admin: 403,
   not_found: 404,
+  unknown_setting: 404,
   slug_taken: 409,
   transition_not_allowed: 409,
   use_pause: 409,
