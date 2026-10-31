@@ -11,15 +11,29 @@ import { toCsv, type CsvCell } from '@booq/domain';
 //   GET  /staff/daily-close/csv?day=         the same, flattened, as a CSV (audited)
 //   GET  /staff/reports/:name?from=&to=      the report as JSON (value-owed takes asOf=)
 //   GET  /staff/reports/:name/csv?from=&to=  the same rows as a CSV (audited)
-// Coach payouts (F13-T10) join here when their tables exist.
+//   GET  /staff/coach-pay?month=               the month's coach payouts (computed, with adjustments and the total), month as YYYY-MM
+//   GET  /staff/coach-pay/csv?month=           the same as a CSV (audited)
+//   POST /staff/coach-pay/:id/adjustments      {delta_satang, reason}: owner only, reason required (D115)
+//   POST /staff/coach-pay/:id/paid             owner only; refused while the amount is unset (D115)
 
 export interface ReportRouteDeps {
   db: Db;
 }
 
-const UUID_ERRORS: Record<string, number> = { forbidden: 403, invalid_day: 400, day_not_over: 409, already_closed: 409, invalid_range: 400 };
+const UUID_ERRORS: Record<string, number> = {
+  forbidden: 403, invalid_day: 400, day_not_over: 409, already_closed: 409, invalid_range: 400,
+  invalid_month: 400, coach_not_found: 404, not_found: 404, already_paid: 409, reason_required: 400, invalid_delta: 400, amount_unset: 409, negative_total: 409,
+};
 const DAY = /^(\d{4})-(\d{2})-(\d{2})$/;
 const bad = () => new RouteError(400, 'bad_input');
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** `YYYY-MM` (or the first day of the month) to the first day of that month. */
+const monthOf = (v: unknown): string => {
+  const m = typeof v === 'string' ? /^(\d{4})-(0[1-9]|1[0-2])(?:-01)?$/.exec(v) : null;
+  if (!m) throw bad();
+  return `${m[1]}-${m[2]}-01`;
+};
+const PAYOUT_COLUMNS = ['coach_id', 'coach_name', 'status', 'solo_sessions', 'group_sessions', 'base_satang', 'solo_pay_satang', 'group_pay_satang', 'flags', 'amount_satang', 'adjustments_satang', 'total_satang', 'paid_at'] as const;
 const day = (v: unknown): string => {
   const m = typeof v === 'string' ? DAY.exec(v) : null;
   if (!m || new Date(Date.UTC(+m[1]!, +m[2]! - 1, +m[3]!)).toISOString().slice(0, 10) !== v) throw bad();
@@ -47,7 +61,7 @@ const REPORTS: Record<string, ReportDef> = {
 /** Big sums come out of the database as text: whole numbers go back to numbers (satang stay exact below 2^53), everything else is kept. */
 function plain(row: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(row)) out[k] = typeof v === 'string' && /^-?\d{1,15}$/.test(v) && !/id$/.test(k) && k !== 'partner_name' ? Number(v) : v;
+  for (const [k, v] of Object.entries(row)) out[k] = typeof v === 'string' && /^-?\d{1,15}$/.test(v) && !/id$/.test(k) && k !== 'partner_name' && k !== 'coach_name' ? Number(v) : v;
   return out;
 }
 
@@ -59,7 +73,7 @@ export function reportRoutes(deps: ReportRouteDeps): Route<unknown>[] {
         (tx) => fn((sql, params) => tx.query(sql, params)),
       );
     } catch (e) {
-      const m = /^(?:close|report):(\w+)/.exec((e as { message?: string }).message ?? '');
+      const m = /^(?:close|report|payout):(\w+)/.exec((e as { message?: string }).message ?? '');
       if (m && (e as { code?: string }).code === 'P0001' && UUID_ERRORS[m[1]!] !== undefined) throw new RouteError(UUID_ERRORS[m[1]!]!, m[1]!);
       throw e;
     }
@@ -86,6 +100,9 @@ export function reportRoutes(deps: ReportRouteDeps): Route<unknown>[] {
     inClub(ctx, async (q) => ({
       rows: (await q(`select * from app.${def.fn}(${a.params.map((_, n) => `$${n + 1}::date`).join(', ')})`, a.params)).rows.map(plain),
     }));
+
+  const payoutRows = (ctx: RouteContext, month: string) =>
+    inClub(ctx, async (q) => ({ rows: (await q('select * from app.payout_month($1::date)', [month])).rows.map(plain) }));
 
   /** The daily close as one flat list: a section, an item, an amount, a count, a reference (receipt number) and a name. */
   function closeRows(t: Record<string, any>): CsvCell[][] {
@@ -141,6 +158,31 @@ export function reportRoutes(deps: ReportRouteDeps): Route<unknown>[] {
       return audited(ctx, name, a.from, a.to, rows.length, () =>
         csv(`${name}-${a.from}${a.from === a.to ? '' : `-${a.to}`}.csv`, toCsv(def.columns, rows.map((r) => def.columns.map((c) => r[c] as CsvCell)))),
       );
+    }),
+    route({ method: 'GET', path: '/staff/coach-pay', permission: 'payout.read' }, async (ctx) => (await payoutRows(ctx, monthOf((ctx.input as Record<string, unknown>)['month']))).rows),
+    route({ method: 'GET', path: '/staff/coach-pay/csv', permission: 'payout.read' }, async (ctx) => {
+      const m = monthOf((ctx.input as Record<string, unknown>)['month']);
+      const { rows } = await payoutRows(ctx, m);
+      return audited(ctx, 'coach-payouts', m, m, rows.length, () =>
+        csv(`coach-payouts-${m.slice(0, 7)}.csv`, toCsv(PAYOUT_COLUMNS, rows.map((r) => PAYOUT_COLUMNS.map((c) => (Array.isArray(r[c]) ? (r[c] as string[]).join(' ') : (r[c] as CsvCell)))))),
+      );
+    }),
+    route({ method: 'POST', path: '/staff/coach-pay/:id/adjustments', permission: 'payout.adjust' }, (ctx) => {
+      const id = (ctx.input as Record<string, unknown>)['id'];
+      const b = ctx.body as Record<string, unknown> | undefined;
+      if (typeof id !== 'string' || !UUID.test(id)) throw new RouteError(404, 'not_found');
+      if (!b || typeof b !== 'object' || Array.isArray(b) || Object.keys(b).some((k) => k !== 'delta_satang' && k !== 'reason')) throw bad();
+      const delta = b['delta_satang'];
+      if (typeof delta !== 'number' || !Number.isSafeInteger(delta) || delta === 0 || Math.abs(delta) > 2_000_000_000 || typeof b['reason'] !== 'string' || b['reason'].length > 500) throw bad();
+      return inClub(ctx, async (q) => ({ id: (await q('select app.add_payout_adjustment($1, $2, $3) as id', [id, delta, b['reason']])).rows[0]!.id as string }));
+    }),
+    route({ method: 'POST', path: '/staff/coach-pay/:id/paid', permission: 'payout.pay' }, (ctx) => {
+      const id = (ctx.input as Record<string, unknown>)['id'];
+      if (typeof id !== 'string' || !UUID.test(id)) throw new RouteError(404, 'not_found');
+      return inClub(ctx, async (q) => {
+        await q('select app.mark_payout_paid($1)', [id]);
+        return { id };
+      });
     }),
   ];
 }
