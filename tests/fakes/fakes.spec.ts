@@ -7,6 +7,9 @@ import {
   FakeBeam,
   FakeClock,
   FakeLine,
+  containsThai,
+  detectLanguage,
+  findKeyFor,
   badSignature,
   duplicateCallbackParallel,
   callbackNeverArrives,
@@ -191,5 +194,28 @@ describe('fake Beam: D71 to D79 helpers', () => {
     expect(beam.unexpectedRequestFields()).toEqual([]);
     beam.createCharge('mA', { amount: 100, currency: 'THB', referenceId: 'x', phone: '0812345678', paymentMethod: { paymentMethodType: 'QR_PROMPT_PAY', qrPromptPay: { expiryTime: '2026-12-07T10:00:00Z' } } } as never);
     expect(beam.unexpectedRequestFields()).toEqual(['phone']);
+  });
+});
+
+describe('language detection of a pushed card', () => {
+  const flex = (...texts: string[]) => [{ type: 'flex', altText: texts[0] ?? 'x', contents: { type: 'bubble', body: { type: 'box', layout: 'vertical', contents: texts.map((text) => ({ type: 'text', text })) } } }];
+
+  test('an English card with a baht amount is English, not Thai', () => {
+    expect(detectLanguage(flex('Booking confirmed', 'Court 1', '฿1,300', 'HTC-2027-000001'))).toBe('en');
+  });
+
+  test('the baht sign alone is not a language', () => {
+    expect(containsThai('฿1,300')).toBe(false);
+    expect(containsThai('๑๒๓')).toBe(false);
+    expect(detectLanguage(flex('฿1,300', '18:00'))).toBe('none');
+  });
+
+  test('a Thai card is Thai even when the amount has the baht sign', () => {
+    expect(detectLanguage(flex('ยืนยันการจองแล้ว', 'สนาม 1', '฿1,300'))).toBe('th');
+  });
+
+  test('a text that is only a bare variable template (P-0017) does not decide the language', () => {
+    expect(findKeyFor('en', 'Sat 9 Jan 2027')).toBe('P-0017');
+    expect(findKeyFor('en', 'Sat 9 Jan 2027', { ignoreBareVariables: true })).toBeUndefined();
   });
 });

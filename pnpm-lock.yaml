@@ -75,6 +75,9 @@ importers:
       '@booq/line':
         specifier: workspace:*
         version: link:../../packages/line
+      '@booq/receipts':
+        specifier: workspace:*
+        version: link:../../packages/receipts
       '@booq/secrets':
         specifier: workspace:*
         version: link:../../packages/secrets
