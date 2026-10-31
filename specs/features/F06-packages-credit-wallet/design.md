@@ -149,7 +149,7 @@ Conventions as FA §9: typed codes, no text, 404 for out of reach; amounts in sa
 
 | Method and path | Permission | Purpose |
 |---|---|---|
-| `GET /api/c/{slug}/packages` | public (guest) | Active products for C9: named public columns only (D103); price per credit and saving computed server side |
+| `GET /api/c/{slug}/packages` | public (guest) | Active products for C9: named public columns only (D103); price per credit and saving computed server side (saving per D173, migration 0519: credits × the matching single price − the package price; null when that price is unset or varies) |
 | `GET /api/c/{slug}/me/credits` | own | Packages with credits left, expiry and status, and wallet balance for C14 |
 | `GET /api/c/{slug}/me/ledger?kind=credit\|wallet&cursor=` | own | History of movements, newest first, with the reason key and booking reference |
 | `POST /api/c/{slug}/staff/customers/{id}/wallet-adjust` | `wallet.adjust` (front desk, owner) | `wallet_adjust` with a note |
