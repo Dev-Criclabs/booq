@@ -72,6 +72,31 @@ afterEach(async () => {
   await tdb.close();
 });
 
+describe('cell details (A-0021 to A-0033; migration 1111)', () => {
+  it('a closure cell carries its reason; a booking cell its payment method and state; a class cell its booked and cap', async () => {
+    const b = await court(10);
+    const cx = await tdb.pool.connect();
+    try {
+      await cx.query('begin');
+      await cx.query('set local session_replication_role = replica');
+      await cx.query(`update public.orders set status = 'open', price_group_snapshot = '{}'::jsonb, subtotal_satang = 50000, discount_satang = 0, total_satang = 50000, credit_value_satang = 0, wallet_satang = 0, money_satang = 50000, quote_hash = repeat('a',64), priced_at = app.now() where id = (select order_id from public.booking where id = $1)`, [b]);
+      await cx.query('commit');
+    } finally {
+      cx.release();
+    }
+    await tdb.query(`insert into public.payment (club_id, order_id, method, status, environment, gateway, gateway_charge_id, amount_satang, qr_image, qr_expires_at)
+                     select $1, order_id, 'beam', 'pending', 'test', 'beam', 'ch', 50000, 'x', app.now() + interval '5 minutes' from public.booking where id = $2`, [A, b]);
+    const cl = await tdb.seedClosure(A);
+    await tdb.query(`update public.closure set reason = 'Maintenance · lights' where id = $1`, [cl]);
+    await tdb.query(`insert into public.occupancy (club_id, kind, resource_id, start_at, end_at, state, closure_id) values ($1,'closure',$2,$3,$4,'confirmed',$5)`, [A, C2, H(14), H(15), cl]);
+    const cells = (await get(owner())).body!;
+    expect(cells.find((c) => c['bookingId'] === b)).toMatchObject({ paymentMethod: 'beam', paymentState: 'pending', closureReason: null, classBooked: null });
+    expect(cells.find((c) => c['closureId'] === cl)).toMatchObject({ closureReason: 'Maintenance · lights', paymentMethod: null });
+    await tdb.query(`update public.payment set status = 'succeeded', qr_image = null, confirmed_at = app.now() where order_id = (select order_id from public.booking where id = $1)`, [b]);
+    expect((await get(owner())).body!.find((c) => c['bookingId'] === b)).toMatchObject({ paymentMethod: 'beam', paymentState: 'paid' });
+  });
+});
+
 describe('GET /staff/calendar', () => {
   it('front desk and owner see the day: confirmed, held, solo class and closure cells with names only', async () => {
     const b = await court(10);

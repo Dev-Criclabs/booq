@@ -174,7 +174,7 @@ describe('C11 hand-off and the checkout states (F04-T18; R8-AC1 to AC4)', () => 
     const started = await open();
     await started.page.getByTestId('due').waitFor();
     await started.page.getByTestId('pay').click();
-    await started.page.waitForURL('**/pay/o1');
+    await started.page.waitForURL('**/pay/o1?payment=p1');
     await started.context.close();
     const free = await open({ quoteFor: () => ({ status: 200, json: quote({ moneySatang: 0 }) }), payFor: () => ({ status: 200, json: { orderId: 'o2', holdExpiresAt: null, payment: null, confirmed: true } }) });
     await free.page.getByTestId('due').waitFor();

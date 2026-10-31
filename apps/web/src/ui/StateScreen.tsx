@@ -12,7 +12,7 @@ export function OfflineIcon() {
   );
 }
 
-export function StateScreen({ t, offline, titleKey, textKey, actionKey, onAction, testId }: { t: T; offline?: boolean; titleKey?: string; textKey: string; actionKey?: string; onAction?(): void; testId: string }) {
+export function StateScreen({ t, offline, titleKey, textKey, actionKey, onAction, testId, vars, secondKey, onSecond }: { t: T; offline?: boolean; titleKey?: string; textKey: string; actionKey?: string; onAction?(): void; testId: string; vars?: Record<string, string | number>; secondKey?: string; onSecond?(): void }) {
   return (
     <main className="app state" data-testid={testId}>
       <div className="state-body" role="alert">
@@ -22,13 +22,18 @@ export function StateScreen({ t, offline, titleKey, textKey, actionKey, onAction
           </span>
         ) : null}
         {titleKey ? <h1 className="state-title">{t(titleKey)}</h1> : null}
-        <p className="state-text">{t(textKey)}</p>
+        <p className="state-text">{t(textKey, vars)}</p>
       </div>
       {actionKey && onAction ? (
         <div className="state-actions">
           <button type="button" className="btn btn-primary" onClick={onAction}>
             <span>{t(actionKey)}</span>
           </button>
+          {secondKey && onSecond ? (
+            <button type="button" className="btn btn-ghost" onClick={onSecond}>
+              <span>{t(secondKey)}</span>
+            </button>
+          ) : null}
         </div>
       ) : null}
     </main>
