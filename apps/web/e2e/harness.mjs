@@ -47,14 +47,14 @@ export async function startApp(port = 3107) {
   throw new Error(`next dev did not start:\n${log}`);
 }
 
-export const CLUB = { nameTh: 'ฮันเตอร์ เทนนิส คลับ', nameEn: 'Hunter Tennis Club', defaultLanguage: 'th', status: 'live', liffId: 'liff-test', languages: ['th', 'en'], noticeVersion: 'v1' };
+export const CLUB = { nameTh: 'ฮันเตอร์ เทนนิส คลับ', nameEn: 'Hunter Tennis Club', defaultLanguage: 'th', status: 'live', liffId: 'liff-test', languages: ['th', 'en'], noticeVersion: 'v1', oaBasicId: '@hunter' };
 
 /**
  * A page with the club API faked. `session` answers POST /auth/session, `profile` POST /auth/profile (a reply, or a
  * function of the calls so far), `notice` GET /public/notice/{kind} as { privacy: { th: doc } }; every API call is recorded,
  * so a test can prove nothing was created.
  */
-export async function openPage(browser, { liff, club = CLUB, session = { status: 200, body: { state: 'active' } }, profile = { status: 200, body: { state: 'active' } }, notice = null, me = undefined, schedule = null, lang, width = 375, height = 812 } = {}) {
+export async function openPage(browser, { liff, club = CLUB, session = { status: 200, body: { state: 'active' } }, profile = { status: 200, body: { state: 'active' } }, notice = null, me = undefined, schedule = null, stubCheckout = false, lang, width = 375, height = 812 } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, locale: 'th-TH' });
   if (lang) await context.addCookies([{ name: 'lang', value: lang, url: 'http://localhost' }]);
   const page = await context.newPage();
@@ -102,5 +102,8 @@ export async function openPage(browser, { liff, club = CLUB, session = { status:
     return route.fulfill({ status: 404, json: { code: 'not_found' } });
   });
   if (liff) await page.addInitScript((state) => (window.__BOOQ_LIFF_FAKE__ = state), liff);
+  // Checkout (C10) is another lane's page and a person page: tests that only check they arrive there
+  // (with the choice in the address) get a stub document, so the real page's own checks do not move them on.
+  if (stubCheckout) await page.route('**/c/*/checkout?*', (r) => (r.request().resourceType() === 'document' ? r.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>checkout</title>' }) : r.continue()));
   return { context, page, calls };
 }

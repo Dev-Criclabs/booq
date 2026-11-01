@@ -2,8 +2,9 @@
 import type { T } from '../client/i18n';
 
 // The in-app ask to add the club's Official Account (LINE-01-AC8, AC9; D9). Shown to a known
-// non-friend at most once per session; it never blocks anything. With the Official Account's basic id
-// it opens LINE's add-friend page; without it the ask is the note alone.
+// non-friend at most once per session; it never blocks anything. Add on LINE opens LINE's add-friend
+// page for the club's Official Account basic id (public config, migration 0060); without one the ask is
+// the note alone.
 export function AddFriendAsk({ t, clubName, url, onDismiss }: { t: T; clubName: string; url: string | null; onDismiss(): void }) {
   return (
     <aside className="friend-ask" data-testid="friend-ask" role="note">

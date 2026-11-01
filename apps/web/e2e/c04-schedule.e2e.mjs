@@ -46,7 +46,7 @@ after(async () => {
 
 describe('C4 schedule (F03-T24)', () => {
   it('BOOK-01-AC6: a guest sees the date strip from today to the window and both courts by the hour', async () => {
-    const { page, context, calls } = await openPage(browser, { liff: guest, lang: 'en', schedule: schedule() });
+    const { page, context, calls } = await openPage(browser, { stubCheckout: true, liff: guest, lang: 'en', schedule: schedule() });
     await page.goto(`${app.base}/c/hunter/book`);
     await page.getByTestId('grid').waitFor();
     assert.deepEqual(await page.locator('.date-chip').evaluateAll((els) => els.map((e) => e.dataset.date)), days.map((d) => d.date));
@@ -58,7 +58,7 @@ describe('C4 schedule (F03-T24)', () => {
   });
 
   it('BOOK-01-AC7: every state is told apart without colour (word and icon), and only open hours can be chosen', async () => {
-    const { page, context } = await openPage(browser, { liff: guest, lang: 'th', schedule: schedule() });
+    const { page, context } = await openPage(browser, { stubCheckout: true, liff: guest, lang: 'th', schedule: schedule() });
     await page.goto(`${app.base}/c/hunter/book`);
     await page.getByTestId('grid').waitFor();
     // Turn colour off entirely: the states must still differ by text and icon shape.
@@ -74,7 +74,7 @@ describe('C4 schedule (F03-T24)', () => {
   });
 
   it('selecting non-consecutive hours is not possible; Continue carries the chosen block to checkout', async () => {
-    const { page, context } = await openPage(browser, { liff: guest, lang: 'en', schedule: schedule() });
+    const { page, context } = await openPage(browser, { stubCheckout: true, liff: guest, lang: 'en', schedule: schedule() });
     await page.goto(`${app.base}/c/hunter/book`);
     await page.getByTestId('grid').waitFor();
     const cell = (court, h) => page.getByRole('button', { name: `Court ${court} · ${h}:00 ·` });
@@ -97,7 +97,7 @@ describe('C4 schedule (F03-T24)', () => {
   });
 
   it('BOOK-01-AC14: a full day shows Day full with Join waitlist and a way to the next open date', async () => {
-    const { page, context } = await openPage(browser, { liff: guest, lang: 'en', schedule: schedule({ dayFor: (d) => (d === TODAY ? fullDay(d) : normalDay(d)) }) });
+    const { page, context } = await openPage(browser, { stubCheckout: true, liff: guest, lang: 'en', schedule: schedule({ dayFor: (d) => (d === TODAY ? fullDay(d) : normalDay(d)) }) });
     await page.goto(`${app.base}/c/hunter/book`);
     await page.getByTestId('day-full').waitFor();
     assert.match(await page.getByTestId('day-full').innerText(), /Sat 9 Jan is fully booked from 16:00\.\s+Sun 10 Jan has 18 open hours\./);
@@ -111,13 +111,13 @@ describe('C4 schedule (F03-T24)', () => {
   });
 
   it('BOOK-01-AC13: while loading the grid shows the loading state; a failed read shows offline with Try again', async () => {
-    const slow = await openPage(browser, { liff: guest, lang: 'en', schedule: schedule({ delayMs: 1500 }) });
+    const slow = await openPage(browser, { stubCheckout: true, liff: guest, lang: 'en', schedule: schedule({ delayMs: 1500 }) });
     await slow.page.goto(`${app.base}/c/hunter/book`);
     await slow.page.getByTestId('loading').waitFor();
     await slow.page.screenshot({ path: join(SHOTS, 'C4-loading-en.png') });
     await slow.page.getByTestId('grid').waitFor();
     await slow.context.close();
-    const down = await openPage(browser, { liff: guest, lang: 'th', schedule: { offline: true } });
+    const down = await openPage(browser, { stubCheckout: true, liff: guest, lang: 'th', schedule: { offline: true } });
     await down.page.goto(`${app.base}/c/hunter/book`);
     await down.page.getByTestId('offline').waitFor();
     assert.match(await down.page.getByTestId('offline').innerText(), /ลองอีกครั้ง/);
@@ -126,7 +126,7 @@ describe('C4 schedule (F03-T24)', () => {
   });
 
   it('BOOK-02-AC4: a paused club shows C4 as paused, with Bookings still in the nav', async () => {
-    const { page, context } = await openPage(browser, { liff: guest, lang: 'en', schedule: schedule({ courts: info({ status: 'paused' }) }) });
+    const { page, context } = await openPage(browser, { stubCheckout: true, liff: guest, lang: 'en', schedule: schedule({ courts: info({ status: 'paused' }) }) });
     await page.goto(`${app.base}/c/hunter/book`);
     await page.getByTestId('paused').waitFor();
     assert.equal(await page.getByTestId('grid').count(), 0);
@@ -136,7 +136,7 @@ describe('C4 schedule (F03-T24)', () => {
 
   it('CC-5: at 320 px with the longest strings, nothing scrolls sideways and Continue stays on one line', async () => {
     for (const lang of ['th', 'en']) {
-      const { page, context } = await openPage(browser, { liff: guest, lang, width: 320, height: 568, schedule: schedule({ courts: info({ courts: [{ id: 'c1', name: '12A', sport: 'tennis' }, { id: 'c2', name: '12B', sport: 'tennis' }] }), dayFor: (d) => { const x = normalDay(d); x.courts[0].name = '12A'; x.courts[1].name = '12B'; return x; } }) });
+      const { page, context } = await openPage(browser, { stubCheckout: true, liff: guest, lang, width: 320, height: 568, schedule: schedule({ courts: info({ courts: [{ id: 'c1', name: '12A', sport: 'tennis' }, { id: 'c2', name: '12B', sport: 'tennis' }] }), dayFor: (d) => { const x = normalDay(d); x.courts[0].name = '12A'; x.courts[1].name = '12B'; return x; } }) });
       await page.goto(`${app.base}/c/hunter/book`);
       await page.getByTestId('grid').waitFor();
       await page.locator('[data-state=open]').last().click();
@@ -162,7 +162,7 @@ describe('refusals on C4 (F03-T25)', () => {
 
   it('BOOK-01-AC15, BOOK-04-AC4: a slot taken meanwhile is told in both languages on a fresh grid, and nothing is charged', async () => {
     for (const lang of ['th', 'en']) {
-      const { page, context, calls } = await openPage(browser, { liff: guest, lang, schedule: schedule() });
+      const { page, context, calls } = await openPage(browser, { stubCheckout: true, liff: guest, lang, schedule: schedule() });
       await page.goto(back(app.base, 'refused=slot_unavailable&by=resource'));
       await page.getByTestId('refusal').waitFor();
       await page.getByTestId('grid').waitFor();
@@ -186,7 +186,7 @@ describe('refusals on C4 (F03-T25)', () => {
       ['refused=outside_window', /up to 6 days ahead/],
       ['refused=hour_started', /already started/],
     ]) {
-      const { page, context } = await openPage(browser, { liff: guest, lang: 'en', schedule: schedule() });
+      const { page, context } = await openPage(browser, { stubCheckout: true, liff: guest, lang: 'en', schedule: schedule() });
       await page.goto(back(app.base, q));
       await page.getByTestId('refusal').waitFor();
       assert.match(await page.getByTestId('refusal').innerText(), re, q);
@@ -195,7 +195,7 @@ describe('refusals on C4 (F03-T25)', () => {
   });
 
   it('an unknown code or a missing value shows nothing, and picking an hour clears the message', async () => {
-    const odd = await openPage(browser, { liff: guest, lang: 'en', schedule: schedule() });
+    const odd = await openPage(browser, { stubCheckout: true, liff: guest, lang: 'en', schedule: schedule() });
     await odd.page.goto(back(app.base, 'refused=not_a_code'));
     await odd.page.getByTestId('grid').waitFor();
     assert.equal(await odd.page.getByTestId('refusal').count(), 0);
